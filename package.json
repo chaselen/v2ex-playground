@@ -2,7 +2,7 @@
   "name": "v2ex-playground",
   "displayName": "V2EX Playground",
   "description": "V2EX游乐场",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.48.0"
   },

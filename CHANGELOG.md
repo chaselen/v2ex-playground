@@ -1,9 +1,6 @@
-# Change Log
+# 更新日志
 
-All notable changes to the "v2ex-playground" extension will be documented in this file.
+## [1.0.0]
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+- 查看首页各标签下的话题列表
+- 话题浏览功能
