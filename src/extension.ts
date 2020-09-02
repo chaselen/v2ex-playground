@@ -2,6 +2,7 @@ import { DataProvider, Node, TopicDetail } from './DataProvider';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as template from 'art-template';
 
 export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
@@ -39,26 +40,27 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // 点击浏览帖子
-  const htmlPath = path.join(context.extensionPath, 'src', 'topic.html');
-  const htmlTemplate = fs.readFileSync(htmlPath, 'utf-8');
+  const templatePath = path.join(context.extensionPath, 'src', 'topic.art');
   let disposable5 = vscode.commands.registerCommand('itemClick', (item: Node) => {
     const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, {});
 
     // 先加载一个只有标题的页面
     const _default = new TopicDetail();
     _default.title = item.label || '';
-    panel.webview.html = dataProvider.getTopicDetailHTML(htmlTemplate, _default);
+    panel.webview.html = template(templatePath, _default);
 
     // 获取详情页面
     dataProvider.getTopicDetail(item.link || '').then((detail) => {
-      panel.webview.html = dataProvider.getTopicDetailHTML(htmlTemplate, detail);
+			const html = template(templatePath, detail);
+			console.log('topic html：', html);
+      panel.webview.html = html;
     });
   });
 
-	const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, {});
-
-  // 先加载一个只有标题的页面
-  panel.webview.html = htmlTemplate;
+  // 测试页面
+  // const htmlTemplate = fs.readFileSync(path.join(context.extensionPath, 'src', 'topic.html'), 'utf-8');
+  // const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, {});
+  // panel.webview.html = htmlTemplate;
 
   context.subscriptions.push(disposable);
   context.subscriptions.push(disposable2);

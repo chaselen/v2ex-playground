@@ -98,6 +98,7 @@
   },
   "dependencies": {
     "@types/cheerio": "^0.22.21",
+    "art-template": "^4.13.2",
     "axios": "^0.19.0",
     "cheerio": "^1.0.0-rc.3"
   }

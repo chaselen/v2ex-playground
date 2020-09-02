@@ -101,13 +101,26 @@ export class DataProvider implements TreeDataProvider<Node> {
     topicDetail.displayTime = meta[1].trim();
     topicDetail.visitCount = meta[2].trim();
     topicDetail.content = $('.topic_content').html() || '';
-    const rs = $('#Main > .box').eq(1).children('div[id].cell');
+    $('.subtle').each((_, element) => {
+      topicDetail.appends.push({
+        time: $(element).children('.fade').text().split('·')[1].trim(),
+        content: $(element).children('.topic_content').html() || ''
+      });
+    });
+    topicDetail.replyCount = parseInt($('#Main > .box').eq(1).children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0;
+    $('#Main > .box')
+      .eq(1)
+      .children('div[id].cell')
+      .each((_, element) => {
+        topicDetail.replies.push({
+          userAvatar: $(element).find('img.avatar').attr('src') || '',
+          userName: $(element).find('a.dark').html() || '',
+          time: $(element).find('span.ago').text(),
+          floor: $(element).find('span.no').text(),
+          content: $(element).find('.reply_content').html() || ''
+        });
+      });
     return topicDetail;
-  }
-
-  getTopicDetailHTML(htmlTemplate: string, topicDetail: TopicDetail): string {
-    const html = htmlTemplate.replace(/{{title}}/g, topicDetail.title).replace(/{{content}}/g, topicDetail.content);
-    return html;
   }
 
   getTreeItem(element: Node): TreeItem | Thenable<TreeItem> {
@@ -167,11 +180,36 @@ export class TopicDetail {
   public visitCount: string = '';
   // 内容
   public content: string = '';
+  // 追加内容
+  public appends: TopicAppend[] = [];
+  // 回复总条数
+  public replyCount: number = 0;
+  // 回复
+  public replies: TopicReply[] = [];
+}
+
+/**
+ * 话题追加内容
+ */
+export class TopicAppend {
+  // 追加时间
+  public time: String = '';
+  // 追加内容
+  public content: string = '';
 }
 
 /**
  * 话题回复
  */
 export class TopicReply {
+  // 用户头像
   public userAvatar: string = '';
+  // 用户名
+  public userName: string = '';
+  // 回复时间
+  public time: string = '';
+  // 楼层
+  public floor: string = '';
+  // 回复内容
+  public content: string = '';
 }
