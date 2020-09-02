@@ -3,6 +3,11 @@
   "displayName": "V2EX Playground",
   "description": "V2EX游乐场",
   "version": "1.0.0",
+  "publisher": "chaselen",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chaselen/v2ex-playground"
+  },
   "engines": {
     "vscode": "^1.48.0"
   },
