@@ -3,6 +3,7 @@ import { DataProvider, Node } from './DataProvider';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as template from 'art-template';
+// import * as fs from 'fs';
 
 export function activate(context: vscode.ExtensionContext) {
   // let disposable = vscode.commands.registerCommand('v2ex-playground.helloWorld', () => {
