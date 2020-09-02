@@ -1,7 +1,4 @@
 import { TreeDataProvider, Event, EventEmitter, TreeItem, TreeItemCollapsibleState, ProviderResult } from 'vscode';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
-import { assert } from 'console';
 import { V2ex } from './v2ex';
 
 export class DataProvider implements TreeDataProvider<Node> {
@@ -65,8 +62,6 @@ export class DataProvider implements TreeDataProvider<Node> {
    * 刷新全部数据
    */
   refreshAll() {
-    console.log('刷新全部数据');
-
     this.rootElements.forEach((root) => {
       // 只刷新已经加载过的节点数据
       if (root.children) {

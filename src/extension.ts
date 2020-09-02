@@ -5,24 +5,13 @@ import * as path from 'path';
 import * as template from 'art-template';
 
 export function activate(context: vscode.ExtensionContext) {
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "v2ex-playground" is now active!');
-
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
-  let disposable = vscode.commands.registerCommand('v2ex-playground.helloWorld', () => {
-    // The code you place here will be executed every time your command is executed
-
-    // Display a message box to the user
-    vscode.window.showInformationMessage('Hello World from V2EX Playground!');
-  });
+  // let disposable = vscode.commands.registerCommand('v2ex-playground.helloWorld', () => {
+  //   vscode.window.showInformationMessage('V2EX Playground');
+  // });
 
   // 列表数据
   const dataProvider = new DataProvider();
   vscode.window.registerTreeDataProvider('v2ex-explore', dataProvider);
-  // dataProvider.refreshAll();
 
   // 事件：刷新当前节点
   let disposable2 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: Node) => {
@@ -45,11 +34,16 @@ export function activate(context: vscode.ExtensionContext) {
     const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, {});
 
     // 获取详情数据
-    V2ex.getTopicDetail(item.link || '').then((detail) => {
-      const html = template(templatePath, detail);
-      console.log('topic html：', html);
-      panel.webview.html = html;
-    });
+    V2ex.getTopicDetail(item.link || '')
+      .then((detail) => {
+        const html = template(templatePath, detail);
+        console.log('topic html：', html);
+        panel.webview.html = html;
+      })
+      .catch((err) => {
+        console.error(err);
+        vscode.window.showErrorMessage(`获取话题详情失败`);
+      });
   });
 
   // 测试页面
@@ -57,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
   // const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, {});
   // panel.webview.html = htmlTemplate;
 
-  context.subscriptions.push(disposable);
+  // context.subscriptions.push(disposable);
   context.subscriptions.push(disposable2);
   context.subscriptions.push(disposable3);
   context.subscriptions.push(disposable4);
