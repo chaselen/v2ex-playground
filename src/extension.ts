@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // 点击浏览帖子
-  const templatePath = path.join(context.extensionPath, 'src', 'html', 'topic.art');
+  const templatePath = path.join(context.extensionPath, 'resources', 'html', 'topic.art');
   let disposable5 = vscode.commands.registerCommand('itemClick', (item: Node) => {
     const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, {});
 
@@ -40,14 +40,15 @@ export function activate(context: vscode.ExtensionContext) {
         console.log('topic html：', html);
         panel.webview.html = html;
       })
-      .catch((err) => {
+      .catch((err: Error) => {
+        panel.dispose();
         console.error(err);
-        vscode.window.showErrorMessage(`获取话题详情失败`);
+        vscode.window.showErrorMessage(`获取话题详情失败：${err.message}`);
       });
   });
 
   // 测试页面
-  // const htmlTemplate = fs.readFileSync(path.join(context.extensionPath, 'src', 'html', 'topic.html'), 'utf-8');
+  // const htmlTemplate = fs.readFileSync(path.join(context.extensionPath, 'resources', 'html', 'topic.html'), 'utf-8');
   // const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, {});
   // panel.webview.html = htmlTemplate;
 
