@@ -11,7 +11,7 @@ export class DataProvider implements TreeDataProvider<Node> {
   constructor() {
     const createRoot = (label: string, tag: string) => {
       const root = new Node(label, true);
-      root.tag = tag;
+      root.tab = tag;
       return root;
     };
     this.rootElements = [
@@ -29,10 +29,10 @@ export class DataProvider implements TreeDataProvider<Node> {
     ];
   }
 
-  async getElementData(root: Node): Promise<Node[]> {
+  private async getElementData(root: Node): Promise<Node[]> {
     try {
-      const res = await axios.get(`https://www.v2ex.com/?tab=${root.tag}`);
-      const $ = cheerio.load(res.data);
+      const { data: html } = await axios.get(`https://www.v2ex.com/?tab=${root.tab}`);
+      const $ = cheerio.load(html);
       const cells = $('#Main > .box').eq(0).children('.cell.item');
 
       const children: Node[] = [];
@@ -85,8 +85,29 @@ export class DataProvider implements TreeDataProvider<Node> {
     });
   }
 
-  reloadRootElementData(element: Node | undefined) {
-    this._onDidChangeTreeData.fire(element);
+  /**
+   * 获取话题详情内容
+   * @param topicLink 话题链接
+   */
+  async getTopicDetail(topicLink: string): Promise<TopicDetail> {
+    const { data: html } = await axios.get(topicLink);
+    const $ = cheerio.load(html);
+    const topicDetail = new TopicDetail();
+    topicDetail.title = $('.header > h1').text();
+    topicDetail.nodeName = $('.header > a').eq(1).text();
+    topicDetail.authorAvatar = $('.header > .fr img.avatar').attr('src') || '';
+    const meta = $('.header > .gray').text().split('·');
+    topicDetail.authorName = meta[0].trim();
+    topicDetail.displayTime = meta[1].trim();
+    topicDetail.visitCount = meta[2].trim();
+    topicDetail.content = $('.topic_content').html() || '';
+    const rs = $('#Main > .box').eq(1).children('div[id].cell');
+    return topicDetail;
+  }
+
+  getTopicDetailHTML(htmlTemplate: string, topicDetail: TopicDetail): string {
+    const html = htmlTemplate.replace(/{{title}}/g, topicDetail.title).replace(/{{content}}/g, topicDetail.content);
+    return html;
   }
 
   getTreeItem(element: Node): TreeItem | Thenable<TreeItem> {
@@ -113,7 +134,7 @@ export class Node extends TreeItem {
   public isDir: boolean;
 
   // 根节点属性-节点标签
-  public tag: string | undefined;
+  public tab: string | undefined;
   // 根节点属性-子节点
   public children: Node[] | undefined;
 
@@ -126,4 +147,31 @@ export class Node extends TreeItem {
     // contextValue对应的是view/item/context中的viewItem
     this.contextValue = isDir ? 'dir' : 'item';
   }
+}
+
+/**
+ * 话题详情
+ */
+export class TopicDetail {
+  // 标题
+  public title: string = '';
+  // 节点名称
+  public nodeName: string = '';
+  // 作者头像
+  public authorAvatar: string = '';
+  // 作者名字
+  public authorName: string = '';
+  // 时间
+  public displayTime: string = '';
+  // 点击次数
+  public visitCount: string = '';
+  // 内容
+  public content: string = '';
+}
+
+/**
+ * 话题回复
+ */
+export class TopicReply {
+  public userAvatar: string = '';
 }

@@ -1,10 +1,8 @@
-import { DataProvider, Node } from './DataProvider';
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+import { DataProvider, Node, TopicDetail } from './DataProvider';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
@@ -41,10 +39,26 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // 点击浏览帖子
+  const htmlPath = path.join(context.extensionPath, 'src', 'topic.html');
+  const htmlTemplate = fs.readFileSync(htmlPath, 'utf-8');
   let disposable5 = vscode.commands.registerCommand('itemClick', (item: Node) => {
     const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, {});
-    panel.webview.html = item.label || '';
+
+    // 先加载一个只有标题的页面
+    const _default = new TopicDetail();
+    _default.title = item.label || '';
+    panel.webview.html = dataProvider.getTopicDetailHTML(htmlTemplate, _default);
+
+    // 获取详情页面
+    dataProvider.getTopicDetail(item.link || '').then((detail) => {
+      panel.webview.html = dataProvider.getTopicDetailHTML(htmlTemplate, detail);
+    });
   });
+
+	const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, {});
+
+  // 先加载一个只有标题的页面
+  panel.webview.html = htmlTemplate;
 
   context.subscriptions.push(disposable);
   context.subscriptions.push(disposable2);
@@ -53,5 +67,4 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable5);
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {}

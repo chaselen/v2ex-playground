@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>话题详情</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        font-size: 14px;
+      }
+      hr {
+        transform: scaleY(0.25);
+        margin: 20px 0;
+      }
+      .container {
+        width: 700px;
+        padding: 20px;
+        margin: 0 auto;
+      }
+      .header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+      .header h1 {
+        flex: 1;
+        padding-right: 20px;
+      }
+      .header img {
+        width: 73px;
+        height: 73px;
+        flex-shrink: 0;
+        border-radius: 4px;
+      }
+      .meta {
+        display: flex;
+        align-items: center;
+      }
+      .meta span {
+        opacity: 0.5;
+        padding-left: 10px;
+      }
+      .content {
+        line-height: 1.5;
+      }
+      .content.append h3 {
+        padding-bottom: 10px;
+      }
+      .reply h3 {
+        padding-bottom: 10px;
+      }
+      .reply-item {
+        display: flex;
+        flex-direction: row;
+      }
+      .reply-item__avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 4px;
+      }
+      .reply-item-wrap {
+        margin-left: 10px;
+        flex: 1;
+      }
+      .reply-item-wrap-meta {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+      .reply-item-wrap-meta__time {
+        padding-left: 10px;
+        flex: 1;
+        opacity: 0.5;
+      }
+      .reply-item-wrap-meta__floor {
+        font-size: 9px;
+        min-width: 20px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        font-weight: 500;
+        border-radius: 10px;
+        display: inline-block;
+        background-color: darkslategray;
+        color: lightgray;
+        padding: 0 5px;
+      }
+      .reply-item-wrap-content {
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- 标题 -->
+      <div class="header">
+        <h1>求推荐便宜的服务器, 用于内网穿透。</h1>
+        <img src="https://cdn.v2ex.com/avatar/bbb9/cc89/499879_large.png?m=1598252504" alt="avatar" />
+      </div>
+
+      <!-- 作者、时间 -->
+      <div class="meta">
+        <a href="https://www.v2ex.com/member/Chingim">Chingim</a>
+        <span> · 1 天前 · 4330 次点击</span>
+      </div>
+      <hr />
+
+      <!-- 正文 -->
+      <div class="content">
+        配置不重要, 带宽大 /流量便宜即可, 可接受价格每月 30 以内。配置不重要, 带宽大 /流量便宜即可, 可接受价格每月 30 以内。配置不重要, 带宽大
+        /流量便宜即可, 可接受价格每月 30 以内。配置不重要, 带宽大 /流量便宜即可, 可接受价格每月 30 以内。配置不重要, 带宽大 /流量便宜即可,
+        可接受价格每月 30 以内。配置不重要, 带宽大 /流量便宜即可, 可接受价格每月 30 以内。<br /><br />用来穿透内网的 nas<br /><br />nat
+        服务器应该是最佳选择了吧?
+      </div>
+      <hr />
+
+      <!-- 附言 -->
+      <div class="content append">
+        <h3>第 1 条附言</h3>
+        0. 没有 v4v6 的公网 ip, 也不想换宽带。游戏宽带对翻墙很友好<br /><br />1. 试过 zerotier，实在太慢了<br />2. 用过腾讯云的 1m
+        的机器，太慢了。后来升级到 2m，稍微好一点点，看文字资源还行，多媒体资源不行。<br />3. 所以至少 5m 往上吧，10m 更好<br />4. 申请了腾讯云轻应用
+        hk，到时候看看它的峰值 30m 是什么样的水平<br />5. 或许可以搞个阿里云的 5m 学生机，如果能买个 3 年往上的话
+      </div>
+      <hr />
+      <div class="content append">
+        <h3>第 2 条附言</h3>
+        或者有 v2 提供一个端口也可以哈哈<br />当然有偿
+      </div>
+      <hr />
+
+      <!-- 评论 -->
+      <div class="reply">
+        <h3>共 59 条回复</h3>
+        <div class="reply-item">
+          <img class="reply-item__avatar" src="https://cdn.v2ex.com/avatar/4b43/34f3/168471_normal.png?m=1584798711" alt="" />
+          <div class="reply-item-wrap">
+            <div class="reply-item-wrap-meta">
+              <a href="https://www.v2ex.com/member/JavaIO">JavaIO</a>
+              <span class="reply-item-wrap-meta__time">1 天前</span>
+              <span class="reply-item-wrap-meta__floor">1</span>
+            </div>
+            <div class="reply-item-wrap-content">
+              大带宽+ 30/月 国内基本只能考虑 nat, 国外的话小鸡很多，不过延时太高，搞内网穿透不好用<br /><br />国内的话<br />蹲梨园，很多转手 nat
+              小鸡的<br />碳云现在有个 40/month 的宿迁 BGP nat 在卖，也可以试试
+            </div>
+          </div>
+        </div>
+        <hr />
+        <div class="reply-item">
+          <img class="reply-item__avatar" src="https://cdn.v2ex.com/avatar/4b43/34f3/168471_normal.png?m=1584798711" alt="" />
+          <div class="reply-item-wrap">
+            <div class="reply-item-wrap-meta">
+              <a href="https://www.v2ex.com/member/JavaIO">JavaIO</a>
+              <span class="reply-item-wrap-meta__time">1 天前</span>
+              <span class="reply-item-wrap-meta__floor">10</span>
+            </div>
+            <div class="reply-item-wrap-content">
+              大带宽+ 30/月 国内基本只能考虑 nat, 国外的话小鸡很多，不过延时太高，搞内网穿透不好用<br /><br />国内的话<br />蹲梨园，很多转手 nat
+              小鸡的<br />碳云现在有个 40/month 的宿迁 BGP nat 在卖，也可以试试
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
