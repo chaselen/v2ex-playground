@@ -1,45 +1,104 @@
 {
-	"name": "v2ex-playground",
-	"displayName": "V2EX Playground",
-	"description": "V2EX游乐场",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.48.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onCommand:v2ex-playground.helloWorld"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "v2ex-playground.helloWorld",
-				"title": "Hello World"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"lint": "eslint src --ext ts",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/vscode": "^1.48.0",
-		"@types/glob": "^7.1.3",
-		"@types/mocha": "^8.0.0",
-		"@types/node": "^14.0.27",
-		"eslint": "^7.6.0",
-		"@typescript-eslint/eslint-plugin": "^3.8.0",
-		"@typescript-eslint/parser": "^3.8.0",
-		"glob": "^7.1.6",
-		"mocha": "^8.0.1",
-		"typescript": "^3.8.3",
-		"vscode-test": "^1.4.0"
-	}
+  "name": "v2ex-playground",
+  "displayName": "V2EX Playground",
+  "description": "V2EX游乐场",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.48.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:v2ex-playground.helloWorld",
+    "onView:v2ex-explore",
+    "onCommand:itemClick"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "v2ex-playground.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "v2ex-explore.refreshAll",
+        "title": "刷新",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "v2ex-explore.refreshNode",
+        "title": "刷新节点"
+      },
+      {
+        "command": "v2ex-explore.viewInBrowser",
+        "title": "在浏览器中打开"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "v2ex",
+          "title": "V2EX",
+          "icon": "resources/v.svg"
+        }
+      ]
+    },
+    "views": {
+      "v2ex": [
+        {
+          "id": "v2ex-explore",
+          "name": ""
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "v2ex-explore.refreshAll",
+          "when": "view == v2ex-explore",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "v2ex-explore.refreshNode",
+          "when": "view == v2ex-explore && viewItem == dir"
+        },
+        {
+          "command": "v2ex-explore.viewInBrowser",
+          "when": "view == v2ex-explore && viewItem == item"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint src --ext ts",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.48.0",
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^14.0.27",
+    "eslint": "^7.6.0",
+    "@typescript-eslint/eslint-plugin": "^3.8.0",
+    "@typescript-eslint/parser": "^3.8.0",
+    "glob": "^7.1.6",
+    "mocha": "^8.0.1",
+    "typescript": "^3.8.3",
+    "vscode-test": "^1.4.0"
+  },
+  "dependencies": {
+    "@types/cheerio": "^0.22.21",
+    "axios": "^0.19.0",
+    "cheerio": "^1.0.0-rc.3"
+  }
 }
