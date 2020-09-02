@@ -1,4 +1,4 @@
-# v2ex-playground
+# V2EX Playground
 
 中文名：v2ex 游乐场
 
