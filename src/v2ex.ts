@@ -105,7 +105,7 @@ export class V2ex {
       }
     ];
 
-    const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true });
+    const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
     panel.webview.html = template(templatePath, {
       topic,
       extensionPath

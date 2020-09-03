@@ -11,7 +11,7 @@ hr {
   margin: 20px 0;
   border: none;
   height: 1px;
-  background-color: var(--vscode-textSeparator-foreground);
+  background-color: var(--vscode-editorIndentGuide-background);
 }
 .container {
   width: 700px;
@@ -71,7 +71,7 @@ hr {
   display: flex;
   flex-direction: row;
 }
-.reply-item__avatar {
+.reply-item .avatar {
   width: 48px;
   height: 48px;
   border-radius: 4px;
@@ -80,17 +80,17 @@ hr {
 .reply-item-wrap {
   flex: 1;
 }
-.reply-item-wrap-meta {
+.reply-item-wrap .meta {
   display: flex;
   flex-direction: row;
   align-items: center;
 }
-.reply-item-wrap-meta__time {
+.reply-item-wrap .meta .time {
   padding-left: 10px;
   flex: 1;
   opacity: 0.5;
 }
-.reply-item-wrap-meta__floor {
+.reply-item-wrap .meta .floor {
   font-size: 10px;
   min-width: 20px;
   height: 20px;
@@ -102,6 +102,6 @@ hr {
   background-color: var(--vscode-editor-inactiveSelectionBackground);
   padding: 0 5px;
 }
-.reply-item-wrap-content {
+.reply-item-wrap .content {
   margin-top: 5px;
 }

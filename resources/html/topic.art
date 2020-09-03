@@ -41,17 +41,21 @@
 
       <!-- 评论 -->
       <div class="reply">
+        {{if topic.replies.length}}
         <h2>共 {{ topic.replyCount }} 条回复</h2>
+        {{else}}
+        <h2>暂无回复</h2>
+        {{/if}}
         {{each topic.replies}}
         <div class="reply-item">
-          <!-- <img class="reply-item__avatar" src="{{$value.userAvatar}}" alt="" /> -->
+          <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
-            <div class="reply-item-wrap-meta">
+            <div class="meta">
               <a href="https://www.v2ex.com/member/{{ $value.userName }}">{{ $value.userName }}</a>
-              <span class="reply-item-wrap-meta__time">{{ $value.time }}</span>
-              <span class="reply-item-wrap-meta__floor">{{ $value.floor }}</span>
+              <span class="time">{{ $value.time }}</span>
+              <span class="floor">{{ $value.floor }}</span>
             </div>
-            <div class="reply-item-wrap-content">
+            <div class="content">
               {{@ $value.content}}
             </div>
           </div>

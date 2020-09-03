@@ -31,7 +31,10 @@ export function activate(context: vscode.ExtensionContext) {
   // 点击浏览帖子
   const templatePath = path.join(context.extensionPath, 'resources', 'html', 'topic.art');
   let disposable5 = vscode.commands.registerCommand('itemClick', (item: Node) => {
-    const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, { enableScripts: true });
+    const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, {
+      enableScripts: true,
+      retainContextWhenHidden: true
+    });
 
     // 获取详情数据
     V2ex.getTopicDetail(item.link || '')
