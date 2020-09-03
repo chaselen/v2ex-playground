@@ -1,5 +1,8 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import * as vscode from 'vscode';
+import * as template from 'art-template';
+
 export class V2ex {
   /**
    * 根据标签获取话题列表
@@ -61,6 +64,52 @@ export class V2ex {
         });
       });
     return topicDetail;
+  }
+
+  /**
+   * 打开测试页面
+   * @param templatePath 模板文件路径
+   * @param extensionPath 插件目录
+   */
+  static openTestPage(templatePath: string, extensionPath: string) {
+    const topic = new TopicDetail();
+    topic.title = 'AMD 5700XT 实际体验也太差了';
+    topic.nodeName = 'AMD';
+    topic.authorAvatar = 'https://cdn.v2ex.com/avatar/8727/6d75/276253_large.png?m=1513922337';
+    topic.authorName = 'iMiata';
+    topic.displayTime = '4 小时 36 分钟前';
+    topic.visitCount = '2158 次点击';
+    topic.content = `<div class="markdown_body"><p>原显卡是 1070ti，换了 2k 屏以后显卡性能跟不上，本来想换个 2070s 的，但是又想后面能搞黑果，换成了 5700xt 。结果这货不用不知道，用了真的是。。。</p>
+  <ul>
+  <li>LOL 的 FPS 上限顶在了 60，时不时还会掉到 50+，1070ti 的日常 FPS 在 160-240 之间；</li>
+  <li>Forza Horizon 4 设置成锁 60FPS，但是也是极其明显的持续卡顿，1070ti 完全没有这种情况；</li>
+  <li>Scum 更是卡，我把主屏换成 1080p 的，在 1k 的分辨率下游戏居然也是每 5-10s 必掉一次 FPS （到城市那一片以后 FPS 每 3s 掉一次，每次直接掉到个位数）</li>
+  <li>现在只剩 Dota 可以玩了。。。</li>
+  </ul>
+  <p>有没有同样用 5700xt 的盆友有我这么绝望的体验的，想知道是 AMD 的卡还是驱动挫</p>
+  </div>`;
+    topic.appends = [
+      {
+        time: '',
+        content: `<div class="markdown_body"><p>看来LOL帧率锁60应该是我开了垂直同步导致的，但是不理解为啥这玩意开了会导致这种效果，我之前的1070ti玩游戏都会开垂直同步的呀</p></div>`
+      }
+    ];
+    topic.replyCount = 50;
+    topic.replies = [
+      {
+        userAvatar: 'https://cdn.v2ex.com/avatar/171b/5976/95780_normal.png?m=1449498342',
+        userName: 'kokutou',
+        time: '46 分钟前',
+        floor: '1',
+        content: '全脂...热量太高了啊'
+      }
+    ];
+
+    const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true });
+    panel.webview.html = template(templatePath, {
+      topic,
+      extensionPath
+    });
   }
 }
 

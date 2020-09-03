@@ -3,7 +3,6 @@ import { DataProvider, Node } from './DataProvider';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as template from 'art-template';
-// import * as fs from 'fs';
 
 export function activate(context: vscode.ExtensionContext) {
   // let disposable = vscode.commands.registerCommand('v2ex-playground.helloWorld', () => {
@@ -32,12 +31,15 @@ export function activate(context: vscode.ExtensionContext) {
   // 点击浏览帖子
   const templatePath = path.join(context.extensionPath, 'resources', 'html', 'topic.art');
   let disposable5 = vscode.commands.registerCommand('itemClick', (item: Node) => {
-    const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, {});
+    const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, { enableScripts: true });
 
     // 获取详情数据
     V2ex.getTopicDetail(item.link || '')
       .then((detail) => {
-        const html = template(templatePath, detail);
+        const html = template(templatePath, {
+          topic: detail,
+          extensionPath: context.extensionPath
+        });
         console.log('topic html：', html);
         panel.webview.html = html;
       })
@@ -49,9 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // 测试页面
-  // const htmlTemplate = fs.readFileSync(path.join(context.extensionPath, 'resources', 'html', 'topic.html'), 'utf-8');
-  // const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, {});
-  // panel.webview.html = htmlTemplate;
+  // V2ex.openTestPage(templatePath, context.extensionPath);
 
   // context.subscriptions.push(disposable);
   context.subscriptions.push(disposable2);
