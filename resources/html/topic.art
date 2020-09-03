@@ -31,11 +31,11 @@
       }
       .header h1 {
         flex: 1;
-        padding-right: 20px;
       }
       .header img {
         width: 73px;
         height: 73px;
+        margin-left: 20px;
         flex-shrink: 0;
         border-radius: 4px;
       }
@@ -52,6 +52,9 @@
       }
       .content p {
         margin: 10px 0;
+      }
+      .content a {
+        word-break: break-all;
       }
       .content img {
         max-width: 100% !important;
@@ -78,9 +81,9 @@
         width: 48px;
         height: 48px;
         border-radius: 4px;
+        margin-right: 10px;
       }
       .reply-item-wrap {
-        margin-left: 10px;
         flex: 1;
       }
       .reply-item-wrap-meta {
@@ -116,7 +119,7 @@
       <!-- 标题 -->
       <div class="header">
         <h1>{{title}}</h1>
-        <img src="{{authorAvatar}}" alt="avatar" />
+        <!-- <img src="{{authorAvatar}}" alt="avatar" /> -->
       </div>
 
       <!-- 作者、时间 -->
@@ -146,7 +149,7 @@
         <h2>共 {{replyCount}} 条回复</h2>
         {{each replies}}
         <div class="reply-item">
-          <img class="reply-item__avatar" src="{{$value.userAvatar}}" alt="" />
+          <!-- <img class="reply-item__avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
             <div class="reply-item-wrap-meta">
               <a href="https://www.v2ex.com/member/{{$value.userName}}">{{$value.userName}}</a>

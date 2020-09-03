@@ -12,4 +12,6 @@
 
 ## 预览
 
-![预览1.jpg](https://i.loli.net/2020/09/02/3Axbr8XlzTcRVSG.jpg)
+<!-- ![预览1.jpg](https://i.loli.net/2020/09/02/3Axbr8XlzTcRVSG.jpg) -->
+
+![预览1.jpg](https://i.loli.net/2020/09/03/B42LT6zrUAbv1jK.png)
