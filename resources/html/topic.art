@@ -18,7 +18,7 @@
       <!-- 作者、时间 -->
       <div class="topic-meta">
         <a class="node" href="/go/{{ topic.node }}">{{ topic.nodeName }}</a>
-        <a class="user bold" href="/member/{{ topic.authorName }}">{{ topic.authorName }}</a>
+        <a class="user text-bold" href="/member/{{ topic.authorName }}">{{ topic.authorName }}</a>
         <span class="time"> · {{ topic.displayTime }} · {{ topic.visitCount }}</span>
       </div>
       <hr />
@@ -52,7 +52,7 @@
           <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
             <div class="meta">
-              <a class="user bold" href="/member/{{ $value.userName }}">{{ $value.userName }}</a>
+              <a class="user text-bold {{ topic.authorName === $value.userName ? 'user--author' : '' }}" href="/member/{{ $value.userName }}">{{ $value.userName }}</a>
               <span class="time">{{ $value.time }}</span>
               <span class="floor">{{ $value.floor }}</span>
             </div>

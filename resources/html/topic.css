@@ -18,7 +18,7 @@ hr {
   height: 1px;
   background-color: var(--vscode-editorIndentGuide-background);
 }
-.bold {
+.text-bold {
   font-weight: bold;
 }
 .container {
@@ -103,6 +103,9 @@ hr {
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+.reply-item-wrap .meta .user--author::after {
+  content: '（楼主）';
 }
 .reply-item-wrap .meta .time {
   padding-left: 10px;

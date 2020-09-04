@@ -24,7 +24,7 @@ hr {
   background-color: var(--vscode-editorIndentGuide-background);
 }
 
-.bold {
+.text-bold {
   font-weight: bold;
 }
 
@@ -127,8 +127,11 @@ hr {
     flex-direction: row;
     align-items: center;
 
-    // .user {
-    // }
+    .user {
+      &--author::after {
+        content: '（楼主）';
+      }
+    }
 
     .time {
       padding-left: 10px;
