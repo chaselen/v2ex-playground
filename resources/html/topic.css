@@ -45,6 +45,7 @@ hr {
 .topic-meta {
   display: flex;
   align-items: center;
+  margin-top: 10px;
 }
 .topic-meta .node {
   flex-shrink: 0;
