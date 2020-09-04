@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
           topic: detail,
           extensionPath: context.extensionPath
         });
-        console.log('topic html：', html);
+        // console.log('topic html：', html);
         panel.webview.html = html;
       })
       .catch((err: Error) => {

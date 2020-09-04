@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import * as vscode from 'vscode';
 import * as template from 'art-template';
 import http from './http';
+import { AxiosResponse } from 'axios';
 
 export class V2ex {
   /**
@@ -33,39 +34,75 @@ export class V2ex {
    * @param topicLink 话题链接
    */
   static async getTopicDetail(topicLink: string): Promise<TopicDetail> {
-    const { data: html } = await http.get(topicLink);
+    const { data: html } = await http.get(topicLink + '?p=1');
     const $ = cheerio.load(html);
-    const topicDetail = new TopicDetail();
-    topicDetail.title = $('.header > h1').text();
+    const topic = new TopicDetail();
+    topic.title = $('.header > h1').text();
     const node = $('.header > a').eq(1);
-    topicDetail.node = node.attr('href')?.split('go/')[1] || '';
-    topicDetail.nodeName = node.text();
-    topicDetail.authorAvatar = $('.header > .fr img.avatar').attr('src') || '';
+    topic.node = node.attr('href')?.split('go/')[1] || '';
+    topic.nodeName = node.text();
+    topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || '';
     const meta = $('.header > .gray').text().split('·');
-    topicDetail.authorName = meta[0].trim();
-    topicDetail.displayTime = meta[1].trim();
-    topicDetail.visitCount = meta[2].trim();
-    topicDetail.content = $('.topic_content').html() || '';
+    topic.authorName = meta[0].trim();
+    topic.displayTime = meta[1].trim();
+    topic.visitCount = meta[2].trim();
+    topic.content = $('.topic_content').html() || '';
     $('.subtle').each((_, element) => {
-      topicDetail.appends.push({
+      topic.appends.push({
         time: $(element).children('.fade').text().split('·')[1].trim(),
         content: $(element).children('.topic_content').html() || ''
       });
     });
-    topicDetail.replyCount = parseInt($('#Main > .box').eq(1).children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0;
-    $('#Main > .box')
-      .eq(1)
-      .children('div[id].cell')
-      .each((_, element) => {
-        topicDetail.replies.push({
-          userAvatar: $(element).find('img.avatar').attr('src') || '',
-          userName: $(element).find('a.dark').html() || '',
-          time: $(element).find('span.ago').text(),
-          floor: $(element).find('span.no').text(),
-          content: $(element).find('.reply_content').html() || ''
+    topic.replyCount = parseInt($('#Main > .box').eq(1).children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0;
+
+    /**
+     * 获取回复
+     * @param $ 页面加载后的文档
+     */
+    const _getTopicReplies = ($: CheerioStatic): TopicReply[] => {
+      const replies: TopicReply[] = [];
+      $('#Main > .box')
+        .eq(1)
+        .children('div[id].cell')
+        .each((_, element) => {
+          replies.push({
+            userAvatar: $(element).find('img.avatar').attr('src') || '',
+            userName: $(element).find('a.dark').html() || '',
+            time: $(element).find('span.ago').text(),
+            floor: $(element).find('span.no').text(),
+            content: $(element).find('.reply_content').html() || ''
+          });
         });
-      });
-    return topicDetail;
+      return replies;
+    };
+
+    // 获取评论
+    topic.replies = _getTopicReplies($);
+    const pager = $('#Main > .box').eq(1).find('table');
+    if (pager) {
+      // 如果获取分页组件，表示有多页评论
+      const totalPage = parseInt(pager.find('td').eq(0).children('a').last().text());
+      console.log(`${topicLink}：一共${totalPage}页回复`);
+
+      const promises: Promise<AxiosResponse<string>>[] = [];
+      for (let p = 2; p <= totalPage; p++) {
+        promises.push(http.get<string>(topicLink + `?p=${p}`));
+      }
+      try {
+        const resList = await Promise.all(promises);
+        resList
+          .map((res) => res.data)
+          .forEach((html) => {
+            const replies = _getTopicReplies(cheerio.load(html));
+            topic.replies = topic.replies.concat(replies);
+            // 有时候会出现统计的回复数与实际获取到的回复数量不一致的问题，修正一下回复数量
+            if (topic.replies.length > topic.replyCount) {
+              topic.replyCount = topic.replies.length;
+            }
+          });
+      } catch (error) {}
+    }
+    return topic;
   }
 
   /**
