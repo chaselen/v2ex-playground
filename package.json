@@ -16,17 +16,12 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:v2ex-playground.helloWorld",
     "onView:v2ex-explore",
     "onCommand:itemClick"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "v2ex-playground.helloWorld",
-        "title": "Hello World"
-      },
       {
         "command": "v2ex-explore.refreshAll",
         "title": "刷新",
