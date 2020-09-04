@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import * as template from 'art-template';
 import http from './http';
 import { AxiosResponse } from 'axios';
+import * as path from 'path';
 
 export class V2ex {
   /**
@@ -106,11 +107,22 @@ export class V2ex {
   }
 
   /**
-   * 打开测试页面
-   * @param templatePath 模板文件路径
-   * @param extensionPath 插件目录
+   * 渲染一个页面，返回渲染后的html
+   * @param context 上下文
+   * @param page 要渲染的html页面
+   * @param data 传入的数据
    */
-  static openTestPage(templatePath: string, extensionPath: string) {
+  static renderPage(context: vscode.ExtensionContext, page: string, data: any = {}): string {
+    const templatePath = path.join(context.extensionPath, 'resources', 'html', page);
+    const html = template(templatePath, data);
+    return html;
+  }
+
+  /**
+   * 打开测试页面
+   * @param context 插件上下文
+   */
+  static openTestPage(context: vscode.ExtensionContext) {
     const topic = new TopicDetail();
     topic.title = 'AMD 5700XT 实际体验也太差了';
     topic.node = 'create';
@@ -146,9 +158,9 @@ export class V2ex {
     ];
 
     const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
-    panel.webview.html = template(templatePath, {
+    panel.webview.html = this.renderPage(context, 'topic.art', {
       topic,
-      extensionPath
+      extensionPath: context.extensionPath
     });
   }
 }

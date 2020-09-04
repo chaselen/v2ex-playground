@@ -1,8 +1,6 @@
 import { V2ex } from './v2ex';
 import { DataProvider, Node } from './DataProvider';
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as template from 'art-template';
 
 export function activate(context: vscode.ExtensionContext) {
   // let disposable = vscode.commands.registerCommand('v2ex-playground.helloWorld', () => {
@@ -29,43 +27,40 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // 点击浏览帖子
-  const templatePath = path.join(context.extensionPath, 'resources', 'html', 'topic.art');
-  let disposable5 = vscode.commands.registerCommand('itemClick', (item: Node) => {
+  let disposable5 = vscode.commands.registerCommand('itemClick', async (item: Node) => {
     const label = item.label?.slice(0, 15) || '';
     const panel = vscode.window.createWebviewPanel(item.link || '', label, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true
     });
-
     panel.webview.onDidReceiveMessage((message) => {
       switch (message.command) {
         case 'browserImage':
-          openLargeImage(context, message.src);
+          _openLargeImage(context, message.src);
           break;
         default:
           break;
       }
     });
 
+    panel.webview.html = '<h1>加载中...</h1>';
+
     // 获取详情数据
-    V2ex.getTopicDetail(item.link || '')
-      .then((detail) => {
-        const html = template(templatePath, {
-          topic: detail,
-          extensionPath: context.extensionPath
-        });
-        // console.log('topic html：', html);
-        panel.webview.html = html;
-      })
-      .catch((err: Error) => {
-        panel.dispose();
-        console.error(err);
-        vscode.window.showErrorMessage(`获取话题详情失败：${err.message}`);
+    try {
+      const detail = await V2ex.getTopicDetail(item.link || '');
+      panel.webview.html = V2ex.renderPage(context, 'topic.art', {
+        topic: detail,
+        extensionPath: context.extensionPath
       });
+    } catch (err) {
+      panel.dispose();
+      console.error(err);
+      vscode.window.showErrorMessage(`获取话题详情失败：${err.message}`);
+    }
   });
 
   // 测试页面
-  // V2ex.openTestPage(templatePath, context.extensionPath);
+  // V2ex.openTestPage(context);
 
   // context.subscriptions.push(disposable);
   context.subscriptions.push(disposable2);
@@ -78,16 +73,16 @@ export function activate(context: vscode.ExtensionContext) {
  * 打开大图
  * @param imageSrc 图片地址
  */
-function openLargeImage(context: vscode.ExtensionContext, imageSrc: string) {
+function _openLargeImage(context: vscode.ExtensionContext, imageSrc: string) {
   console.log('打开大图：', imageSrc);
-  const templatePath = path.join(context.extensionPath, 'resources', 'html', 'browserImage.art');
   const panel = vscode.window.createWebviewPanel(imageSrc, '查看大图', vscode.ViewColumn.One, {
     enableScripts: true,
     retainContextWhenHidden: true
   });
-  panel.webview.html = template(templatePath, {
+
+  panel.webview.html = V2ex.renderPage(context, 'browserImage.art', {
     imageSrc: imageSrc
-  });;
+  });
 }
 
 export function deactivate() {}
