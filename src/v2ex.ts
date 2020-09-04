@@ -1,7 +1,7 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 import * as vscode from 'vscode';
 import * as template from 'art-template';
+import http from './http';
 
 export class V2ex {
   /**
@@ -9,7 +9,7 @@ export class V2ex {
    * @param tab 标签
    */
   static async getTopicListByTab(tab: string): Promise<Topic[]> {
-    const { data: html } = await axios.get(`https://www.v2ex.com/?tab=${tab}`);
+    const { data: html } = await http.get(`https://www.v2ex.com/?tab=${tab}`);
     const $ = cheerio.load(html);
     const cells = $('#Main > .box').eq(0).children('.cell.item');
 
@@ -33,7 +33,7 @@ export class V2ex {
    * @param topicLink 话题链接
    */
   static async getTopicDetail(topicLink: string): Promise<TopicDetail> {
-    const { data: html } = await axios.get(topicLink);
+    const { data: html } = await http.get(topicLink);
     const $ = cheerio.load(html);
     const topicDetail = new TopicDetail();
     topicDetail.title = $('.header > h1').text();
