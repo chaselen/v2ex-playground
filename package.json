@@ -10,7 +10,7 @@
     "url": "https://github.com/chaselen/v2ex-playground"
   },
   "engines": {
-    "vscode": "^1.48.0"
+    "vscode": "^1.42.0"
   },
   "categories": [
     "Other"
@@ -91,7 +91,7 @@
     "package": "vsce package"
   },
   "devDependencies": {
-    "@types/vscode": "^1.48.0",
+    "@types/vscode": "^1.42.0",
     "@types/glob": "^7.1.3",
     "@types/mocha": "^8.0.0",
     "@types/node": "^14.0.27",
