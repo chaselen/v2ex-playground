@@ -167,7 +167,7 @@ export class V2ex {
     const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
     panel.webview.html = this.renderPage(context, 'topic.art', {
       topic,
-      extensionPath: context.extensionPath
+      cssPath: panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'resources/html/topic.css'))).toString()
     });
   }
 }

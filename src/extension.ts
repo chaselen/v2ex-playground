@@ -1,6 +1,7 @@
 import { V2ex } from './v2ex';
 import { DataProvider, Node } from './DataProvider';
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
   // 列表数据
@@ -47,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
           // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
           panel.webview.html = V2ex.renderPage(context, 'topic.art', {
             topic: detail,
-            extensionPath: context.extensionPath
+            cssPath: panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'resources/html/topic.css'))).toString()
           });
         } catch (ignored) {}
       })

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ topic.title }}</title>
     <base href="https://www.v2ex.com" />
-    <link rel="stylesheet" href="vscode-resource:{{ extensionPath }}/resources/html/topic.css" />
+    <link rel="stylesheet" href="{{ cssPath }}" />
   </head>
   <body>
     <div class="container">
