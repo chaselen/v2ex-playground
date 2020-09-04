@@ -3,10 +3,6 @@ import { DataProvider, Node } from './DataProvider';
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-  // let disposable = vscode.commands.registerCommand('v2ex-playground.helloWorld', () => {
-  //   vscode.window.showInformationMessage('V2EX Playground');
-  // });
-
   // 列表数据
   const dataProvider = new DataProvider();
   vscode.window.registerTreeDataProvider('v2ex-explore', dataProvider);
@@ -66,7 +62,6 @@ export function activate(context: vscode.ExtensionContext) {
   // 测试页面
   // V2ex.openTestPage(context);
 
-  // context.subscriptions.push(disposable);
   context.subscriptions.push(disposable2);
   context.subscriptions.push(disposable3);
   context.subscriptions.push(disposable4);
