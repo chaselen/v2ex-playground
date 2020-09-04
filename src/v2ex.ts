@@ -78,8 +78,8 @@ export class V2ex {
 
     // 获取评论
     topic.replies = _getTopicReplies($);
-    const pager = $('#Main > .box').eq(1).find('table');
-    if (pager) {
+    const pager = $('#Main > .box').eq(1).find('.cell:not([id]) table');
+    if (pager.length) {
       // 如果获取分页组件，表示有多页评论
       const totalPage = parseInt(pager.find('td').eq(0).children('a').last().text());
       console.log(`${topicLink}：一共${totalPage}页回复`);
