@@ -31,9 +31,20 @@ export function activate(context: vscode.ExtensionContext) {
   // 点击浏览帖子
   const templatePath = path.join(context.extensionPath, 'resources', 'html', 'topic.art');
   let disposable5 = vscode.commands.registerCommand('itemClick', (item: Node) => {
-    const panel = vscode.window.createWebviewPanel(item.link || '', item.label || '', vscode.ViewColumn.One, {
+    const label = item.label?.slice(0, 15) || '';
+    const panel = vscode.window.createWebviewPanel(item.link || '', label, vscode.ViewColumn.One, {
       enableScripts: true,
       retainContextWhenHidden: true
+    });
+
+    panel.webview.onDidReceiveMessage((message) => {
+      switch (message.command) {
+        case 'browserImage':
+          openLargeImage(context, message.src);
+          break;
+        default:
+          break;
+      }
     });
 
     // 获取详情数据
@@ -61,6 +72,22 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable3);
   context.subscriptions.push(disposable4);
   context.subscriptions.push(disposable5);
+}
+
+/**
+ * 打开大图
+ * @param imageSrc 图片地址
+ */
+function openLargeImage(context: vscode.ExtensionContext, imageSrc: string) {
+  console.log('打开大图：', imageSrc);
+  const templatePath = path.join(context.extensionPath, 'resources', 'html', 'browserImage.art');
+  const panel = vscode.window.createWebviewPanel(imageSrc, '查看大图', vscode.ViewColumn.One, {
+    enableScripts: true,
+    retainContextWhenHidden: true
+  });
+  panel.webview.html = template(templatePath, {
+    imageSrc: imageSrc
+  });;
 }
 
 export function deactivate() {}

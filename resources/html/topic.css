@@ -74,12 +74,14 @@ hr {
   max-width: 100% !important;
 }
 .topic-content pre {
-  white-space: pre;
   font-family: inherit;
+  white-space: pre;
+  word-break: break-all;
 }
 .topic-content code {
-  white-space: pre-wrap;
   font-family: inherit;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 .topic-content.append h2 {
   padding-bottom: 10px;

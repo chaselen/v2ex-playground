@@ -52,7 +52,9 @@
           <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
             <div class="meta">
-              <a class="user text-bold {{ topic.authorName === $value.userName ? 'user--author' : '' }}" href="/member/{{ $value.userName }}">{{ $value.userName }}</a>
+              <a class="user text-bold {{ topic.authorName === $value.userName ? 'user--author' : '' }}" href="/member/{{ $value.userName }}">{{
+                $value.userName
+              }}</a>
               <span class="time">{{ $value.time }}</span>
               <span class="floor">{{ $value.floor }}</span>
             </div>
@@ -65,5 +67,26 @@
         {{/each}}
       </div>
     </div>
+
+    <script>
+      // 给图片添加查看大图的功能
+      const vscode = acquireVsCodeApi();
+      const images = document.querySelectorAll('.topic-content img');
+      images.forEach((img) => {
+        img.onload = () => {
+          if (img.width < 100 && img.height < 100) {
+            return;
+          }
+          img.style.cursor = 'zoom-in';
+          img.onclick = () => {
+            console.log(img.src);
+            vscode.postMessage({
+              command: 'browserImage',
+              src: img.src
+            });
+          };
+        };
+      });
+    </script>
   </body>
 </html>
