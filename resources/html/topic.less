@@ -132,7 +132,17 @@ hr {
 
     .user {
       &--author::after {
-        content: '（楼主）';
+        content: '楼主';
+        padding: 1px;
+        border: 1px solid var(--vscode-textLink-foreground);
+        border-radius: 4px;
+        margin-left: 5px;
+        font-size: 0.8em;
+        box-sizing: border-box;
+        font-weight: normal;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
     }
 
