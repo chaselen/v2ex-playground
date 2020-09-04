@@ -37,6 +37,13 @@ export class V2ex {
   static async getTopicDetail(topicLink: string): Promise<TopicDetail> {
     const { data: html } = await http.get(topicLink + '?p=1');
     const $ = cheerio.load(html);
+
+    // 不能查看帖子：如查看的页面需要先登录
+    const messageElement = $('#Main .message');
+    if (messageElement.length) {
+      throw new Error(messageElement.text().trim());
+    }
+
     const topic = new TopicDetail();
     topic.title = $('.header > h1').text();
     const node = $('.header > a').eq(1);

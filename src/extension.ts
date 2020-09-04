@@ -45,20 +45,22 @@ export function activate(context: vscode.ExtensionContext) {
     panel.webview.html = '<h1 style="text-align: center;">加载中...</h1>';
 
     // 获取详情数据
-    try {
-      const detail = await V2ex.getTopicDetail(item.link || '');
-      try {
-        // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
-        panel.webview.html = V2ex.renderPage(context, 'topic.art', {
-          topic: detail,
-          extensionPath: context.extensionPath
-        });
-      } catch (ignored) {}
-    } catch (err) {
-      panel.dispose();
-      console.error(err);
-      vscode.window.showErrorMessage(`获取话题详情失败：${err.message}`);
-    }
+    V2ex.getTopicDetail(item.link || '')
+      .then((detail) => {
+        try {
+          // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
+          panel.webview.html = V2ex.renderPage(context, 'topic.art', {
+            topic: detail,
+            extensionPath: context.extensionPath
+          });
+        } catch (ignored) {}
+      })
+      .catch((err: Error) => {
+        console.error(err);
+        // panel.dispose();
+        // vscode.window.showErrorMessage(`获取话题详情失败：${err.message}`);
+        panel.webview.html = `<h1 style="text-align: center;">${err.message}</h1>`;
+      });
   });
 
   // 测试页面
