@@ -42,16 +42,18 @@ export function activate(context: vscode.ExtensionContext) {
           break;
       }
     });
-
-    panel.webview.html = '<h1>加载中...</h1>';
+    panel.webview.html = '<h1 style="text-align: center;">加载中...</h1>';
 
     // 获取详情数据
     try {
       const detail = await V2ex.getTopicDetail(item.link || '');
-      panel.webview.html = V2ex.renderPage(context, 'topic.art', {
-        topic: detail,
-        extensionPath: context.extensionPath
-      });
+      try {
+        // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
+        panel.webview.html = V2ex.renderPage(context, 'topic.art', {
+          topic: detail,
+          extensionPath: context.extensionPath
+        });
+      } catch (ignored) {}
     } catch (err) {
       panel.dispose();
       console.error(err);
