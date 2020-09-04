@@ -10,21 +10,22 @@
   <body>
     <div class="container">
       <!-- 标题 -->
-      <div class="header">
+      <div class="topic-header">
         <h1>{{ topic.title }}</h1>
         <!-- <img src="{{authorAvatar}}" alt="avatar" /> -->
       </div>
 
       <!-- 作者、时间 -->
-      <div class="meta">
-        <a href="https://www.v2ex.com/member/{{ topic.authorName }}">{{ topic.authorName }}</a>
-        <span> · {{ topic.displayTime }} · {{ topic.visitCount }}</span>
+      <div class="topic-meta">
+        <a class="node" href="/go/{{ topic.node }}">{{ topic.nodeName }}</a>
+        <a class="user bold" href="/member/{{ topic.authorName }}">{{ topic.authorName }}</a>
+        <span class="time"> · {{ topic.displayTime }} · {{ topic.visitCount }}</span>
       </div>
       <hr />
 
       <!-- 正文 -->
       {{if topic.content}}
-      <div class="content">
+      <div class="topic-content">
         {{@ topic.content}}
       </div>
       <hr />
@@ -32,7 +33,7 @@
 
       <!-- 附言 -->
       {{each topic.appends}}
-      <div class="content append">
+      <div class="topic-content append">
         <h2>第 {{ $index + 1 }} 条附言</h2>
         {{@ $value.content}}
       </div>
@@ -51,11 +52,11 @@
           <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
             <div class="meta">
-              <a href="https://www.v2ex.com/member/{{ $value.userName }}">{{ $value.userName }}</a>
+              <a class="user bold" href="/member/{{ $value.userName }}">{{ $value.userName }}</a>
               <span class="time">{{ $value.time }}</span>
               <span class="floor">{{ $value.floor }}</span>
             </div>
-            <div class="content">
+            <div class="topic-content">
               {{@ $value.content}}
             </div>
           </div>

@@ -37,7 +37,9 @@ export class V2ex {
     const $ = cheerio.load(html);
     const topicDetail = new TopicDetail();
     topicDetail.title = $('.header > h1').text();
-    topicDetail.nodeName = $('.header > a').eq(1).text();
+    const node = $('.header > a').eq(1);
+    topicDetail.node = node.attr('href')?.split('go/')[1] || '';
+    topicDetail.nodeName = node.text();
     topicDetail.authorAvatar = $('.header > .fr img.avatar').attr('src') || '';
     const meta = $('.header > .gray').text().split('·');
     topicDetail.authorName = meta[0].trim();
@@ -74,7 +76,8 @@ export class V2ex {
   static openTestPage(templatePath: string, extensionPath: string) {
     const topic = new TopicDetail();
     topic.title = 'AMD 5700XT 实际体验也太差了';
-    topic.nodeName = 'AMD';
+    topic.node = 'create';
+    topic.nodeName = 'amd';
     topic.authorAvatar = 'https://cdn.v2ex.com/avatar/8727/6d75/276253_large.png?m=1513922337';
     topic.authorName = 'iMiata';
     topic.displayTime = '4 小时 36 分钟前';
@@ -133,6 +136,8 @@ export class Topic {
 export class TopicDetail {
   // 标题
   public title: string = '';
+  // 节点
+  public node: string = '';
   // 节点名称
   public nodeName: string = '';
   // 作者头像

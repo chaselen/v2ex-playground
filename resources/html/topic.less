@@ -12,6 +12,10 @@ body {
   padding: 0;
 }
 
+a {
+  text-decoration: none;
+}
+
 hr {
   // transform: scaleY(0.25);
   margin: 20px 0;
@@ -20,14 +24,18 @@ hr {
   background-color: var(--vscode-editorIndentGuide-background);
 }
 
+.bold {
+  font-weight: bold;
+}
+
 .container {
-  min-width: 300px;
+  min-width: 400px;
   max-width: 700px;
   padding: 20px;
   margin: 0 auto;
 }
 
-.header {
+.topic-header {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -44,16 +52,29 @@ hr {
   }
 }
 
-.meta {
+.topic-meta {
   display: flex;
   align-items: center;
-  span {
+
+  .node {
+    flex-shrink: 0;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: var(--vscode-editor-inactiveSelectionBackground);
+    color: var(--vscode-editor-foreground);
+  }
+
+  .user {
+    margin-left: 10px;
+  }
+
+  .time {
+    margin-left: 10px;
     opacity: 0.5;
-    padding-left: 10px;
   }
 }
 
-.content {
+.topic-content {
   line-height: 1.5;
   p {
     margin: 10px 0;
@@ -105,6 +126,9 @@ hr {
     display: flex;
     flex-direction: row;
     align-items: center;
+
+    // .user {
+    // }
 
     .time {
       padding-left: 10px;
