@@ -25,10 +25,7 @@
       {
         "command": "v2ex-explore.refreshAll",
         "title": "刷新",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "v2ex-explore.refreshNode",
