@@ -35,13 +35,16 @@ export class V2ex {
    * @param topicLink 话题链接
    */
   static async getTopicDetail(topicLink: string): Promise<TopicDetail> {
-    const { data: html } = await http.get(topicLink + '?p=1');
-    const $ = cheerio.load(html);
+    const res = await http.get<string>(topicLink + '?p=1');
+    const $ = cheerio.load(res.data);
 
-    // 不能查看帖子：如查看的页面需要先登录
-    const messageElement = $('#Main .message');
-    if (messageElement.length) {
-      throw new Error(messageElement.text().trim());
+    /**
+     * 部分帖子需要登录查看
+     * 第1种：会重定向到登录页（https://www.v2ex.com/signin?next=/t/xxxxxx），并提示：你要查看的页面需要先登录。如交易区：https://www.v2ex.com/t/704753
+     * 第2种：会重定向到首页，无提示。如：https://www.v2ex.com/t/704716
+     */
+    if (res.request._redirectable._isRedirect) {
+      throw new Error('你要查看的页面需要先登录');
     }
 
     const topic = new TopicDetail();
