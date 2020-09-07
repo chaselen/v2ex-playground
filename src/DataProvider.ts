@@ -37,7 +37,7 @@ export class DataProvider implements TreeDataProvider<Node> {
         // 添加点击事件的命令
         child.command = {
           title: topic.title,
-          command: 'itemClick',
+          command: 'topicItemClick',
           tooltip: topic.title,
           arguments: [child]
         };
