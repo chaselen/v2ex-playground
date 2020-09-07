@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
     panel.webview.onDidReceiveMessage((message) => {
       switch (message.command) {
-        case 'browserImage':
+        case 'browseImage':
           _openLargeImage(context, message.src);
           break;
         default:
@@ -75,12 +75,12 @@ export function activate(context: vscode.ExtensionContext) {
  */
 function _openLargeImage(context: vscode.ExtensionContext, imageSrc: string) {
   console.log('打开大图：', imageSrc);
-  const panel = vscode.window.createWebviewPanel(imageSrc, '查看大图', vscode.ViewColumn.One, {
+  const panel = vscode.window.createWebviewPanel(imageSrc, '查看图片', vscode.ViewColumn.One, {
     enableScripts: true,
     retainContextWhenHidden: true
   });
 
-  panel.webview.html = V2ex.renderPage(context, 'browserImage.art', {
+  panel.webview.html = V2ex.renderPage(context, 'browseImage.art', {
     imageSrc: imageSrc
   });
 }
