@@ -4,7 +4,7 @@ import * as template from 'art-template';
 import http from './http';
 import { AxiosResponse } from 'axios';
 import * as path from 'path';
-import g from './global';
+import G from './global';
 
 export class V2ex {
   /**
@@ -45,7 +45,9 @@ export class V2ex {
      * 第1种：会重定向到登录页（https://www.v2ex.com/signin?next=/t/xxxxxx），并提示：你要查看的页面需要先登录。如交易区：https://www.v2ex.com/t/704753
      * 第2种：会重定向到首页，无提示。如：https://www.v2ex.com/t/704716
      */
-    if (res.request._redirectable._isRedirect) {
+    if (res.request._redirectable._redirectCount > 0) {
+      // 登录失效，删除cookie
+      G.setCookie('');
       throw new Error('你要查看的页面需要先登录');
     }
 
@@ -119,12 +121,27 @@ export class V2ex {
   }
 
   /**
+   * 检查cookie是否有效
+   * @param cookie 检查的cookie
+   */
+  static async checkCookie(cookie: string): Promise<boolean> {
+    // 前往一个需要登录的页面检测，如果被重定向，说明cookie无效
+    const res = await http.get('https://www.v2ex.com/t', {
+      headers: {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        Cookie: cookie
+      }
+    });
+    return res.request._redirectable._redirectCount <= 0;
+  }
+
+  /**
    * 渲染一个页面，返回渲染后的html
    * @param page 要渲染的html页面
    * @param data 传入的数据
    */
   static renderPage(page: string, data: any = {}): string {
-    const templatePath = path.join(g.context!.extensionPath, 'resources', 'html', page);
+    const templatePath = path.join(G.context!.extensionPath, 'resources', 'html', page);
     const html = template(templatePath, data);
     return html;
   }
@@ -171,7 +188,7 @@ export class V2ex {
     const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
     panel.webview.html = this.renderPage('topic.art', {
       topic,
-      contextPath: panel.webview.asWebviewUri(vscode.Uri.parse(g.context!.extensionPath)).toString()
+      contextPath: panel.webview.asWebviewUri(vscode.Uri.parse(G.context!.extensionPath)).toString()
     });
   }
 }

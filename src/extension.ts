@@ -1,10 +1,11 @@
 import { DataProvider, Node } from './DataProvider';
 import * as vscode from 'vscode';
 import topicItemClick from './commands/topicItemClick';
-import g from './global';
+import signin from './commands/signin';
+import G from './global';
 
 export function activate(context: vscode.ExtensionContext) {
-  g.context = context;
+  G.context = context;
 
   // 列表数据
   const dataProvider = new DataProvider();
@@ -13,11 +14,14 @@ export function activate(context: vscode.ExtensionContext) {
     showCollapseAll: true
   });
 
-  // 事件：刷新当前节点
-  let disposable1 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: Node) => dataProvider.refreshRoot(root));
+  // 事件：登录
+  let disposable0 = vscode.commands.registerCommand('v2ex-explore.signin', () => signin());
 
   // 事件：刷新全部
-  let disposable2 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => dataProvider.refreshAll());
+  let disposable1 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => dataProvider.refreshAll());
+
+  // 事件：刷新当前节点
+  let disposable2 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: Node) => dataProvider.refreshRoot(root));
 
   // 事件：在浏览器中打开
   let disposable3 = vscode.commands.registerCommand('v2ex-explore.viewInBrowser', (item: Node) =>
@@ -30,9 +34,9 @@ export function activate(context: vscode.ExtensionContext) {
   // 测试页面
   // V2ex.openTestPage();
 
-  context.subscriptions.push(disposable1, disposable2, disposable3, disposable4);
+  context.subscriptions.push(disposable0, disposable1, disposable2, disposable3, disposable4);
 }
 
 export function deactivate() {
-  g.context = undefined;
+  G.context = undefined;
 }
