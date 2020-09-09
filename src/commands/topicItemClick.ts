@@ -20,20 +20,40 @@ function _openLargeImage(imageSrc: string) {
 }
 
 /**
+ * 存放话题页面的panels
+ * key：话题的链接
+ * value：panel
+ */
+const panels: { [key: string]: vscode.WebviewPanel } = {};
+
+/**
  * 点击子节点打开详情页面
  * @param item 话题的子节点
  */
 export default function topicItemClick(item: Node) {
+  // 如果panel已经存在，则直接激活
+  let panel = panels[item.link!];
+  if (panel) {
+    panel.reveal();
+    return;
+  }
+
   // 截取标题
   const _getTitle = (title: string) => {
     return title.length <= 15 ? title : title.slice(0, 15) + '...';
   };
 
-  const panel = vscode.window.createWebviewPanel(item.link!, _getTitle(item.label!), vscode.ViewColumn.One, {
+  panel = vscode.window.createWebviewPanel(item.link!, _getTitle(item.label!), vscode.ViewColumn.One, {
     enableScripts: true,
     retainContextWhenHidden: true,
     enableFindWidget: true
   });
+  panels[item.link!] = panel;
+
+  panel.onDidDispose(() => {
+    delete panels[item.link!];
+  });
+  
   panel.webview.onDidReceiveMessage((message) => {
     switch (message.command) {
       case 'setTitle':
