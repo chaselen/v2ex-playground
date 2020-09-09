@@ -4,6 +4,7 @@ import * as template from 'art-template';
 import http from './http';
 import { AxiosResponse } from 'axios';
 import * as path from 'path';
+import g from './global';
 
 export class V2ex {
   /**
@@ -35,6 +36,7 @@ export class V2ex {
    * @param topicLink 话题链接
    */
   static async getTopicDetail(topicLink: string): Promise<TopicDetail> {
+    // topicLink = 'https://www.v2ex.com/t/703733';
     const res = await http.get<string>(topicLink + '?p=1');
     const $ = cheerio.load(res.data);
 
@@ -118,12 +120,11 @@ export class V2ex {
 
   /**
    * 渲染一个页面，返回渲染后的html
-   * @param context 上下文
    * @param page 要渲染的html页面
    * @param data 传入的数据
    */
-  static renderPage(context: vscode.ExtensionContext, page: string, data: any = {}): string {
-    const templatePath = path.join(context.extensionPath, 'resources', 'html', page);
+  static renderPage(page: string, data: any = {}): string {
+    const templatePath = path.join(g.context!.extensionPath, 'resources', 'html', page);
     const html = template(templatePath, data);
     return html;
   }
@@ -132,7 +133,7 @@ export class V2ex {
    * 打开测试页面
    * @param context 插件上下文
    */
-  static openTestPage(context: vscode.ExtensionContext) {
+  static openTestPage() {
     const topic = new TopicDetail();
     topic.title = 'AMD 5700XT 实际体验也太差了';
     topic.node = 'create';
@@ -168,9 +169,9 @@ export class V2ex {
     ];
 
     const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
-    panel.webview.html = this.renderPage(context, 'topic.art', {
+    panel.webview.html = this.renderPage('topic.art', {
       topic,
-      cssPath: panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'resources/html/topic.css'))).toString()
+      contextPath: panel.webview.asWebviewUri(vscode.Uri.parse(g.context!.extensionPath)).toString()
     });
   }
 }

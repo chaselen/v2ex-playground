@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ topic.title }}</title>
     <base href="https://www.v2ex.com" />
-    <link rel="stylesheet" href="{{ cssPath }}" />
+    <link rel="stylesheet" href="{{ contextPath }}/resources/html/topic.css" />
   </head>
   <body>
     <div class="container">
@@ -68,41 +68,6 @@
       </div>
     </div>
 
-    <script>
-      // 给图片添加查看图片的功能
-      const vscode = acquireVsCodeApi();
-      document.querySelectorAll('.topic-content img').forEach((img) => {
-        img.onload = () => {
-          if (img.width < 100 && img.height < 100) {
-            return;
-          }
-          img.style.cursor = 'zoom-in';
-          img.onclick = () => {
-            console.log(img.src);
-            vscode.postMessage({
-              command: 'browseImage',
-              src: img.src
-            });
-          };
-        };
-      });
-      // 图片地址的a标签，点击打开图片
-      const supportImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
-      supportImageTypes.forEach(type => {
-        document.querySelectorAll(`.topic-content a[href$=".${type}"]`).forEach(a => {
-          a.dataset['imageSrc'] = a.href;
-          // vsc中 return false 不能阻止a标签跳转。曲线救国
-          a.href = 'javascript:;';
-          a.onclick = () => {
-            console.log(a.dataset['imageSrc']);
-            vscode.postMessage({
-              command: 'browseImage',
-              src: a.dataset['imageSrc']
-            });
-            return false;
-          }
-        })
-      })
-    </script>
+    <script src="{{ contextPath }}/resources/html/topic.js"></script>
   </body>
 </html>
