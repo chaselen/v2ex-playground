@@ -85,7 +85,8 @@ export class V2ex {
             userName: $(element).find('a.dark').html() || '',
             time: $(element).find('span.ago').text(),
             floor: $(element).find('span.no').text(),
-            content: $(element).find('.reply_content').html() || ''
+            content: $(element).find('.reply_content').html() || '',
+            thanks: parseInt($(element).find('span.small.fade').text().trim() || '0')
           });
         });
       return replies;
@@ -181,14 +182,15 @@ export class V2ex {
         userName: 'kokutou',
         time: '46 分钟前',
         floor: '1',
-        content: '全脂...热量太高了啊'
+        content: '全脂...热量太高了啊',
+        thanks: 1
       }
     ];
 
     const panel = vscode.window.createWebviewPanel('test', '测试', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
     panel.webview.html = this.renderPage('topic.art', {
       topic,
-      contextPath: panel.webview.asWebviewUri(vscode.Uri.parse(G.context!.extensionPath)).toString()
+      contextPath: panel.webview.asWebviewUri(vscode.Uri.file(G.context!.extensionPath)).toString()
     });
   }
 }
@@ -259,4 +261,6 @@ export class TopicReply {
   public floor: string = '';
   // 回复内容
   public content: string = '';
+  // 感谢数 ❤
+  public thanks: number = 0;
 }

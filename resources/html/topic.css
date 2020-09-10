@@ -122,6 +122,10 @@ hr {
 }
 .reply-item-wrap .meta .time {
   padding-left: 10px;
+  opacity: 0.5;
+}
+.reply-item-wrap .meta .thanks {
+  padding-left: 10px;
   flex: 1;
   opacity: 0.5;
 }

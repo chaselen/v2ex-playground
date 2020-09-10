@@ -56,6 +56,10 @@
                 $value.userName
               }}</a>
               <span class="time">{{ $value.time }}</span>
+              {{if $value.thanks > 0}}
+              <span class="thanks">♥ {{ $value.thanks }}</span>
+              {{/if}}
+              <span style="flex: 1;"></span>
               <span class="floor">{{ $value.floor }}</span>
             </div>
             <div class="topic-content">
