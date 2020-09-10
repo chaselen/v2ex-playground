@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ topic.title }}</title>
     <base href="https://www.v2ex.com" />
+    <link rel="stylesheet" href="{{ contextPath }}/resources/html/common.css" />
     <link rel="stylesheet" href="{{ contextPath }}/resources/html/topic.css" />
   </head>
   <body>
@@ -25,9 +26,7 @@
 
       <!-- 正文 -->
       {{if topic.content}}
-      <div class="topic-content">
-        {{@ topic.content}}
-      </div>
+      <div class="topic-content">{{@ topic.content}}</div>
       <hr />
       {{/if}}
 
@@ -46,25 +45,22 @@
         <h2>共 {{ topic.replyCount }} 条回复</h2>
         {{else}}
         <h2>暂无回复</h2>
-        {{/if}}
-        {{each topic.replies}}
+        {{/if}} {{each topic.replies}}
         <div class="reply-item">
           <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
             <div class="meta">
-              <a class="user text-bold {{ topic.authorName === $value.userName ? 'user--author' : '' }}" href="/member/{{ $value.userName }}">{{
-                $value.userName
-              }}</a>
+              <a class="user text-bold {{ topic.authorName === $value.userName ? 'user--author' : '' }}" href="/member/{{ $value.userName }}"
+                >{{ $value.userName }}</a
+              >
               <span class="time">{{ $value.time }}</span>
               {{if $value.thanks > 0}}
               <span class="thanks">♥ {{ $value.thanks }}</span>
               {{/if}}
-              <span style="flex: 1;"></span>
+              <span style="flex: 1"></span>
               <span class="floor">{{ $value.floor }}</span>
             </div>
-            <div class="topic-content">
-              {{@ $value.content}}
-            </div>
+            <div class="topic-content">{{@ $value.content}}</div>
           </div>
         </div>
         <hr />

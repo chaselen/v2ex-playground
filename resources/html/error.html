@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>错误</title>
+    <link rel="stylesheet" href="{{ contextPath }}/resources/html/common.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>{{ message }}</h1>
+      <a href="javascript:;" onclick="refresh()">刷新页面</a>
+    </div>
+    <script>
+      const vscode = acquireVsCodeApi();
+      function refresh() {
+        vscode.postMessage({
+          command: 'refresh'
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,3 +1,4 @@
+import { LoginRequiredError } from './../error';
 import { Node } from '../DataProvider';
 import { V2ex } from '../v2ex';
 import * as vscode from 'vscode';
@@ -14,7 +15,7 @@ function _openLargeImage(imageSrc: string) {
     retainContextWhenHidden: true
   });
 
-  panel.webview.html = V2ex.renderPage('browseImage.art', {
+  panel.webview.html = V2ex.renderPage('browseImage.html', {
     imageSrc: imageSrc
   });
 }
@@ -25,6 +26,69 @@ function _openLargeImage(imageSrc: string) {
  * value：panel
  */
 const panels: { [key: string]: vscode.WebviewPanel } = {};
+
+/**
+ * 截取标题
+ * @param title 标题
+ */
+function _getTitle(title: string) {
+  return title.length <= 15 ? title : title.slice(0, 15) + '...';
+}
+
+/**
+ * 创建webview面板
+ * @param id 面板id
+ * @param label 面板标题
+ */
+function _createPanel(id: string, label: string): vscode.WebviewPanel {
+  const panel = vscode.window.createWebviewPanel(id, _getTitle(label), vscode.ViewColumn.One, {
+    enableScripts: true,
+    retainContextWhenHidden: true,
+    enableFindWidget: true
+  });
+  panels[id] = panel;
+
+  panel.onDidDispose(() => {
+    delete panels[id];
+  });
+  return panel;
+}
+
+/**
+ * 在Panel中加载话题
+ * @param panel panel
+ * @param topicLink 话题链接
+ */
+function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
+  panel.webview.html = V2ex.renderPage('loading.html', {
+    contextPath: g.getWebViewContextPath(panel.webview)
+  });
+
+  // 获取详情数据
+  V2ex.getTopicDetail(topicLink)
+    .then((detail) => {
+      try {
+        // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
+        panel.webview.html = V2ex.renderPage('topic.html', {
+          topic: detail,
+          contextPath: g.getWebViewContextPath(panel.webview)
+        });
+      } catch (ignored) {}
+    })
+    .catch((err: Error) => {
+      console.error(err);
+      if (err instanceof LoginRequiredError) {
+        panel.webview.html = V2ex.renderPage('login.html', {
+          contextPath: g.getWebViewContextPath(panel.webview)
+        });
+      } else {
+        panel.webview.html = V2ex.renderPage('error.html', {
+          contextPath: g.getWebViewContextPath(panel.webview),
+          message: err.message
+        });
+      }
+    });
+}
 
 /**
  * 点击子节点打开详情页面
@@ -38,22 +102,7 @@ export default function topicItemClick(item: Node) {
     return;
   }
 
-  // 截取标题
-  const _getTitle = (title: string) => {
-    return title.length <= 15 ? title : title.slice(0, 15) + '...';
-  };
-
-  panel = vscode.window.createWebviewPanel(item.link, _getTitle(item.label!), vscode.ViewColumn.One, {
-    enableScripts: true,
-    retainContextWhenHidden: true,
-    enableFindWidget: true
-  });
-  panels[item.link] = panel;
-
-  panel.onDidDispose(() => {
-    delete panels[item.link];
-  });
-  
+  panel = _createPanel(item.link, item.label!);
   panel.webview.onDidReceiveMessage((message) => {
     switch (message.command) {
       case 'setTitle':
@@ -64,31 +113,22 @@ export default function topicItemClick(item: Node) {
         break;
       case 'openTopic':
         // label显示/t/xxx部分
-        const item = new Node(message.link.split('.com')[1], false);
-        item.link = message.link;
-        topicItemClick(item);
+        {
+          const item = new Node(message.link.split('.com')[1], false);
+          item.link = message.link;
+          topicItemClick(item);
+        }
+        break;
+      case 'signin':
+        vscode.commands.executeCommand('v2ex-explore.signin');
+        break;
+      case 'refresh':
+        loadTopicInPanel(panel, item.link);
         break;
       default:
         break;
     }
   });
-  panel.webview.html = '<h1 style="text-align: center;">加载中...</h1>';
 
-  // 获取详情数据
-  V2ex.getTopicDetail(item.link)
-    .then((detail) => {
-      try {
-        // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
-        panel.webview.html = V2ex.renderPage('topic.art', {
-          topic: detail,
-          contextPath: panel.webview.asWebviewUri(vscode.Uri.file(g.context!.extensionPath)).toString()
-        });
-      } catch (ignored) {}
-    })
-    .catch((err: Error) => {
-      console.error(err);
-      // panel.dispose();
-      // vscode.window.showErrorMessage(`获取话题详情失败：${err.message}`);
-      panel.webview.html = `<h1 style="text-align: center;">${err.message}</h1>`;
-    });
+  loadTopicInPanel(panel, item.link);
 }

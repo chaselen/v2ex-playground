@@ -29,7 +29,7 @@ export class DataProvider implements TreeDataProvider<Node> {
 
   private async getElementData(root: Node): Promise<Node[]> {
     try {
-      const topics = await V2ex.getTopicListByTab(root.tab || 'all');
+      const topics = await V2ex.getTopicListByTab(root.tab!);
       const children: Node[] = [];
       topics.forEach((topic) => {
         const child = new Node(topic.title, false);

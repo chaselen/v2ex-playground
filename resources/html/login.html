@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>需要登录</title>
+    <link rel="stylesheet" href="{{ contextPath }}/resources/html/common.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>你要查看的页面需要先登录</h1>
+      <a href="javascript:;" onclick="signin()">去登录</a>
+      <br />
+      <a href="javascript:;" onclick="refresh()">刷新页面</a>
+    </div>
+    <script>
+      const vscode = acquireVsCodeApi();
+      function signin() {
+        vscode.postMessage({
+          command: 'signin'
+        });
+      }
+      function refresh() {
+        vscode.postMessage({
+          command: 'refresh'
+        });
+      }
+    </script>
+  </body>
+</html>
