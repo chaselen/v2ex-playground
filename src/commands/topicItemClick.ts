@@ -81,7 +81,7 @@ export default function topicItemClick(item: Node) {
         // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
         panel.webview.html = V2ex.renderPage('topic.art', {
           topic: detail,
-          contextPath: panel.webview.asWebviewUri(vscode.Uri.parse(g.context!.extensionPath)).toString()
+          contextPath: panel.webview.asWebviewUri(vscode.Uri.file(g.context!.extensionPath)).toString()
         });
       } catch (ignored) {}
     })
