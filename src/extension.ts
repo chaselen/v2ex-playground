@@ -1,7 +1,7 @@
 import { DataProvider, Node } from './DataProvider';
 import * as vscode from 'vscode';
 import topicItemClick from './commands/topicItemClick';
-import signin from './commands/signin';
+import login from './commands/login';
 import G from './global';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // 事件：登录
-  let disposable0 = vscode.commands.registerCommand('v2ex-explore.signin', () => signin());
+  let disposable0 = vscode.commands.registerCommand('v2ex-explore.login', () => login());
 
   // 事件：刷新全部
   let disposable1 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => dataProvider.refreshAll());

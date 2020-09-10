@@ -2,7 +2,7 @@ import { V2ex } from './../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
 
-export default async function signin() {
+export default async function login() {
   let cookie = await vscode.window.showInputBox({
     placeHolder: 'V2EX Cookie',
     prompt: '在此处粘贴从浏览器中复制的 Cookie（即请求头中的 Cookie 项）',

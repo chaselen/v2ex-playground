@@ -119,8 +119,8 @@ export default function topicItemClick(item: Node) {
           topicItemClick(item);
         }
         break;
-      case 'signin':
-        vscode.commands.executeCommand('v2ex-explore.signin');
+      case 'login':
+        vscode.commands.executeCommand('v2ex-explore.login');
         break;
       case 'refresh':
         loadTopicInPanel(panel, item.link);

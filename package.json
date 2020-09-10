@@ -26,7 +26,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "v2ex-explore.signin",
+        "command": "v2ex-explore.login",
         "title": "登录V2EX",
         "icon": "$(sign-in)"
       },
@@ -68,7 +68,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "v2ex-explore.signin",
+          "command": "v2ex-explore.login",
           "when": "view == v2ex-explore",
           "group": "navigation@0"
         },
