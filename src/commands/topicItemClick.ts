@@ -32,7 +32,7 @@ const panels: { [key: string]: vscode.WebviewPanel } = {};
  */
 export default function topicItemClick(item: Node) {
   // 如果panel已经存在，则直接激活
-  let panel = panels[item.link!];
+  let panel = panels[item.link];
   if (panel) {
     panel.reveal();
     return;
@@ -43,15 +43,15 @@ export default function topicItemClick(item: Node) {
     return title.length <= 15 ? title : title.slice(0, 15) + '...';
   };
 
-  panel = vscode.window.createWebviewPanel(item.link!, _getTitle(item.label!), vscode.ViewColumn.One, {
+  panel = vscode.window.createWebviewPanel(item.link, _getTitle(item.label!), vscode.ViewColumn.One, {
     enableScripts: true,
     retainContextWhenHidden: true,
     enableFindWidget: true
   });
-  panels[item.link!] = panel;
+  panels[item.link] = panel;
 
   panel.onDidDispose(() => {
-    delete panels[item.link!];
+    delete panels[item.link];
   });
   
   panel.webview.onDidReceiveMessage((message) => {
@@ -75,7 +75,7 @@ export default function topicItemClick(item: Node) {
   panel.webview.html = '<h1 style="text-align: center;">加载中...</h1>';
 
   // 获取详情数据
-  V2ex.getTopicDetail(item.link || '')
+  V2ex.getTopicDetail(item.link)
     .then((detail) => {
       try {
         // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下

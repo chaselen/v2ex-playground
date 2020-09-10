@@ -99,7 +99,7 @@ export class Node extends TreeItem {
   public children: Node[] | undefined;
 
   //  子节点属性-链接地址
-  public link: string | undefined;
+  public link: string = '';
 
   constructor(label: string, isDir: boolean) {
     super(label, isDir ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None);

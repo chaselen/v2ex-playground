@@ -40,6 +40,10 @@
         "title": "刷新节点"
       },
       {
+        "command": "v2ex-explore.copyLink",
+        "title": "复制链接"
+      },
+      {
         "command": "v2ex-explore.viewInBrowser",
         "title": "在浏览器中打开"
       }
@@ -78,6 +82,10 @@
         {
           "command": "v2ex-explore.refreshNode",
           "when": "view == v2ex-explore && viewItem == dir"
+        },
+        {
+          "command": "v2ex-explore.copyLink",
+          "when": "view == v2ex-explore && viewItem == item"
         },
         {
           "command": "v2ex-explore.viewInBrowser",
