@@ -2,7 +2,8 @@ import { LoginRequiredError } from './../error';
 import { Node } from '../DataProvider';
 import { V2ex } from '../v2ex';
 import * as vscode from 'vscode';
-import g from '../global';
+import G from '../global';
+import * as path from 'path';
 
 /**
  * 打开大图
@@ -14,6 +15,7 @@ function _openLargeImage(imageSrc: string) {
     enableScripts: true,
     retainContextWhenHidden: true
   });
+  panel.iconPath = vscode.Uri.file(path.join(G.context!.extensionPath, 'resources/favicon.png'));
 
   panel.webview.html = V2ex.renderPage('browseImage.html', {
     imageSrc: imageSrc
@@ -46,6 +48,7 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
     retainContextWhenHidden: true,
     enableFindWidget: true
   });
+  panel.iconPath = vscode.Uri.file(path.join(G.context!.extensionPath, 'resources/favicon.png'));
   panels[id] = panel;
 
   panel.onDidDispose(() => {
@@ -61,7 +64,7 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
  */
 function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
   panel.webview.html = V2ex.renderPage('loading.html', {
-    contextPath: g.getWebViewContextPath(panel.webview)
+    contextPath: G.getWebViewContextPath(panel.webview)
   });
 
   // 获取详情数据
@@ -71,7 +74,7 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
         // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
         panel.webview.html = V2ex.renderPage('topic.html', {
           topic: detail,
-          contextPath: g.getWebViewContextPath(panel.webview)
+          contextPath: G.getWebViewContextPath(panel.webview)
         });
       } catch (ignored) {}
     })
@@ -79,11 +82,11 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
       console.error(err);
       if (err instanceof LoginRequiredError) {
         panel.webview.html = V2ex.renderPage('login.html', {
-          contextPath: g.getWebViewContextPath(panel.webview)
+          contextPath: G.getWebViewContextPath(panel.webview)
         });
       } else {
         panel.webview.html = V2ex.renderPage('error.html', {
-          contextPath: g.getWebViewContextPath(panel.webview),
+          contextPath: G.getWebViewContextPath(panel.webview),
           message: err.message
         });
       }
