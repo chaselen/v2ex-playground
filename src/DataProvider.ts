@@ -22,6 +22,7 @@ export class DataProvider implements TreeDataProvider<Node> {
       createRoot('城市', 'city'),
       createRoot('问与答', 'qna'),
       createRoot('最热', 'hot'),
+      createRoot('全部', 'all'),
       createRoot('R2', 'r2'),
       createRoot('节点', 'nodes')
     ];
