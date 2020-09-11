@@ -81,8 +81,10 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
     .catch((err: Error) => {
       console.error(err);
       if (err instanceof LoginRequiredError) {
-        panel.webview.html = V2ex.renderPage('login.html', {
-          contextPath: G.getWebViewContextPath(panel.webview)
+        panel.webview.html = V2ex.renderPage('error.html', {
+          contextPath: G.getWebViewContextPath(panel.webview),
+          message: '你要查看的页面需要先登录',
+          showLogin: true
         });
       } else {
         panel.webview.html = V2ex.renderPage('error.html', {

@@ -5,14 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>错误</title>
     <link rel="stylesheet" href="{{ contextPath }}/resources/html/common.css" />
+    <style>
+      h3 {
+        margin-top: 10px;
+      }
+      .btn-wrap {
+        margin-top: 10px;
+      }
+      .btn-wrap a {
+        font-weight: bold;
+      }
+      .btn-wrap a:not(:first-child) {
+        margin-left: 10px;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
-      <h1>{{ message }}</h1>
-      <a href="javascript:;" onclick="refresh()">刷新页面</a>
+      <h1>提示</h1>
+      <h3>{{ message }}</h3>
+      <div class="btn-wrap">
+        {{if showLogin}}
+        <a href="javascript:;" onclick="login()">去登录</a>
+        {{/if}}
+        <a href="javascript:;" onclick="refresh()">刷新页面</a>
+      </div>
     </div>
     <script>
       const vscode = acquireVsCodeApi();
+      function login() {
+        vscode.postMessage({
+          command: 'login'
+        });
+      }
       function refresh() {
         vscode.postMessage({
           command: 'refresh'
