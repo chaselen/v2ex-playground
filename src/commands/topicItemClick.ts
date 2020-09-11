@@ -81,7 +81,7 @@ export default function topicItemClick(item: Node) {
           vscode.window.withProgress(
             {
               title: '正在提交回复',
-              location: vscode.ProgressLocation.Window
+              location: vscode.ProgressLocation.Notification
             },
             async () => {
               await V2ex.postReply(topicLink, content, once);

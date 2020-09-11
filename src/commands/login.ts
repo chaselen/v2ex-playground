@@ -27,7 +27,7 @@ export default async function login() {
       title: '正在登录',
       location: vscode.ProgressLocation.Notification
     },
-    async (progress, token) => {
+    async () => {
       const isCookieValid = await V2ex.checkCookie(cookie!);
       console.log('Cookie是否有效：', isCookieValid);
       if (isCookieValid) {
