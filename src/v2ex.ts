@@ -6,6 +6,7 @@ import http from './http';
 import { AxiosResponse } from 'axios';
 import * as path from 'path';
 import G from './global';
+import * as FormData from 'form-data';
 
 export class V2ex {
   /**
@@ -53,6 +54,8 @@ export class V2ex {
     }
 
     const topic = new TopicDetail();
+    topic.link = topicLink;
+    topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || '';
     topic.title = $('.header > h1').text();
     const node = $('.header > a').eq(1);
     topic.node = node.attr('href')?.split('go/')[1] || '';
@@ -120,6 +123,21 @@ export class V2ex {
       } catch (error) {}
     }
     return topic;
+  }
+
+  /**
+   * 提交回复
+   * @param topicLink 话题链接，如：https://www.v2ex.com/t/703733
+   * @param content 回复内容
+   * @param once 校验参数，可以从话题页面中获得
+   */
+  static async postReply(topicLink: string, content: string, once: string) {
+    const form = new FormData();
+    form.append('content', content);
+    form.append('once', once);
+    await http.post(topicLink, form, {
+      headers: form.getHeaders()
+    });
   }
 
   /**
@@ -214,6 +232,10 @@ export class Topic {
  * 话题详情
  */
 export class TopicDetail {
+  // 链接
+  public link: string = '';
+  // 校验参数，可用来判断是否登录或登录是否有效
+  public once: string = '';
   // 标题
   public title: string = '';
   // 节点

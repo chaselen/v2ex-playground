@@ -59,3 +59,18 @@ document.querySelectorAll('.topic-content a[href^="https://www.v2ex.com"]').forE
     return false;
   };
 });
+
+// 评论
+function onSubmit() {
+  const content = (document.querySelector('#replyBox').value || '').trim();
+  if (!content) {
+    return;
+  }
+
+  vscode.postMessage({
+    command: 'postReply',
+    topicLink: document.querySelector('#topicLink').value,
+    content: content,
+    once: document.querySelector('#once').value
+  });
+}

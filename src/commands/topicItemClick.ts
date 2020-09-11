@@ -75,6 +75,21 @@ export default function topicItemClick(item: Node) {
       case 'refresh':
         loadTopicInPanel(panel, item.link);
         break;
+      case 'postReply':
+        {
+          const { topicLink, content, once } = message;
+          vscode.window.withProgress(
+            {
+              title: '正在提交回复',
+              location: vscode.ProgressLocation.Window
+            },
+            async () => {
+              await V2ex.postReply(topicLink, content, once);
+              loadTopicInPanel(panel, item.link);
+            }
+          );
+        }
+        break;
       default:
         break;
     }

@@ -177,3 +177,35 @@ hr {
     margin-top: 5px;
   }
 }
+
+.post-reply {
+  textarea {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    overflow-y: scroll;
+    overflow-wrap: break-word;
+    border-radius: 3px;
+    padding: 5px;
+    font-size: 14px;
+    border: 1px solid var(--vscode-editorIndentGuide-background);
+    box-sizing: border-box;
+    background-color: transparent;
+    color: var(--vscode-editor-foreground);
+  }
+
+  .submit {
+    margin-top: 10px;
+    border: none;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+    outline: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: var(--vscode-editor-inactiveSelectionBackground);
+    color: var(--vscode-editor-foreground);
+    cursor: pointer;
+  }
+}

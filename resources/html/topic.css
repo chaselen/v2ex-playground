@@ -1,3 +1,32 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html,
+body {
+  font-size: 14px;
+  margin: 0;
+  padding: 0;
+}
+a {
+  text-decoration: none;
+}
+hr {
+  margin: 20px 0;
+  border: none;
+  height: 1px;
+  background-color: var(--vscode-editorIndentGuide-background);
+}
+.text-bold {
+  font-weight: bold;
+}
+.container {
+  min-width: 400px;
+  max-width: 700px;
+  padding: 20px;
+  margin: 0 auto;
+}
 .topic-header {
   display: flex;
   flex-direction: row;
@@ -114,4 +143,32 @@
 }
 .reply-item-wrap .content {
   margin-top: 5px;
+}
+.post-reply textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  overflow-y: scroll;
+  overflow-wrap: break-word;
+  border-radius: 3px;
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid var(--vscode-editorIndentGuide-background);
+  box-sizing: border-box;
+  background-color: transparent;
+  color: var(--vscode-editor-foreground);
+}
+.post-reply .submit {
+  margin-top: 10px;
+  border: none;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  outline: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
+  color: var(--vscode-editor-foreground);
+  cursor: pointer;
 }

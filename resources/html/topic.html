@@ -66,6 +66,18 @@
         <hr />
         {{/each}}
       </div>
+
+      <!-- 提交回复 -->
+      {{if topic.once}}
+      <form action="#" class="post-reply" onsubmit="onSubmit();return false;">
+        <input id="topicLink" type="hidden" value="{{topic.link}}" />
+        <input id="once" type="hidden" value="{{topic.once}}" />
+        <textarea id="replyBox" maxlength="10000" placeholder="请尽量让自己的回复能够对别人有帮助"></textarea>
+        <button type="submit" class="submit">回复</button>
+      </form>
+      {{else}}
+      <p style="opacity: 0.5;">您目前还不能回复，请先登录</p>
+      {{/if}}
     </div>
 
     <script src="{{ contextPath }}/resources/html/topic.js"></script>
