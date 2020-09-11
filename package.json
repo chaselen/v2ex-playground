@@ -45,6 +45,10 @@
         "title": "复制链接"
       },
       {
+        "command": "v2ex-explore.copyTitleLink",
+        "title": "复制标题和链接"
+      },
+      {
         "command": "v2ex-explore.viewInBrowser",
         "title": "在浏览器中打开"
       }
@@ -91,6 +95,10 @@
         },
         {
           "command": "v2ex-explore.copyLink",
+          "when": "view == v2ex-explore && viewItem == item"
+        },
+        {
+          "command": "v2ex-explore.copyTitleLink",
           "when": "view == v2ex-explore && viewItem == item"
         },
         {

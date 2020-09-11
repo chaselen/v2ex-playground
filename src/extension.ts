@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import topicItemClick from './commands/topicItemClick';
 import login from './commands/login';
 import G from './global';
+import { EOL } from 'os';
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context;
@@ -26,18 +27,23 @@ export function activate(context: vscode.ExtensionContext) {
   // 事件：复制链接
   let disposable3 = vscode.commands.registerCommand('v2ex-explore.copyLink', (item: Node) => vscode.env.clipboard.writeText(item.link));
 
+  // 事件：复制标题和链接
+  let disposable4 = vscode.commands.registerCommand('v2ex-explore.copyTitleLink', (item: Node) =>
+    vscode.env.clipboard.writeText(item.label + EOL + item.link)
+  );
+
   // 事件：在浏览器中打开
-  let disposable4 = vscode.commands.registerCommand('v2ex-explore.viewInBrowser', (item: Node) =>
+  let disposable5 = vscode.commands.registerCommand('v2ex-explore.viewInBrowser', (item: Node) =>
     vscode.env.openExternal(vscode.Uri.parse(item.link))
   );
 
   // 点击浏览帖子
-  let disposable5 = vscode.commands.registerCommand('topicItemClick', (item: Node) => topicItemClick(item));
+  let disposable6 = vscode.commands.registerCommand('topicItemClick', (item: Node) => topicItemClick(item));
 
   // 测试页面
   // V2ex.openTestPage();
 
-  context.subscriptions.push(disposable0, disposable1, disposable2, disposable3, disposable4, disposable5);
+  context.subscriptions.push(disposable0, disposable1, disposable2, disposable3, disposable4, disposable5, disposable6);
 }
 
 export function deactivate() {
