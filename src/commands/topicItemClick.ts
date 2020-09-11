@@ -6,23 +6,6 @@ import G from '../global';
 import * as path from 'path';
 
 /**
- * 打开大图
- * @param imageSrc 图片地址
- */
-function _openLargeImage(imageSrc: string) {
-  console.log('打开大图：', imageSrc);
-  const panel = vscode.window.createWebviewPanel(imageSrc, '查看图片', vscode.ViewColumn.One, {
-    enableScripts: true,
-    retainContextWhenHidden: true
-  });
-  panel.iconPath = vscode.Uri.file(path.join(G.context!.extensionPath, 'resources/favicon.png'));
-
-  panel.webview.html = V2ex.renderPage('browseImage.html', {
-    imageSrc: imageSrc
-  });
-}
-
-/**
  * 存放话题页面的panels
  * key：话题的链接
  * value：panel
@@ -55,44 +38,6 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
     delete panels[id];
   });
   return panel;
-}
-
-/**
- * 在Panel中加载话题
- * @param panel panel
- * @param topicLink 话题链接
- */
-function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
-  panel.webview.html = V2ex.renderPage('loading.html', {
-    contextPath: G.getWebViewContextPath(panel.webview)
-  });
-
-  // 获取详情数据
-  V2ex.getTopicDetail(topicLink)
-    .then((detail) => {
-      try {
-        // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
-        panel.webview.html = V2ex.renderPage('topic.html', {
-          topic: detail,
-          contextPath: G.getWebViewContextPath(panel.webview)
-        });
-      } catch (ignored) {}
-    })
-    .catch((err: Error) => {
-      console.error(err);
-      if (err instanceof LoginRequiredError) {
-        panel.webview.html = V2ex.renderPage('error.html', {
-          contextPath: G.getWebViewContextPath(panel.webview),
-          message: '你要查看的页面需要先登录',
-          showLogin: true
-        });
-      } else {
-        panel.webview.html = V2ex.renderPage('error.html', {
-          contextPath: G.getWebViewContextPath(panel.webview),
-          message: err.message
-        });
-      }
-    });
 }
 
 /**
@@ -136,4 +81,61 @@ export default function topicItemClick(item: Node) {
   });
 
   loadTopicInPanel(panel, item.link);
+}
+
+/**
+ * 在Panel中加载话题
+ * @param panel panel
+ * @param topicLink 话题链接
+ */
+function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
+  panel.webview.html = V2ex.renderPage('loading.html', {
+    contextPath: G.getWebViewContextPath(panel.webview)
+  });
+
+  // 获取详情数据
+  V2ex.getTopicDetail(topicLink)
+    .then((detail) => {
+      try {
+        // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
+        panel.webview.html = V2ex.renderPage('topic.html', {
+          topic: detail,
+          contextPath: G.getWebViewContextPath(panel.webview)
+        });
+      } catch (ignored) {}
+    })
+    .catch((err: Error) => {
+      console.error(err);
+      if (err instanceof LoginRequiredError) {
+        panel.webview.html = V2ex.renderPage('error.html', {
+          contextPath: G.getWebViewContextPath(panel.webview),
+          message: '你要查看的页面需要先登录',
+          showLogin: true
+        });
+      } else {
+        panel.webview.html = V2ex.renderPage('error.html', {
+          contextPath: G.getWebViewContextPath(panel.webview),
+          message: err.message
+        });
+      }
+    });
+}
+
+/**
+ * 打开大图
+ * @param imageSrc 图片地址
+ */
+function _openLargeImage(imageSrc: string) {
+  // 如果panel已经存在，则直接激活
+  let panel = panels[imageSrc];
+  if (panel) {
+    panel.reveal();
+    return;
+  }
+
+  console.log('打开大图：', imageSrc);
+  panel = _createPanel(imageSrc, '查看图片');
+  panel.webview.html = V2ex.renderPage('browseImage.html', {
+    imageSrc: imageSrc
+  });
 }
