@@ -41,14 +41,22 @@ supportImageTypes.forEach((type) => {
   });
 });
 
-// 指向站内地址的a标签，点击在插件内打开
-document.querySelectorAll('.topic-content a[href^="https://www.v2ex.com"]').forEach((a) => {
-  // 检查是否帖子链接并取地址
-  if (!/(https:\/\/www.v2ex.com\/t\/\d+)/.test(a.href)) {
+/**
+ * 指向站内地址的a标签，点击在插件内打开
+ * 有几种：
+ * 1. 完整地址：https://www.v2ex.com/t/123456，域名也可能是v2ex.com
+ * 2. 相对地址：/t/123456
+ */
+document.querySelectorAll('.topic-content a[href*="/t/"]').forEach((a) => {
+  // 取帖子链接
+  let href = '';
+  if (/(\/t\/\d+)/.test(a.href)) {
+    href = 'https://www.v2ex.com' + RegExp.$1;
+  } else {
     return;
   }
 
-  a.dataset['href'] = RegExp.$1;
+  a.dataset['href'] = href;
   a.href = 'javascript:;';
   a.onclick = () => {
     console.log(a.dataset['href']);
