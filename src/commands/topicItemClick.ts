@@ -1,5 +1,5 @@
 import { LoginRequiredError } from './../error';
-import { Node } from '../DataProvider';
+import { TreeNode } from '../DataProvider';
 import { V2ex } from '../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
@@ -44,7 +44,7 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
  * 点击子节点打开详情页面
  * @param item 话题的子节点
  */
-export default function topicItemClick(item: Node) {
+export default function topicItemClick(item: TreeNode) {
   // 如果panel已经存在，则直接激活
   let panel = panels[item.link];
   if (panel) {
@@ -64,7 +64,7 @@ export default function topicItemClick(item: Node) {
       case 'openTopic':
         // label显示/t/xxx部分
         {
-          const item = new Node(message.link.split('.com')[1], false);
+          const item = new TreeNode(message.link.split('.com')[1], false);
           item.link = message.link;
           topicItemClick(item);
         }

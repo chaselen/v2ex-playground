@@ -7,7 +7,7 @@ import * as path from 'path';
 import G from './global';
 import * as FormData from 'form-data';
 import topicItemClick from './commands/topicItemClick';
-import { Node } from './DataProvider';
+import { TreeNode } from './DataProvider';
 
 export class V2ex {
   /**
@@ -157,6 +157,22 @@ export class V2ex {
   }
 
   /**
+   * 获取所有节点
+   */
+  static async getAllNodes(): Promise<Node[]> {
+    const { data: html } = await http.get<string>('https://www.v2ex.com/planes');
+    const $ = cheerio.load(html);
+    const nodes: Node[] = [];
+    $('a.item_node').each((_, element) => {
+      nodes.push({
+        name: $(element).attr('href')?.split('go/')[1] || '',
+        title: $(element).text().trim()
+      });
+    });
+    return nodes;
+  }
+
+  /**
    * 渲染一个页面，返回渲染后的html
    * @param page 要渲染的html页面
    * @param data 传入的数据
@@ -172,7 +188,7 @@ export class V2ex {
    * @param context 插件上下文
    */
   static openTestPage() {
-    const item = new Node('写了一个 VSCode 上可以逛 V2EX 的插件', false);
+    const item = new TreeNode('写了一个 VSCode 上可以逛 V2EX 的插件', false);
     item.link = 'https://www.v2ex.com/t/703733';
     topicItemClick(item);
   }
@@ -250,4 +266,14 @@ export class TopicReply {
   public content: string = '';
   // 感谢数 ❤
   public thanks: number = 0;
+}
+
+/**
+ * 节点
+ */
+export class Node {
+  // 节点名称
+  public name: string = '';
+  // 节点标题（显示的名称）
+  public title: string = '';
 }

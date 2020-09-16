@@ -1,14 +1,14 @@
 import { TreeDataProvider, Event, EventEmitter, TreeItem, TreeItemCollapsibleState, ProviderResult } from 'vscode';
 import { V2ex } from './v2ex';
 
-export class DataProvider implements TreeDataProvider<Node> {
-  private _onDidChangeTreeData: EventEmitter<Node | undefined> = new EventEmitter<Node | undefined>();
-  readonly onDidChangeTreeData?: Event<Node | undefined | null | void> = this._onDidChangeTreeData.event;
-  rootElements: Node[];
+export class DataProvider implements TreeDataProvider<TreeNode> {
+  private _onDidChangeTreeData: EventEmitter<TreeNode | undefined> = new EventEmitter<TreeNode | undefined>();
+  readonly onDidChangeTreeData?: Event<TreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
+  rootElements: TreeNode[];
 
   constructor() {
     const createRoot = (label: string, tag: string) => {
-      const root = new Node(label, true);
+      const root = new TreeNode(label, true);
       root.tab = tag;
       return root;
     };
@@ -28,12 +28,12 @@ export class DataProvider implements TreeDataProvider<Node> {
     ];
   }
 
-  private async getElementData(root: Node): Promise<Node[]> {
+  private async getElementData(root: TreeNode): Promise<TreeNode[]> {
     try {
       const topics = await V2ex.getTopicListByTab(root.tab!);
-      const children: Node[] = [];
+      const children: TreeNode[] = [];
       topics.forEach((topic) => {
-        const child = new Node(topic.title, false);
+        const child = new TreeNode(topic.title, false);
         child.link = topic.link;
         // 添加点击事件的命令
         child.command = {
@@ -54,7 +54,7 @@ export class DataProvider implements TreeDataProvider<Node> {
   /**
    * 刷新指定节点
    */
-  async refreshRoot(root: Node) {
+  async refreshRoot(root: TreeNode) {
     delete root.children;
     this._onDidChangeTreeData.fire(root);
   }
@@ -71,11 +71,11 @@ export class DataProvider implements TreeDataProvider<Node> {
     });
   }
 
-  getTreeItem(element: Node): TreeItem | Thenable<TreeItem> {
+  getTreeItem(element: TreeNode): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  async getChildren(element?: Node | undefined): Promise<Node[]> {
+  async getChildren(element?: TreeNode | undefined): Promise<TreeNode[]> {
     if (element === undefined) {
       return this.rootElements;
     }
@@ -90,14 +90,14 @@ export class DataProvider implements TreeDataProvider<Node> {
   }
 }
 
-export class Node extends TreeItem {
+export class TreeNode extends TreeItem {
   // 是否是目录节点
   public isDir: boolean;
 
   // 根节点属性-节点标签
   public tab: string | undefined;
   // 根节点属性-子节点
-  public children: Node[] | undefined;
+  public children: TreeNode[] | undefined;
 
   //  子节点属性-链接地址
   public link: string = '';
