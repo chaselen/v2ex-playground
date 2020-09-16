@@ -27,8 +27,10 @@ export class V2ex {
       const topic = new Topic();
       topic.title = topicElement.text().trim();
       topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
-      topic.node = nodeElement.attr('href')?.split('go/')[1] || '';
-      topic.nodeName = nodeElement.text();
+      topic.node = {
+        name: nodeElement.attr('href')?.split('go/')[1] || '',
+        title: nodeElement.text().trim()
+      };
       list.push(topic);
     });
     return list;
@@ -59,8 +61,10 @@ export class V2ex {
     topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || '';
     topic.title = $('.header > h1').text();
     const node = $('.header > a').eq(1);
-    topic.node = node.attr('href')?.split('go/')[1] || '';
-    topic.nodeName = node.text();
+    topic.node = {
+      name: node.attr('href')?.split('go/')[1] || '',
+      title: node.text().trim()
+    };
     topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || '';
     const meta = $('.header > .gray').text().split('·');
     topic.authorName = meta[0].trim();
@@ -203,9 +207,7 @@ export class Topic {
   // 链接
   public link: string = '';
   // 节点
-  public node: string = '';
-  // 节点名称
-  public nodeName: string = '';
+  public node: Node = { title: '', name: '' };
 }
 
 /**
@@ -219,9 +221,7 @@ export class TopicDetail {
   // 标题
   public title: string = '';
   // 节点
-  public node: string = '';
-  // 节点名称
-  public nodeName: string = '';
+  public node: Node = { title: '', name: '' };
   // 作者头像
   public authorAvatar: string = '';
   // 作者名字
