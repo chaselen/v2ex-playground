@@ -3,7 +3,7 @@
   "icon": "resources/icon.png",
   "displayName": "V2EX Playground",
   "description": "V2EX 游乐场，上班时用来放（mō）松（yú）的插件",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "publisher": "chaselen",
   "repository": {
     "type": "git",
@@ -51,6 +51,11 @@
       {
         "command": "v2ex-explore.viewInBrowser",
         "title": "在浏览器中打开"
+      },
+      {
+        "command": "v2ex-explore.addNode",
+        "title": "添加节点",
+        "icon": "$(add)"
       }
     ],
     "viewsContainers": {
@@ -66,7 +71,11 @@
       "v2ex": [
         {
           "id": "v2ex-explore",
-          "name": ""
+          "name": "首页"
+        },
+        {
+          "id": "v2ex-custom",
+          "name": "自定义"
         }
       ]
     },
@@ -81,6 +90,11 @@
           "command": "v2ex-explore.refreshAll",
           "when": "view == v2ex-explore",
           "group": "navigation@1"
+        },
+        {
+          "command": "v2ex-explore.addNode",
+          "when": "view == v2ex-custom",
+          "group": "navigation@0"
         }
       ],
       "view/item/context": [

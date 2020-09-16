@@ -1,3 +1,4 @@
+import { TreeNode } from './providers/BaseProvider';
 import { LoginRequiredError } from './error';
 import * as cheerio from 'cheerio';
 import * as template from 'art-template';
@@ -7,7 +8,6 @@ import * as path from 'path';
 import G from './global';
 import * as FormData from 'form-data';
 import topicItemClick from './commands/topicItemClick';
-import { TreeNode } from './DataProvider';
 
 export class V2ex {
   /**
@@ -160,10 +160,15 @@ export class V2ex {
     return res.request._redirectable._redirectCount <= 0;
   }
 
+  // 缓存的节点信息
+  private static _cachedNodes: Node[] = [];
   /**
    * 获取所有节点
    */
   static async getAllNodes(): Promise<Node[]> {
+    if (this._cachedNodes.length) {
+      return this._cachedNodes;
+    }
     const { data: html } = await http.get<string>('https://www.v2ex.com/planes');
     const $ = cheerio.load(html);
     const nodes: Node[] = [];
@@ -173,6 +178,8 @@ export class V2ex {
         title: $(element).text().trim()
       });
     });
+    console.log(`获取到${nodes.length}个节点`);
+    this._cachedNodes = nodes;
     return nodes;
   }
 

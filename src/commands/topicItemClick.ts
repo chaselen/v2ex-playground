@@ -1,5 +1,5 @@
+import { TreeNode } from '../providers/BaseProvider';
 import { LoginRequiredError } from './../error';
-import { TreeNode } from '../DataProvider';
 import { V2ex } from '../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
