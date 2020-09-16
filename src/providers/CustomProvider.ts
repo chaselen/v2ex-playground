@@ -2,6 +2,7 @@ import { TreeItem, ProviderResult } from 'vscode';
 import { BaseProvider, TreeNode } from './BaseProvider';
 import * as path from 'path';
 import G from '../global';
+import { V2ex } from '../v2ex';
 
 export default class CustomProvider extends BaseProvider {
   private rootElements: TreeNode[] = [];
@@ -21,7 +22,7 @@ export default class CustomProvider extends BaseProvider {
     if (customNodes.length) {
       this.rootElements = customNodes.map<TreeNode>((n) => {
         const treeNode = new TreeNode(n.title, true);
-        treeNode.tab = n.name;
+        treeNode.nodeName = n.name;
         return treeNode;
       });
     } else {
@@ -30,14 +31,46 @@ export default class CustomProvider extends BaseProvider {
     this._onDidChangeTreeData.fire(undefined);
   }
 
+  private async getElementData(root: TreeNode): Promise<TreeNode[]> {
+    try {
+      const topics = await V2ex.getTopicListByNode({
+        name: root.nodeName!,
+        title: root.label!
+      });
+      const children: TreeNode[] = [];
+      topics.forEach((topic) => {
+        const child = new TreeNode(topic.title, false);
+        child.link = topic.link;
+        // 添加点击事件的命令
+        child.command = {
+          title: topic.title,
+          command: 'topicItemClick',
+          tooltip: topic.title,
+          arguments: [child]
+        };
+        children.push(child);
+      });
+      console.log(`获取到【${root.label}】数据：${topics.length}条`);
+      return children;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   getTreeItem(element: TreeNode): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element?: TreeNode): ProviderResult<TreeNode[]> {
+  async getChildren(element?: TreeNode): Promise<TreeNode[]> {
     if (element === undefined) {
       return this.rootElements;
     }
-    return element.children;
+    if (element.children) {
+      return element.children;
+    } else {
+      const children = await this.getElementData(element);
+      element.children = children;
+      return children;
+    }
   }
 }

@@ -12,8 +12,8 @@ export class TreeNode extends TreeItem {
   // 是否是目录节点
   public isDir: boolean;
 
-  // 根节点属性-节点标签
-  public tab: string | undefined;
+  // 根节点属性-节点名称
+  public nodeName: string | undefined;
   // 根节点属性-子节点
   public children: TreeNode[] | undefined;
 

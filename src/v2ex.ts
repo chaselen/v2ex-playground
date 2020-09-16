@@ -37,6 +37,28 @@ export class V2ex {
   }
 
   /**
+   * 根据节点获取话题列表
+   * @param node 节点
+   */
+  static async getTopicListByNode(node: Node): Promise<Topic[]> {
+    const { data: html } = await http.get(`https://www.v2ex.com/go/${node.name}`);
+    const $ = cheerio.load(html);
+    const cells = $('#TopicsNode .cell[class*="t_"]');
+
+    const list: Topic[] = [];
+    cells.each((_, cell) => {
+      const topicElement = $(cell).find('a.topic-link');
+
+      const topic = new Topic();
+      topic.title = topicElement.text().trim();
+      topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
+      topic.node = node;
+      list.push(topic);
+    });
+    return list;
+  }
+
+  /**
    * 获取话题详情内容
    * @param topicLink 话题链接
    */

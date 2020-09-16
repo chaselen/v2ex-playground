@@ -9,7 +9,7 @@ export default class ExploreProvider extends BaseProvider {
     super();
     const createRoot = (label: string, tag: string) => {
       const root = new TreeNode(label, true);
-      root.tab = tag;
+      root.nodeName = tag;
       return root;
     };
     this.rootElements = [
@@ -30,7 +30,7 @@ export default class ExploreProvider extends BaseProvider {
 
   private async getElementData(root: TreeNode): Promise<TreeNode[]> {
     try {
-      const topics = await V2ex.getTopicListByTab(root.tab!);
+      const topics = await V2ex.getTopicListByTab(root.nodeName!);
       const children: TreeNode[] = [];
       topics.forEach((topic) => {
         const child = new TreeNode(topic.title, false);
