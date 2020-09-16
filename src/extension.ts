@@ -7,6 +7,7 @@ import G from './global';
 import { EOL } from 'os';
 import CustomProvider from './providers/CustomProvider';
 import addNode from './commands/addNode';
+import removeNode from './commands/removeNode';
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context;
@@ -50,12 +51,21 @@ export function activate(context: vscode.ExtensionContext) {
   let disposable6 = vscode.commands.registerCommand('topicItemClick', (item: TreeNode) => topicItemClick(item));
 
   // 事件：添加自定义节点
-  let disposable7 = vscode.commands.registerCommand('v2ex-explore.addNode', () => addNode());
+  let disposable7 = vscode.commands.registerCommand('v2ex-explore.addNode', async () => {
+    const isAdd = await addNode();
+    isAdd && customProvider.refreshNodeList();
+  });
+
+  // 事件：删除自定义节点
+  let disposable8 = vscode.commands.registerCommand('v2ex-custom.removeNode', (root: TreeNode) => {
+    removeNode(root);
+    customProvider.refreshNodeList();
+  });
 
   // 测试页面
   // V2ex.openTestPage();
 
-  context.subscriptions.push(disposable0, disposable1, disposable2, disposable3, disposable4, disposable5, disposable6, disposable7);
+  context.subscriptions.push(disposable0, disposable1, disposable2, disposable3, disposable4, disposable5, disposable6, disposable7, disposable8);
 }
 
 export function deactivate() {

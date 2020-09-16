@@ -2,7 +2,11 @@ import { V2ex, Node } from './../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
 
-export default async function addNode() {
+/**
+ * 添加节点逻辑
+ * @returns 返回是否成功添加
+ */
+export default async function addNode(): Promise<boolean> {
   const nodes = await vscode.window.withProgress(
     {
       title: '获取节点信息',
@@ -24,7 +28,7 @@ export default async function addNode() {
     matchOnDescription: true
   });
   if (select === undefined) {
-    return;
+    return false;
   }
   console.log('选择的节点', select);
   const isAdd = G.addCustomNode({
@@ -34,6 +38,7 @@ export default async function addNode() {
   if (!isAdd) {
     vscode.window.showInformationMessage('节点已经存在，无需再添加');
   }
+  return isAdd;
 }
 
 /**

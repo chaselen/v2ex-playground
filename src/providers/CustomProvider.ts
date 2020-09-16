@@ -4,14 +4,19 @@ import * as path from 'path';
 import G from '../global';
 
 export default class CustomProvider extends BaseProvider {
-  rootElements: TreeNode[];
+  private rootElements: TreeNode[] = [];
+  private _tipNode = new TreeNode('还没有添加自定义节点', false);
 
   constructor() {
     super();
 
-    const tipNode = new TreeNode('还没有添加自定义节点', false);
-    this.rootElements = [tipNode];
+    this.refreshNodeList();
+  }
 
+  /**
+   * 刷新节点列表
+   */
+  refreshNodeList() {
     const customNodes = G.getCustomNodes();
     if (customNodes.length) {
       this.rootElements = customNodes.map<TreeNode>((n) => {
@@ -19,7 +24,10 @@ export default class CustomProvider extends BaseProvider {
         treeNode.tab = n.name;
         return treeNode;
       });
+    } else {
+      this.rootElements = [this._tipNode];
     }
+    this._onDidChangeTreeData.fire(undefined);
   }
 
   getTreeItem(element: TreeNode): TreeItem | Thenable<TreeItem> {

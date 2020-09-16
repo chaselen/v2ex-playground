@@ -1,7 +1,7 @@
 import { TreeDataProvider, Event, EventEmitter, TreeItem, TreeItemCollapsibleState, ProviderResult } from 'vscode';
 
 export abstract class BaseProvider implements TreeDataProvider<TreeNode> {
-  _onDidChangeTreeData: EventEmitter<TreeNode | undefined> = new EventEmitter<TreeNode | undefined>();
+  protected _onDidChangeTreeData: EventEmitter<TreeNode | undefined> = new EventEmitter<TreeNode | undefined>();
   readonly onDidChangeTreeData?: Event<TreeNode | undefined | null | void> = this._onDidChangeTreeData.event;
 
   abstract getTreeItem(element: TreeNode): TreeItem | Thenable<TreeItem>;

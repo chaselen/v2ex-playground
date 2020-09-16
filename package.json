@@ -56,6 +56,10 @@
         "command": "v2ex-explore.addNode",
         "title": "添加节点",
         "icon": "$(add)"
+      },
+      {
+        "command": "v2ex-custom.removeNode",
+        "title": "删除节点"
       }
     ],
     "viewsContainers": {
@@ -118,6 +122,10 @@
         {
           "command": "v2ex-explore.viewInBrowser",
           "when": "view == v2ex-explore && viewItem == item"
+        },
+        {
+          "command": "v2ex-custom.removeNode",
+          "when": "view == v2ex-custom && viewItem == dir"
         }
       ]
     }

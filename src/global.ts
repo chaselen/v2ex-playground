@@ -57,4 +57,17 @@ export default class G {
     this.setCustomNodes(nodes);
     return true;
   }
+
+  /**
+   * 删除自定义节点
+   * @param nodeName 要删除的节点名称
+   */
+  static removeCustomNode(nodeName: string) {
+    const nodes = this.getCustomNodes();
+    const i = nodes.findIndex((n) => n.name === nodeName);
+    if (i >= 0) {
+      nodes.splice(i, 1);
+    }
+    this.setCustomNodes(nodes);
+  }
 }
