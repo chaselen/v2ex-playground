@@ -10,39 +10,46 @@ export default class CollectionProvider extends BaseProvider {
 
   constructor() {
     super();
-
-    this.refreshNodeList();
   }
 
   /**
    * 刷新节点列表
    */
   refreshNodeList() {
-    V2ex.getCollectionNodes()
-      .then((collectionNodes) => {
-        if (collectionNodes.length) {
-          this.rootElements = collectionNodes.map<TreeNode>((n) => {
-            const treeNode = new TreeNode(n.title, true);
-            treeNode.nodeName = n.name;
-            return treeNode;
-          });
-        } else {
-          this.rootElements = [new TreeNode('还没有收藏的节点', false)];
-        }
-      })
-      .catch((err) => {
-        if (err instanceof LoginRequiredError) {
-          const n = new TreeNode('还未登录，请先登录', false);
-          n.iconPath = {
-            light: path.join(G.context!.extensionPath, 'resources/light/statusWarning.svg'),
-            dark: path.join(G.context!.extensionPath, 'resources/dark/statusWarning.svg')
-          };
-          this.rootElements = [n];
-        }
-      })
-      .finally(() => {
-        this._onDidChangeTreeData.fire(undefined);
-      });
+    this.rootElements = [];
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  /**
+   * 获取节点列表
+   */
+  async getNodeList() {
+    try {
+      if (!G.getCookie()) {
+        throw new LoginRequiredError();
+      }
+      const collectionNodes = await V2ex.getCollectionNodes();
+      if (collectionNodes.length) {
+        this.rootElements = collectionNodes.map<TreeNode>((n) => {
+          const treeNode = new TreeNode(n.title, true);
+          treeNode.nodeName = n.name;
+          return treeNode;
+        });
+      } else {
+        this.rootElements = [new TreeNode('还没有收藏的节点', false)];
+      }
+    } catch (err) {
+      if (err instanceof LoginRequiredError) {
+        const n = new TreeNode('还未登录，请先登录', false);
+        n.iconPath = {
+          light: path.join(G.context!.extensionPath, 'resources/light/statusWarning.svg'),
+          dark: path.join(G.context!.extensionPath, 'resources/dark/statusWarning.svg')
+        };
+        this.rootElements = [n];
+      }
+    } finally {
+      // this._onDidChangeTreeData.fire(undefined);
+    }
   }
 
   private async getElementData(root: TreeNode): Promise<TreeNode[]> {
@@ -97,6 +104,9 @@ export default class CollectionProvider extends BaseProvider {
 
   async getChildren(element?: TreeNode): Promise<TreeNode[]> {
     if (element === undefined) {
+      if (!this.rootElements.length) {
+        await this.getNodeList();
+      }
       return this.rootElements;
     }
     if (element.children) {

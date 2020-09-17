@@ -1,9 +1,8 @@
-import { V2ex } from './v2ex';
 import { TreeNode } from './providers/BaseProvider';
 import ExploreProvider from './providers/ExploreProvider';
 import * as vscode from 'vscode';
 import topicItemClick from './commands/topicItemClick';
-import login from './commands/login';
+import login, { LoginResult } from './commands/login';
 import G from './global';
 import { EOL } from 'os';
 import CustomProvider from './providers/CustomProvider';
@@ -35,8 +34,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 公共事件：登录
   let cDisposable1 = vscode.commands.registerCommand('v2ex.login', async () => {
-    const isLogin = await login();
-    if (isLogin) {
+    const loginResult = await login();
+    if (loginResult === LoginResult.success || loginResult === LoginResult.logout) {
       collectionProvider.refreshNodeList();
     }
   });

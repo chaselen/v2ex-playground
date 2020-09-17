@@ -1,4 +1,4 @@
-import { V2ex, Node } from './../v2ex';
+import { V2ex } from './../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
 

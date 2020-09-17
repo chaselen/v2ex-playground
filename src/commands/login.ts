@@ -6,7 +6,7 @@ import G from '../global';
  * 登录逻辑
  * @returns 返回是否成功登录成功
  */
-export default async function login(): Promise<boolean> {
+export default async function login(): Promise<LoginResult> {
   let cookie = await vscode.window.showInputBox({
     placeHolder: 'V2EX Cookie',
     prompt: '在此处粘贴从浏览器中复制的 Cookie（即请求头中的 Cookie 项）',
@@ -14,7 +14,7 @@ export default async function login(): Promise<boolean> {
   });
   // 如果用户撤销输入，如ESC，则为undefined
   if (cookie === undefined) {
-    return false;
+    return LoginResult.cancel;
   }
   cookie = (cookie || '').trim();
   // 容错处理：如果用户把前面的键也复制进去了，则手动去掉前面的cookie:
@@ -23,7 +23,7 @@ export default async function login(): Promise<boolean> {
   // 清除cookie
   if (!cookie) {
     await G.setCookie('');
-    return false;
+    return LoginResult.logout;
   }
 
   const isLoginSuccess = await vscode.window.withProgress(
@@ -43,5 +43,19 @@ export default async function login(): Promise<boolean> {
       return isCookieValid;
     }
   );
-  return isLoginSuccess;
+  return isLoginSuccess ? LoginResult.success : LoginResult.failed;
+}
+
+/**
+ * 登录结果
+ */
+export enum LoginResult {
+  /** 登录成功 */
+  success,
+  /** 登录失败 */
+  failed,
+  /** 退出登录 */
+  logout,
+  /** 取消登录 */
+  cancel
 }

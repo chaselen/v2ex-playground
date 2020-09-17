@@ -1,6 +1,5 @@
-import { TreeItem, ProviderResult } from 'vscode';
+import { TreeItem } from 'vscode';
 import { BaseProvider, TreeNode } from './BaseProvider';
-import * as path from 'path';
 import G from '../global';
 import { V2ex } from '../v2ex';
 
