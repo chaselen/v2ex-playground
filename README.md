@@ -13,10 +13,21 @@
 
 ---
 
-## 预览
+## 功能
 
-![预览1.jpg](https://i.loli.net/2020/09/04/jp6eLVwtG4Im129.jpg)
+- [x] 浏览首页各标签下的话题
+- [x] 自定义节点话题查看
+- [x] 收藏节点话题查看
+- [x] 自定义话题浏览页面，页面样式跟随主题变化
+- [x] 话题回复
+- [x] 复制话题标题、链接、使用浏览器打开
+
+---
 
 ## 反馈
 
 如果您有任何问题或意见，欢迎在[我的创作帖](https://www.v2ex.com/t/703733)中进行回复，或者提交 [issues](https://github.com/chaselen/v2ex-playground/issues)。
+
+## 预览
+
+![预览1.jpg](https://tva1.sinaimg.cn/large/007S8ZIlly1gitgagertij31hc0qqn46.jpg)
