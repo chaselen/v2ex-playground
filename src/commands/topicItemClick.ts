@@ -70,7 +70,7 @@ export default function topicItemClick(item: TreeNode) {
         }
         break;
       case 'login':
-        vscode.commands.executeCommand('v2ex-explore.login');
+        vscode.commands.executeCommand('v2ex.login');
         break;
       case 'refresh':
         loadTopicInPanel(panel, item.link);
