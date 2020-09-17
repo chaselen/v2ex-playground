@@ -65,7 +65,7 @@ export default class CollectionProvider extends BaseProvider {
         // 添加点击事件的命令
         child.command = {
           title: topic.title,
-          command: 'topicItemClick',
+          command: 'v2ex.topicItemClick',
           tooltip: topic.title,
           arguments: [child]
         };

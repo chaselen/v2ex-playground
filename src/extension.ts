@@ -52,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
   let cDisposable4 = vscode.commands.registerCommand('v2ex.viewInBrowser', (item: TreeNode) => vscode.env.openExternal(vscode.Uri.parse(item.link)));
 
   // 公共事件：点击浏览帖子
-  let cDisposable5 = vscode.commands.registerCommand('topicItemClick', (item: TreeNode) => topicItemClick(item));
+  let cDisposable5 = vscode.commands.registerCommand('v2ex.topicItemClick', (item: TreeNode) => topicItemClick(item));
 
   // 首页视图事件：刷新全部
   let homeDisposable1 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => exploreProvider.refreshAll());
