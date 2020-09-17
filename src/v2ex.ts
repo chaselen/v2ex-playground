@@ -206,6 +206,22 @@ export class V2ex {
   }
 
   /**
+   * 获取我收藏的节点
+   */
+  static async getCollectionNodes(): Promise<Node[]> {
+    const { data: html } = await http.get<string>('https://www.v2ex.com/my/nodes');
+    const $ = cheerio.load(html);
+    const nodes: Node[] = [];
+    $('#my-nodes > a.grid_item').each((_, element) => {
+      nodes.push({
+        name: $(element).attr('href')?.split('go/')[1] || '',
+        title: $(element).children('div').text().trim().split(' ')[0]
+      });
+    });
+    return nodes;
+  }
+
+  /**
    * 渲染一个页面，返回渲染后的html
    * @param page 要渲染的html页面
    * @param data 传入的数据

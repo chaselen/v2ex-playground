@@ -1,3 +1,4 @@
+import { V2ex } from './v2ex';
 import { TreeNode } from './providers/BaseProvider';
 import ExploreProvider from './providers/ExploreProvider';
 import * as vscode from 'vscode';
