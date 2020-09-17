@@ -9,6 +9,7 @@ import { EOL } from 'os';
 import CustomProvider from './providers/CustomProvider';
 import addNode from './commands/addNode';
 import removeNode from './commands/removeNode';
+import CollectionProvider from './providers/CollectionProvider';
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context;
@@ -26,62 +27,81 @@ export function activate(context: vscode.ExtensionContext) {
     showCollapseAll: true
   });
 
-  // 事件：登录
-  let disposable0 = vscode.commands.registerCommand('v2ex-explore.login', () => login());
+  const collectionProvider = new CollectionProvider();
+  vscode.window.createTreeView('v2ex-collection', {
+    treeDataProvider: collectionProvider,
+    showCollapseAll: true
+  });
 
-  // 事件：刷新全部
-  let disposable1 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => exploreProvider.refreshAll());
+  // 公共事件：登录
+  let cDisposable1 = vscode.commands.registerCommand('v2ex.login', async () => {
+    const isLogin = await login();
+    if (isLogin) {
+      collectionProvider.refreshNodeList();
+    }
+  });
 
-  // 事件：刷新当前节点
-  let disposable2 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: TreeNode) => exploreProvider.refreshRoot(root));
+  // 公共事件：复制链接
+  let cDisposable2 = vscode.commands.registerCommand('v2ex.copyLink', (item: TreeNode) => vscode.env.clipboard.writeText(item.link));
 
-  // 事件：复制链接
-  let disposable3 = vscode.commands.registerCommand('v2ex.copyLink', (item: TreeNode) => vscode.env.clipboard.writeText(item.link));
-
-  // 事件：复制标题和链接
-  let disposable4 = vscode.commands.registerCommand('v2ex.copyTitleLink', (item: TreeNode) =>
+  // 公共事件：复制标题和链接
+  let cDisposable3 = vscode.commands.registerCommand('v2ex.copyTitleLink', (item: TreeNode) =>
     vscode.env.clipboard.writeText(item.label + EOL + item.link)
   );
 
-  // 事件：在浏览器中打开
-  let disposable5 = vscode.commands.registerCommand('v2ex.viewInBrowser', (item: TreeNode) => vscode.env.openExternal(vscode.Uri.parse(item.link)));
+  // 公共事件：在浏览器中打开
+  let cDisposable4 = vscode.commands.registerCommand('v2ex.viewInBrowser', (item: TreeNode) => vscode.env.openExternal(vscode.Uri.parse(item.link)));
 
-  // 点击浏览帖子
-  let disposable6 = vscode.commands.registerCommand('topicItemClick', (item: TreeNode) => topicItemClick(item));
+  // 公共事件：点击浏览帖子
+  let cDisposable5 = vscode.commands.registerCommand('topicItemClick', (item: TreeNode) => topicItemClick(item));
 
-  // 事件：添加自定义节点
-  let disposable7 = vscode.commands.registerCommand('v2ex-explore.addNode', async () => {
+  // 首页视图事件：刷新全部
+  let homeDisposable1 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => exploreProvider.refreshAll());
+
+  // 首页视图事件：刷新当前节点
+  let homeDisposable2 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: TreeNode) => exploreProvider.refreshRoot(root));
+
+  // 自定义视图事件：添加自定义节点
+  let cusDisposable1 = vscode.commands.registerCommand('v2ex-explore.addNode', async () => {
     const isAdd = await addNode();
     isAdd && customProvider.refreshNodeList();
   });
 
-  // 事件：刷新全部
-  let disposable8 = vscode.commands.registerCommand('v2ex-custom.refreshAll', () => customProvider.refreshAll());
+  // 自定义视图事件：刷新全部
+  let cusDisposable2 = vscode.commands.registerCommand('v2ex-custom.refreshAll', () => customProvider.refreshAll());
 
-  // 事件：刷新当前节点
-  let disposable9 = vscode.commands.registerCommand('v2ex-custom.refreshNode', (root: TreeNode) => customProvider.refreshRoot(root));
+  // 自定义视图事件：刷新当前节点
+  let cusDisposable3 = vscode.commands.registerCommand('v2ex-custom.refreshNode', (root: TreeNode) => customProvider.refreshRoot(root));
 
-  // 事件：删除自定义节点
-  let disposable10 = vscode.commands.registerCommand('v2ex-custom.removeNode', (root: TreeNode) => {
+  // 自定义视图事件：删除自定义节点
+  let cusDisposable4 = vscode.commands.registerCommand('v2ex-custom.removeNode', (root: TreeNode) => {
     removeNode(root);
     customProvider.refreshNodeList();
   });
+
+  // 收藏视图事件：刷新全部
+  let colDisposable1 = vscode.commands.registerCommand('v2ex-collection.refreshAll', () => collectionProvider.refreshAll());
+
+  // 收藏视图事件：刷新当前节点
+  let colDisposable2 = vscode.commands.registerCommand('v2ex-collection.refreshNode', (root: TreeNode) => collectionProvider.refreshRoot(root));
 
   // 测试页面
   // V2ex.openTestPage();
 
   context.subscriptions.push(
-    disposable0,
-    disposable1,
-    disposable2,
-    disposable3,
-    disposable4,
-    disposable5,
-    disposable6,
-    disposable7,
-    disposable8,
-    disposable9,
-    disposable10
+    cDisposable1,
+    cDisposable2,
+    cDisposable3,
+    cDisposable4,
+    cDisposable5,
+    homeDisposable1,
+    homeDisposable2,
+    cusDisposable1,
+    cusDisposable2,
+    cusDisposable3,
+    cusDisposable4,
+    colDisposable1,
+    colDisposable2
   );
 }
 

@@ -20,7 +20,8 @@
   ],
   "activationEvents": [
     "onView:v2ex-explore",
-    "onCommand:topicItemClick"
+    "onView:v2ex-custom",
+    "onView:v2ex-collection"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -38,7 +39,7 @@
         "title": "在浏览器中打开"
       },
       {
-        "command": "v2ex-explore.login",
+        "command": "v2ex.login",
         "title": "登录V2EX",
         "icon": "$(sign-in)"
       },
@@ -70,6 +71,16 @@
       {
         "command": "v2ex-custom.removeNode",
         "title": "删除节点"
+      },
+      {
+        "command": "v2ex-collection.refreshAll",
+        "title": "刷新",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "v2ex-collection.refreshNode",
+        "title": "刷新节点",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {
@@ -90,13 +101,17 @@
         {
           "id": "v2ex-custom",
           "name": "自定义"
+        },
+        {
+          "id": "v2ex-collection",
+          "name": "收藏节点"
         }
       ]
     },
     "menus": {
       "view/title": [
         {
-          "command": "v2ex-explore.login",
+          "command": "v2ex.login",
           "when": "view == v2ex-explore",
           "group": "navigation@0"
         },
@@ -113,6 +128,16 @@
         {
           "command": "v2ex-custom.refreshAll",
           "when": "view == v2ex-custom",
+          "group": "navigation@1"
+        },
+        {
+          "command": "v2ex.login",
+          "when": "view == v2ex-collection",
+          "group": "navigation@0"
+        },
+        {
+          "command": "v2ex-collection.refreshAll",
+          "when": "view == v2ex-collection",
           "group": "navigation@1"
         }
       ],
@@ -142,6 +167,11 @@
         {
           "command": "v2ex-custom.removeNode",
           "when": "view == v2ex-custom && viewItem == dir"
+        },
+        {
+          "command": "v2ex-collection.refreshNode",
+          "when": "view == v2ex-collection && viewItem == dir",
+          "group": "inline"
         }
       ]
     }

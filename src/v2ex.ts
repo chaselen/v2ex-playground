@@ -209,8 +209,14 @@ export class V2ex {
    * 获取我收藏的节点
    */
   static async getCollectionNodes(): Promise<Node[]> {
-    const { data: html } = await http.get<string>('https://www.v2ex.com/my/nodes');
-    const $ = cheerio.load(html);
+    const res = await http.get<string>('https://www.v2ex.com/my/nodes');
+    if (res.request._redirectable._redirectCount > 0) {
+      // 登录失效，删除cookie
+      G.setCookie('');
+      throw new LoginRequiredError('你要查看的页面需要先登录');
+    }
+
+    const $ = cheerio.load(res.data);
     const nodes: Node[] = [];
     $('#my-nodes > a.grid_item').each((_, element) => {
       nodes.push({
