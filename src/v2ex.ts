@@ -233,7 +233,7 @@ export class V2ex {
    * @param data 传入的数据
    */
   static renderPage(page: string, data: any = {}): string {
-    const templatePath = path.join(G.context!.extensionPath, 'resources', 'html', page);
+    const templatePath = path.join(G.context!.extensionPath, 'html', page);
     const html = template(templatePath, data);
     return html;
   }
