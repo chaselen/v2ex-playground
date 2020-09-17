@@ -35,17 +35,15 @@ export function activate(context: vscode.ExtensionContext) {
   let disposable2 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: TreeNode) => exploreProvider.refreshRoot(root));
 
   // 事件：复制链接
-  let disposable3 = vscode.commands.registerCommand('v2ex-explore.copyLink', (item: TreeNode) => vscode.env.clipboard.writeText(item.link));
+  let disposable3 = vscode.commands.registerCommand('v2ex.copyLink', (item: TreeNode) => vscode.env.clipboard.writeText(item.link));
 
   // 事件：复制标题和链接
-  let disposable4 = vscode.commands.registerCommand('v2ex-explore.copyTitleLink', (item: TreeNode) =>
+  let disposable4 = vscode.commands.registerCommand('v2ex.copyTitleLink', (item: TreeNode) =>
     vscode.env.clipboard.writeText(item.label + EOL + item.link)
   );
 
   // 事件：在浏览器中打开
-  let disposable5 = vscode.commands.registerCommand('v2ex-explore.viewInBrowser', (item: TreeNode) =>
-    vscode.env.openExternal(vscode.Uri.parse(item.link))
-  );
+  let disposable5 = vscode.commands.registerCommand('v2ex.viewInBrowser', (item: TreeNode) => vscode.env.openExternal(vscode.Uri.parse(item.link)));
 
   // 点击浏览帖子
   let disposable6 = vscode.commands.registerCommand('topicItemClick', (item: TreeNode) => topicItemClick(item));
@@ -56,8 +54,14 @@ export function activate(context: vscode.ExtensionContext) {
     isAdd && customProvider.refreshNodeList();
   });
 
+  // 事件：刷新全部
+  let disposable8 = vscode.commands.registerCommand('v2ex-custom.refreshAll', () => customProvider.refreshAll());
+
+  // 事件：刷新当前节点
+  let disposable9 = vscode.commands.registerCommand('v2ex-custom.refreshNode', (root: TreeNode) => customProvider.refreshRoot(root));
+
   // 事件：删除自定义节点
-  let disposable8 = vscode.commands.registerCommand('v2ex-custom.removeNode', (root: TreeNode) => {
+  let disposable10 = vscode.commands.registerCommand('v2ex-custom.removeNode', (root: TreeNode) => {
     removeNode(root);
     customProvider.refreshNodeList();
   });
@@ -65,7 +69,19 @@ export function activate(context: vscode.ExtensionContext) {
   // 测试页面
   // V2ex.openTestPage();
 
-  context.subscriptions.push(disposable0, disposable1, disposable2, disposable3, disposable4, disposable5, disposable6, disposable7, disposable8);
+  context.subscriptions.push(
+    disposable0,
+    disposable1,
+    disposable2,
+    disposable3,
+    disposable4,
+    disposable5,
+    disposable6,
+    disposable7,
+    disposable8,
+    disposable9,
+    disposable10
+  );
 }
 
 export function deactivate() {

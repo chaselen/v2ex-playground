@@ -26,6 +26,18 @@
   "contributes": {
     "commands": [
       {
+        "command": "v2ex.copyLink",
+        "title": "复制链接"
+      },
+      {
+        "command": "v2ex.copyTitleLink",
+        "title": "复制标题和链接"
+      },
+      {
+        "command": "v2ex.viewInBrowser",
+        "title": "在浏览器中打开"
+      },
+      {
         "command": "v2ex-explore.login",
         "title": "登录V2EX",
         "icon": "$(sign-in)"
@@ -41,21 +53,19 @@
         "icon": "$(refresh)"
       },
       {
-        "command": "v2ex-explore.copyLink",
-        "title": "复制链接"
-      },
-      {
-        "command": "v2ex-explore.copyTitleLink",
-        "title": "复制标题和链接"
-      },
-      {
-        "command": "v2ex-explore.viewInBrowser",
-        "title": "在浏览器中打开"
-      },
-      {
         "command": "v2ex-explore.addNode",
         "title": "添加节点",
         "icon": "$(add)"
+      },
+      {
+        "command": "v2ex-custom.refreshAll",
+        "title": "刷新",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "v2ex-custom.refreshNode",
+        "title": "刷新节点",
+        "icon": "$(refresh)"
       },
       {
         "command": "v2ex-custom.removeNode",
@@ -99,12 +109,25 @@
           "command": "v2ex-explore.addNode",
           "when": "view == v2ex-custom",
           "group": "navigation@0"
+        },
+        {
+          "command": "v2ex-custom.refreshAll",
+          "when": "view == v2ex-custom",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
         {
-          "command": "v2ex-explore.refreshNode",
-          "when": "view == v2ex-explore && viewItem == dir"
+          "command": "v2ex.copyLink",
+          "when": "viewItem == item"
+        },
+        {
+          "command": "v2ex.copyTitleLink",
+          "when": "viewItem == item"
+        },
+        {
+          "command": "v2ex.viewInBrowser",
+          "when": "viewItem == item"
         },
         {
           "command": "v2ex-explore.refreshNode",
@@ -112,16 +135,9 @@
           "group": "inline"
         },
         {
-          "command": "v2ex-explore.copyLink",
-          "when": "view == v2ex-explore && viewItem == item"
-        },
-        {
-          "command": "v2ex-explore.copyTitleLink",
-          "when": "view == v2ex-explore && viewItem == item"
-        },
-        {
-          "command": "v2ex-explore.viewInBrowser",
-          "when": "view == v2ex-explore && viewItem == item"
+          "command": "v2ex-custom.refreshNode",
+          "when": "view == v2ex-custom && viewItem == dir",
+          "group": "inline"
         },
         {
           "command": "v2ex-custom.removeNode",

@@ -57,6 +57,26 @@ export default class CustomProvider extends BaseProvider {
     }
   }
 
+  /**
+   * 刷新指定节点
+   */
+  async refreshRoot(root: TreeNode) {
+    delete root.children;
+    this._onDidChangeTreeData.fire(root);
+  }
+
+  /**
+   * 刷新全部数据
+   */
+  refreshAll() {
+    this.rootElements.forEach((root) => {
+      // 只刷新已经加载过的节点数据
+      if (root.children) {
+        this.refreshRoot(root);
+      }
+    });
+  }
+
   getTreeItem(element: TreeNode): TreeItem | Thenable<TreeItem> {
     return element;
   }
