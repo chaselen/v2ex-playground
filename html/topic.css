@@ -63,6 +63,7 @@ hr {
 }
 .topic-content {
   line-height: 1.5;
+  word-break: break-all;
 }
 .topic-content p {
   margin: 10px 0;
