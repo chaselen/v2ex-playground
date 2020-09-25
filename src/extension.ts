@@ -9,9 +9,13 @@ import CustomProvider from './providers/CustomProvider';
 import addNode from './commands/addNode';
 import removeNode from './commands/removeNode';
 import CollectionProvider from './providers/CollectionProvider';
+import { V2ex } from './v2ex';
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context;
+
+  // 插件激活后直接获取节点信息缓存下来
+  V2ex.getAllNodes();
 
   // 列表数据
   const exploreProvider = new ExploreProvider();
