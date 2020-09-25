@@ -9,7 +9,7 @@ import CustomProvider from './providers/CustomProvider';
 import addNode from './commands/addNode';
 import removeNode from './commands/removeNode';
 import CollectionProvider from './providers/CollectionProvider';
-import { V2ex } from './v2ex';
+import { V2ex, DailyRes } from './v2ex';
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context;
@@ -22,6 +22,9 @@ export function activate(context: vscode.ExtensionContext) {
     if (isLoginValid) {
       V2ex.daily().then((res) => {
         console.log(`每日签到结果：${res}`);
+        if (res === DailyRes.success) {
+          vscode.window.showInformationMessage('签到成功');
+        } 
       });
     }
   });
