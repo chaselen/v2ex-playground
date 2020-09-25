@@ -2,6 +2,7 @@ import axios from 'axios';
 import g from './global';
 
 const http = axios.create({
+  baseURL: 'https://www.v2ex.com',
   headers: {
     // 需要用一个合法的UA，否则访问某些页面会出错
     // eslint-disable-next-line @typescript-eslint/naming-convention

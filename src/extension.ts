@@ -16,6 +16,15 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 插件激活后直接获取节点信息缓存下来
   V2ex.getAllNodes();
+  // 检查登录是否有效
+  V2ex.checkCookie(G.getCookie()!).then((isLoginValid) => {
+    console.log(`登录是否有效：${isLoginValid}`);
+    if (isLoginValid) {
+      V2ex.daily().then((res) => {
+        console.log(`每日签到结果：${res}`);
+      });
+    }
+  });
 
   // 列表数据
   const exploreProvider = new ExploreProvider();

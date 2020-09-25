@@ -1,4 +1,4 @@
-import { V2ex } from './../v2ex';
+import { DailyRes, V2ex } from './../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
 
@@ -37,6 +37,14 @@ export default async function login(): Promise<LoginResult> {
       if (isCookieValid) {
         await G.setCookie(cookie!);
         vscode.window.showInformationMessage('登录成功');
+
+        // 登录后签到
+        V2ex.daily().then((res) => {
+          console.log(`每日签到结果：${res}`);
+          if (res === DailyRes.success) {
+            vscode.window.showInformationMessage('签到成功');
+          }
+        });
       } else {
         vscode.window.showErrorMessage('登录失败，Cookie无效');
       }

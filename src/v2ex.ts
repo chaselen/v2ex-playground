@@ -172,6 +172,9 @@ export class V2ex {
    * @param cookie 检查的cookie
    */
   static async checkCookie(cookie: string): Promise<boolean> {
+    if (!cookie) {
+      return false;
+    }
     // 前往一个需要登录的页面检测，如果被重定向，说明cookie无效
     const res = await http.get('https://www.v2ex.com/t', {
       headers: {
@@ -225,6 +228,33 @@ export class V2ex {
       });
     });
     return nodes;
+  }
+
+  /**
+   * 每日签到
+   *
+   * @returns {Promise<DailyRes>} 返回签到结果
+   */
+  static async daily(): Promise<DailyRes> {
+    const { data: html } = await http.get<string>('/mission/daily');
+    const $ = cheerio.load(html);
+    // 已领取过时会提示：每日登录奖励已领取
+    if ($('.fa-ok-sign').length) {
+      return DailyRes.repetitive;
+    }
+    // 未领取时有一个领取按钮，onclick内容是location.href = '/mission/daily/redeem?once=1111'
+    const btn = $('input.super.normal.button');
+    if (btn.length) {
+      const once = btn.attr('onclick')?.split('?once=')[1] || '';
+      if (once) {
+        const { data: html2 } = await http.get<string>(`/mission/daily/redeem?once=${once}`);
+        const $2 = cheerio.load(html2);
+        if ($2('.fa-ok-sign').length) {
+          return DailyRes.success;
+        }
+      }
+    }
+    return DailyRes.failed;
   }
 
   /**
@@ -327,4 +357,16 @@ export class Node {
   public name: string = '';
   // 节点标题（显示的名称）
   public title: string = '';
+}
+
+/**
+ * 签到结果
+ */
+export enum DailyRes {
+  /**签到成功 */
+  success = '签到成功',
+  /**重复签到 */
+  repetitive = '重复签到',
+  /**签到失败 */
+  failed = '签到失败'
 }
