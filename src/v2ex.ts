@@ -245,8 +245,8 @@ export class V2ex {
     // 未领取时有一个领取按钮，onclick内容是location.href = '/mission/daily/redeem?once=1111'
     const btn = $('input.super.normal.button');
     if (btn.length) {
-      const once = btn.attr('onclick')?.split('?once=')[1] || '';
-      if (once) {
+      if (/once=(\d+)/.test(btn.attr('onclick') || '')) {
+        const once = RegExp.$1;
         const { data: html2 } = await http.get<string>(`/mission/daily/redeem?once=${once}`);
         const $2 = cheerio.load(html2);
         if ($2('.fa-ok-sign').length) {
