@@ -302,10 +302,9 @@ export class V2ex {
    */
   static async thankTopic(topicId: number, once: string): Promise<boolean> {
     // POST /thank/topic/714502?once=30681
-    const { data: json } = await http.post<string>(`/thank/topic/${topicId}?once=${once}`);
-    const res = JSON.parse(json);
-    const isSuccess = !!res.success;
-    return isSuccess;
+    // 返回结果：{success: true, once: 30681}
+    const { data: res } = await http.post(`/thank/topic/${topicId}?once=${once}`);
+    return !!res.success;
   }
 
   /**
