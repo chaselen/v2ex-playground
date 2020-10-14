@@ -22,6 +22,8 @@
 - [x] 话题回复
 - [x] 复制话题标题、链接、使用浏览器打开
 - [x] 自动签到领取奖励
+- [x] 话题收藏、话题感谢
+- [ ] 感谢回复者
 
 ---
 
@@ -31,4 +33,4 @@
 
 ## 预览
 
-![预览1.jpg](https://tva1.sinaimg.cn/large/007S8ZIlly1gitgagertij31hc0qqn46.jpg)
+![预览1.jpg](https://tva1.sinaimg.cn/large/007S8ZIlgy1gjoz8xtsgdj31hv0u07hp.jpg)
