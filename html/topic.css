@@ -87,6 +87,23 @@ hr {
 .topic-content.append h2 {
   padding-bottom: 10px;
 }
+.topic-toolbar {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: row;
+}
+.topic-toolbar .op {
+  margin-right: 10px;
+}
+.topic-toolbar .text {
+  opacity: 0.5;
+}
+.topic-toolbar .text + .text {
+  padding-left: 10px;
+}
+.topic-toolbar .count {
+  margin-left: auto;
+}
 .reply h2 {
   padding-bottom: 10px;
 }
@@ -131,6 +148,7 @@ hr {
   opacity: 0.5;
 }
 .reply-item-wrap .meta .floor {
+  margin-left: auto;
   font-size: 10px;
   min-width: 20px;
   height: 20px;

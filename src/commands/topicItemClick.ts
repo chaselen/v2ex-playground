@@ -1,9 +1,11 @@
+import { TopicDetail } from './../v2ex';
 import { TreeNode } from '../providers/BaseProvider';
 import { LoginRequiredError } from './../error';
 import { V2ex } from '../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
 import * as path from 'path';
+const yaml = require('js-yaml');
 
 /**
  * 存放话题页面的panels
@@ -54,6 +56,7 @@ export default function topicItemClick(item: TreeNode) {
 
   panel = _createPanel(item.link, item.label!);
   panel.webview.onDidReceiveMessage((message) => {
+    const topic: TopicDetail = message.__topic;
     switch (message.command) {
       case 'setTitle':
         panel.title = _getTitle(message.title);
@@ -75,16 +78,58 @@ export default function topicItemClick(item: TreeNode) {
       case 'refresh':
         loadTopicInPanel(panel, item.link);
         break;
+      case 'collect': // 收藏
+        {
+          vscode.window.withProgress(
+            {
+              title: '正在收藏',
+              location: vscode.ProgressLocation.Notification
+            },
+            async () => {
+              await V2ex.collectTopic(topic.id, topic.collectParamT || '');
+              loadTopicInPanel(panel, item.link);
+            }
+          );
+        }
+        break;
+      case 'cancelCollect': // 取消收藏
+        {
+          vscode.window.withProgress(
+            {
+              title: '正在取消收藏',
+              location: vscode.ProgressLocation.Notification
+            },
+            async () => {
+              await V2ex.cancelCollectTopic(topic.id, topic.collectParamT || '');
+              loadTopicInPanel(panel, item.link);
+            }
+          );
+        }
+        break;
+      case 'thank':
+        {
+          vscode.window.withProgress(
+            {
+              title: '发送感谢',
+              location: vscode.ProgressLocation.Notification
+            },
+            async () => {
+              await V2ex.thankTopic(topic.id, topic.once);
+              loadTopicInPanel(panel, item.link);
+            }
+          );
+        }
+        break;
       case 'postReply':
         {
-          const { topicLink, content, once } = message;
+          const { content } = message;
           vscode.window.withProgress(
             {
               title: '正在提交回复',
               location: vscode.ProgressLocation.Notification
             },
             async () => {
-              await V2ex.postReply(topicLink, content, once);
+              await V2ex.postReply(topic.link, content, topic.once);
               loadTopicInPanel(panel, item.link);
             }
           );
@@ -115,9 +160,12 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
         // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
         panel.webview.html = V2ex.renderPage('topic.html', {
           topic: detail,
+          topicYml: yaml.safeDump(detail),
           contextPath: G.getWebViewContextPath(panel.webview)
         });
-      } catch (ignored) {}
+      } catch (err) {
+        console.log(err);
+      }
     })
     .catch((err: Error) => {
       console.error(err);

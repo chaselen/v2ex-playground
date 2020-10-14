@@ -79,6 +79,7 @@ export class V2ex {
     }
 
     const topic = new TopicDetail();
+    topic.id = parseInt(topicLink.split('/t/')[1] || '0');
     topic.link = topicLink;
     topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || '';
     topic.title = $('.header > h1').text();
@@ -91,7 +92,7 @@ export class V2ex {
     const meta = $('.header > .gray').text().split('·');
     topic.authorName = meta[0].trim();
     topic.displayTime = meta[1].trim();
-    topic.visitCount = meta[2].trim();
+    topic.visitCount = parseInt(meta[2].trim());
     topic.content = $('.topic_content').html() || '';
     $('.subtle').each((_, element) => {
       topic.appends.push({
@@ -99,6 +100,23 @@ export class V2ex {
         content: $(element).children('.topic_content').html() || ''
       });
     });
+
+    const topicButtons = $('.topic_buttons');
+    if (topicButtons.length) {
+      const countStr = topicButtons.children('.topic_stats').text();
+      if (/(\d+)\s*人收藏/.test(countStr)) {
+        topic.collectCount = parseInt(RegExp.$1);
+      }
+      if (/(\d+)\s*人感谢/.test(countStr)) {
+        topic.thankCount = parseInt(RegExp.$1);
+      }
+      const collectButton = topicButtons.children('a.tb').eq(0);
+      topic.isCollected = collectButton.text().indexOf('取消收藏') >= 0;
+      topic.collectParamT = collectButton.attr('href')?.split('?t=')[1] || null;
+      topic.canThank = topicButtons.children('#topic_thank').length > 0;
+      topic.isThanked = topicButtons.find('.topic_thanked').length > 0;
+    }
+
     topic.replyCount = parseInt($('#Main > .box').eq(1).children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0;
 
     /**
@@ -258,6 +276,39 @@ export class V2ex {
   }
 
   /**
+   * 收藏帖子
+   * @param topicId 帖子id
+   * @param t 收藏参数t
+   */
+  static async collectTopic(topicId: number, t: string) {
+    // /favorite/topic/714346?t=uecaqsvpeyreyhsyohnaxgpnjsfpufte
+    await http.get<string>(`/favorite/topic/${topicId}?t=${t}`);
+  }
+
+  /**
+   * 取消收藏帖子
+   * @param topicId 帖子id
+   * @param t 收藏参数t
+   */
+  static async cancelCollectTopic(topicId: number, t: string) {
+    // /unfavorite/topic/714346?t=uecaqsvpeyreyhsyohnaxgpnjsfpufte
+    await http.get<string>(`/unfavorite/topic/${topicId}?t=${t}`);
+  }
+
+  /**
+   * 向帖子发送感谢
+   * @param topicId 帖子id
+   * @param once once参数
+   */
+  static async thankTopic(topicId: number, once: string): Promise<boolean> {
+    // POST /thank/topic/714502?once=30681
+    const { data: json } = await http.post<string>(`/thank/topic/${topicId}?once=${once}`);
+    const res = JSON.parse(json);
+    const isSuccess = !!res.success;
+    return isSuccess;
+  }
+
+  /**
    * 渲染一个页面，返回渲染后的html
    * @param page 要渲染的html页面
    * @param data 传入的数据
@@ -295,6 +346,8 @@ export class Topic {
  * 话题详情
  */
 export class TopicDetail {
+  // id
+  public id: number = 0;
   // 链接
   public link: string = '';
   // 校验参数，可用来判断是否登录或登录是否有效
@@ -310,11 +363,23 @@ export class TopicDetail {
   // 时间
   public displayTime: string = '';
   // 点击次数
-  public visitCount: string = '';
+  public visitCount: number = 0;
   // 内容
   public content: string = '';
   // 追加内容
   public appends: TopicAppend[] = [];
+  // 收藏人数
+  public collectCount: number = 0;
+  // 感谢人数
+  public thankCount: number = 0;
+  // 是否已收藏
+  public isCollected: boolean = false;
+  // 是否已感谢
+  public isThanked: boolean = false;
+  // 是否能发送感谢（自己的帖子不能发送感谢）
+  public canThank: boolean = true;
+  // 收藏/取消收藏参数t
+  public collectParamT: string | null = null;
   // 回复总条数
   public replyCount: number = 0;
   // 回复

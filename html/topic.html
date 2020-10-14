@@ -20,15 +20,42 @@
       <div class="topic-meta">
         <a class="node" href="/go/{{ topic.node.name }}">{{ topic.node.title }}</a>
         <a class="user text-bold" href="/member/{{ topic.authorName }}">{{ topic.authorName }}</a>
-        <span class="time"> · {{ topic.displayTime }} · {{ topic.visitCount }}</span>
+        <span class="time"> · {{ topic.displayTime }} · {{ topic.visitCount }} 次点击</span>
       </div>
       <hr />
 
       <!-- 正文 -->
       {{if topic.content}}
       <div class="topic-content">{{@ topic.content}}</div>
-      <hr />
+      {{else}}
+      <div class="topic-content">正文无内容</div>
       {{/if}}
+
+      <!-- 工具条 -->
+      {{if topic.once}}
+      <div class="topic-toolbar">
+        <!-- 收藏 -->
+        {{if !topic.isCollected}}
+        <a class="op collect" href="javascript:;" onclick="vsPostMessage('collect');" title="加入收藏">加入收藏</a>
+        {{else}}
+        <a class="op collect" href="javascript:;" onclick="vsPostMessage('cancelCollect');" title="取消收藏">取消收藏</a>
+        {{/if}}
+        <!-- 感谢 -->
+        {{if topic.canThank && !topic.isThanked}}
+        <a class="op thanks" href="javascript:;" onclick="vsPostMessage('thank');" title="感谢">感谢</a>
+        {{/if}}
+        <!-- 感谢-已发送 -->
+        {{if topic.canThank && topic.isThanked}}
+        <span class="text">感谢已发送</span>
+        {{/if}}
+        <span class="text count"
+          >{{topic.visitCount}} 次点击 {{if topic.collectCount}} ∙ {{topic.collectCount}} 人收藏 {{/if}} {{if topic.thankCount}} ∙
+          {{topic.thankCount}} 人感谢 {{/if}}
+        </span>
+      </div>
+      {{/if}}
+
+      <hr />
 
       <!-- 附言 -->
       {{each topic.appends}}
@@ -45,7 +72,10 @@
         <h2>共 {{ topic.replyCount }} 条回复</h2>
         {{else}}
         <h2>暂无回复</h2>
-        {{/if}} {{each topic.replies}}
+        {{/if}}
+
+        <!-- 列表 -->
+        {{each topic.replies}}
         <div class="reply-item">
           <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
@@ -57,7 +87,6 @@
               {{if $value.thanks > 0}}
               <span class="thanks">♥ {{ $value.thanks }}</span>
               {{/if}}
-              <span style="flex: 1"></span>
               <span class="floor">{{ $value.floor }}</span>
             </div>
             <div class="topic-content">{{@ $value.content}}</div>
@@ -70,16 +99,18 @@
       <!-- 提交回复 -->
       {{if topic.once}}
       <form action="#" class="post-reply" onsubmit="onSubmit();return false;">
-        <input id="topicLink" type="hidden" value="{{topic.link}}" />
-        <input id="once" type="hidden" value="{{topic.once}}" />
         <textarea id="replyBox" maxlength="10000" placeholder="请尽量让自己的回复能够对别人有帮助"></textarea>
         <button type="submit" class="submit">回复</button>
       </form>
       {{else}}
-      <p style="opacity: 0.5;">您目前还不能回复，请先登录</p>
+      <p style="opacity: 0.5">您目前还不能回复，请先登录</p>
       {{/if}}
     </div>
 
+    <script src="{{ contextPath }}/html/lib/js-yaml.min.js"></script>
+    <script>
+      var __topic = jsyaml.load(`{{@ topicYml}}`);
+    </script>
     <script src="{{ contextPath }}/html/topic.js"></script>
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
   </body>

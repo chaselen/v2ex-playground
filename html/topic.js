@@ -1,8 +1,15 @@
 const vscode = acquireVsCodeApi();
 
+const vsPostMessage = (command, messages) => {
+  vscode.postMessage({
+    command: command,
+    __topic: __topic,
+    ...(messages || {})
+  });
+};
+
 // 设置标题
-vscode.postMessage({
-  command: 'setTitle',
+vsPostMessage('setTitle', {
   title: document.title
 });
 
@@ -15,8 +22,7 @@ document.querySelectorAll('.topic-content img').forEach((img) => {
     img.style.cursor = 'zoom-in';
     img.onclick = () => {
       console.log(img.src);
-      vscode.postMessage({
-        command: 'browseImage',
+      vsPostMessage('browseImage', {
         src: img.src
       });
     };
@@ -32,8 +38,7 @@ supportImageTypes.forEach((type) => {
     a.href = 'javascript:;';
     a.onclick = () => {
       console.log(a.dataset['imageSrc']);
-      vscode.postMessage({
-        command: 'browseImage',
+      vsPostMessage('browseImage', {
         src: a.dataset['imageSrc']
       });
       return false;
@@ -60,8 +65,7 @@ document.querySelectorAll('.topic-content a[href*="/t/"]').forEach((a) => {
   a.href = 'javascript:;';
   a.onclick = () => {
     console.log(a.dataset['href']);
-    vscode.postMessage({
-      command: 'openTopic',
+    vsPostMessage('openTopic', {
       link: a.dataset['href']
     });
     return false;
@@ -75,10 +79,7 @@ function onSubmit() {
     return;
   }
 
-  vscode.postMessage({
-    command: 'postReply',
-    topicLink: document.querySelector('#topicLink').value,
-    content: content,
-    once: document.querySelector('#once').value
+  vsPostMessage('postReply', {
+    content: content
   });
 }

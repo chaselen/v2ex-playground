@@ -78,7 +78,7 @@ hr {
 .topic-content {
   line-height: 1.5;
   word-break: break-all;
-  
+
   p {
     margin: 10px 0;
   }
@@ -103,6 +103,27 @@ hr {
     h2 {
       padding-bottom: 10px;
     }
+  }
+}
+
+.topic-toolbar {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: row;
+
+  .op {
+    margin-right: 10px;
+  }
+
+  .text {
+    opacity: 0.5;
+    & + .text {
+      padding-left: 10px;
+    }
+  }
+
+  .count {
+    margin-left: auto;
   }
 }
 
@@ -160,6 +181,7 @@ hr {
     }
 
     .floor {
+      margin-left: auto;
       font-size: 10px;
       min-width: 20px;
       height: 20px;
