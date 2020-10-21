@@ -1,6 +1,6 @@
 import { TopicDetail } from './../v2ex';
 import { TreeNode } from '../providers/BaseProvider';
-import { LoginRequiredError } from './../error';
+import { LoginRequiredError, AccountRestrictedError } from './../error';
 import { V2ex } from '../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
@@ -172,13 +172,21 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
       if (err instanceof LoginRequiredError) {
         panel.webview.html = V2ex.renderPage('error.html', {
           contextPath: G.getWebViewContextPath(panel.webview),
-          message: '你要查看的页面需要先登录',
-          showLogin: true
+          message: err.message,
+          showLogin: true,
+          showRefresh: true
+        });
+      } else if (err instanceof AccountRestrictedError) {
+        panel.webview.html = V2ex.renderPage('error.html', {
+          contextPath: G.getWebViewContextPath(panel.webview),
+          message: err.message,
+          showRefresh: false
         });
       } else {
         panel.webview.html = V2ex.renderPage('error.html', {
           contextPath: G.getWebViewContextPath(panel.webview),
-          message: err.message
+          message: err.message,
+          showRefresh: true
         });
       }
     });

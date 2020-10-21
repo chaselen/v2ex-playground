@@ -1,5 +1,5 @@
 import { TreeNode } from './providers/BaseProvider';
-import { LoginRequiredError } from './error';
+import { AccountRestrictedError, LoginRequiredError } from './error';
 import * as cheerio from 'cheerio';
 import * as template from 'art-template';
 import http from './http';
@@ -64,6 +64,7 @@ export class V2ex {
    */
   static async getTopicDetail(topicLink: string): Promise<TopicDetail> {
     // topicLink = 'https://www.v2ex.com/t/703733';
+    // topicLink = 'https://www.v2ex.com/t/704716';
     const res = await http.get<string>(topicLink + '?p=1');
     const $ = cheerio.load(res.data);
 
@@ -71,11 +72,25 @@ export class V2ex {
      * 部分帖子需要登录查看
      * 第1种：会重定向到登录页（https://www.v2ex.com/signin?next=/t/xxxxxx），并提示：你要查看的页面需要先登录。如交易区：https://www.v2ex.com/t/704753
      * 第2种：会重定向到首页，无提示。如：https://www.v2ex.com/t/704716
+     * 第3种：账号访问受限（如新用户），会重定向到 https://www.v2ex.com/restricted
      */
     if (res.request._redirectable._redirectCount > 0) {
-      // 登录失效，删除cookie
-      G.setCookie('');
-      throw new LoginRequiredError('你要查看的页面需要先登录');
+      if (res.request.path.indexOf('/signin') >= 0) {
+        // 登录失效，删除cookie
+        G.setCookie('');
+        throw new LoginRequiredError('你要查看的页面需要先登录');
+      }
+      if (res.request.path === '/') {
+        if (G.getCookie()) {
+          throw new Error('您无权访问此页面');
+        } else {
+          throw new LoginRequiredError('你要查看的页面需要先登录');
+        }
+      }
+      if (res.request.path.indexOf('/restricted') === 0) {
+        throw new AccountRestrictedError('访问受限，详情请查看 <a href="https://www.v2ex.com/restricted">https://www.v2ex.com/restricted</a>');
+      }
+      throw new Error('未知错误');
     }
 
     const topic = new TopicDetail();

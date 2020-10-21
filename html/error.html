@@ -23,12 +23,14 @@
   <body>
     <div class="container">
       <h1>提示</h1>
-      <h3>{{ message }}</h3>
+      <h3>{{@ message }}</h3>
       <div class="btn-wrap">
         {{if showLogin}}
         <a href="javascript:;" onclick="login()">去登录</a>
         {{/if}}
+        {{if showRefresh}}
         <a href="javascript:;" onclick="refresh()">刷新页面</a>
+        {{/if}}
       </div>
     </div>
     <script>
