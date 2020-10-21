@@ -308,6 +308,24 @@ export class V2ex {
   }
 
   /**
+   *
+   * @param q 查询关键词
+   * @param from 与第一个结果的偏移量（默认 0），比如 0, 10, 20
+   * @param size 结果数量（默认 10）
+   */
+  static async search(q: string, from = 0, size = 10): Promise<SoV2exSource[]> {
+    const { data: res } = await http.get('https://www.sov2ex.com/api/search', {
+      params: {
+        q,
+        from,
+        size
+      }
+    });
+    const hits: any[] = res.hits || [];
+    return hits.map((h) => h._source);
+  }
+
+  /**
    * 渲染一个页面，返回渲染后的html
    * @param page 要渲染的html页面
    * @param data 传入的数据
@@ -433,4 +451,22 @@ export enum DailyRes {
   repetitive = '重复签到',
   /**签到失败 */
   failed = '签到失败'
+}
+
+/**
+ * sov2ex搜索结果的source字段
+ */
+export class SoV2exSource {
+  /**帖子id */
+  public id: number = 0;
+  /**发帖人 */
+  public member: string = '';
+  /**帖子标题 */
+  public title: string = '';
+  /**帖子内容 */
+  public content: string = '';
+  /**回复数量 */
+  public replies: number = 0;
+  /**发帖时间 */
+  public created: string = '';
 }

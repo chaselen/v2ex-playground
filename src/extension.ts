@@ -10,6 +10,7 @@ import addNode from './commands/addNode';
 import removeNode from './commands/removeNode';
 import CollectionProvider from './providers/CollectionProvider';
 import { V2ex, DailyRes } from './v2ex';
+import search from './commands/search';
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context;
@@ -24,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
         console.log(`每日签到结果：${res}`);
         if (res === DailyRes.success) {
           vscode.window.showInformationMessage('签到成功');
-        } 
+        }
       });
     }
   });
@@ -70,11 +71,14 @@ export function activate(context: vscode.ExtensionContext) {
   // 公共事件：点击浏览帖子
   let cDisposable5 = vscode.commands.registerCommand('v2ex.topicItemClick', (item: TreeNode) => topicItemClick(item));
 
+  // 首页视图事件：搜索
+  let homeDisposable1 = vscode.commands.registerCommand('v2ex-explore.search', () => search());
+
   // 首页视图事件：刷新全部
-  let homeDisposable1 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => exploreProvider.refreshAll());
+  let homeDisposable2 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () => exploreProvider.refreshAll());
 
   // 首页视图事件：刷新当前节点
-  let homeDisposable2 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: TreeNode) => exploreProvider.refreshRoot(root));
+  let homeDisposable3 = vscode.commands.registerCommand('v2ex-explore.refreshNode', (root: TreeNode) => exploreProvider.refreshRoot(root));
 
   // 自定义视图事件：添加自定义节点
   let cusDisposable1 = vscode.commands.registerCommand('v2ex-explore.addNode', async () => {
@@ -111,6 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
     cDisposable5,
     homeDisposable1,
     homeDisposable2,
+    homeDisposable3,
     cusDisposable1,
     cusDisposable2,
     cusDisposable3,
