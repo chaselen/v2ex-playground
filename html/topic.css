@@ -64,6 +64,7 @@ hr {
 .topic-content {
   line-height: 1.5;
   word-break: break-all;
+  overflow-wrap: break-word;
 }
 .topic-content p {
   margin: 10px 0;
@@ -119,6 +120,7 @@ hr {
 }
 .reply-item-wrap {
   flex: 1;
+  overflow: hidden;
 }
 .reply-item-wrap .meta {
   display: flex;
