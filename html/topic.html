@@ -34,6 +34,8 @@
       <!-- 工具条 -->
       {{if topic.once}}
       <div class="topic-toolbar">
+        <!-- 刷新 -->
+        <a class="op refresh" href="javascript:;" onclick="vsPostMessage('refresh');" title="刷新页面">刷新页面</a>
         <!-- 收藏 -->
         {{if !topic.isCollected}}
         <a class="op collect" href="javascript:;" onclick="vsPostMessage('collect');" title="加入收藏">加入收藏</a>
@@ -80,7 +82,7 @@
           <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
           <div class="reply-item-wrap">
             <div class="meta">
-              <a class="user text-bold {{ topic.authorName === $value.userName ? 'user--author' : '' }}" href="/member/{{ $value.userName }}"
+              <a class="user {{ topic.authorName === $value.userName ? 'user--author' : '' }}" href="/member/{{ $value.userName }}"
                 >{{ $value.userName }}</a
               >
               <span class="time">{{ $value.time }}</span>
