@@ -18,10 +18,10 @@ export default async function search() {
     return;
   }
 
-  showInoutBox();
+  showInputBox();
 }
 
-async function showInoutBox() {
+async function showInputBox() {
   // 输入搜索关键词
   let q = await vscode.window.showInputBox({
     placeHolder: '搜索帖子',
