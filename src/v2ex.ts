@@ -26,10 +26,11 @@ export class V2ex {
 
       const topic = new Topic();
       topic.title = topicElement.text().trim();
-      topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
+      topic.link =
+        'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
       topic.node = {
         name: nodeElement.attr('href')?.split('go/')[1] || '',
-        title: nodeElement.text().trim()
+        title: nodeElement.text().trim(),
       };
       list.push(topic);
     });
@@ -41,7 +42,9 @@ export class V2ex {
    * @param node 节点
    */
   static async getTopicListByNode(node: Node): Promise<Topic[]> {
-    const { data: html } = await http.get(`https://www.v2ex.com/go/${node.name}`);
+    const { data: html } = await http.get(
+      `https://www.v2ex.com/go/${node.name}`
+    );
     const $ = cheerio.load(html);
     const cells = $('#TopicsNode .cell[class*="t_"]');
 
@@ -51,7 +54,8 @@ export class V2ex {
 
       const topic = new Topic();
       topic.title = topicElement.text().trim();
-      topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
+      topic.link =
+        'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
       topic.node = node;
       list.push(topic);
     });
@@ -88,7 +92,9 @@ export class V2ex {
         }
       }
       if (res.request.path.indexOf('/restricted') === 0) {
-        throw new AccountRestrictedError('访问受限，详情请查看 <a href="https://www.v2ex.com/restricted">https://www.v2ex.com/restricted</a>');
+        throw new AccountRestrictedError(
+          '访问受限，详情请查看 <a href="https://www.v2ex.com/restricted">https://www.v2ex.com/restricted</a>'
+        );
       }
       throw new Error('未知错误');
     }
@@ -101,7 +107,7 @@ export class V2ex {
     const node = $('.header > a').eq(1);
     topic.node = {
       name: node.attr('href')?.split('go/')[1] || '',
-      title: node.text().trim()
+      title: node.text().trim(),
     };
     topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || '';
     const meta = $('.header > .gray').text().split('·');
@@ -112,7 +118,7 @@ export class V2ex {
     $('.subtle').each((_, element) => {
       topic.appends.push({
         time: $(element).children('.fade').text().split('·')[1].trim(),
-        content: $(element).children('.topic_content').html() || ''
+        content: $(element).children('.topic_content').html() || '',
       });
     });
 
@@ -132,7 +138,16 @@ export class V2ex {
       topic.isThanked = topicButtons.find('.topic_thanked').length > 0;
     }
 
-    topic.replyCount = parseInt($('#Main > .box').eq(1).children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0;
+    topic.replyCount =
+      parseInt(
+        $('#Main > .box')
+          .eq(1)
+          .children('div.cell')
+          .eq(0)
+          .find('span.gray')
+          .text()
+          .split('•')[0]
+      ) || 0;
 
     /**
      * 获取回复
@@ -150,7 +165,9 @@ export class V2ex {
             time: $(element).find('span.ago').text(),
             floor: $(element).find('span.no').text(),
             content: $(element).find('.reply_content').html() || '',
-            thanks: parseInt($(element).find('span.small.fade').text().trim() || '0')
+            thanks: parseInt(
+              $(element).find('span.small.fade').text().trim() || '0'
+            ),
           });
         });
       return replies;
@@ -161,7 +178,9 @@ export class V2ex {
     const pager = $('#Main > .box').eq(1).find('.cell:not([id]) table');
     if (pager.length) {
       // 如果获取分页组件，表示有多页评论
-      const totalPage = parseInt(pager.find('td').eq(0).children('a').last().text());
+      const totalPage = parseInt(
+        pager.find('td').eq(0).children('a').last().text()
+      );
       console.log(`${topicLink}：一共${totalPage}页回复`);
 
       const promises: Promise<AxiosResponse<string>>[] = [];
@@ -196,7 +215,7 @@ export class V2ex {
     form.append('content', content);
     form.append('once', once);
     await http.post(topicLink, form, {
-      headers: form.getHeaders()
+      headers: form.getHeaders(),
     });
   }
 
@@ -212,8 +231,8 @@ export class V2ex {
     const res = await http.get('https://www.v2ex.com/t', {
       headers: {
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        Cookie: cookie
-      }
+        Cookie: cookie,
+      },
     });
     return res.request._redirectable._redirectCount <= 0;
   }
@@ -227,13 +246,15 @@ export class V2ex {
     if (this._cachedNodes.length) {
       return this._cachedNodes;
     }
-    const { data: html } = await http.get<string>('https://www.v2ex.com/planes');
+    const { data: html } = await http.get<string>(
+      'https://www.v2ex.com/planes'
+    );
     const $ = cheerio.load(html);
     const nodes: Node[] = [];
     $('a.item_node').each((_, element) => {
       nodes.push({
         name: $(element).attr('href')?.split('go/')[1] || '',
-        title: $(element).text().trim()
+        title: $(element).text().trim(),
       });
     });
     console.log(`获取到${nodes.length}个节点`);
@@ -254,10 +275,14 @@ export class V2ex {
 
     const $ = cheerio.load(res.data);
     const nodes: Node[] = [];
-    $('#my-nodes > a.grid_item').each((_, element) => {
+    $('#my-nodes > a.fav-node').each((_, element) => {
       nodes.push({
         name: $(element).attr('href')?.split('go/')[1] || '',
-        title: $(element).children('div').text().trim().split(' ')[0]
+        title: $(element)
+          .children('.fav-node-name')
+          .text()
+          .trim()
+          .split(' ')[0],
       });
     });
     return nodes;
@@ -280,7 +305,9 @@ export class V2ex {
     if (btn.length) {
       if (/once=(\d+)/.test(btn.attr('onclick') || '')) {
         const once = RegExp.$1;
-        const { data: html2 } = await http.get<string>(`/mission/daily/redeem?once=${once}`);
+        const { data: html2 } = await http.get<string>(
+          `/mission/daily/redeem?once=${once}`
+        );
         const $2 = cheerio.load(html2);
         if ($2('.fa-ok-sign').length) {
           return DailyRes.success;
@@ -318,7 +345,9 @@ export class V2ex {
   static async thankTopic(topicId: number, once: string): Promise<boolean> {
     // POST /thank/topic/714502?once=30681
     // 返回结果：{success: true, once: 30681}
-    const { data: res } = await http.post(`/thank/topic/${topicId}?once=${once}`);
+    const { data: res } = await http.post(
+      `/thank/topic/${topicId}?once=${once}`
+    );
     return !!res.success;
   }
 
@@ -333,8 +362,8 @@ export class V2ex {
       params: {
         q,
         from,
-        size
-      }
+        size,
+      },
     });
     const hits: any[] = res.hits || [];
     return hits.map((h) => h._source);
@@ -366,11 +395,11 @@ export class V2ex {
  * 话题
  */
 export class Topic {
-  // 标题
+  /** 标题 */
   public title: string = '';
-  // 链接
+  /** 链接 */
   public link: string = '';
-  // 节点
+  /** 节点 */
   public node: Node = { title: '', name: '' };
 }
 
@@ -378,43 +407,43 @@ export class Topic {
  * 话题详情
  */
 export class TopicDetail {
-  // id
+  /** id */
   public id: number = 0;
-  // 链接
+  /** 链接 */
   public link: string = '';
-  // 校验参数，可用来判断是否登录或登录是否有效
+  /** 校验参数，可用来判断是否登录或登录是否有效 */
   public once: string = '';
-  // 标题
+  /** 标题 */
   public title: string = '';
-  // 节点
+  /** 节点 */
   public node: Node = { title: '', name: '' };
-  // 作者头像
+  /** 作者头像 */
   public authorAvatar: string = '';
-  // 作者名字
+  /** 作者名字 */
   public authorName: string = '';
-  // 时间
+  /** 时间 */
   public displayTime: string = '';
-  // 点击次数
+  /** 点击次数 */
   public visitCount: number = 0;
-  // 内容
+  /** 内容 */
   public content: string = '';
-  // 追加内容
+  /** 追加内容 */
   public appends: TopicAppend[] = [];
-  // 收藏人数
+  /** 收藏人数 */
   public collectCount: number = 0;
-  // 感谢人数
+  /** 感谢人数 */
   public thankCount: number = 0;
-  // 是否已收藏
+  /** 是否已收藏 */
   public isCollected: boolean = false;
-  // 是否已感谢
+  /** 是否已感谢 */
   public isThanked: boolean = false;
-  // 是否能发送感谢（自己的帖子不能发送感谢）
+  /** 是否能发送感谢（自己的帖子不能发送感谢） */
   public canThank: boolean = true;
-  // 收藏/取消收藏参数t
+  /** 收藏/取消收藏参数t */
   public collectParamT: string | null = null;
-  // 回复总条数
+  /** 回复总条数 */
   public replyCount: number = 0;
-  // 回复
+  /** 回复 */
   public replies: TopicReply[] = [];
 }
 
@@ -422,9 +451,9 @@ export class TopicDetail {
  * 话题追加内容
  */
 export class TopicAppend {
-  // 追加时间
+  /** 追加时间 */
   public time: String = '';
-  // 追加内容
+  /** 追加内容 */
   public content: string = '';
 }
 
@@ -432,17 +461,17 @@ export class TopicAppend {
  * 话题回复
  */
 export class TopicReply {
-  // 用户头像
+  /** 用户头像 */
   public userAvatar: string = '';
-  // 用户名
+  /** 用户名 */
   public userName: string = '';
-  // 回复时间
+  /** 回复时间 */
   public time: string = '';
-  // 楼层
+  /** 楼层 */
   public floor: string = '';
-  // 回复内容
+  /** 回复内容 */
   public content: string = '';
-  // 感谢数 ❤
+  /** 感谢数 ❤ */
   public thanks: number = 0;
 }
 
@@ -450,9 +479,9 @@ export class TopicReply {
  * 节点
  */
 export class Node {
-  // 节点名称
+  /** 节点名称 */
   public name: string = '';
-  // 节点标题（显示的名称）
+  /** 节点标题（显示的名称） */
   public title: string = '';
 }
 
@@ -465,7 +494,7 @@ export enum DailyRes {
   /**重复签到 */
   repetitive = '重复签到',
   /**签到失败 */
-  failed = '签到失败'
+  failed = '签到失败',
 }
 
 /**

@@ -5,6 +5,7 @@ import { V2ex } from '../v2ex';
 import * as vscode from 'vscode';
 import G from '../global';
 import * as path from 'path';
+import Config from '../config';
 const yaml = require('js-yaml');
 
 /**
@@ -28,12 +29,19 @@ function _getTitle(title: string) {
  * @param label 面板标题
  */
 function _createPanel(id: string, label: string): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(id, _getTitle(label), vscode.ViewColumn.One, {
-    enableScripts: true,
-    retainContextWhenHidden: true,
-    enableFindWidget: true
-  });
-  panel.iconPath = vscode.Uri.file(path.join(G.context!.extensionPath, 'resources/favicon.png'));
+  const panel = vscode.window.createWebviewPanel(
+    id,
+    _getTitle(label),
+    vscode.ViewColumn.One,
+    {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      enableFindWidget: true,
+    }
+  );
+  panel.iconPath = vscode.Uri.file(
+    path.join(G.context!.extensionPath, 'resources/favicon.png')
+  );
   panels[id] = panel;
 
   panel.onDidDispose(() => {
@@ -52,6 +60,13 @@ export default function topicItemClick(item: TreeNode) {
   if (panel) {
     panel.reveal();
     return;
+  }
+
+  // 不在新标签页打开，则关闭之前的标签页重新创建
+  if (!Config.openInNewTab()) {
+    Object.values(panels).forEach((p) => {
+      p.dispose();
+    });
   }
 
   panel = _createPanel(item.link, item.label!);
@@ -83,7 +98,7 @@ export default function topicItemClick(item: TreeNode) {
           vscode.window.withProgress(
             {
               title: '正在收藏',
-              location: vscode.ProgressLocation.Notification
+              location: vscode.ProgressLocation.Notification,
             },
             async () => {
               await V2ex.collectTopic(topic.id, topic.collectParamT || '');
@@ -97,10 +112,13 @@ export default function topicItemClick(item: TreeNode) {
           vscode.window.withProgress(
             {
               title: '正在取消收藏',
-              location: vscode.ProgressLocation.Notification
+              location: vscode.ProgressLocation.Notification,
             },
             async () => {
-              await V2ex.cancelCollectTopic(topic.id, topic.collectParamT || '');
+              await V2ex.cancelCollectTopic(
+                topic.id,
+                topic.collectParamT || ''
+              );
               loadTopicInPanel(panel, item.link);
             }
           );
@@ -111,7 +129,7 @@ export default function topicItemClick(item: TreeNode) {
           vscode.window.withProgress(
             {
               title: '发送感谢',
-              location: vscode.ProgressLocation.Notification
+              location: vscode.ProgressLocation.Notification,
             },
             async () => {
               await V2ex.thankTopic(topic.id, topic.once);
@@ -126,7 +144,7 @@ export default function topicItemClick(item: TreeNode) {
           vscode.window.withProgress(
             {
               title: '正在提交回复',
-              location: vscode.ProgressLocation.Notification
+              location: vscode.ProgressLocation.Notification,
             },
             async () => {
               await V2ex.postReply(topic.link, content, topic.once);
@@ -150,7 +168,7 @@ export default function topicItemClick(item: TreeNode) {
  */
 function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
   panel.webview.html = V2ex.renderPage('loading.html', {
-    contextPath: G.getWebViewContextPath(panel.webview)
+    contextPath: G.getWebViewContextPath(panel.webview),
   });
 
   // 获取详情数据
@@ -161,7 +179,7 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
         panel.webview.html = V2ex.renderPage('topic.html', {
           topic: detail,
           topicYml: yaml.safeDump(detail),
-          contextPath: G.getWebViewContextPath(panel.webview)
+          contextPath: G.getWebViewContextPath(panel.webview),
         });
       } catch (err) {
         console.log(err);
@@ -174,19 +192,19 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
           contextPath: G.getWebViewContextPath(panel.webview),
           message: err.message,
           showLogin: true,
-          showRefresh: true
+          showRefresh: true,
         });
       } else if (err instanceof AccountRestrictedError) {
         panel.webview.html = V2ex.renderPage('error.html', {
           contextPath: G.getWebViewContextPath(panel.webview),
           message: err.message,
-          showRefresh: false
+          showRefresh: false,
         });
       } else {
         panel.webview.html = V2ex.renderPage('error.html', {
           contextPath: G.getWebViewContextPath(panel.webview),
           message: err.message,
-          showRefresh: true
+          showRefresh: true,
         });
       }
     });
@@ -207,6 +225,6 @@ function _openLargeImage(imageSrc: string) {
   console.log('打开大图：', imageSrc);
   panel = _createPanel(imageSrc, '查看图片');
   panel.webview.html = V2ex.renderPage('browseImage.html', {
-    imageSrc: imageSrc
+    imageSrc: imageSrc,
   });
 }

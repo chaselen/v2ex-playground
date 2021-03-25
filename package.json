@@ -3,7 +3,7 @@
   "icon": "resources/icon.png",
   "displayName": "V2EX Playground",
   "description": "V2EX 游乐场，上班时用来放（mō）松（yú）的插件",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "publisher": "chaselen",
   "repository": {
     "type": "git",
@@ -184,6 +184,17 @@
           "group": "inline"
         }
       ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "V2EX Playground",
+      "properties": {
+        "v2ex.browse.openInNewTab": {
+          "type": "boolean",
+          "default": true,
+          "description": "在新标签页中打开链接"
+        }
+      }
     }
   },
   "scripts": {
