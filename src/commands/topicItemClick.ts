@@ -32,7 +32,7 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
   const panel = vscode.window.createWebviewPanel(
     id,
     _getTitle(label),
-    vscode.ViewColumn.One,
+    vscode.ViewColumn.Active,
     {
       enableScripts: true,
       retainContextWhenHidden: true,
