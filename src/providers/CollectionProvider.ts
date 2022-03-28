@@ -45,6 +45,10 @@ export default class CollectionProvider extends BaseProvider {
           light: path.join(G.context!.extensionPath, 'resources/light/statusWarning.svg'),
           dark: path.join(G.context!.extensionPath, 'resources/dark/statusWarning.svg')
         };
+        n.command = {
+          title: '登录',
+          command: 'v2ex.login'
+        };
         this.rootElements = [n];
       }
     } finally {

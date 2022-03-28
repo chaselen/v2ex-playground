@@ -9,7 +9,7 @@ import G from '../global';
 export default async function login(): Promise<LoginResult> {
   let cookie = await vscode.window.showInputBox({
     placeHolder: 'V2EX Cookie',
-    prompt: '在此处粘贴从浏览器中复制的 Cookie（即请求头中的 Cookie 项）',
+    prompt: '在此处粘贴从浏览器中复制的 Cookie 以登录。（如要退出，请清空 Cookie 并回车确认）',
     value: G.getCookie()
   });
   // 如果用户撤销输入，如ESC，则为undefined
