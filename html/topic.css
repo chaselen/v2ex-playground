@@ -115,6 +115,9 @@ hr {
   border-radius: 4px;
   margin-right: 10px;
 }
+.reply-item:hover .thankReply {
+  visibility: visible !important;
+}
 .reply-item-wrap {
   flex: 1;
   overflow: hidden;
@@ -146,8 +149,17 @@ hr {
   flex: 1;
   opacity: 0.5;
 }
-.reply-item-wrap .meta .floor {
+.reply-item-wrap .meta .reply-right {
   margin-left: auto;
+}
+.reply-item-wrap .meta .reply-right .thankReply {
+  visibility: hidden;
+}
+.reply-item-wrap .meta .reply-right .thanked {
+  opacity: 0.5;
+}
+.reply-item-wrap .meta .reply-right .floor {
+  margin-left: 10px;
   font-size: 10px;
   min-width: 20px;
   height: 20px;

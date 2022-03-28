@@ -160,6 +160,7 @@ export class V2ex {
         .children('div[id].cell')
         .each((_, element) => {
           replies.push({
+            replyId: $(element).attr('id')?.split('r_')[1] || '0',
             userAvatar: $(element).find('img.avatar').attr('src') || '',
             userName: $(element).find('a.dark').html() || '',
             time: $(element).find('span.ago').text(),
@@ -168,6 +169,7 @@ export class V2ex {
             thanks: parseInt(
               $(element).find('span.small.fade').text().trim() || '0'
             ),
+            thanked: $(element).find('.thank_area.thanked').length > 0,
           });
         });
       return replies;
@@ -217,6 +219,22 @@ export class V2ex {
     await http.post(topicLink, form, {
       headers: form.getHeaders(),
     });
+  }
+
+  /**
+   * 感谢回复者
+   * @param replyId 回复id
+   * @param once 校验参数
+   */
+  static async thankReply(replyId: string, once: string): Promise<ThankReplyResp> {
+    const resp = await http.post<ThankReplyResp>(`https://www.v2ex.com/thank/reply/${replyId}?once=${once}`);
+    if (resp.status !== 200) {
+      return {
+        success: false,
+        once: undefined,
+      };
+    }
+    return resp.data;
   }
 
   /**
@@ -461,6 +479,8 @@ export class TopicAppend {
  * 话题回复
  */
 export class TopicReply {
+  /** 回复id */
+  public replyId: string = '';
   /** 用户头像 */
   public userAvatar: string = '';
   /** 用户名 */
@@ -473,6 +493,8 @@ export class TopicReply {
   public content: string = '';
   /** 感谢数 ❤ */
   public thanks: number = 0;
+  /** 感谢已发送 */
+  public thanked: boolean = false;
 }
 
 /**
@@ -513,4 +535,14 @@ export class SoV2exSource {
   public replies: number = 0;
   /**发帖时间 */
   public created: string = '';
+}
+
+/**
+ * 感谢回复的响应内容
+ */
+export interface ThankReplyResp {
+  /** 是否成功 */
+  success: boolean;
+  /** 新的once */
+  once: string | undefined;
 }

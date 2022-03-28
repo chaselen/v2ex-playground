@@ -140,6 +140,10 @@ hr {
     border-radius: 4px;
     margin-right: 10px;
   }
+
+  &:hover .thankReply {
+    visibility: visible !important;
+  }
 }
 
 .reply-item-wrap {
@@ -178,20 +182,30 @@ hr {
       opacity: 0.5;
     }
 
-    .floor {
+    .reply-right {
       margin-left: auto;
-      font-size: 10px;
-      min-width: 20px;
-      height: 20px;
-      line-height: 20px;
-      text-align: center;
-      font-weight: 500;
-      border-radius: 10px;
-      display: inline-block;
-      // background-color: darkslategray;
-      // color: lightgray;
-      background-color: var(--vscode-editor-inactiveSelectionBackground);
-      padding: 0 5px;
+      .thankReply {
+        visibility: hidden;
+      }
+      .thanked {
+        opacity: 0.5;
+      }
+
+      .floor {
+        margin-left: 10px;
+        font-size: 10px;
+        min-width: 20px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        font-weight: 500;
+        border-radius: 10px;
+        display: inline-block;
+        // background-color: darkslategray;
+        // color: lightgray;
+        background-color: var(--vscode-editor-inactiveSelectionBackground);
+        padding: 0 5px;
+      }
     }
   }
 

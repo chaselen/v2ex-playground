@@ -3,14 +3,14 @@ const vscode = acquireVsCodeApi();
 const vsPostMessage = (command, messages) => {
   vscode.postMessage({
     command: command,
-    __topic: __topic,
-    ...(messages || {})
+    _topic: _topic,
+    ...(messages || {}),
   });
 };
 
 // 设置标题
 vsPostMessage('setTitle', {
-  title: document.title
+  title: document.title,
 });
 
 // 给图片添加查看图片的功能
@@ -23,7 +23,7 @@ document.querySelectorAll('.topic-content img').forEach((img) => {
     img.onclick = () => {
       console.log(img.src);
       vsPostMessage('browseImage', {
-        src: img.src
+        src: img.src,
       });
     };
   };
@@ -32,18 +32,20 @@ document.querySelectorAll('.topic-content img').forEach((img) => {
 // 图片地址的a标签，点击打开图片
 const supportImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 supportImageTypes.forEach((type) => {
-  document.querySelectorAll(`.topic-content a[href$=".${type}"]`).forEach((a) => {
-    a.dataset['imageSrc'] = a.href;
-    // vsc中 return false 不能阻止a标签跳转。曲线救国
-    a.href = 'javascript:;';
-    a.onclick = () => {
-      console.log(a.dataset['imageSrc']);
-      vsPostMessage('browseImage', {
-        src: a.dataset['imageSrc']
-      });
-      return false;
-    };
-  });
+  document
+    .querySelectorAll(`.topic-content a[href$=".${type}"]`)
+    .forEach((a) => {
+      a.dataset['imageSrc'] = a.href;
+      // vsc中 return false 不能阻止a标签跳转。曲线救国
+      a.href = 'javascript:;';
+      a.onclick = () => {
+        console.log(a.dataset['imageSrc']);
+        vsPostMessage('browseImage', {
+          src: a.dataset['imageSrc'],
+        });
+        return false;
+      };
+    });
 });
 
 /**
@@ -66,20 +68,29 @@ document.querySelectorAll('.topic-content a[href*="/t/"]').forEach((a) => {
   a.onclick = () => {
     console.log(a.dataset['href']);
     vsPostMessage('openTopic', {
-      link: a.dataset['href']
+      link: a.dataset['href'],
     });
     return false;
   };
 });
 
 // 评论
-function onSubmit() {
+function onSubmit(e) {
+  e.preventDefault();
   const content = (document.querySelector('#replyBox').value || '').trim();
   if (!content) {
     return;
   }
 
   vsPostMessage('postReply', {
-    content: content
+    content: content,
+  });
+}
+
+// 感谢回复者
+function thankReply(e) {
+  const { replyId } = e.target.dataset;
+  vsPostMessage('thankReply', {
+    replyId: replyId,
   });
 }

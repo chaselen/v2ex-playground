@@ -71,7 +71,7 @@ export default function topicItemClick(item: TreeNode) {
 
   panel = _createPanel(item.link, item.label!);
   panel.webview.onDidReceiveMessage((message) => {
-    const topic: TopicDetail = message.__topic;
+    const topic: TopicDetail = message._topic;
     switch (message.command) {
       case 'setTitle':
         panel.title = _getTitle(message.title);
@@ -153,6 +153,30 @@ export default function topicItemClick(item: TreeNode) {
           );
         }
         break;
+      case 'thankReply':
+        {
+          const { replyId } = message;
+          const reply = topic.replies.find(r => r.replyId === replyId);
+          if (!reply) {
+            return;
+          }
+          vscode.window.withProgress(
+            {
+              title: '正在提交回复',
+              location: vscode.ProgressLocation.Notification,
+            },
+            async () => {
+              const resp = await V2ex.thankReply(replyId, topic.once);
+              if (resp.success && resp.once) {
+                reply.thanked = true;
+                reply.thanks++;
+                topic.once = resp.once;
+                renderTopicInPanel(panel, topic);
+              }
+            }
+          );
+        }
+        break;
       default:
         break;
     }
@@ -174,16 +198,7 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
   // 获取详情数据
   V2ex.getTopicDetail(topicLink)
     .then((detail) => {
-      try {
-        // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
-        panel.webview.html = V2ex.renderPage('topic.html', {
-          topic: detail,
-          topicYml: yaml.safeDump(detail),
-          contextPath: G.getWebViewContextPath(panel.webview),
-        });
-      } catch (err) {
-        console.log(err);
-      }
+      renderTopicInPanel(panel, detail);
     })
     .catch((err: Error) => {
       console.error(err);
@@ -208,6 +223,24 @@ function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
         });
       }
     });
+}
+
+/**
+ * 在Panel中加载话题
+ * @param panel panel
+ * @param topicDetail 话题详情
+ */
+function renderTopicInPanel(panel: vscode.WebviewPanel, topicDetail: TopicDetail) {
+  try {
+    // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
+    panel.webview.html = V2ex.renderPage('topic.html', {
+      topic: topicDetail,
+      topicYml: yaml.safeDump(topicDetail),
+      contextPath: G.getWebViewContextPath(panel.webview),
+    });
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 /**

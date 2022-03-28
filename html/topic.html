@@ -89,7 +89,16 @@
               {{if $value.thanks > 0}}
               <span class="thanks">♥ {{ $value.thanks }}</span>
               {{/if}}
-              <span class="floor">{{ $value.floor }}</span>
+              <div class="reply-right">
+                {{if topic.once}}
+                  {{if $value.thanked}}
+                  <span class="thanked">感谢已发送</span>
+                  {{else}}
+                  <a class="thankReply" href="javascript:;" data-reply-id="{{ $value.replyId }}" onclick="thankReply(event)" title="感谢回复者">感谢回复者</a>
+                  {{/if}}
+                {{/if}}
+                <span class="floor">{{ $value.floor }}</span>
+              </div>
             </div>
             <div class="topic-content">{{@ $value.content}}</div>
           </div>
@@ -100,7 +109,7 @@
 
       <!-- 提交回复 -->
       {{if topic.once}}
-      <form action="#" class="post-reply" onsubmit="onSubmit();return false;">
+      <form action="#" class="post-reply" onsubmit="onSubmit">
         <textarea id="replyBox" maxlength="10000" placeholder="请尽量让自己的回复能够对别人有帮助"></textarea>
         <button type="submit" class="submit">回复</button>
       </form>
@@ -111,7 +120,7 @@
 
     <script src="{{ contextPath }}/html/lib/js-yaml.min.js"></script>
     <script>
-      var __topic = jsyaml.load(`{{@ topicYml}}`);
+      var _topic = jsyaml.load(`{{@ topicYml}}`);
     </script>
     <script src="{{ contextPath }}/html/topic.js"></script>
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
