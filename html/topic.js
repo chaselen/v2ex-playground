@@ -75,8 +75,7 @@ document.querySelectorAll('.topic-content a[href*="/t/"]').forEach((a) => {
 });
 
 // 评论
-function onSubmit(e) {
-  e.preventDefault();
+function onSubmit() {
   const content = (document.querySelector('#replyBox').value || '').trim();
   if (!content) {
     return;

@@ -109,9 +109,9 @@
 
       <!-- 提交回复 -->
       {{if topic.once}}
-      <form action="#" class="post-reply" onsubmit="onSubmit">
+      <form action="#" class="post-reply">
         <textarea id="replyBox" maxlength="10000" placeholder="请尽量让自己的回复能够对别人有帮助"></textarea>
-        <button type="submit" class="submit">回复</button>
+        <button type="submit" class="submit" onclick="onSubmit()">回复</button>
       </form>
       {{else}}
       <p style="opacity: 0.5">您目前还不能回复，请先登录</p>
