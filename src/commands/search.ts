@@ -1,5 +1,5 @@
 import { TreeNode } from './../providers/BaseProvider';
-import { V2ex, SoV2exSource } from './../v2ex';
+import { V2ex, SoV2exSource, SoV2exSort } from './../v2ex';
 import * as vscode from 'vscode';
 import topicItemClick from './topicItemClick';
 import dayjs = require('dayjs');
@@ -25,7 +25,7 @@ async function showInputBox() {
   // 输入搜索关键词
   let q = await vscode.window.showInputBox({
     placeHolder: '搜索帖子',
-    prompt: '请输入查询的关键字'
+    prompt: '请输入查询的关键字',
   });
   // 如果用户撤销输入，如ESC，则为undefined
   if (q === undefined) {
@@ -36,7 +36,16 @@ async function showInputBox() {
     return;
   }
 
-  const searchList = await V2ex.search(q, 0, 50);
+  // 选择排序方式
+  let sort = await vscode.window.showQuickPick(['权重', '发帖时间'], {
+    placeHolder: '选择排序方式',
+  });
+  if (sort === undefined) {
+    return;
+  }
+  let sortType: SoV2exSort = sort === '权重' ? 'sumup' : 'created';
+
+  const searchList = await V2ex.search(q, sortType, 0, 50);
   console.log(`<${q}>搜索到${searchList.length}条结果`);
   if (searchList.length <= 0) {
     await vscode.window.showInformationMessage('没有找到相关内容');
@@ -54,14 +63,14 @@ async function showQuickPick(searchList: SoV2exSource[]) {
       title: s.title,
       label: `${i + 1}. ${s.title}`,
       description: `@${s.member} ${dt}`,
-      detail: s.content
+      detail: s.content,
     };
   });
 
   const select = await vscode.window.showQuickPick(items, {
     matchOnDescription: true,
     matchOnDetail: true,
-    placeHolder: '搜索结果来自 sov2ex.com'
+    placeHolder: '搜索结果来自 sov2ex.com',
   });
 
   // 在搜索结果弹框中取消
