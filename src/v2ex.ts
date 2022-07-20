@@ -226,8 +226,13 @@ export class V2ex {
    * @param replyId 回复id
    * @param once 校验参数
    */
-  static async thankReply(replyId: string, once: string): Promise<ThankReplyResp> {
-    const resp = await http.post<ThankReplyResp>(`https://www.v2ex.com/thank/reply/${replyId}?once=${once}`);
+  static async thankReply(
+    replyId: string,
+    once: string
+  ): Promise<ThankReplyResp> {
+    const resp = await http.post<ThankReplyResp>(
+      `https://www.v2ex.com/thank/reply/${replyId}?once=${once}`
+    );
     if (resp.status !== 200) {
       return {
         success: false,
@@ -370,15 +375,22 @@ export class V2ex {
   }
 
   /**
-   *
+   * V2EX搜搜
    * @param q 查询关键词
+   * @param sort 结果排序方式
    * @param from 与第一个结果的偏移量（默认 0），比如 0, 10, 20
    * @param size 结果数量（默认 10）
    */
-  static async search(q: string, from = 0, size = 10): Promise<SoV2exSource[]> {
+  static async search(
+    q: string,
+    sort: SoV2exSort = 'sumup',
+    from = 0,
+    size = 10
+  ): Promise<SoV2exSource[]> {
     const { data: res } = await http.get('https://www.sov2ex.com/api/search', {
       params: {
         q,
+        sort,
         from,
         size,
       },
@@ -536,6 +548,8 @@ export class SoV2exSource {
   /**发帖时间 */
   public created: string = '';
 }
+
+export type SoV2exSort = 'sumup' | 'created';
 
 /**
  * 感谢回复的响应内容

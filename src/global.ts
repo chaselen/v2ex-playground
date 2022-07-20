@@ -9,7 +9,9 @@ export default class G {
    * @param webview webview
    */
   static getWebViewContextPath(webview: Webview): string {
-    return webview.asWebviewUri(Uri.file(this.context!.extensionPath)).toString();
+    return webview
+      .asWebviewUri(Uri.file(this.context!.extensionPath))
+      .toString();
   }
 
   /**
@@ -70,4 +72,25 @@ export default class G {
     }
     this.setCustomNodes(nodes);
   }
+
+  /**
+   * 获取代理设置
+   */
+  static getProxySetting(): ProxySetting | undefined {
+    return this.context?.globalState.get<ProxySetting>('proxy');
+  }
+
+  /**
+   * 保存代理设置
+   * @param proxy 代理设置
+   */
+  static async setProxySetting(proxy?: ProxySetting) {
+    await this.context?.globalState.update('proxy', proxy);
+  }
+}
+
+export interface ProxySetting {
+  protocol: string;
+  host: string;
+  port: number;
 }
