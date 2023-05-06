@@ -118,6 +118,9 @@ hr {
 .reply-item:hover .thankReply {
   visibility: visible !important;
 }
+.reply-item:hover .floorReply {
+  visibility: visible !important;
+}
 .reply-item-wrap {
   flex: 1;
   overflow: hidden;
@@ -153,6 +156,10 @@ hr {
   margin-left: auto;
 }
 .reply-item-wrap .meta .reply-right .thankReply {
+  visibility: hidden;
+}
+.reply-item-wrap .meta .reply-right .floorReply {
+  margin-left: 10px;
   visibility: hidden;
 }
 .reply-item-wrap .meta .reply-right .thanked {

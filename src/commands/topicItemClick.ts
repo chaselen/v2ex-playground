@@ -101,7 +101,7 @@ export default function topicItemClick(item: TreeNode) {
               location: vscode.ProgressLocation.Notification,
             },
             async () => {
-              await V2ex.collectTopic(topic.id, topic.collectParamT || '');
+              V2ex.collectTopic(topic.id, topic.once || '')
               loadTopicInPanel(panel, item.link);
             }
           );
@@ -117,7 +117,7 @@ export default function topicItemClick(item: TreeNode) {
             async () => {
               await V2ex.cancelCollectTopic(
                 topic.id,
-                topic.collectParamT || ''
+                topic.once || ''
               );
               loadTopicInPanel(panel, item.link);
             }
@@ -162,7 +162,7 @@ export default function topicItemClick(item: TreeNode) {
           }
           vscode.window.withProgress(
             {
-              title: '正在提交回复',
+              title: '发送感谢',
               location: vscode.ProgressLocation.Notification,
             },
             async () => {

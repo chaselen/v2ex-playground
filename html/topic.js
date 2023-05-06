@@ -93,3 +93,10 @@ function thankReply(e) {
     replyId: replyId,
   });
 }
+
+// 快捷回复楼层
+function floorReply(e) {
+  const { replyAuthor, replyFloor } = e.target.dataset;
+  document.querySelector('#replyBox').value = '@' + replyAuthor + ' #' + replyFloor + ' ';
+  document.querySelector('#replyBox').focus();
+}
