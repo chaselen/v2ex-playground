@@ -153,7 +153,7 @@ export class V2ex {
      * 获取回复
      * @param $ 页面加载后的文档
      */
-    const _getTopicReplies = ($: CheerioStatic): TopicReply[] => {
+    const _getTopicReplies = ($: ReturnType<typeof cheerio.load>): TopicReply[] => {
       const replies: TopicReply[] = [];
       $('#Main > .box')
         .eq(1)

@@ -60,7 +60,7 @@ export default class CollectionProvider extends BaseProvider {
     try {
       const topics = await V2ex.getTopicListByNode({
         name: root.nodeName!,
-        title: root.label!
+        title: root.label as string
       });
       const children: TreeNode[] = [];
       topics.forEach((topic) => {
