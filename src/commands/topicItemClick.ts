@@ -101,7 +101,7 @@ export default function topicItemClick(item: TreeNode) {
               location: vscode.ProgressLocation.Notification,
             },
             async () => {
-              V2ex.collectTopic(topic.id, topic.once || '')
+              await V2ex.collectTopic(topic.id, topic.once || '')
               loadTopicInPanel(panel, item.link);
             }
           );
