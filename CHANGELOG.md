@@ -1,5 +1,9 @@
 # 更新日志
 
+## [1.5.1]
+
+- 修复水生活热节点内容加载问题 [#16](https://github.com/chaselen/v2ex-playground/issues/16)
+
 ## [1.5.0]
 
 - 新增代理设置

@@ -69,7 +69,7 @@ export default function topicItemClick(item: TreeNode) {
     });
   }
 
-  panel = _createPanel(item.link, item.label!);
+  panel = _createPanel(item.link, item.label as string);
   panel.webview.onDidReceiveMessage((message) => {
     const topic: TopicDetail = message._topic;
     switch (message.command) {
