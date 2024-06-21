@@ -9,6 +9,7 @@ import G from './global';
 import * as FormData from 'form-data';
 import topicItemClick from './commands/topicItemClick';
 import * as vscode from 'vscode';
+import * as querystring from 'node:querystring';
 
 export class V2ex {
   /**
@@ -243,13 +244,12 @@ export class V2ex {
    * @param once 校验参数，可以从话题页面中获得
    */
   static async postReply(topicLink: string, content: string, once: string) {
-    const form = new FormData();
-    form.append('content', content);
-    form.append('once', once);
-    await http.post(topicLink, form, {
-      headers: form.getHeaders(),
-    }).catch(err => {
-      console.error(err)
+    const params = {
+      content,
+      once,
+    };
+    await http.post(topicLink, querystring.stringify(params)).catch((err) => {
+      console.error(err);
     });
   }
 
