@@ -39,7 +39,7 @@ export class V2ex {
 
     // 判断是否需要签到
     const signRes = await this.daily();
-    if (signRes != DailyRes.repetitive) {
+    if (signRes !== DailyRes.repetitive) {
       vscode.window.showInformationMessage(signRes);
     }
 
@@ -223,11 +223,11 @@ export class V2ex {
     if (
       match &&
       parseInt(match[1]) > 0 &&
-      (unReadLastTipTime == undefined ||
-        (unReadLastTipTime != undefined && timestamp - unReadLastTipTime > 300))
+      (unReadLastTipTime === undefined ||
+        (unReadLastTipTime !== undefined && timestamp - unReadLastTipTime > 300))
     ) {
       vscode.window.showInformationMessage('您有' + match[1] + '条未读提醒', '查看提醒').then(result => {
-        if (result == '查看提醒') {
+        if (result === '查看提醒') {
           vscode.env.openExternal(vscode.Uri.parse('https://www.v2ex.com/notifications'));
         }
       });
@@ -352,7 +352,7 @@ export class V2ex {
     // 查询时上次签到时间
     const timestamp = new Date().getTime() / 1000;
     const lastSignTime = G.context?.globalState.get<number>('lastSignTime');
-    if (lastSignTime != undefined && timestamp - lastSignTime < 86400) {
+    if (lastSignTime !== undefined && timestamp - lastSignTime < 86400) {
       // 最后签到时间小于1天
       return DailyRes.repetitive;
     }
@@ -390,7 +390,7 @@ export class V2ex {
   static async collectTopic(topicId: number, once: string) {
     // /favorite/topic/937439?once=34361
     await http.get<string>(`/favorite/topic/${topicId}?once=${once}`).catch(err => {
-      console.error(err)
+      console.error(err);
     });
   }
 
@@ -402,7 +402,7 @@ export class V2ex {
   static async cancelCollectTopic(topicId: number, once: string) {
     // /unfavorite/topic/900126?once=34361
     await http.get<string>(`/unfavorite/topic/${topicId}?once=${once}`).catch(err => {
-      console.error(err)
+      console.error(err);
     });
   }
 
