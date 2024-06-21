@@ -96,6 +96,7 @@
                   {{else}}
                   <a class="thankReply" href="javascript:;" data-reply-id="{{ $value.replyId }}" onclick="thankReply(event)" title="感谢回复者">感谢回复者</a>
                   {{/if}}
+                  <a class="floorReply" href="javascript:;" data-reply-author="{{ $value.userName }}" data-reply-floor="{{ $value.floor }}" onclick="floorReply(event)" title="回复该楼层">回复</a>
                 {{/if}}
                 <span class="floor">{{ $value.floor }}</span>
               </div>

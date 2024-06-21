@@ -8,6 +8,7 @@ import * as path from 'path';
 import G from './global';
 import * as FormData from 'form-data';
 import topicItemClick from './commands/topicItemClick';
+import * as vscode from 'vscode';
 
 export class V2ex {
   /**
@@ -34,6 +35,13 @@ export class V2ex {
       };
       list.push(topic);
     });
+
+    // 判断是否需要签到
+    const signRes = await this.daily();
+    if (signRes != DailyRes.repetitive) {
+      vscode.window.showInformationMessage(signRes);
+    }
+
     return list;
   }
 
@@ -201,8 +209,30 @@ export class V2ex {
               topic.replyCount = topic.replies.length;
             }
           });
-      } catch (error) {}
+      } catch (error) { }
     }
+
+    // 获取是否有未读提醒，如果有的话，则打开浏览器查看
+    const title = $('title').text();
+    const regex = /V2EX \((\d+)\)/;
+    const match = title.match(regex);
+    const timestamp = new Date().getTime() / 1000;
+    const unReadLastTipTime =
+      G.context?.globalState.get<number>('unReadLastTipTime');
+    if (
+      match &&
+      parseInt(match[1]) > 0 &&
+      (unReadLastTipTime == undefined ||
+        (unReadLastTipTime != undefined && timestamp - unReadLastTipTime > 300))
+    ) {
+      vscode.window.showInformationMessage('您有' + match[1] + '条未读提醒', '查看提醒').then(result => {
+        if (result == '查看提醒') {
+          vscode.env.openExternal(vscode.Uri.parse('https://www.v2ex.com/notifications'));
+        }
+      });
+      G.context?.globalState.update('unReadLastTipTime', timestamp);
+    }
+
     return topic;
   }
 
@@ -218,6 +248,8 @@ export class V2ex {
     form.append('once', once);
     await http.post(topicLink, form, {
       headers: form.getHeaders(),
+    }).catch(err => {
+      console.error(err)
     });
   }
 
@@ -317,10 +349,19 @@ export class V2ex {
    * @returns {Promise<DailyRes>} 返回签到结果
    */
   static async daily(): Promise<DailyRes> {
+    // 查询时上次签到时间
+    const timestamp = new Date().getTime() / 1000;
+    const lastSignTime = G.context?.globalState.get<number>('lastSignTime');
+    if (lastSignTime != undefined && timestamp - lastSignTime < 86400) {
+      // 最后签到时间小于1天
+      return DailyRes.repetitive;
+    }
+
     const { data: html } = await http.get<string>('/mission/daily');
     const $ = cheerio.load(html);
     // 已领取过时会提示：每日登录奖励已领取
     if ($('.fa-ok-sign').length) {
+      G.context?.globalState.update('lastSignTime', timestamp); // 设置最后签到时间
       return DailyRes.repetitive;
     }
     // 未领取时有一个领取按钮，onclick内容是location.href = '/mission/daily/redeem?once=1111'
@@ -333,6 +374,7 @@ export class V2ex {
         );
         const $2 = cheerio.load(html2);
         if ($2('.fa-ok-sign').length) {
+          G.context?.globalState.update('lastSignTime', timestamp); // 设置最后签到时间
           return DailyRes.success;
         }
       }
@@ -343,21 +385,25 @@ export class V2ex {
   /**
    * 收藏帖子
    * @param topicId 帖子id
-   * @param t 收藏参数t
+   * @param once 收藏参数once
    */
-  static async collectTopic(topicId: number, t: string) {
-    // /favorite/topic/714346?t=uecaqsvpeyreyhsyohnaxgpnjsfpufte
-    await http.get<string>(`/favorite/topic/${topicId}?t=${t}`);
+  static async collectTopic(topicId: number, once: string) {
+    // /favorite/topic/937439?once=34361
+    await http.get<string>(`/favorite/topic/${topicId}?once=${once}`).catch(err => {
+      console.error(err)
+    });
   }
 
   /**
    * 取消收藏帖子
    * @param topicId 帖子id
-   * @param t 收藏参数t
+   * @param once 收藏参数once
    */
-  static async cancelCollectTopic(topicId: number, t: string) {
-    // /unfavorite/topic/714346?t=uecaqsvpeyreyhsyohnaxgpnjsfpufte
-    await http.get<string>(`/unfavorite/topic/${topicId}?t=${t}`);
+  static async cancelCollectTopic(topicId: number, once: string) {
+    // /unfavorite/topic/900126?once=34361
+    await http.get<string>(`/unfavorite/topic/${topicId}?once=${once}`).catch(err => {
+      console.error(err)
+    });
   }
 
   /**
