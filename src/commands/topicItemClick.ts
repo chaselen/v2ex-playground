@@ -6,7 +6,6 @@ import * as vscode from 'vscode';
 import G from '../global';
 import * as path from 'path';
 import Config from '../config';
-const yaml = require('js-yaml');
 
 /**
  * 存放话题页面的panels
@@ -235,7 +234,8 @@ function renderTopicInPanel(panel: vscode.WebviewPanel, topicDetail: TopicDetail
     // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
     panel.webview.html = V2ex.renderPage('topic.html', {
       topic: topicDetail,
-      topicYml: yaml.safeDump(topicDetail),
+      // 避免内容被转义，所以用base64
+      topicJson: Buffer.from(JSON.stringify(topicDetail)).toString('base64'),
       contextPath: G.getWebViewContextPath(panel.webview),
     });
   } catch (err) {
