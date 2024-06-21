@@ -1,5 +1,10 @@
 # 更新日志
 
+## [1.5.2]
+
+- 修复回复帖子失败的问题 [#14](https://github.com/chaselen/v2ex-playground/issues/14)
+- 修复收藏+未读提醒+签到优化+快捷回复 [PR-20](https://github.com/chaselen/v2ex-playground/pull/20)
+
 ## [1.5.1]
 
 - 修复水生活热节点内容加载问题 [#16](https://github.com/chaselen/v2ex-playground/issues/16)
