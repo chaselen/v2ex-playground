@@ -9,9 +9,10 @@ import CustomProvider from './providers/CustomProvider'
 import addNode from './commands/addNode'
 import removeNode from './commands/removeNode'
 import CollectionProvider from './providers/CollectionProvider'
-import { V2ex, DailyRes } from './v2ex'
+import { V2ex } from './v2ex'
 import search from './commands/search'
 import setting from './commands/setting'
+import { DailyRes } from './type'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context

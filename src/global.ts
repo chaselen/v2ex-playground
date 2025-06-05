@@ -1,4 +1,4 @@
-import { Node } from './v2ex'
+import { Node } from './type'
 import { ExtensionContext, Webview, Uri } from 'vscode'
 
 export default class G {
@@ -18,21 +18,21 @@ export default class G {
    * @param cookie cookie
    */
   static async setCookie(cookie: string) {
-    await this.context?.globalState.update('cookie', cookie)
+    await this.context.globalState.update('cookie', cookie)
   }
 
   /**
    * 获取cookie
    */
   static getCookie(): string | undefined {
-    return this.context?.globalState.get('cookie')
+    return this.context.globalState.get('cookie')
   }
 
   /**
    * 获取自定义节点
    */
   static getCustomNodes(): Node[] {
-    return this.context?.globalState.get<Node[]>('nodes') || []
+    return this.context.globalState.get<Node[]>('nodes') || []
   }
 
   /**
@@ -40,7 +40,7 @@ export default class G {
    * @param newNodes 节点列表
    */
   static setCustomNodes(newNodes: Node[]) {
-    this.context?.globalState.update('nodes', newNodes)
+    this.context.globalState.update('nodes', newNodes)
   }
 
   /**

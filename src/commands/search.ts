@@ -1,15 +1,15 @@
 import { TreeNode } from './../providers/BaseProvider'
-import { V2ex, SoV2exSource, SoV2exSort } from './../v2ex'
+import { V2ex } from './../v2ex'
 import vscode from 'vscode'
 import topicItemClick from './topicItemClick'
 import dayjs = require('dayjs')
+import { SoV2exSource, SoV2exSort } from '../type'
 
 /**上次的搜索结果 */
-var _lastSearchList: SoV2exSource[] | undefined = undefined
+var _lastSearchList: SoV2exSource[] | null = null
 
 /**
- * 登录逻辑
- * @returns 返回是否成功登录成功
+ * 搜索逻辑
  */
 export default async function search() {
   // 如果已经搜索过，直接打开上次的搜索结果
@@ -76,7 +76,7 @@ async function showQuickPick(searchList: SoV2exSource[]) {
   // 在搜索结果弹框中取消
   if (select === undefined) {
     // showInoutBox();
-    _lastSearchList = undefined
+    _lastSearchList = null
     return
   }
   const node = new TreeNode(select.title, false)

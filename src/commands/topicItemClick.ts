@@ -1,4 +1,3 @@
-import { TopicDetail } from './../v2ex'
 import { TreeNode } from '../providers/BaseProvider'
 import { LoginRequiredError, AccountRestrictedError } from './../error'
 import { V2ex } from '../v2ex'
@@ -6,6 +5,7 @@ import vscode from 'vscode'
 import G from '../global'
 import path from 'path'
 import Config from '../config'
+import { TopicDetail } from '../type'
 
 /**
  * 存放话题页面的panels

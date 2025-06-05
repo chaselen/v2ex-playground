@@ -1,6 +1,7 @@
-import { DailyRes, V2ex } from './../v2ex'
+import { V2ex } from './../v2ex'
 import vscode from 'vscode'
 import G from '../global'
+import { DailyRes } from '../type'
 
 /**
  * 登录逻辑
