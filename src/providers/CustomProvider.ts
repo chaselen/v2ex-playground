@@ -32,12 +32,9 @@ export default class CustomProvider extends BaseProvider {
 
   private async getElementData(root: TreeNode): Promise<TreeNode[]> {
     try {
-      const topics = await V2ex.getTopicListByNode({
-        name: root.nodeName!,
-        title: root.label as string
-      });
+      const res = await V2ex.getTopicListByNode(root.nodeName!);
       const children: TreeNode[] = [];
-      topics.forEach((topic) => {
+      res.list.forEach((topic) => {
         const child = new TreeNode(topic.title, false);
         child.link = topic.link;
         // 添加点击事件的命令
@@ -49,7 +46,7 @@ export default class CustomProvider extends BaseProvider {
         };
         children.push(child);
       });
-      console.log(`获取到【${root.label}】数据：${topics.length}条`);
+      console.log(`获取到【${root.label}】数据：${res.list.length}条`);
       return children;
     } catch (err) {
       throw err;

@@ -6,7 +6,6 @@ import http from './http';
 import { AxiosResponse } from 'axios';
 import * as path from 'path';
 import G from './global';
-import * as FormData from 'form-data';
 import topicItemClick from './commands/topicItemClick';
 import * as vscode from 'vscode';
 import * as querystring from 'node:querystring';
@@ -28,12 +27,9 @@ export class V2ex {
 
       const topic = new Topic();
       topic.title = topicElement.text().trim();
-      topic.link =
-        'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
-      topic.node = {
-        name: nodeElement.attr('href')?.split('go/')[1] || '',
-        title: nodeElement.text().trim(),
-      };
+      topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
+      topic.node.name = nodeElement.attr('href')?.split('go/')[1] || '';
+      topic.node.title = nodeElement.text().trim();
       list.push(topic);
     });
 
@@ -48,14 +44,19 @@ export class V2ex {
 
   /**
    * 根据节点获取话题列表
-   * @param node 节点
+   * @param nodeName 节点名
+   * @param page 页码
+   * @example https://www.v2ex.com/go/python?p=2
    */
-  static async getTopicListByNode(node: Node): Promise<Topic[]> {
-    const { data: html } = await http.get(
-      `https://www.v2ex.com/go/${node.name}`
-    );
+  static async getTopicListByNode(
+    nodeName: string,
+    page = 1
+  ): Promise<{ totalPage: number; list: Topic[] }> {
+    const { data: html } = await http.get(`https://www.v2ex.com/go/${nodeName}?p=${page}`);
     const $ = cheerio.load(html);
+    const nodeTitle = $('.node-breadcrumb').text().split('›')[1].trim();
     const cells = $('#TopicsNode .cell[class*="t_"]');
+    const totalPage = $('.ps_container .page_normal').last().text();
 
     const list: Topic[] = [];
     cells.each((_, cell) => {
@@ -63,12 +64,14 @@ export class V2ex {
 
       const topic = new Topic();
       topic.title = topicElement.text().trim();
-      topic.link =
-        'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
-      topic.node = node;
+      topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0];
+      topic.node = new Node(nodeName, nodeTitle);
       list.push(topic);
     });
-    return list;
+    return {
+      totalPage: Number(totalPage),
+      list: list,
+    };
   }
 
   /**
@@ -114,10 +117,8 @@ export class V2ex {
     topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || '';
     topic.title = $('.header > h1').text();
     const node = $('.header > a').eq(1);
-    topic.node = {
-      name: node.attr('href')?.split('go/')[1] || '',
-      title: node.text().trim(),
-    };
+    topic.node.name = node.attr('href')?.split('go/')[1] || '';
+    topic.node.title = node.text().trim();
     topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || '';
     const meta = $('.header > .gray').text().split('·');
     topic.authorName = meta[0].trim();
@@ -162,7 +163,7 @@ export class V2ex {
      * 获取回复
      * @param $ 页面加载后的文档
      */
-    const _getTopicReplies = ($: ReturnType<typeof cheerio.load>): TopicReply[] => {
+    const _getTopicReplies = ($: cheerio.Root): TopicReply[] => {
       const replies: TopicReply[] = [];
       $('#Main > .box')
         .eq(1)
@@ -476,7 +477,7 @@ export class Topic {
   /** 链接 */
   public link: string = '';
   /** 节点 */
-  public node: Node = { title: '', name: '' };
+  public node: Node = new Node();
 }
 
 /**
@@ -492,7 +493,7 @@ export class TopicDetail {
   /** 标题 */
   public title: string = '';
   /** 节点 */
-  public node: Node = { title: '', name: '' };
+  public node: Node = new Node();
   /** 作者头像 */
   public authorAvatar: string = '';
   /** 作者名字 */
@@ -563,6 +564,11 @@ export class Node {
   public name: string = '';
   /** 节点标题（显示的名称） */
   public title: string = '';
+
+  constructor(name: string = '', title: string = '') {
+    this.name = name;
+    this.title = title;
+  }
 }
 
 /**
