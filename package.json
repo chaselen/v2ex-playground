@@ -10,7 +10,7 @@
     "url": "https://github.com/chaselen/v2ex-playground"
   },
   "engines": {
-    "vscode": "^1.42.0"
+    "vscode": "^1.86.0"
   },
   "categories": [
     "Other"
@@ -202,7 +202,12 @@
         "v2ex.browse.openInNewTab": {
           "type": "boolean",
           "default": true,
-          "description": "在新标签页中打开链接"
+          "description": "始终在新标签页中打开帖子"
+        },
+        "v2ex.browse.proxyUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "代理设置，如 `http://127.0.0.1:7890`。暂时只支持 `http` 代理"
         }
       }
     }
@@ -216,17 +221,14 @@
   },
   "devDependencies": {
     "@types/node": "^18.19.110",
-    "@types/vscode": "^1.42.0",
-    "typescript": "5.4.5"
+    "@types/vscode": "~1.86.0",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "art-template": "^4.13.4",
-    "axios": "^1.9.0",
+    "axios": "~1.8.4",
     "cheerio": "^1.0.0",
     "dayjs": "^1.11.13",
-    "form-data": "^4.0.2",
-    "http-proxy-agent": "^7.0.2",
-    "https-proxy-agent": "^7.0.6",
-    "socks-proxy-agent": "^8.0.5"
+    "form-data": "^4.0.2"
   }
 }

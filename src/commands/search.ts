@@ -1,6 +1,6 @@
 import { TreeNode } from './../providers/BaseProvider'
 import { V2ex, SoV2exSource, SoV2exSort } from './../v2ex'
-import * as vscode from 'vscode'
+import vscode from 'vscode'
 import topicItemClick from './topicItemClick'
 import dayjs = require('dayjs')
 

@@ -2,7 +2,8 @@ import { Node } from './v2ex'
 import { ExtensionContext, Webview, Uri } from 'vscode'
 
 export default class G {
-  static context: ExtensionContext | undefined
+  /** 插件上下文，在插件激活时赋值 */
+  static context: ExtensionContext
 
   /**
    * 获取WebView的上下文地址
@@ -70,25 +71,4 @@ export default class G {
     }
     this.setCustomNodes(nodes)
   }
-
-  /**
-   * 获取代理设置
-   */
-  static getProxySetting(): ProxySetting | undefined {
-    return this.context?.globalState.get<ProxySetting>('proxy')
-  }
-
-  /**
-   * 保存代理设置
-   * @param proxy 代理设置
-   */
-  static async setProxySetting(proxy?: ProxySetting) {
-    await this.context?.globalState.update('proxy', proxy)
-  }
-}
-
-export interface ProxySetting {
-  protocol: string
-  host: string
-  port: number
 }

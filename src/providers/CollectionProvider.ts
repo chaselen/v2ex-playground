@@ -2,7 +2,7 @@ import { LoginRequiredError } from './../error'
 import { TreeItem } from 'vscode'
 import { BaseProvider, TreeNode } from './BaseProvider'
 import { V2ex } from '../v2ex'
-import * as path from 'path'
+import path from 'path'
 import G from '../global'
 
 export default class CollectionProvider extends BaseProvider {

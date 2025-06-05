@@ -1,5 +1,5 @@
 import { V2ex } from './../v2ex'
-import * as vscode from 'vscode'
+import vscode from 'vscode'
 import G from '../global'
 
 /**

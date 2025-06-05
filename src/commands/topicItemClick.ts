@@ -2,9 +2,9 @@ import { TopicDetail } from './../v2ex'
 import { TreeNode } from '../providers/BaseProvider'
 import { LoginRequiredError, AccountRestrictedError } from './../error'
 import { V2ex } from '../v2ex'
-import * as vscode from 'vscode'
+import vscode from 'vscode'
 import G from '../global'
-import * as path from 'path'
+import path from 'path'
 import Config from '../config'
 
 /**
@@ -33,7 +33,7 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
     retainContextWhenHidden: true,
     enableFindWidget: true
   })
-  panel.iconPath = vscode.Uri.file(path.join(G.context!.extensionPath, 'resources/favicon.png'))
+  panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
   panels[id] = panel
 
   panel.onDidDispose(() => {

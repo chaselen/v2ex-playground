@@ -4,11 +4,11 @@ import * as cheerio from 'cheerio'
 import template from 'art-template'
 import http from './http'
 import { AxiosResponse } from 'axios'
-import * as path from 'path'
+import path from 'path'
 import G from './global'
 import topicItemClick from './commands/topicItemClick'
-import * as vscode from 'vscode'
-import * as querystring from 'node:querystring'
+import vscode from 'vscode'
+import querystring from 'node:querystring'
 
 export class V2ex {
   /**
@@ -430,7 +430,7 @@ export class V2ex {
    * @param data 传入的数据
    */
   static renderPage(page: string, data: any = {}): string {
-    const templatePath = path.join(G.context!.extensionPath, 'html', page)
+    const templatePath = path.join(G.context.extensionPath, 'html', page)
     const html = template(templatePath, data)
     return html
   }

@@ -1,6 +1,6 @@
 import { TreeNode } from './providers/BaseProvider'
 import ExploreProvider from './providers/ExploreProvider'
-import * as vscode from 'vscode'
+import vscode from 'vscode'
 import topicItemClick from './commands/topicItemClick'
 import login, { LoginResult } from './commands/login'
 import G from './global'
@@ -155,5 +155,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-  G.context = undefined
+  // G.context = undefined
 }
