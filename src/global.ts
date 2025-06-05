@@ -1,17 +1,15 @@
-import { Node } from './v2ex';
-import { ExtensionContext, Webview, Uri } from 'vscode';
+import { Node } from './v2ex'
+import { ExtensionContext, Webview, Uri } from 'vscode'
 
 export default class G {
-  static context: ExtensionContext | undefined;
+  static context: ExtensionContext | undefined
 
   /**
    * 获取WebView的上下文地址
    * @param webview webview
    */
   static getWebViewContextPath(webview: Webview): string {
-    return webview
-      .asWebviewUri(Uri.file(this.context!.extensionPath))
-      .toString();
+    return webview.asWebviewUri(Uri.file(this.context!.extensionPath)).toString()
   }
 
   /**
@@ -19,21 +17,21 @@ export default class G {
    * @param cookie cookie
    */
   static async setCookie(cookie: string) {
-    await this.context?.globalState.update('cookie', cookie);
+    await this.context?.globalState.update('cookie', cookie)
   }
 
   /**
    * 获取cookie
    */
   static getCookie(): string | undefined {
-    return this.context?.globalState.get('cookie');
+    return this.context?.globalState.get('cookie')
   }
 
   /**
    * 获取自定义节点
    */
   static getCustomNodes(): Node[] {
-    return this.context?.globalState.get<Node[]>('nodes') || [];
+    return this.context?.globalState.get<Node[]>('nodes') || []
   }
 
   /**
@@ -41,7 +39,7 @@ export default class G {
    * @param newNodes 节点列表
    */
   static setCustomNodes(newNodes: Node[]) {
-    this.context?.globalState.update('nodes', newNodes);
+    this.context?.globalState.update('nodes', newNodes)
   }
 
   /**
@@ -50,14 +48,14 @@ export default class G {
    * @returns true表示添加成功，false表示节点已存在无需添加
    */
   static addCustomNode(node: Node): boolean {
-    const nodes = this.getCustomNodes();
+    const nodes = this.getCustomNodes()
     // 如果节点已经有了，则忽略
-    if (nodes.find((n) => n.name === node.name)) {
-      return false;
+    if (nodes.find(n => n.name === node.name)) {
+      return false
     }
-    nodes.push(node);
-    this.setCustomNodes(nodes);
-    return true;
+    nodes.push(node)
+    this.setCustomNodes(nodes)
+    return true
   }
 
   /**
@@ -65,19 +63,19 @@ export default class G {
    * @param nodeName 要删除的节点名称
    */
   static removeCustomNode(nodeName: string) {
-    const nodes = this.getCustomNodes();
-    const i = nodes.findIndex((n) => n.name === nodeName);
+    const nodes = this.getCustomNodes()
+    const i = nodes.findIndex(n => n.name === nodeName)
     if (i >= 0) {
-      nodes.splice(i, 1);
+      nodes.splice(i, 1)
     }
-    this.setCustomNodes(nodes);
+    this.setCustomNodes(nodes)
   }
 
   /**
    * 获取代理设置
    */
   static getProxySetting(): ProxySetting | undefined {
-    return this.context?.globalState.get<ProxySetting>('proxy');
+    return this.context?.globalState.get<ProxySetting>('proxy')
   }
 
   /**
@@ -85,12 +83,12 @@ export default class G {
    * @param proxy 代理设置
    */
   static async setProxySetting(proxy?: ProxySetting) {
-    await this.context?.globalState.update('proxy', proxy);
+    await this.context?.globalState.update('proxy', proxy)
   }
 }
 
 export interface ProxySetting {
-  protocol: string;
-  host: string;
-  port: number;
+  protocol: string
+  host: string
+  port: number
 }

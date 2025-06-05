@@ -1,25 +1,25 @@
-import { TopicDetail } from './../v2ex';
-import { TreeNode } from '../providers/BaseProvider';
-import { LoginRequiredError, AccountRestrictedError } from './../error';
-import { V2ex } from '../v2ex';
-import * as vscode from 'vscode';
-import G from '../global';
-import * as path from 'path';
-import Config from '../config';
+import { TopicDetail } from './../v2ex'
+import { TreeNode } from '../providers/BaseProvider'
+import { LoginRequiredError, AccountRestrictedError } from './../error'
+import { V2ex } from '../v2ex'
+import * as vscode from 'vscode'
+import G from '../global'
+import * as path from 'path'
+import Config from '../config'
 
 /**
  * 存放话题页面的panels
  * key：话题的链接
  * value：panel
  */
-const panels: { [key: string]: vscode.WebviewPanel } = {};
+const panels: { [key: string]: vscode.WebviewPanel } = {}
 
 /**
  * 截取标题
  * @param title 标题
  */
 function _getTitle(title: string) {
-  return title.length <= 15 ? title : title.slice(0, 15) + '...';
+  return title.length <= 15 ? title : title.slice(0, 15) + '...'
 }
 
 /**
@@ -28,25 +28,18 @@ function _getTitle(title: string) {
  * @param label 面板标题
  */
 function _createPanel(id: string, label: string): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    id,
-    _getTitle(label),
-    vscode.ViewColumn.Active,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      enableFindWidget: true,
-    }
-  );
-  panel.iconPath = vscode.Uri.file(
-    path.join(G.context!.extensionPath, 'resources/favicon.png')
-  );
-  panels[id] = panel;
+  const panel = vscode.window.createWebviewPanel(id, _getTitle(label), vscode.ViewColumn.Active, {
+    enableScripts: true,
+    retainContextWhenHidden: true,
+    enableFindWidget: true
+  })
+  panel.iconPath = vscode.Uri.file(path.join(G.context!.extensionPath, 'resources/favicon.png'))
+  panels[id] = panel
 
   panel.onDidDispose(() => {
-    delete panels[id];
-  });
-  return panel;
+    delete panels[id]
+  })
+  return panel
 }
 
 /**
@@ -55,133 +48,130 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
  */
 export default function topicItemClick(item: TreeNode) {
   // 如果panel已经存在，则直接激活
-  let panel = panels[item.link];
+  let panel = panels[item.link]
   if (panel) {
-    panel.reveal();
-    return;
+    panel.reveal()
+    return
   }
 
   // 不在新标签页打开，则关闭之前的标签页重新创建
   if (!Config.openInNewTab()) {
-    Object.values(panels).forEach((p) => {
-      p.dispose();
-    });
+    Object.values(panels).forEach(p => {
+      p.dispose()
+    })
   }
 
-  panel = _createPanel(item.link, item.label as string);
-  panel.webview.onDidReceiveMessage((message) => {
-    const topic: TopicDetail = message._topic;
+  panel = _createPanel(item.link, item.label as string)
+  panel.webview.onDidReceiveMessage(message => {
+    const topic: TopicDetail = message._topic
     switch (message.command) {
       case 'setTitle':
-        panel.title = _getTitle(message.title);
-        break;
+        panel.title = _getTitle(message.title)
+        break
       case 'browseImage':
-        _openLargeImage(message.src);
-        break;
+        _openLargeImage(message.src)
+        break
       case 'openTopic':
         // label显示/t/xxx部分
         {
-          const item = new TreeNode(message.link.split('.com')[1], false);
-          item.link = message.link;
-          topicItemClick(item);
+          const item = new TreeNode(message.link.split('.com')[1], false)
+          item.link = message.link
+          topicItemClick(item)
         }
-        break;
+        break
       case 'login':
-        vscode.commands.executeCommand('v2ex.login');
-        break;
+        vscode.commands.executeCommand('v2ex.login')
+        break
       case 'refresh':
-        loadTopicInPanel(panel, item.link);
-        break;
+        loadTopicInPanel(panel, item.link)
+        break
       case 'collect': // 收藏
         {
           vscode.window.withProgress(
             {
               title: '正在收藏',
-              location: vscode.ProgressLocation.Notification,
+              location: vscode.ProgressLocation.Notification
             },
             async () => {
-              await V2ex.collectTopic(topic.id, topic.once || '');
-              loadTopicInPanel(panel, item.link);
+              await V2ex.collectTopic(topic.id, topic.once || '')
+              loadTopicInPanel(panel, item.link)
             }
-          );
+          )
         }
-        break;
+        break
       case 'cancelCollect': // 取消收藏
         {
           vscode.window.withProgress(
             {
               title: '正在取消收藏',
-              location: vscode.ProgressLocation.Notification,
+              location: vscode.ProgressLocation.Notification
             },
             async () => {
-              await V2ex.cancelCollectTopic(
-                topic.id,
-                topic.once || ''
-              );
-              loadTopicInPanel(panel, item.link);
+              await V2ex.cancelCollectTopic(topic.id, topic.once || '')
+              loadTopicInPanel(panel, item.link)
             }
-          );
+          )
         }
-        break;
+        break
       case 'thank':
         {
           vscode.window.withProgress(
             {
               title: '发送感谢',
-              location: vscode.ProgressLocation.Notification,
+              location: vscode.ProgressLocation.Notification
             },
             async () => {
-              await V2ex.thankTopic(topic.id, topic.once);
-              loadTopicInPanel(panel, item.link);
+              await V2ex.thankTopic(topic.id, topic.once)
+              loadTopicInPanel(panel, item.link)
             }
-          );
+          )
         }
-        break;
+        break
       case 'postReply':
         {
-          const { content } = message;
+          const { content } = message
           vscode.window.withProgress(
             {
               title: '正在提交回复',
-              location: vscode.ProgressLocation.Notification,
+              location: vscode.ProgressLocation.Notification
             },
             async () => {
-              await V2ex.postReply(topic.link, content, topic.once);
-              loadTopicInPanel(panel, item.link);
+              await V2ex.postReply(topic.link, content, topic.once)
+              loadTopicInPanel(panel, item.link)
             }
-          );
+          )
         }
-        break;
+        break
       case 'thankReply':
         {
-          const { replyId } = message;
-          const reply = topic.replies.find(r => r.replyId === replyId);
+          const { replyId } = message
+          const reply = topic.replies.find(r => r.replyId === replyId)
           if (!reply) {
-            return;
+            return
           }
           vscode.window.withProgress(
             {
               title: '发送感谢',
-              location: vscode.ProgressLocation.Notification,
+              location: vscode.ProgressLocation.Notification
             },
             async () => {
-              const resp = await V2ex.thankReply(replyId, topic.once);
+              const resp = await V2ex.thankReply(replyId, topic.once)
               if (resp.success && resp.once) {
-                reply.thanked = true;
-                reply.thanks++;
-                topic.once = resp.once;
-                renderTopicInPanel(panel, topic);
+                reply.thanked = true
+                reply.thanks++
+                topic.once = resp.once
+                renderTopicInPanel(panel, topic)
               }
             }
-          );
+          )
         }
-        break;
+        break
       default:
-        break;
+        break
     }
-  });
+  })
 
-  loadTopicInPanel(panel, item.link);
+  loadTopicInPanel(panel, item.link)
 }
 
 /**
@@ -191,37 +181,37 @@ export default function topicItemClick(item: TreeNode) {
  */
 function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
   panel.webview.html = V2ex.renderPage('loading.html', {
-    contextPath: G.getWebViewContextPath(panel.webview),
-  });
+    contextPath: G.getWebViewContextPath(panel.webview)
+  })
 
   // 获取详情数据
   V2ex.getTopicDetail(topicLink)
-    .then((detail) => {
-      renderTopicInPanel(panel, detail);
+    .then(detail => {
+      renderTopicInPanel(panel, detail)
     })
     .catch((err: Error) => {
-      console.error(err);
+      console.error(err)
       if (err instanceof LoginRequiredError) {
         panel.webview.html = V2ex.renderPage('error.html', {
           contextPath: G.getWebViewContextPath(panel.webview),
           message: err.message,
           showLogin: true,
-          showRefresh: true,
-        });
+          showRefresh: true
+        })
       } else if (err instanceof AccountRestrictedError) {
         panel.webview.html = V2ex.renderPage('error.html', {
           contextPath: G.getWebViewContextPath(panel.webview),
           message: err.message,
-          showRefresh: false,
-        });
+          showRefresh: false
+        })
       } else {
         panel.webview.html = V2ex.renderPage('error.html', {
           contextPath: G.getWebViewContextPath(panel.webview),
           message: err.message,
-          showRefresh: true,
-        });
+          showRefresh: true
+        })
       }
-    });
+    })
 }
 
 /**
@@ -236,10 +226,10 @@ function renderTopicInPanel(panel: vscode.WebviewPanel, topicDetail: TopicDetail
       topic: topicDetail,
       // 避免内容被转义，所以用base64
       topicJson: Buffer.from(JSON.stringify(topicDetail)).toString('base64'),
-      contextPath: G.getWebViewContextPath(panel.webview),
-    });
+      contextPath: G.getWebViewContextPath(panel.webview)
+    })
   } catch (err) {
-    console.log(err);
+    console.log(err)
   }
 }
 
@@ -249,15 +239,15 @@ function renderTopicInPanel(panel: vscode.WebviewPanel, topicDetail: TopicDetail
  */
 function _openLargeImage(imageSrc: string) {
   // 如果panel已经存在，则直接激活
-  let panel = panels[imageSrc];
+  let panel = panels[imageSrc]
   if (panel) {
-    panel.reveal();
-    return;
+    panel.reveal()
+    return
   }
 
-  console.log('打开大图：', imageSrc);
-  panel = _createPanel(imageSrc, '查看图片');
+  console.log('打开大图：', imageSrc)
+  panel = _createPanel(imageSrc, '查看图片')
   panel.webview.html = V2ex.renderPage('browseImage.html', {
-    imageSrc: imageSrc,
-  });
+    imageSrc: imageSrc
+  })
 }
