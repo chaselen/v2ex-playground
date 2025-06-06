@@ -12,7 +12,7 @@ import { TopicDetail } from '../type'
  * key：话题的链接
  * value：panel
  */
-const panels: { [key: string]: vscode.WebviewPanel } = {}
+const panels: Record<string, vscode.WebviewPanel> = {}
 
 /**
  * 截取标题

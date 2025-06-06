@@ -41,7 +41,7 @@ export default class CollectionProvider extends BaseProvider {
     } catch (err) {
       if (err instanceof LoginRequiredError) {
         const n = new TreeNode('还未登录，请先登录', false)
-        n.iconPath = path.join(G.context!.extensionPath, 'resources/light/statusWarning.svg')
+        n.iconPath = path.join(G.context.extensionPath, 'resources/light/statusWarning.svg')
         n.command = {
           title: '登录',
           command: 'v2ex.login'

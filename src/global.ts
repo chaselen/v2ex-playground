@@ -10,7 +10,7 @@ export default class G {
    * @param webview webview
    */
   static getWebViewContextPath(webview: Webview): string {
-    return webview.asWebviewUri(Uri.file(this.context!.extensionPath)).toString()
+    return webview.asWebviewUri(Uri.file(this.context.extensionPath)).toString()
   }
 
   /**

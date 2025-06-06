@@ -24,10 +24,10 @@ export class TreeNode extends TreeItem {
 
   // 根节点属性-节点名称
   public nodeName: string | undefined
-  // 根节点属性-子节点
+  // 根节点属性-子节点列表
   public children: TreeNode[] | undefined
 
-  //  子节点属性-链接地址
+  // 子节点属性-链接地址
   public link: string = ''
 
   constructor(label: string, isDir: boolean) {

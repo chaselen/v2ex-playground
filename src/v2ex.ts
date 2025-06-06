@@ -21,6 +21,9 @@ import {
 } from './type'
 
 export class V2ex {
+  /** 域名 */
+  static baseUrl = 'https://www.v2ex.com'
+
   /**
    * 根据标签获取话题列表
    * @param tab 标签
