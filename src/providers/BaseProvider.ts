@@ -6,6 +6,7 @@ import {
   TreeItemCollapsibleState,
   ProviderResult
 } from 'vscode'
+import { V2ex } from '../v2ex'
 
 export abstract class BaseProvider implements TreeDataProvider<TreeNode> {
   protected _onDidChangeTreeData: EventEmitter<TreeNode | undefined> = new EventEmitter<
@@ -23,12 +24,19 @@ export class TreeNode extends TreeItem {
   public isDir: boolean
 
   // 根节点属性-节点名称
-  public nodeName: string | undefined
-  // 根节点属性-子节点列表
-  public children: TreeNode[] | undefined
+  public nodeName?: string
+  // 根节点属性-子节点
+  public children?: TreeNode[]
 
-  // 子节点属性-链接地址
-  public link: string = ''
+  // 子节点属性-主题id
+  public topicId?: number
+  /** 子节点属性-主题链接 */
+  public get link(): string | undefined {
+    if (this.topicId) {
+      return `${V2ex.baseUrl}/t/${this.topicId}`
+    }
+    return undefined
+  }
 
   constructor(label: string, isDir: boolean) {
     super(label, isDir ? TreeItemCollapsibleState.Collapsed : TreeItemCollapsibleState.None)

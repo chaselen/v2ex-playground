@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 公共事件：复制链接
   let cDisposable2 = vscode.commands.registerCommand('v2ex.copyLink', (item: TreeNode) =>
-    vscode.env.clipboard.writeText(item.link)
+    vscode.env.clipboard.writeText(item.link!)
   )
 
   // 公共事件：复制标题和链接
@@ -71,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 公共事件：在浏览器中打开
   let cDisposable4 = vscode.commands.registerCommand('v2ex.viewInBrowser', (item: TreeNode) =>
-    vscode.env.openExternal(vscode.Uri.parse(item.link))
+    vscode.env.openExternal(vscode.Uri.parse(item.link!))
   )
 
   // 公共事件：点击浏览帖子

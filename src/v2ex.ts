@@ -29,7 +29,7 @@ export class V2ex {
    * @param tab 标签
    */
   static async getTopicListByTab(tab: string): Promise<Topic[]> {
-    const { data: html } = await http.get(`https://www.v2ex.com/?tab=${tab}`)
+    const { data: html } = await http.get(`/?tab=${tab}`)
     const $ = cheerio.load(html)
     const cells = $('#Main > .box').eq(0).children('.cell.item')
 
@@ -38,9 +38,9 @@ export class V2ex {
       const topicElement = $(cell).find('a.topic-link')
       const nodeElement = $(cell).find('a.node')
 
-      const topic = new Topic()
+      const topicId = this.extractTopicIdFromLink(topicElement.attr('href')!)
+      const topic = new Topic(topicId!)
       topic.title = topicElement.text().trim()
-      topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0]
       topic.node.name = nodeElement.attr('href')?.split('go/')[1] || ''
       topic.node.title = nodeElement.text().trim()
       list.push(topic)
@@ -65,7 +65,7 @@ export class V2ex {
     nodeName: string,
     page = 1
   ): Promise<{ totalPage: number; list: Topic[] }> {
-    const { data: html } = await http.get(`https://www.v2ex.com/go/${nodeName}?p=${page}`)
+    const { data: html } = await http.get(`/go/${nodeName}?p=${page}`)
     const $ = cheerio.load(html)
     const nodeTitle = $('.node-breadcrumb').text().split('›')[1].trim()
     const cells = $('#TopicsNode .cell[class*="t_"]')
@@ -75,9 +75,9 @@ export class V2ex {
     cells.each((_, cell) => {
       const topicElement = $(cell).find('a.topic-link')
 
-      const topic = new Topic()
+      const topicId = this.extractTopicIdFromLink(topicElement.attr('href')!)
+      const topic = new Topic(topicId!)
       topic.title = topicElement.text().trim()
-      topic.link = 'https://www.v2ex.com' + topicElement.attr('href')?.split('#')[0]
       topic.node = new Node(nodeName, nodeTitle)
       list.push(topic)
     })
@@ -89,12 +89,13 @@ export class V2ex {
 
   /**
    * 获取话题详情内容
-   * @param topicLink 话题链接
+   * @param topicId 话题id
    */
-  static async getTopicDetail(topicLink: string): Promise<TopicDetail> {
+  static async getTopicDetail(topicId: number): Promise<TopicDetail> {
     // topicLink = 'https://www.v2ex.com/t/703733';
     // topicLink = 'https://www.v2ex.com/t/704716';
-    const res = await http.get<string>(topicLink + '?p=1')
+    const topicLink = `https://www.v2ex.com/t/${topicId}`
+    const res = await http.get<string>(`/t/${topicId}` + '?p=1')
     const $ = cheerio.load(res.data)
 
     /**
@@ -126,7 +127,6 @@ export class V2ex {
 
     const topic = new TopicDetail()
     topic.id = parseInt(topicLink.split('/t/')[1] || '0')
-    topic.link = topicLink
     topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || ''
     topic.title = $('.header > h1').text()
     const node = $('.header > a').eq(1)
@@ -438,6 +438,16 @@ export class V2ex {
   }
 
   /**
+   * 从链接中提取主题id
+   * @param topicLink 主题链接，如：`/t/1136705#reply50`、`https://www.v2ex.com/t/703733#reply12`
+   * @returns 主题id
+   */
+  static extractTopicIdFromLink(topicLink: string): number | undefined {
+    const match = topicLink.match(/t\/(\d+)/)
+    return match ? Number(match[1]) : undefined
+  }
+
+  /**
    * 渲染一个页面，返回渲染后的html
    * @param page 要渲染的html页面
    * @param data 传入的数据
@@ -454,7 +464,7 @@ export class V2ex {
    */
   static openTestPage() {
     const item = new TreeNode('写了一个 VSCode 上可以逛 V2EX 的插件', false)
-    item.link = 'https://www.v2ex.com/t/703733'
+    item.topicId = 703733
     topicItemClick(item)
   }
 }

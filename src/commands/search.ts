@@ -80,6 +80,6 @@ async function showQuickPick(searchList: SoV2exSource[]) {
     return
   }
   const node = new TreeNode(select.title, false)
-  node.link = `https://www.v2ex.com/t/${select.topicId}`
+  node.topicId = select.topicId
   topicItemClick(node)
 }

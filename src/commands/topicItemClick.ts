@@ -9,7 +9,7 @@ import { TopicDetail } from '../type'
 
 /**
  * 存放话题页面的panels
- * key：话题的链接
+ * key：话题的链接/图片链接
  * value：panel
  */
 const panels: Record<string, vscode.WebviewPanel> = {}
@@ -28,11 +28,16 @@ function _getTitle(title: string) {
  * @param label 面板标题
  */
 function _createPanel(id: string, label: string): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(id, _getTitle(label), vscode.ViewColumn.Active, {
-    enableScripts: true,
-    retainContextWhenHidden: true,
-    enableFindWidget: true
-  })
+  const panel = vscode.window.createWebviewPanel(
+    id.toString(),
+    _getTitle(label),
+    vscode.ViewColumn.Active,
+    {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      enableFindWidget: true
+    }
+  )
   panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
   panels[id] = panel
 
@@ -48,7 +53,7 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
  */
 export default function topicItemClick(item: TreeNode) {
   // 如果panel已经存在，则直接激活
-  let panel = panels[item.link]
+  let panel = panels[item.link!]
   if (panel) {
     panel.reveal()
     return
@@ -61,7 +66,7 @@ export default function topicItemClick(item: TreeNode) {
     })
   }
 
-  panel = _createPanel(item.link, item.label as string)
+  panel = _createPanel(item.link!.toString(), item.label as string)
   panel.webview.onDidReceiveMessage(message => {
     const topic: TopicDetail = message._topic
     switch (message.command) {
@@ -75,7 +80,7 @@ export default function topicItemClick(item: TreeNode) {
         // label显示/t/xxx部分
         {
           const item = new TreeNode(message.link.split('.com')[1], false)
-          item.link = message.link
+          item.topicId = V2ex.extractTopicIdFromLink(message.link)
           topicItemClick(item)
         }
         break
@@ -83,7 +88,7 @@ export default function topicItemClick(item: TreeNode) {
         vscode.commands.executeCommand('v2ex.login')
         break
       case 'refresh':
-        loadTopicInPanel(panel, item.link)
+        loadTopicInPanel(panel, item.topicId!)
         break
       case 'collect': // 收藏
         {
@@ -94,7 +99,7 @@ export default function topicItemClick(item: TreeNode) {
             },
             async () => {
               await V2ex.collectTopic(topic.id, topic.once || '')
-              loadTopicInPanel(panel, item.link)
+              loadTopicInPanel(panel, item.topicId!)
             }
           )
         }
@@ -108,7 +113,7 @@ export default function topicItemClick(item: TreeNode) {
             },
             async () => {
               await V2ex.cancelCollectTopic(topic.id, topic.once || '')
-              loadTopicInPanel(panel, item.link)
+              loadTopicInPanel(panel, item.topicId!)
             }
           )
         }
@@ -122,7 +127,7 @@ export default function topicItemClick(item: TreeNode) {
             },
             async () => {
               await V2ex.thankTopic(topic.id, topic.once)
-              loadTopicInPanel(panel, item.link)
+              loadTopicInPanel(panel, item.topicId!)
             }
           )
         }
@@ -137,7 +142,7 @@ export default function topicItemClick(item: TreeNode) {
             },
             async () => {
               await V2ex.postReply(topic.link, content, topic.once)
-              loadTopicInPanel(panel, item.link)
+              loadTopicInPanel(panel, item.topicId!)
             }
           )
         }
@@ -171,21 +176,21 @@ export default function topicItemClick(item: TreeNode) {
     }
   })
 
-  loadTopicInPanel(panel, item.link)
+  loadTopicInPanel(panel, item.topicId!)
 }
 
 /**
  * 在Panel中加载话题
  * @param panel panel
- * @param topicLink 话题链接
+ * @param topicId 话题id
  */
-function loadTopicInPanel(panel: vscode.WebviewPanel, topicLink: string) {
+function loadTopicInPanel(panel: vscode.WebviewPanel, topicId: number) {
   panel.webview.html = V2ex.renderPage('loading.html', {
     contextPath: G.getWebViewContextPath(panel.webview)
   })
 
   // 获取详情数据
-  V2ex.getTopicDetail(topicLink)
+  V2ex.getTopicDetail(topicId)
     .then(detail => {
       renderTopicInPanel(panel, detail)
     })

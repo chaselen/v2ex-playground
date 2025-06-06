@@ -34,7 +34,7 @@ export default class ExploreProvider extends BaseProvider {
       const children: TreeNode[] = []
       topics.forEach(topic => {
         const child = new TreeNode(topic.title, false)
-        child.link = topic.link
+        child.topicId = topic.id
         // 添加点击事件的命令
         child.command = {
           title: topic.title,

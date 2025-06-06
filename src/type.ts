@@ -2,12 +2,23 @@
  * 话题
  */
 export class Topic {
+  /** 主题id */
+  public id: number
+
   /** 标题 */
   public title: string = ''
-  /** 链接 */
-  public link: string = ''
+
   /** 节点 */
   public node: Node = new Node()
+
+  /** 链接 */
+  public get link(): string {
+    return `https://www.v2ex.com/t/${this.id}`
+  }
+
+  constructor(id: number) {
+    this.id = id
+  }
 }
 
 /**
@@ -16,8 +27,6 @@ export class Topic {
 export class TopicDetail {
   /** id */
   public id: number = 0
-  /** 链接 */
-  public link: string = ''
   /** 校验参数，可用来判断是否登录或登录是否有效 */
   public once: string = ''
   /** 标题 */
@@ -52,6 +61,11 @@ export class TopicDetail {
   public replyCount: number = 0
   /** 回复 */
   public replies: TopicReply[] = []
+
+  /** 链接 */
+  public get link(): string {
+    return `https://www.v2ex.com/t/${this.id}`
+  }
 }
 
 /**

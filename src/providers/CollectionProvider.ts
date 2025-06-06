@@ -59,7 +59,7 @@ export default class CollectionProvider extends BaseProvider {
       const children: TreeNode[] = []
       res.list.forEach(topic => {
         const child = new TreeNode(topic.title, false)
-        child.link = topic.link
+        child.topicId = topic.id
         // 添加点击事件的命令
         child.command = {
           title: topic.title,
