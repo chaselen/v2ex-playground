@@ -10,7 +10,8 @@
     "url": "https://github.com/chaselen/v2ex-playground"
   },
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.86.0",
+    "node": ">=18"
   },
   "categories": [
     "Other"
@@ -229,6 +230,7 @@
     "axios": "~1.8.4",
     "cheerio": "^1.0.0",
     "dayjs": "^1.11.13",
+    "file-type": "^20.5.0",
     "form-data": "^4.0.2"
   }
 }
