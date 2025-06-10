@@ -66,6 +66,19 @@ export class TopicDetail {
   public get link(): string {
     return `https://www.v2ex.com/t/${this.id}`
   }
+
+  /** 从一个对象中创建一个TopicDetail实例 */
+  static from(obj: any) {
+    const topicDetail = new TopicDetail()
+    const source: any = {}
+    Object.keys(topicDetail).forEach(key => {
+      if (key in obj) {
+        source[key] = obj[key]
+      }
+    })
+    Object.assign(topicDetail, source)
+    return topicDetail
+  }
 }
 
 /**

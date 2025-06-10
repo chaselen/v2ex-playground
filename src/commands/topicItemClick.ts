@@ -69,7 +69,7 @@ export default function topicItemClick(item: TreeNode) {
 
   panel = _createPanel(item.link!.toString(), item.label as string)
   panel.webview.onDidReceiveMessage(message => {
-    const topic: TopicDetail = message._topic
+    const topic: TopicDetail = TopicDetail.from(message._topic)
     switch (message.command) {
       case 'setTitle':
         panel.title = _getTitle(message.title)

@@ -31,6 +31,7 @@ hr {
 }
 .topic-header h1 {
   flex: 1;
+  font-size: 22px;
 }
 .topic-header img {
   width: 73px;
@@ -81,6 +82,9 @@ hr {
   font-family: inherit;
   white-space: pre-wrap;
   word-break: break-all;
+}
+.topic-content ul {
+  list-style: inside;
 }
 .topic-content.append h2 {
   padding-bottom: 10px;
@@ -159,7 +163,7 @@ hr {
   visibility: hidden;
 }
 .reply-item-wrap .meta .reply-right .floorReply {
-  margin-left: 10px;
+  margin-left: 6px;
   visibility: hidden;
 }
 .reply-item-wrap .meta .reply-right .thanked {
