@@ -70,6 +70,11 @@ hr {
 .topic-content a {
   word-break: break-all;
 }
+.topic-content a:has(img) {
+  display: inline-block;
+  line-height: 0;
+  vertical-align: top;
+}
 .topic-content img {
   max-width: 100% !important;
 }
@@ -194,6 +199,7 @@ hr {
   overflow-wrap: break-word;
   border-radius: 3px;
   padding: 5px;
+  font-family: inherit;
   font-size: 14px;
   border: 1px solid var(--vscode-editorIndentGuide-background);
   box-sizing: border-box;

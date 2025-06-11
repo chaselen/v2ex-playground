@@ -82,6 +82,13 @@ hr {
   }
   a {
     word-break: break-all;
+
+    &:has(img) {
+      // 让a标签适应img标签的宽高
+      display: inline-block;
+      line-height: 0;
+      vertical-align: top;
+    }
   }
   img {
     max-width: 100% !important;
@@ -235,6 +242,7 @@ hr {
     overflow-wrap: break-word;
     border-radius: 3px;
     padding: 5px;
+    font-family: inherit;
     font-size: 14px;
     border: 1px solid var(--vscode-editorIndentGuide-background);
     box-sizing: border-box;

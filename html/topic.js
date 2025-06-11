@@ -13,13 +13,27 @@ vsPostMessage('setTitle', {
   title: document.title
 })
 
+// imgur图片代理
+document.querySelectorAll('.topic-content img').forEach(img => {
+  if (img.src.startsWith('https://i.imgur.com/')) {
+    console.log(`代理图片：${img.src}`)
+    img.src = 'https://img.noobzone.ru/getimg.php?url=' + encodeURIComponent(img.src)
+  }
+})
+
 // 给图片添加查看图片的功能
 document.querySelectorAll('.topic-content img').forEach(img => {
   img.style.cursor = 'zoom-in'
+  // 判断img是否已加载
+  if (img.complete) {
+    console.log('图片已加载')
+    return
+  }
   img.onclick = () => {
     // if (img.width < 100 && img.height < 100) {
     //   return
     // }
+    console.log('查看图片')
     vsPostMessage('browseImage', {
       src: img.src
     })
@@ -30,16 +44,23 @@ document.querySelectorAll('.topic-content img').forEach(img => {
 const supportImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
 supportImageTypes.forEach(type => {
   document.querySelectorAll(`.topic-content a[href$=".${type}"]`).forEach(a => {
-    a.dataset['imageSrc'] = a.href
+    const imageSrc = a.href
     // vsc中 return false 不能阻止a标签跳转。曲线救国
     a.href = 'javascript:;'
     a.onclick = () => {
-      console.log(a.dataset['imageSrc'])
-      vsPostMessage('browseImage', {
-        src: a.dataset['imageSrc']
-      })
       return false
     }
+
+    // 如果a标签中的的是img元素，则忽略（因为img标签已经添加了点击事件）
+    if (a.childNodes[0].nodeName === 'IMG') {
+      return
+    }
+
+    a.addEventListener('click', () => {
+      vsPostMessage('browseImage', {
+        src: imageSrc
+      })
+    })
   })
 })
 

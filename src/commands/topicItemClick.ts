@@ -29,16 +29,11 @@ function _getTitle(title: string) {
  * @param label 面板标题
  */
 function _createPanel(id: string, label: string): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    id.toString(),
-    _getTitle(label),
-    vscode.ViewColumn.Active,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      enableFindWidget: true
-    }
-  )
+  const panel = vscode.window.createWebviewPanel(id, _getTitle(label), vscode.ViewColumn.Active, {
+    enableScripts: true,
+    retainContextWhenHidden: true,
+    enableFindWidget: true
+  })
   panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
   panels[id] = panel
 
@@ -69,7 +64,7 @@ export default function topicItemClick(item: TreeNode) {
 
   panel = _createPanel(item.link!.toString(), item.label as string)
   panel.webview.onDidReceiveMessage(message => {
-    const topic: TopicDetail = TopicDetail.from(message._topic)
+    const topic: TopicDetail = message._topic ? TopicDetail.from(message._topic) : new TopicDetail()
     switch (message.command) {
       case 'setTitle':
         panel.title = _getTitle(message.title)
@@ -283,6 +278,6 @@ async function _openLargeImage(imageSrc: string) {
     const base64 = Buffer.from(res.data).toString('base64')
     panel.webview.html = `<img src="data:${ft.mime};base64,${base64}">`
   } catch (e: any) {
-    vscode.window.showErrorMessage(e.message)
+    vscode.window.showErrorMessage(`下载图片失败：${e.message}`)
   }
 }
