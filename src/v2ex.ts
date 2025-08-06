@@ -285,7 +285,7 @@ export class V2ex {
       return false
     }
     // 前往一个需要登录的页面检测，如果被重定向，说明cookie无效
-    const res = await http.get('https://www.v2ex.com/t', {
+    const res = await http.get('/t', {
       headers: {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         Cookie: cookie
@@ -303,7 +303,7 @@ export class V2ex {
     if (this._cachedNodes.length) {
       return this._cachedNodes
     }
-    const { data: html } = await http.get<string>('https://www.v2ex.com/planes')
+    const { data: html } = await http.get<string>('/planes')
     const $ = cheerio.load(html)
     const nodes: Node[] = []
     $('a.item_node').each((_, element) => {
@@ -321,7 +321,7 @@ export class V2ex {
    * 获取我收藏的节点
    */
   static async getCollectionNodes(): Promise<Node[]> {
-    const res = await http.get<string>('https://www.v2ex.com/my/nodes')
+    const res = await http.get<string>('/my/nodes')
     if (res.request._redirectable._redirectCount > 0) {
       // 登录失效，删除cookie
       G.setCookie('')

@@ -24,12 +24,11 @@ document.querySelectorAll('.topic-content img').forEach(img => {
 // 给图片添加查看图片的功能
 document.querySelectorAll('.topic-content img').forEach(img => {
   img.style.cursor = 'zoom-in'
-  // 判断img是否已加载
-  if (img.complete) {
-    console.log('图片已加载')
-    return
-  }
   img.onclick = () => {
+    // 判断img是否已加载
+    if (!img.complete) {
+      return
+    }
     // if (img.width < 100 && img.height < 100) {
     //   return
     // }
@@ -90,10 +89,6 @@ document.querySelectorAll('.topic-content a[href*="/t/"]').forEach(a => {
 // 评论
 function onSubmit() {
   const content = (document.querySelector('#replyBox').value || '').trim()
-  if (!content) {
-    return
-  }
-
   vsPostMessage('postReply', {
     content: content
   })

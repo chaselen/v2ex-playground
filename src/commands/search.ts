@@ -48,7 +48,7 @@ async function showInputBox() {
   const searchList = await V2ex.search(q, sortType, 0, 50)
   console.log(`<${q}>搜索到${searchList.length}条结果`)
   if (searchList.length <= 0) {
-    await vscode.window.showInformationMessage('没有找到相关内容')
+    vscode.window.showInformationMessage('没有找到相关内容')
     return
   }
   _lastSearchList = searchList
