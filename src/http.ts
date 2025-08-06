@@ -15,9 +15,18 @@ const http = axios.create({
 })
 
 http.interceptors.request.use(config => {
+  const reqUrl = new URL(config.url || '', config.baseURL)
+  // v2ex以外的请求不做额外处理
+  if (!reqUrl.host.endsWith('v2ex.com')) {
+    return config
+  }
+
+  // 添加cookie
   if (config.headers['Cookie'] === undefined) {
     config.headers['Cookie'] = G.getCookie() || ''
   }
+
+  // 设置代理
   const proxyUrl = Config.proxyUrl()
   if (proxyUrl) {
     const isValid = checkProxyUrl(proxyUrl)

@@ -139,6 +139,10 @@ export default function topicItemClick(item: TreeNode) {
       case 'postReply':
         {
           const { content } = message
+          if (!content) {
+            vscode.window.showWarningMessage('请输入回复内容')
+            return
+          }
           vscode.window.withProgress(
             {
               title: '正在提交回复',
