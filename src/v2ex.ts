@@ -161,19 +161,32 @@ export class V2ex {
       topic.isThanked = topicButtons.find('.topic_thanked').length > 0
     }
 
+    
+    let topicBoxIndex = 1;
+    const boxes = $('#Main > .box');
+
+    if (boxes.eq(1).attr('id') === 'topic-tip-box') {
+      topicBoxIndex = 2;
+    }
+    const topicBox = boxes.eq(topicBoxIndex)
+
     topic.replyCount =
       parseInt(
-        $('#Main > .box').eq(1).children('div.cell').eq(0).find('span.gray').text().split('•')[0]
+       topicBox.children('div.cell').eq(0).find('span.gray').text().split('•')[0]
       ) || 0
-
     /**
      * 获取回复
      * @param $ 页面加载后的文档
      */
     const _getTopicReplies = ($: cheerio.CheerioAPI): TopicReply[] => {
       const replies: TopicReply[] = []
-      $('#Main > .box')
-        .eq(1)
+      let topicBoxIndex = 1;
+      const boxes = $('#Main > .box');
+      if (boxes.eq(1).attr('id') === 'topic-tip-box') {
+        topicBoxIndex = 2;
+      }
+      const topicBox = boxes.eq(topicBoxIndex)
+      topicBox
         .children('div[id].cell')
         .each((_, element) => {
           replies.push({
@@ -192,7 +205,7 @@ export class V2ex {
 
     // 获取评论
     topic.replies = _getTopicReplies($)
-    const pager = $('#Main > .box').eq(1).find('.cell:not([id]) table')
+    const pager = topicBox.find('.cell:not([id]) table')
     if (pager.length) {
       // 如果获取分页组件，表示有多页评论
       const totalPage = parseInt(pager.find('td').eq(0).children('a').last().text())
