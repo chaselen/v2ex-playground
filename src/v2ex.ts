@@ -161,45 +161,40 @@ export class V2ex {
       topic.isThanked = topicButtons.find('.topic_thanked').length > 0
     }
 
-    
-    let topicBoxIndex = 1;
-    const boxes = $('#Main > .box');
+    let topicBoxIndex = 1
+    const boxes = $('#Main > .box')
 
     if (boxes.eq(1).attr('id') === 'topic-tip-box') {
-      topicBoxIndex = 2;
+      topicBoxIndex = 2
     }
     const topicBox = boxes.eq(topicBoxIndex)
 
     topic.replyCount =
-      parseInt(
-       topicBox.children('div.cell').eq(0).find('span.gray').text().split('•')[0]
-      ) || 0
+      parseInt(topicBox.children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0
     /**
      * 获取回复
      * @param $ 页面加载后的文档
      */
     const _getTopicReplies = ($: cheerio.CheerioAPI): TopicReply[] => {
       const replies: TopicReply[] = []
-      let topicBoxIndex = 1;
-      const boxes = $('#Main > .box');
+      let topicBoxIndex = 1
+      const boxes = $('#Main > .box')
       if (boxes.eq(1).attr('id') === 'topic-tip-box') {
-        topicBoxIndex = 2;
+        topicBoxIndex = 2
       }
       const topicBox = boxes.eq(topicBoxIndex)
-      topicBox
-        .children('div[id].cell')
-        .each((_, element) => {
-          replies.push({
-            replyId: $(element).attr('id')?.split('r_')[1] || '0',
-            userAvatar: $(element).find('img.avatar').attr('src') || '',
-            userName: $(element).find('a.dark').html() || '',
-            time: $(element).find('span.ago').text(),
-            floor: $(element).find('span.no').text(),
-            content: $(element).find('.reply_content').html() || '',
-            thanks: parseInt($(element).find('span.small.fade').text().trim() || '0'),
-            thanked: $(element).find('.thank_area.thanked').length > 0
-          })
+      topicBox.children('div[id].cell').each((_, element) => {
+        replies.push({
+          replyId: $(element).attr('id')?.split('r_')[1] || '0',
+          userAvatar: $(element).find('img.avatar').attr('src') || '',
+          userName: $(element).find('a.dark').html() || '',
+          time: $(element).find('span.ago').text(),
+          floor: $(element).find('span.no').text(),
+          content: $(element).find('.reply_content').html() || '',
+          thanks: parseInt($(element).find('span.small.fade').text().trim() || '0'),
+          thanked: $(element).find('.thank_area.thanked').length > 0
         })
+      })
       return replies
     }
 
