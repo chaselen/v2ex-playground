@@ -13,4 +13,9 @@ export default class Config {
   static proxyUrl(): string {
     return vscode.workspace.getConfiguration().get<string>('v2ex.browse.proxyUrl', '')
   }
+
+  /** 是否自动签到 */
+  static autoSignIn(): boolean {
+    return vscode.workspace.getConfiguration().get<boolean>('v2ex.browse.autoSignIn', true)
+  }
 }
