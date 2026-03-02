@@ -13,6 +13,7 @@ import { V2ex } from './v2ex'
 import search from './commands/search'
 import setting from './commands/setting'
 import { DailyRes } from './type'
+import Config from './config'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
@@ -22,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
   // 检查登录是否有效
   V2ex.checkCookie(G.getCookie()!).then(isLoginValid => {
     console.log(`登录是否有效：${isLoginValid}`)
-    if (isLoginValid) {
+    if (isLoginValid && Config.autoSignIn()) {
       V2ex.daily().then(res => {
         console.log(`每日签到结果：${res}`)
         if (res === DailyRes.success) {
