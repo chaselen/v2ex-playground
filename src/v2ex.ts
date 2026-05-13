@@ -129,7 +129,7 @@ export class V2ex {
     topic.id = parseInt(topicLink.split('/t/')[1] || '0')
     topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || ''
     topic.title = $('.header > h1').text()
-    const node = $('.header > a').eq(1)
+    const node = $('.header a[href^=/go/]')
     topic.node.name = node.attr('href')?.split('go/')[1] || ''
     topic.node.title = node.text().trim()
     topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''
