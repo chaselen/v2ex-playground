@@ -1,19 +1,25 @@
 import { TreeNode } from '../providers/BaseProvider'
-import { LoginRequiredError, AccountRestrictedError } from './../error'
-import { V2ex } from '../v2ex'
 import vscode from 'vscode'
 import G from '../global'
 import path from 'path'
 import Config from '../config'
-import { TopicDetail } from '../type'
 import http from '../http'
+import { TopicPanelController } from '../controllers/TopicPanelController'
+import { V2ex } from '../v2ex'
 
 /**
- * 存放话题页面的panels
- * key：话题的链接/图片链接
+ * 存放话题页面的控制器
+ * key：话题链接
+ * value：控制器
+ */
+const topicPanels: Record<string, TopicPanelController> = {}
+
+/**
+ * 存放图片预览面板
+ * key：图片链接
  * value：panel
  */
-const panels: Record<string, vscode.WebviewPanel> = {}
+const imagePanels: Record<string, vscode.WebviewPanel> = {}
 
 /**
  * 截取标题
@@ -35,12 +41,32 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
     enableFindWidget: true
   })
   panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
-  panels[id] = panel
-
-  panel.onDidDispose(() => {
-    delete panels[id]
-  })
   return panel
+}
+
+/**
+ * 在已有话题面板中打开另一个话题
+ * @param topicId 话题 id
+ */
+function _openTopicInPanel(topicId: string | number) {
+  const topicItem = new TreeNode(`/t/${topicId}`, false)
+  topicItem.topicId = Number(topicId)
+  topicItemClick(topicItem)
+}
+
+/**
+ * 统一执行带进度提示的话题操作
+ * @param title 进度标题
+ * @param task 具体任务
+ */
+function _runTopicAction(title: string, task: () => Thenable<void> | Promise<void>) {
+  return vscode.window.withProgress(
+    {
+      title,
+      location: vscode.ProgressLocation.Notification
+    },
+    task
+  )
 }
 
 /**
@@ -48,202 +74,34 @@ function _createPanel(id: string, label: string): vscode.WebviewPanel {
  * @param item 话题的子节点
  */
 export default function topicItemClick(item: TreeNode) {
-  // 如果panel已经存在，则直接激活
-  let panel = panels[item.link!]
-  if (panel) {
-    panel.reveal()
+  const topicKey = item.link!.toString()
+
+  // 如果控制器已经存在，则直接激活
+  let controller = topicPanels[topicKey]
+  if (controller) {
+    controller.reveal()
     return
   }
 
   // 不在新标签页打开，则关闭之前的标签页重新创建
   if (!Config.openInNewTab()) {
-    Object.values(panels).forEach(p => {
-      p.dispose()
+    Object.values(topicPanels).forEach(topicPanel => {
+      topicPanel.dispose()
     })
   }
 
-  panel = _createPanel(item.link!.toString(), item.label as string)
-  panel.webview.onDidReceiveMessage(message => {
-    const topic: TopicDetail = message._topic ? TopicDetail.from(message._topic) : new TopicDetail()
-    switch (message.command) {
-      case 'setTitle':
-        panel.title = _getTitle(message.title)
-        break
-      case 'browseImage':
-        vscode.window.withProgress(
-          {
-            title: '正在打开大图',
-            location: vscode.ProgressLocation.Notification
-          },
-          () => _openLargeImage(message.src)
-        )
-
-        break
-      case 'openTopic':
-        // label显示/t/xxx部分
-        {
-          const topicId = message.topicId
-          const item = new TreeNode(`/t/${topicId}`, false)
-          item.topicId = topicId
-          topicItemClick(item)
-        }
-        break
-      case 'login':
-        vscode.commands.executeCommand('v2ex.login')
-        break
-      case 'refresh':
-        loadTopicInPanel(panel, item.topicId!)
-        break
-      case 'collect': // 收藏
-        {
-          vscode.window.withProgress(
-            {
-              title: '正在收藏',
-              location: vscode.ProgressLocation.Notification
-            },
-            async () => {
-              await V2ex.collectTopic(topic.id, topic.once || '')
-              loadTopicInPanel(panel, item.topicId!)
-            }
-          )
-        }
-        break
-      case 'cancelCollect': // 取消收藏
-        {
-          vscode.window.withProgress(
-            {
-              title: '正在取消收藏',
-              location: vscode.ProgressLocation.Notification
-            },
-            async () => {
-              await V2ex.cancelCollectTopic(topic.id, topic.once || '')
-              loadTopicInPanel(panel, item.topicId!)
-            }
-          )
-        }
-        break
-      case 'thank':
-        {
-          vscode.window.withProgress(
-            {
-              title: '发送感谢',
-              location: vscode.ProgressLocation.Notification
-            },
-            async () => {
-              await V2ex.thankTopic(topic.id, topic.once)
-              loadTopicInPanel(panel, item.topicId!)
-            }
-          )
-        }
-        break
-      case 'postReply':
-        {
-          const { content } = message
-          if (!content) {
-            vscode.window.showWarningMessage('请输入回复内容')
-            return
-          }
-          vscode.window.withProgress(
-            {
-              title: '正在提交回复',
-              location: vscode.ProgressLocation.Notification
-            },
-            async () => {
-              await V2ex.postReply(topic.link, content, topic.once)
-              loadTopicInPanel(panel, item.topicId!)
-            }
-          )
-        }
-        break
-      case 'thankReply':
-        {
-          const { replyId } = message
-          const reply = topic.replies.find(r => r.replyId === replyId)
-          if (!reply) {
-            return
-          }
-          vscode.window.withProgress(
-            {
-              title: '发送感谢',
-              location: vscode.ProgressLocation.Notification
-            },
-            async () => {
-              const resp = await V2ex.thankReply(replyId, topic.once)
-              if (resp.success && resp.once) {
-                reply.thanked = true
-                reply.thanks++
-                topic.once = resp.once
-                renderTopicInPanel(panel, topic)
-              }
-            }
-          )
-        }
-        break
-      default:
-        break
-    }
+  controller = new TopicPanelController(item, {
+    createPanel: _createPanel,
+    openTopic: _openTopicInPanel,
+    openLargeImage: _openLargeImage,
+    runTopicAction: _runTopicAction,
+    getTitle: _getTitle
   })
-
-  loadTopicInPanel(panel, item.topicId!)
-}
-
-/**
- * 在Panel中加载话题
- * @param panel panel
- * @param topicId 话题id
- */
-function loadTopicInPanel(panel: vscode.WebviewPanel, topicId: number) {
-  panel.webview.html = V2ex.renderPage('loading.html', {
-    contextPath: G.getWebViewContextPath(panel.webview)
+  topicPanels[topicKey] = controller
+  controller.onDidDispose(() => {
+    delete topicPanels[topicKey]
   })
-
-  // 获取详情数据
-  V2ex.getTopicDetail(topicId)
-    .then(detail => {
-      renderTopicInPanel(panel, detail)
-    })
-    .catch((err: Error) => {
-      console.error(err)
-      if (err instanceof LoginRequiredError) {
-        panel.webview.html = V2ex.renderPage('error.html', {
-          contextPath: G.getWebViewContextPath(panel.webview),
-          message: err.message,
-          showLogin: true,
-          showRefresh: true
-        })
-      } else if (err instanceof AccountRestrictedError) {
-        panel.webview.html = V2ex.renderPage('error.html', {
-          contextPath: G.getWebViewContextPath(panel.webview),
-          message: err.message,
-          showRefresh: false
-        })
-      } else {
-        panel.webview.html = V2ex.renderPage('error.html', {
-          contextPath: G.getWebViewContextPath(panel.webview),
-          message: err.message,
-          showRefresh: true
-        })
-      }
-    })
-}
-
-/**
- * 在Panel中加载话题
- * @param panel panel
- * @param topicDetail 话题详情
- */
-function renderTopicInPanel(panel: vscode.WebviewPanel, topicDetail: TopicDetail) {
-  try {
-    // 在panel被关闭后设置html，会出现'Webview is disposed'异常，暂时简单粗暴地解决一下
-    panel.webview.html = V2ex.renderPage('topic.html', {
-      topic: topicDetail,
-      // 避免内容被转义，所以用base64
-      topicJson: Buffer.from(JSON.stringify(topicDetail)).toString('base64'),
-      contextPath: G.getWebViewContextPath(panel.webview)
-    })
-  } catch (err) {
-    console.log(err)
-  }
+  controller.load()
 }
 
 /**
@@ -252,7 +110,7 @@ function renderTopicInPanel(panel: vscode.WebviewPanel, topicDetail: TopicDetail
  */
 async function _openLargeImage(imageSrc: string) {
   // 如果panel已经存在，则直接激活
-  let panel = panels[imageSrc]
+  let panel = imagePanels[imageSrc]
   if (panel) {
     panel.reveal()
     return
@@ -260,6 +118,10 @@ async function _openLargeImage(imageSrc: string) {
 
   console.log('打开大图：', imageSrc)
   panel = _createPanel(imageSrc, '查看图片')
+  imagePanels[imageSrc] = panel
+  panel.onDidDispose(() => {
+    delete imagePanels[imageSrc]
+  })
   // panel.webview.html = V2ex.renderPage('browseImage.html', {
   //   imageSrc: imageSrc
   // })

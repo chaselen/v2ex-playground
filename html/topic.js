@@ -1,17 +1,16 @@
 const vscode = acquireVsCodeApi()
 
+/**
+ * 向扩展侧发送消息
+ * @param {string} command 命令名
+ * @param {Record<string, any>} messages 附加参数
+ */
 const vsPostMessage = (command, messages) => {
   vscode.postMessage({
     command: command,
-    _topic: _topic,
     ...(messages || {})
   })
 }
-
-// 设置标题
-vsPostMessage('setTitle', {
-  title: document.title
-})
 
 // imgur图片代理
 document.querySelectorAll('.topic-content img').forEach(img => {

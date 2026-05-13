@@ -1,13 +1,7 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@import url(lib/modern-normalize.css);
 html,
 body {
   font-size: 14px;
-  margin: 0;
-  padding: 0;
 }
 a {
   text-decoration: none;

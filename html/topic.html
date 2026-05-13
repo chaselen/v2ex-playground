@@ -104,7 +104,6 @@
             <div class="topic-content">{{@ $value.content}}</div>
           </div>
         </div>
-        <hr />
         {{/each}}
       </div>
 
@@ -118,10 +117,6 @@
       <p style="opacity: 0.5">您目前还不能回复，请先登录</p>
       {{/if}}
     </div>
-
-    <script>
-      var _topic = JSON.parse(atob('{{@ topicJson}}'));
-    </script>
     <script src="{{ contextPath }}/html/topic.js"></script>
     <!-- <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script> -->
     <script src="{{ contextPath }}/html/lib/email-decode.min.js"></script>

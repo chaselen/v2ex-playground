@@ -1,29 +1,3 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-html,
-body {
-  font-size: 14px;
-  margin: 0;
-  padding: 0;
-}
-a {
-  text-decoration: none;
-}
-hr {
-  margin: 20px 0;
-  border: none;
-  height: 1px;
-  background-color: var(--vscode-editorIndentGuide-background);
-}
-.container {
-  min-width: 400px;
-  max-width: 700px;
-  padding: 20px;
-  margin: 0 auto;
-}
 .topic-header {
   display: flex;
   flex-direction: row;
@@ -64,9 +38,6 @@ hr {
   word-break: break-all;
   overflow-wrap: break-word;
 }
-.topic-content p {
-  margin: 10px 0;
-}
 .topic-content a {
   word-break: break-all;
 }
@@ -88,8 +59,31 @@ hr {
   white-space: pre-wrap;
   word-break: break-all;
 }
+.topic-content blockquote {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 12px;
+}
+.topic-content blockquote p {
+  margin: 0;
+}
+.topic-content ol,
 .topic-content ul {
-  list-style: inside;
+  padding-left: 0;
+  list-style-position: inside;
+}
+.topic-content table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.topic-content table td,
+.topic-content table th {
+  padding: 6px 12px;
+  border: 1px solid var(--vscode-panel-border);
+}
+.topic-content table tr:nth-child(2n) {
+  background-color: var(--vscode-editorWidget-background);
 }
 .topic-content.append h2 {
   padding-bottom: 10px;
@@ -117,6 +111,8 @@ hr {
 .reply-item {
   display: flex;
   flex-direction: row;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--vscode-panel-border);
 }
 .reply-item .avatar {
   width: 48px;
@@ -201,7 +197,7 @@ hr {
   padding: 5px;
   font-family: inherit;
   font-size: 14px;
-  border: 1px solid var(--vscode-editorIndentGuide-background);
+  border: 1px solid var(--vscode-panel-border);
   box-sizing: border-box;
   background-color: transparent;
   color: var(--vscode-editor-foreground);
