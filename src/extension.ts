@@ -14,9 +14,11 @@ import search from './commands/search'
 import setting from './commands/setting'
 import { DailyRes } from './type'
 import Config from './config'
+import { cleanupImagePreviewCache } from './imagePreview'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
+  cleanupImagePreviewCache()
 
   // 插件激活后直接获取节点信息缓存下来
   V2ex.getAllNodes()

@@ -3,9 +3,8 @@ import vscode from 'vscode'
 import G from '../global'
 import path from 'path'
 import Config from '../config'
-import http from '../http'
 import { TopicPanelController } from '../controllers/TopicPanelController'
-import { V2ex } from '../v2ex'
+import { openImagePreview } from '../imagePreview'
 
 /**
  * 存放话题页面的控制器
@@ -13,13 +12,6 @@ import { V2ex } from '../v2ex'
  * value：控制器
  */
 const topicPanels: Record<string, TopicPanelController> = {}
-
-/**
- * 存放图片预览面板
- * key：图片链接
- * value：panel
- */
-const imagePanels: Record<string, vscode.WebviewPanel> = {}
 
 /**
  * 截取标题
@@ -93,7 +85,7 @@ export default function topicItemClick(item: TreeNode) {
   controller = new TopicPanelController(item, {
     createPanel: _createPanel,
     openTopic: _openTopicInPanel,
-    openLargeImage: _openLargeImage,
+    openLargeImage: openImagePreview,
     runTopicAction: _runTopicAction,
     getTitle: _getTitle
   })
@@ -102,48 +94,4 @@ export default function topicItemClick(item: TreeNode) {
     delete topicPanels[topicKey]
   })
   controller.load()
-}
-
-/**
- * 打开大图
- * @param imageSrc 图片地址
- */
-async function _openLargeImage(imageSrc: string) {
-  // 如果panel已经存在，则直接激活
-  let panel = imagePanels[imageSrc]
-  if (panel) {
-    panel.reveal()
-    return
-  }
-
-  console.log('打开大图：', imageSrc)
-  panel = _createPanel(imageSrc, '查看图片')
-  imagePanels[imageSrc] = panel
-  panel.onDidDispose(() => {
-    delete imagePanels[imageSrc]
-  })
-  // panel.webview.html = V2ex.renderPage('browseImage.html', {
-  //   imageSrc: imageSrc
-  // })
-
-  panel.webview.html = V2ex.renderPage('loading.html', {
-    contextPath: G.getWebViewContextPath(panel.webview)
-  })
-
-  try {
-    const res = await http.get(imageSrc, { responseType: 'arraybuffer' })
-
-    const ft = await import('file-type').then(m => m.fileTypeFromBuffer(res.data))
-    if (!ft) {
-      throw new Error('获取文件类型失败')
-    }
-    if (!ft.mime.startsWith('image/')) {
-      throw new Error(`不是有效的图片类型：${ft.mime}`)
-    }
-
-    const base64 = Buffer.from(res.data).toString('base64')
-    panel.webview.html = `<img src="data:${ft.mime};base64,${base64}">`
-  } catch (e: any) {
-    vscode.window.showErrorMessage(`下载图片失败：${e.message}`)
-  }
 }
