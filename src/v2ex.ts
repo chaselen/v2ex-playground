@@ -134,8 +134,8 @@ export class V2ex {
     topic.node.title = node.text().trim()
     topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''
     const meta = $('.header > .gray').text().split('·')
-    topic.authorName = meta[0].trim()
-    topic.displayTime = meta[1].trim()
+    topic.authorName = $('.header > .gray a[href^=/member]').text().trim()
+    topic.displayTime = $('.header > .gray > span').last().text().trim()
     topic.visitCount = parseInt(meta[2].trim())
     topic.content = $('#Main .topic_content').html() || ''
     $('.subtle').each((_, element) => {
