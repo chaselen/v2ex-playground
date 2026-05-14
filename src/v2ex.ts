@@ -1,8 +1,9 @@
 import { TreeNode } from './providers/BaseProvider'
 import { AccountRestrictedError, LoginRequiredError } from './error'
 import * as cheerio from 'cheerio'
-import template from 'art-template'
+import { Eta } from 'eta'
 import http from './http'
+import { readFileSync } from 'fs'
 import { AxiosResponse } from 'axios'
 import path from 'path'
 import G from './global'
@@ -469,10 +470,11 @@ export class V2ex {
    * @param page 要渲染的html页面
    * @param data 传入的数据
    */
-  static renderPage(page: string, data: any = {}): string {
+  static renderPage(page: string, data: Record<string, unknown> = {}): string {
     const templatePath = path.join(G.context.extensionPath, 'html', page)
-    const html = template(templatePath, data)
-    return html
+    /** eta 使用 <% %> 语法，默认不会和 Vue 的 {{ }} 冲突 */
+    const eta = new Eta({ useWith: true })
+    return eta.renderString(readFileSync(templatePath, 'utf-8'), data) as string
   }
 
   /**

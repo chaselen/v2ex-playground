@@ -1,20 +1,25 @@
-@import url(lib/modern-normalize.css);
+@import url(./lib/modern-normalize.css);
+
 html,
 body {
   font-size: 14px;
 }
+
 a {
   text-decoration: none;
 }
+
 hr {
   margin: 20px 0;
   border: none;
   height: 1px;
   background-color: var(--vscode-editorIndentGuide-background);
 }
+
 .text-bold {
   font-weight: bold;
 }
+
 .container {
   min-width: 400px;
   max-width: 700px;

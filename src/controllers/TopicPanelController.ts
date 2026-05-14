@@ -23,6 +23,22 @@ export interface TopicPanelMessage {
 }
 
 /**
+ * 发往 webview 的话题页面状态
+ */
+interface TopicPanelViewState {
+  /** 页面状态 */
+  status: 'loading' | 'topic' | 'error'
+  /** 话题详情 */
+  topic?: TopicDetail
+  /** 错误文案 */
+  message?: string
+  /** 是否显示登录按钮 */
+  showLogin?: boolean
+  /** 是否显示刷新按钮 */
+  showRefresh?: boolean
+}
+
+/**
  * 打开话题面板所需的最小参数
  */
 export interface TopicPanelInput {
@@ -55,6 +71,9 @@ export class TopicPanelController {
     this.key = V2ex.getTopicLinkById(input.topicId)
     this.topicId = input.topicId
     this.panel = createPanel(this.key, input.label)
+    this.panel.webview.html = V2ex.renderPage('topic.html', {
+      contextPath: G.getWebViewContextPath(this.panel.webview)
+    })
     this.panel.webview.onDidReceiveMessage((message: TopicPanelMessage) => {
       this.handleMessage(message)
     })
@@ -86,8 +105,8 @@ export class TopicPanelController {
    * 加载当前话题
    */
   load() {
-    this.panel.webview.html = V2ex.renderPage('loading.html', {
-      contextPath: G.getWebViewContextPath(this.panel.webview)
+    this.postViewState({
+      status: 'loading'
     })
 
     V2ex.getTopicDetail(this.topicId)
@@ -107,15 +126,10 @@ export class TopicPanelController {
    * @param topicDetail 话题详情
    */
   render(topicDetail: TopicDetail) {
-    try {
-      // 在 panel 被关闭后设置 html 会抛出异常，这里保持兼容处理
-      this.panel.webview.html = V2ex.renderPage('topic.html', {
-        topic: topicDetail,
-        contextPath: G.getWebViewContextPath(this.panel.webview)
-      })
-    } catch (err) {
-      console.log(err)
-    }
+    this.postViewState({
+      status: 'topic',
+      topic: topicDetail
+    })
   }
 
   /**
@@ -124,8 +138,8 @@ export class TopicPanelController {
    */
   private renderError(err: Error) {
     if (err instanceof LoginRequiredError) {
-      this.panel.webview.html = V2ex.renderPage('error.html', {
-        contextPath: G.getWebViewContextPath(this.panel.webview),
+      this.postViewState({
+        status: 'error',
         message: err.message,
         showLogin: true,
         showRefresh: true
@@ -134,19 +148,35 @@ export class TopicPanelController {
     }
 
     if (err instanceof AccountRestrictedError) {
-      this.panel.webview.html = V2ex.renderPage('error.html', {
-        contextPath: G.getWebViewContextPath(this.panel.webview),
+      this.postViewState({
+        status: 'error',
         message: err.message,
         showRefresh: false
       })
       return
     }
 
-    this.panel.webview.html = V2ex.renderPage('error.html', {
-      contextPath: G.getWebViewContextPath(this.panel.webview),
+    this.postViewState({
+      status: 'error',
       message: err.message,
       showRefresh: true
     })
+  }
+
+  /**
+   * 向 webview 同步最新视图状态
+   * @param state 页面状态
+   */
+  private postViewState(state: TopicPanelViewState) {
+    try {
+      // 在 panel 被关闭后发送消息会抛出异常，这里保持兼容处理
+      this.panel.webview.postMessage({
+        command: 'renderState',
+        state
+      })
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   /**
@@ -290,7 +320,11 @@ function createPanel(id: string, label: string): vscode.WebviewPanel {
     {
       enableScripts: true,
       retainContextWhenHidden: true,
-      enableFindWidget: true
+      enableFindWidget: true,
+      localResourceRoots: [
+        vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
+        vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
+      ]
     }
   )
   panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))

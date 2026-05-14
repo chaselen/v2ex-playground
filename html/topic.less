@@ -16,6 +16,39 @@
   }
 }
 
+.state-panel {
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.state-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--vscode-editor-inactiveSelectionBackground);
+  border-top-color: var(--vscode-textLink-foreground);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.state-message {
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
 .topic-meta {
   display: flex;
   align-items: center;
@@ -116,6 +149,10 @@
   margin-top: 20px;
   display: flex;
   flex-direction: row;
+
+  &--state {
+    margin-top: 16px;
+  }
 
   .op {
     margin-right: 10px;

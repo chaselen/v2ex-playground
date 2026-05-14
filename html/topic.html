@@ -1,126 +1,169 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Topic</title>
+    <base href="https://www.v2ex.com" />
+    <link rel="stylesheet" href="<%= contextPath %>/html/common.css" />
+    <link rel="stylesheet/less" href="<%= contextPath %>/html/topic.less" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{ topic.title }}</title>
-  <base href="https://www.v2ex.com" />
-  <link rel="stylesheet" href="{{ contextPath }}/html/common.css" />
-  <link rel="stylesheet" href="{{ contextPath }}/html/topic.css" />
-</head>
+  <body>
+    <div id="app"></div>
+    <script type="text/x-template" id="topic-template">
+      <div class="container">
+        <div v-if="state.status === 'loading'" class="state-panel">
+          <div class="spinner"></div>
+          <div class="state-title">加载中</div>
+        </div>
 
-<body>
-  <div class="container">
-    <!-- 标题 -->
-    <div class="topic-header">
-      <h1>{{ topic.title }}</h1>
-      <!-- <img src="{{authorAvatar}}" alt="avatar" /> -->
-    </div>
+        <div v-else-if="state.status === 'error'" class="state-panel">
+          <div class="state-title">加载失败</div>
+          <div class="state-message" v-html="normalizeHtml(state.message)"></div>
+          <div class="topic-toolbar topic-toolbar--state">
+            <a v-if="state.showLogin" class="op" href="javascript:;" @click="vsPostMessage('login')"
+              >登录</a
+            >
+            <a
+              v-if="state.showRefresh"
+              class="op"
+              href="javascript:;"
+              @click="vsPostMessage('refresh')"
+              >刷新页面</a
+            >
+          </div>
+        </div>
 
-    <!-- 作者、时间 -->
-    <div class="topic-meta">
-      <a class="node" href="/go/{{ topic.node.name }}">{{ topic.node.title }}</a>
-      <a class="user text-bold" href="/member/{{ topic.authorName }}">{{ topic.authorName }}</a>
-      <span class="time"> · {{ topic.displayTime }} · {{ topic.visitCount }} 次点击</span>
-    </div>
-    <hr />
+        <template v-else-if="state.status === 'topic' && topic">
+          <div class="topic-header">
+            <h1>{{ topic.title }}</h1>
+          </div>
 
-    <!-- 正文 -->
-    {{if topic.content}}
-    <div class="topic-content">{{@ topic.content}}</div>
-    {{else}}
-    <div class="topic-content">正文无内容</div>
-    {{/if}}
+          <div class="topic-meta">
+            <a class="node" :href="'/go/' + topic.node.name">{{ topic.node.title }}</a>
+            <a class="user text-bold" :href="'/member/' + topic.authorName">{{
+              topic.authorName
+            }}</a>
+            <span class="time"> · {{ topic.displayTime }} · {{ topic.visitCount }} 次点击</span>
+          </div>
+          <hr />
 
-    <!-- 工具条 -->
-    {{if topic.once}}
-    <div class="topic-toolbar">
-      <!-- 刷新 -->
-      <a class="op refresh" href="javascript:;" onclick="vsPostMessage('refresh')" title="刷新页面">刷新页面</a>
-      <!-- 收藏 -->
-      {{if !topic.isCollected}}
-      <a class="op collect" href="javascript:;" onclick="vsPostMessage('collect')" title="加入收藏">加入收藏</a>
-      {{else}}
-      <a class="op collect" href="javascript:;" onclick="vsPostMessage('cancelCollect')" title="取消收藏">取消收藏</a>
-      {{/if}}
-      <!-- 感谢 -->
-      {{if topic.canThank && !topic.isThanked}}
-      <a class="op thanks" href="javascript:;" onclick="vsPostMessage('thank')" title="感谢">感谢</a>
-      {{/if}}
-      <!-- 感谢-已发送 -->
-      {{if topic.canThank && topic.isThanked}}
-      <span class="text">感谢已发送</span>
-      {{/if}}
-      <span class="text count">{{topic.visitCount}} 次点击 {{if topic.collectCount}} ∙ {{topic.collectCount}} 人收藏
-        {{/if}} {{if topic.thankCount}} ∙ {{topic.thankCount}} 人感谢 {{/if}}
-      </span>
-    </div>
-    {{/if}}
+          <div
+            v-if="topic.content"
+            class="topic-content"
+            v-html="normalizeHtml(topic.content)"
+          ></div>
+          <div v-else class="topic-content">正文无内容</div>
 
-    <hr />
+          <div v-if="topic.once" class="topic-toolbar">
+            <a
+              class="op refresh"
+              href="javascript:;"
+              @click="vsPostMessage('refresh')"
+              title="刷新页面"
+              >刷新页面</a
+            >
+            <a
+              v-if="!topic.isCollected"
+              class="op collect"
+              href="javascript:;"
+              @click="vsPostMessage('collect')"
+              title="加入收藏"
+              >加入收藏</a
+            >
+            <a
+              v-else
+              class="op collect"
+              href="javascript:;"
+              @click="vsPostMessage('cancelCollect')"
+              title="取消收藏"
+              >取消收藏</a
+            >
+            <a
+              v-if="topic.canThank && !topic.isThanked"
+              class="op thanks"
+              href="javascript:;"
+              @click="vsPostMessage('thank')"
+              title="感谢"
+              >感谢</a
+            >
+            <span v-if="topic.canThank && topic.isThanked" class="text">感谢已发送</span>
+            <span class="text count">
+              {{ topic.visitCount }} 次点击
+              <template v-if="topic.collectCount"> ∙ {{ topic.collectCount }} 人收藏 </template>
+              <template v-if="topic.thankCount"> ∙ {{ topic.thankCount }} 人感谢 </template>
+            </span>
+          </div>
 
-    <!-- 附言 -->
-    {{each topic.appends}}
-    <div class="topic-content append">
-      <h2>第 {{ $index + 1 }} 条附言</h2>
-      {{@ $value.content}}
-    </div>
-    <hr />
-    {{/each}}
+          <hr />
 
-    <!-- 评论 -->
-    <div class="reply">
-      {{if topic.replies.length}}
-      <h2>共 {{ topic.replyCount }} 条回复</h2>
-      {{else}}
-      <h2>暂无回复</h2>
-      {{/if}}
+          <template v-for="(append, index) in topic.appends" :key="'append-' + index">
+            <div class="topic-content append">
+              <h2>第 {{ index + 1 }} 条附言</h2>
+              <div v-html="normalizeHtml(append.content)"></div>
+            </div>
+            <hr />
+          </template>
 
-      <!-- 列表 -->
-      {{each topic.replies}}
-      <div class="reply-item">
-        <!-- <img class="avatar" src="{{$value.userAvatar}}" alt="" /> -->
-        <div class="reply-item-wrap">
-          <div class="meta">
-            <a class="user {{ topic.authorName === $value.userName ? 'user--author' : '' }}"
-              href="/member/{{ $value.userName }}">{{ $value.userName }}</a>
-            <span class="time">{{ $value.time }}</span>
-            {{if $value.thanks > 0}}
-            <span class="thanks">♥ {{ $value.thanks }}</span>
-            {{/if}}
-            <div class="reply-right">
-              {{if topic.once}} {{if $value.thanked}}
-              <span class="thanked">感谢已发送</span>
-              {{else}}
-              <a class="thankReply" href="javascript:;" data-reply-id="{{ $value.replyId }}" onclick="thankReply(event)"
-                title="感谢回复者">感谢回复者</a>
-              {{/if}}
-              <a class="floorReply" href="javascript:;" data-reply-author="{{ $value.userName }}"
-                data-reply-floor="{{ $value.floor }}" onclick="floorReply(event)" title="回复该楼层">回复</a>
-              {{/if}}
-              <span class="floor">{{ $value.floor }}</span>
+          <div class="reply">
+            <h2 v-if="topic.replies.length">共 {{ topic.replyCount }} 条回复</h2>
+            <h2 v-else>暂无回复</h2>
+
+            <div v-for="reply in topic.replies" :key="reply.replyId" class="reply-item">
+              <div class="reply-item-wrap">
+                <div class="meta">
+                  <a
+                    class="user"
+                    :class="{ 'user--author': topic.authorName === reply.userName }"
+                    :href="'/member/' + reply.userName"
+                    >{{ reply.userName }}</a
+                  >
+                  <span class="time">{{ reply.time }}</span>
+                  <span v-if="reply.thanks > 0" class="thanks">♥ {{ reply.thanks }}</span>
+                  <div class="reply-right">
+                    <template v-if="topic.once">
+                      <span v-if="reply.thanked" class="thanked">感谢已发送</span>
+                      <a
+                        v-else
+                        class="thankReply"
+                        href="javascript:;"
+                        @click="thankReply(reply.replyId)"
+                        title="感谢回复者"
+                        >感谢回复者</a
+                      >
+                      <a
+                        class="floorReply"
+                        href="javascript:;"
+                        @click="floorReply(reply.userName, reply.floor)"
+                        title="回复该楼层"
+                        >回复</a
+                      >
+                    </template>
+                    <span class="floor">{{ reply.floor }}</span>
+                  </div>
+                </div>
+                <div class="topic-content" v-html="normalizeHtml(reply.content)"></div>
+              </div>
             </div>
           </div>
-          <div class="topic-content">{{@ $value.content}}</div>
-        </div>
+
+          <form v-if="topic.once" action="#" class="post-reply">
+            <textarea
+              id="replyBox"
+              maxlength="10000"
+              placeholder="请尽量让自己的回复能够对别人有帮助"
+            ></textarea>
+            <button type="button" class="submit" @click="onSubmit">回复</button>
+          </form>
+          <p v-else style="opacity: 0.5">您目前还不能回复，请先登录</p>
+        </template>
       </div>
-      {{/each}}
-    </div>
+    </script>
 
-    <!-- 提交回复 -->
-    {{if topic.once}}
-    <form action="#" class="post-reply">
-      <textarea id="replyBox" maxlength="10000" placeholder="请尽量让自己的回复能够对别人有帮助"></textarea>
-      <button type="button" class="submit" onclick="onSubmit()">回复</button>
-    </form>
-    {{else}}
-    <p style="opacity: 0.5">您目前还不能回复，请先登录</p>
-    {{/if}}
-  </div>
-  <script src="{{ contextPath }}/html/topic.js"></script>
-  <!-- <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script> -->
-  <script src="{{ contextPath }}/html/lib/email-decode.min.js"></script>
-</body>
-
+    <script src="<%= contextPath %>/html/lib/vue.global.prod.js"></script>
+    <script src="<%= contextPath %>/html/lib/less.min.js"></script>
+    <script src="<%= contextPath %>/html/lib/email-decode.min.js"></script>
+    <script src="<%= contextPath %>/html/topic.js"></script>
+  </body>
 </html>
