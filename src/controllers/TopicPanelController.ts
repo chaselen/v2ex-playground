@@ -1,9 +1,10 @@
 import vscode from 'vscode'
-import { TreeNode } from '../providers/BaseProvider'
+import path from 'path'
 import { LoginRequiredError, AccountRestrictedError } from '../error'
 import { V2ex } from '../v2ex'
 import G from '../global'
 import { TopicDetail } from '../type'
+import { openImagePreview } from '../imagePreview'
 
 /**
  * Webview 发给扩展侧的话题命令消息
@@ -22,22 +23,13 @@ export interface TopicPanelMessage {
 }
 
 /**
- * 话题面板控制器依赖项
+ * 打开话题面板所需的最小参数
  */
-export interface TopicPanelControllerDeps {
-  /** 创建 webview 面板 */
-  createPanel: (id: string, label: string) => vscode.WebviewPanel
-  /** 打开扩展内另一个话题 */
-  openTopic: (topicId: string | number) => void
-  /** 打开大图预览 */
-  openLargeImage: (imageSrc: string) => Promise<void>
-  /** 统一执行带进度提示的操作 */
-  runTopicAction: (
-    title: string,
-    task: () => Thenable<void> | Promise<void>
-  ) => Thenable<void> | Promise<void>
-  /** 截断标题 */
-  getTitle: (title: string) => string
+export interface TopicPanelInput {
+  /** 话题标题 */
+  label: string
+  /** 话题 id */
+  topicId: number
 }
 
 /**
@@ -47,23 +39,22 @@ export class TopicPanelController {
   /** 话题面板缓存 key */
   readonly key: string
 
-  /** 话题节点 */
-  private readonly item: TreeNode
+  /** 话题 id */
+  private readonly topicId: number
 
   /** 话题面板 */
   private readonly panel: vscode.WebviewPanel
 
-  /** 控制器依赖项 */
-  private readonly deps: TopicPanelControllerDeps
-
   /** 当前话题详情，仅在扩展侧维护 */
-  private topic = new TopicDetail()
+  private detail = new TopicDetail()
 
-  constructor(item: TreeNode, deps: TopicPanelControllerDeps) {
-    this.key = item.link!.toString()
-    this.item = item
-    this.deps = deps
-    this.panel = deps.createPanel(this.key, item.label as string)
+  /**
+   * @param input 话题面板输入参数
+   */
+  constructor(input: TopicPanelInput) {
+    this.key = V2ex.getTopicLinkById(input.topicId)
+    this.topicId = input.topicId
+    this.panel = createPanel(this.key, input.label)
     this.panel.webview.onDidReceiveMessage((message: TopicPanelMessage) => {
       this.handleMessage(message)
     })
@@ -99,10 +90,10 @@ export class TopicPanelController {
       contextPath: G.getWebViewContextPath(this.panel.webview)
     })
 
-    V2ex.getTopicDetail(this.item.topicId!)
+    V2ex.getTopicDetail(this.topicId)
       .then(detail => {
-        this.topic = detail
-        this.panel.title = this.deps.getTitle(detail.title)
+        this.detail = detail
+        this.panel.title = fmtPanelTitle(detail.title)
         this.render(detail)
       })
       .catch((err: Error) => {
@@ -165,12 +156,10 @@ export class TopicPanelController {
   private handleMessage(message: TopicPanelMessage) {
     switch (message.command) {
       case 'browseImage':
-        return this.deps.runTopicAction('正在打开大图', () =>
-          this.deps.openLargeImage(message.src || '')
-        )
+        return this.runTopicAction('正在打开大图', () => openImagePreview(message.src || ''))
       case 'openTopic':
         if (message.topicId !== undefined) {
-          this.deps.openTopic(message.topicId)
+          this.openTopic(message.topicId)
         }
         return
       case 'login':
@@ -179,15 +168,15 @@ export class TopicPanelController {
         return this.load()
       case 'collect':
         return this.runTopicMutation('正在收藏', () =>
-          V2ex.collectTopic(this.topic.id, this.topic.once || '')
+          V2ex.collectTopic(this.detail.id, this.detail.once || '')
         )
       case 'cancelCollect':
         return this.runTopicMutation('正在取消收藏', () =>
-          V2ex.cancelCollectTopic(this.topic.id, this.topic.once || '')
+          V2ex.cancelCollectTopic(this.detail.id, this.detail.once || '')
         )
       case 'thank':
         return this.runTopicMutation('发送感谢', () =>
-          V2ex.thankTopic(this.topic.id, this.topic.once)
+          V2ex.thankTopic(this.detail.id, this.detail.once)
         )
       case 'postReply':
         return this.handlePostReply(message)
@@ -204,10 +193,37 @@ export class TopicPanelController {
    * @param task 具体任务
    */
   private runTopicMutation(title: string, task: () => Promise<unknown>) {
-    return this.deps.runTopicAction(title, async () => {
+    return this.runTopicAction(title, async () => {
       await task()
       this.load()
     })
+  }
+
+  /**
+   * 打开扩展内另一个话题
+   * @param topicId 话题 id
+   */
+  private openTopic(topicId: string | number) {
+    const nextTopicId = Number(topicId)
+    vscode.commands.executeCommand('v2ex.topicItemClick', {
+      label: `/t/${nextTopicId}`,
+      topicId: nextTopicId
+    } satisfies TopicPanelInput)
+  }
+
+  /**
+   * 统一执行带进度提示的话题操作
+   * @param title 进度标题
+   * @param task 具体任务
+   */
+  private runTopicAction(title: string, task: () => Thenable<void> | Promise<void>) {
+    return vscode.window.withProgress(
+      {
+        title,
+        location: vscode.ProgressLocation.Notification
+      },
+      task
+    )
   }
 
   /**
@@ -222,7 +238,7 @@ export class TopicPanelController {
     }
 
     return this.runTopicMutation('正在提交回复', () =>
-      V2ex.postReply(this.topic.link, content, this.topic.once)
+      V2ex.postReply(this.detail.link, content, this.detail.once)
     )
   }
 
@@ -236,19 +252,47 @@ export class TopicPanelController {
       return
     }
 
-    const reply = this.topic.replies.find(r => r.replyId === replyId)
+    const reply = this.detail.replies.find(r => r.replyId === replyId)
     if (!reply) {
       return
     }
 
-    return this.deps.runTopicAction('发送感谢', async () => {
-      const resp = await V2ex.thankReply(replyId, this.topic.once)
+    return this.runTopicAction('发送感谢', async () => {
+      const resp = await V2ex.thankReply(replyId, this.detail.once)
       if (resp.success && resp.once) {
         reply.thanked = true
         reply.thanks++
-        this.topic.once = resp.once
-        this.render(this.topic)
+        this.detail.once = resp.once
+        this.render(this.detail)
       }
     })
   }
+}
+
+/**
+ * 截断面板标题
+ * @param title 原始标题
+ */
+function fmtPanelTitle(title: string) {
+  return title.length <= 15 ? title : title.slice(0, 15) + '...'
+}
+
+/**
+ * 创建话题 webview 面板
+ * @param id 面板 id
+ * @param label 面板标题
+ */
+function createPanel(id: string, label: string): vscode.WebviewPanel {
+  const panel = vscode.window.createWebviewPanel(
+    id,
+    fmtPanelTitle(label),
+    vscode.ViewColumn.Active,
+    {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      enableFindWidget: true
+    }
+  )
+  panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
+  return panel
 }

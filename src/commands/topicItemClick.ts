@@ -1,10 +1,7 @@
 import { TreeNode } from '../providers/BaseProvider'
-import vscode from 'vscode'
-import G from '../global'
-import path from 'path'
 import Config from '../config'
-import { TopicPanelController } from '../controllers/TopicPanelController'
-import { openImagePreview } from '../imagePreview'
+import { TopicPanelController, TopicPanelInput } from '../controllers/TopicPanelController'
+import { V2ex } from '../v2ex'
 
 /**
  * 存放话题页面的控制器
@@ -14,59 +11,12 @@ import { openImagePreview } from '../imagePreview'
 const topicPanels: Record<string, TopicPanelController> = {}
 
 /**
- * 截取标题
- * @param title 标题
- */
-function _getTitle(title: string) {
-  return title.length <= 15 ? title : title.slice(0, 15) + '...'
-}
-
-/**
- * 创建webview面板
- * @param id 面板id
- * @param label 面板标题
- */
-function _createPanel(id: string, label: string): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(id, _getTitle(label), vscode.ViewColumn.Active, {
-    enableScripts: true,
-    retainContextWhenHidden: true,
-    enableFindWidget: true
-  })
-  panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
-  return panel
-}
-
-/**
- * 在已有话题面板中打开另一个话题
- * @param topicId 话题 id
- */
-function _openTopicInPanel(topicId: string | number) {
-  const topicItem = new TreeNode(`/t/${topicId}`, false)
-  topicItem.topicId = Number(topicId)
-  topicItemClick(topicItem)
-}
-
-/**
- * 统一执行带进度提示的话题操作
- * @param title 进度标题
- * @param task 具体任务
- */
-function _runTopicAction(title: string, task: () => Thenable<void> | Promise<void>) {
-  return vscode.window.withProgress(
-    {
-      title,
-      location: vscode.ProgressLocation.Notification
-    },
-    task
-  )
-}
-
-/**
  * 点击子节点打开详情页面
  * @param item 话题的子节点
  */
-export default function topicItemClick(item: TreeNode) {
-  const topicKey = item.link!.toString()
+export default function topicItemClick(item: TreeNode | TopicPanelInput) {
+  const topic = normalizeTopicPanelOptions(item)
+  const topicKey = V2ex.getTopicLinkById(topic.topicId)
 
   // 如果控制器已经存在，则直接激活
   let controller = topicPanels[topicKey]
@@ -82,16 +32,36 @@ export default function topicItemClick(item: TreeNode) {
     })
   }
 
-  controller = new TopicPanelController(item, {
-    createPanel: _createPanel,
-    openTopic: _openTopicInPanel,
-    openLargeImage: openImagePreview,
-    runTopicAction: _runTopicAction,
-    getTitle: _getTitle
-  })
+  controller = new TopicPanelController(topic)
   topicPanels[topicKey] = controller
   controller.onDidDispose(() => {
     delete topicPanels[topicKey]
   })
   controller.load()
+}
+
+/**
+ * 将树节点或轻量参数转换为控制器需要的最小数据
+ * @param item 话题来源对象
+ */
+function normalizeTopicPanelOptions(item: TreeNode | TopicPanelInput): TopicPanelInput {
+  if (item instanceof TreeNode) {
+    if (!item.topicId) {
+      throw new Error('打开话题面板缺少必要参数')
+    }
+
+    return {
+      topicId: item.topicId,
+      label: typeof item.label === 'string' ? item.label : V2ex.getTopicLinkById(item.topicId)
+    }
+  }
+
+  if (Number.isNaN(item.topicId)) {
+    throw new Error('打开话题面板缺少必要参数')
+  }
+
+  return {
+    topicId: item.topicId,
+    label: item.label
+  }
 }

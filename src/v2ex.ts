@@ -25,6 +25,15 @@ export class V2ex {
   static baseUrl = 'https://www.v2ex.com'
 
   /**
+   * 根据话题 id 获取话题链接
+   * @param topicId 话题 id
+   * @example "703733" -> "https://www.v2ex.com/t/703733"
+   */
+  static getTopicLinkById(topicId: string | number) {
+    return `${this.baseUrl}/t/${topicId}`
+  }
+
+  /**
    * 根据标签获取话题列表
    * @param tab 标签
    */
@@ -94,7 +103,7 @@ export class V2ex {
   static async getTopicDetail(topicId: number): Promise<TopicDetail> {
     // topicLink = 'https://www.v2ex.com/t/703733';
     // topicLink = 'https://www.v2ex.com/t/704716';
-    const topicLink = `https://www.v2ex.com/t/${topicId}`
+    const topicLink = this.getTopicLinkById(topicId)
     const res = await http.get<string>(`/t/${topicId}` + '?p=1')
     const $ = cheerio.load(res.data)
 
