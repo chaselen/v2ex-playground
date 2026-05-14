@@ -85,6 +85,10 @@
 .topic-content table tr:nth-child(2n) {
   background-color: var(--vscode-editorWidget-background);
 }
+.topic-content pre > code {
+  display: block;
+  padding: 8px 12px;
+}
 .topic-content.append h2 {
   padding-bottom: 10px;
 }

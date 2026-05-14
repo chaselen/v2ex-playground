@@ -2,7 +2,7 @@ import { TreeNode } from './../providers/BaseProvider'
 import { V2ex } from './../v2ex'
 import vscode from 'vscode'
 import topicItemClick from './topicItemClick'
-import dayjs = require('dayjs')
+import dayjs from 'dayjs'
 import { SoV2exSource, SoV2exSort } from '../type'
 
 /**上次的搜索结果 */

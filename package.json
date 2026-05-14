@@ -19,11 +19,6 @@
   "keywords": [
     "v2ex"
   ],
-  "activationEvents": [
-    "onView:v2ex-explore",
-    "onView:v2ex-custom",
-    "onView:v2ex-collection"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -107,15 +102,18 @@
       "v2ex": [
         {
           "id": "v2ex-explore",
-          "name": "首页"
+          "name": "首页",
+          "icon": "resources/v.svg"
         },
         {
           "id": "v2ex-custom",
-          "name": "自定义"
+          "name": "自定义",
+          "icon": "resources/v.svg"
         },
         {
           "id": "v2ex-collection",
-          "name": "收藏节点"
+          "name": "收藏节点",
+          "icon": "resources/v.svg"
         }
       ]
     },
@@ -226,8 +224,9 @@
     "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/node": "^18.19.110",
+    "@types/node": "^20.19.0",
     "@types/vscode": "~1.86.0",
+    "@types/vscode-webview": "^1.57.5",
     "prettier": "^3.8.3",
     "typescript": "^5.8.3"
   },
