@@ -1,15 +1,11 @@
-import { TreeNode } from './providers/BaseProvider'
 import { AccountRestrictedError, LoginRequiredError } from './error'
 import * as cheerio from 'cheerio'
-import { Eta } from 'eta'
 import http from './http'
-import { readFileSync } from 'fs'
 import { AxiosResponse } from 'axios'
-import path from 'path'
 import G from './global'
-import topicItemClick from './commands/topicItemClick'
 import vscode from 'vscode'
 import querystring from 'node:querystring'
+import Config from './config'
 import {
   Topic,
   Node,
@@ -35,6 +31,18 @@ export class V2ex {
   }
 
   /**
+   * 从链接中提取主题id
+   * @param topicLink 主题链接
+   * @example "/t/1136705#reply50" -> 1136705
+   * @example "https://www.v2ex.com/t/703733#reply12" -> 703733
+   * @returns 主题id
+   */
+  static getTopicIdByLink(topicLink: string): number | undefined {
+    const match = topicLink.match(/t\/(\d+)/)
+    return match ? Number(match[1]) : undefined
+  }
+
+  /**
    * 根据标签获取话题列表
    * @param tab 标签
    */
@@ -48,19 +56,13 @@ export class V2ex {
       const topicElement = $(cell).find('a.topic-link')
       const nodeElement = $(cell).find('a.node')
 
-      const topicId = this.extractTopicIdFromLink(topicElement.attr('href')!)
+      const topicId = this.getTopicIdByLink(topicElement.attr('href')!)
       const topic = new Topic(topicId!)
       topic.title = topicElement.text().trim()
       topic.node.name = nodeElement.attr('href')?.split('go/')[1] || ''
       topic.node.title = nodeElement.text().trim()
       list.push(topic)
     })
-
-    // 判断是否需要签到
-    const signRes = await this.daily()
-    if (signRes !== DailyRes.repetitive) {
-      vscode.window.showInformationMessage(signRes)
-    }
 
     return list
   }
@@ -85,7 +87,7 @@ export class V2ex {
     cells.each((_, cell) => {
       const topicElement = $(cell).find('a.topic-link')
 
-      const topicId = this.extractTopicIdFromLink(topicElement.attr('href')!)
+      const topicId = this.getTopicIdByLink(topicElement.attr('href')!)
       const topic = new Topic(topicId!)
       topic.title = topicElement.text().trim()
       topic.node = new Node(nodeName, nodeTitle)
@@ -102,18 +104,39 @@ export class V2ex {
    * @param topicId 话题id
    */
   static async getTopicDetail(topicId: number): Promise<TopicDetail> {
-    // topicLink = 'https://www.v2ex.com/t/703733';
-    // topicLink = 'https://www.v2ex.com/t/704716';
-    const topicLink = this.getTopicLinkById(topicId)
-    const res = await http.get<string>(`/t/${topicId}` + '?p=1')
-    const $ = cheerio.load(res.data)
+    const res = await http.get<string>(`/t/${topicId}?p=1`)
+    this.checkRedirect(res)
 
-    /**
-     * 部分帖子需要登录查看
-     * 第1种：会重定向到登录页（https://www.v2ex.com/signin?next=/t/xxxxxx），并提示：你要查看的页面需要先登录。如交易区：https://www.v2ex.com/t/704753
-     * 第2种：会重定向到首页，无提示。如：https://www.v2ex.com/t/704716
-     * 第3种：账号访问受限（如新用户），会重定向到 https://www.v2ex.com/restricted
-     */
+    const $ = cheerio.load(res.data)
+    const topic = this.parseTopicMeta($, topicId)
+    topic.replies = this.parseReplies($)
+    G.unreadNoticeCount = parseInt(
+      $('title')
+        .text()
+        .match(/V2EX \((\d+)\)/)?.[1] ?? '0'
+    )
+
+    const pager = this.findReplyPager($)
+    if (pager) {
+      const replies = await this.fetchAllReplies(topicId, pager.totalPage)
+      topic.replies.push(...replies)
+      // 有时候会出现统计的回复数与实际获取到的回复数量不一致的问题，修正一下回复数量
+      if (topic.replies.length > topic.replyCount) {
+        topic.replyCount = topic.replies.length
+      }
+    }
+    return topic
+  }
+
+  /**
+   * 检查请求是否被重定向，处理登录受限等情况
+   *
+   * 部分帖子需要登录查看
+   * 第1种：会重定向到登录页（https://www.v2ex.com/signin?next=/t/xxxxxx），并提示：你要查看的页面需要先登录。如交易区：https://www.v2ex.com/t/704753
+   * 第2种：会重定向到首页，无提示。如：https://www.v2ex.com/t/704716
+   * 第3种：账号访问受限（如新用户），会重定向到 https://www.v2ex.com/restricted
+   */
+  private static checkRedirect(res: AxiosResponse): void {
     if (res.request._redirectable._redirectCount > 0) {
       if (res.request.path.indexOf('/signin') >= 0) {
         // 登录失效，删除cookie
@@ -134,9 +157,16 @@ export class V2ex {
       }
       throw new Error('未知错误')
     }
+  }
 
+  /**
+   * 解析话题元信息
+   * @param $ cheerio 实例
+   * @param topicId 话题id
+   */
+  private static parseTopicMeta($: cheerio.CheerioAPI, topicId: number): TopicDetail {
     const topic = new TopicDetail()
-    topic.id = parseInt(topicLink.split('/t/')[1] || '0')
+    topic.id = topicId
     topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || ''
     topic.title = $('.header > h1').text()
     const node = $('.header a[href^=/go/]')
@@ -173,91 +203,79 @@ export class V2ex {
 
     let topicBoxIndex = 1
     const boxes = $('#Main > .box')
-
     if (boxes.eq(1).attr('id') === 'topic-tip-box') {
       topicBoxIndex = 2
     }
     const topicBox = boxes.eq(topicBoxIndex)
-
     topic.replyCount =
       parseInt(topicBox.children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0
-    /**
-     * 获取回复
-     * @param $ 页面加载后的文档
-     */
-    const _getTopicReplies = ($: cheerio.CheerioAPI): TopicReply[] => {
-      const replies: TopicReply[] = []
-      let topicBoxIndex = 1
-      const boxes = $('#Main > .box')
-      if (boxes.eq(1).attr('id') === 'topic-tip-box') {
-        topicBoxIndex = 2
-      }
-      const topicBox = boxes.eq(topicBoxIndex)
-      topicBox.children('div[id].cell').each((_, element) => {
-        replies.push({
-          replyId: $(element).attr('id')?.split('r_')[1] || '0',
-          userAvatar: $(element).find('img.avatar').attr('src') || '',
-          userName: $(element).find('a.dark').html() || '',
-          time: $(element).find('span.ago').text(),
-          floor: $(element).find('span.no').text(),
-          content: $(element).find('.reply_content').html() || '',
-          thanks: parseInt($(element).find('span.small.fade').text().trim() || '0'),
-          thanked: $(element).find('.thank_area.thanked').length > 0
-        })
-      })
-      return replies
-    }
-
-    // 获取评论
-    topic.replies = _getTopicReplies($)
-    const pager = topicBox.find('.cell:not([id]) table')
-    if (pager.length) {
-      // 如果获取分页组件，表示有多页评论
-      const totalPage = parseInt(pager.find('td').eq(0).children('a').last().text())
-      console.log(`${topicLink}：一共${totalPage}页回复`)
-
-      const promises: Promise<AxiosResponse<string>>[] = []
-      for (let p = 2; p <= totalPage; p++) {
-        promises.push(http.get<string>(topicLink + `?p=${p}`))
-      }
-      try {
-        const resList = await Promise.all(promises)
-        resList
-          .map(res => res.data)
-          .forEach(html => {
-            const replies = _getTopicReplies(cheerio.load(html))
-            topic.replies = topic.replies.concat(replies)
-            // 有时候会出现统计的回复数与实际获取到的回复数量不一致的问题，修正一下回复数量
-            if (topic.replies.length > topic.replyCount) {
-              topic.replyCount = topic.replies.length
-            }
-          })
-      } catch (error) {}
-    }
-
-    // 获取是否有未读提醒，如果有的话，则打开浏览器查看
-    const title = $('title').text()
-    const regex = /V2EX \((\d+)\)/
-    const match = title.match(regex)
-    const timestamp = new Date().getTime() / 1000
-    const unReadLastTipTime = G.context.globalState.get<number>('unReadLastTipTime')
-    if (
-      match &&
-      parseInt(match[1]) > 0 &&
-      (unReadLastTipTime === undefined ||
-        (unReadLastTipTime !== undefined && timestamp - unReadLastTipTime > 300))
-    ) {
-      vscode.window
-        .showInformationMessage('您有' + match[1] + '条未读提醒', '查看提醒')
-        .then(result => {
-          if (result === '查看提醒') {
-            vscode.env.openExternal(vscode.Uri.parse('https://www.v2ex.com/notifications'))
-          }
-        })
-      G.context.globalState.update('unReadLastTipTime', timestamp)
-    }
-
     return topic
+  }
+
+  /**
+   * 获取回复列表
+   * @param $ cheerio 实例
+   */
+  private static parseReplies($: cheerio.CheerioAPI): TopicReply[] {
+    const replies: TopicReply[] = []
+    let topicBoxIndex = 1
+    const boxes = $('#Main > .box')
+    if (boxes.eq(1).attr('id') === 'topic-tip-box') {
+      topicBoxIndex = 2
+    }
+    const topicBox = boxes.eq(topicBoxIndex)
+    topicBox.children('div[id].cell').each((_, element) => {
+      replies.push({
+        replyId: $(element).attr('id')?.split('r_')[1] || '0',
+        userAvatar: $(element).find('img.avatar').attr('src') || '',
+        userName: $(element).find('a.dark').html() || '',
+        time: $(element).find('span.ago').text(),
+        floor: $(element).find('span.no').text(),
+        content: $(element).find('.reply_content').html() || '',
+        thanks: parseInt($(element).find('span.small.fade').text().trim() || '0'),
+        thanked: $(element).find('.thank_area.thanked').length > 0
+      })
+    })
+    return replies
+  }
+
+  /**
+   * 查找回复分页器
+   * @param $ cheerio 实例
+   */
+  private static findReplyPager($: cheerio.CheerioAPI): { totalPage: number } | null {
+    let topicBoxIndex = 1
+    const boxes = $('#Main > .box')
+    if (boxes.eq(1).attr('id') === 'topic-tip-box') {
+      topicBoxIndex = 2
+    }
+    const topicBox = boxes.eq(topicBoxIndex)
+    const pager = topicBox.find('.cell:not([id]) table')
+    if (!pager.length) return null
+    const totalPage = parseInt(pager.find('td').eq(0).children('a').last().text())
+    return { totalPage }
+  }
+
+  /**
+   * 获取所有分页回复
+   * @param topicId 话题id
+   * @param totalPage 总页数
+   */
+  private static async fetchAllReplies(topicId: number, totalPage: number): Promise<TopicReply[]> {
+    const replies: TopicReply[] = []
+    const promises = Array.from({ length: totalPage - 1 }, (_, i) =>
+      http.get<string>(`/t/${topicId}?p=${i + 2}`)
+    )
+    try {
+      const resList = await Promise.all(promises)
+      resList.forEach(res => {
+        const $ = cheerio.load(res.data)
+        replies.push(...this.parseReplies($))
+      })
+    } catch (error) {
+      console.error('获取分页回复失败', error)
+    }
+    return replies
   }
 
   /**
@@ -271,9 +289,7 @@ export class V2ex {
       content,
       once
     }
-    await http.post(topicLink, querystring.stringify(params)).catch(err => {
-      console.error(err)
-    })
+    await http.post(topicLink, querystring.stringify(params))
   }
 
   /**
@@ -297,8 +313,9 @@ export class V2ex {
   /**
    * 检查cookie是否有效
    * @param cookie 检查的cookie
+   * @param autoSignIn 是否自动签到
    */
-  static async checkCookie(cookie: string): Promise<boolean> {
+  static async checkCookie(cookie: string, autoSignIn = false): Promise<boolean> {
     if (!cookie) {
       return false
     }
@@ -309,7 +326,14 @@ export class V2ex {
         Cookie: cookie
       }
     })
-    return res.request._redirectable._redirectCount <= 0
+    const isValid = res.request._redirectable._redirectCount <= 0
+    if (isValid && autoSignIn && Config.autoSignIn()) {
+      const signRes = await this.daily()
+      if (signRes !== DailyRes.repetitive) {
+        vscode.window.showInformationMessage(signRes)
+      }
+    }
+    return isValid
   }
 
   // 缓存的节点信息
@@ -401,9 +425,7 @@ export class V2ex {
    */
   static async collectTopic(topicId: number, once: string) {
     // /favorite/topic/937439?once=34361
-    await http.get<string>(`/favorite/topic/${topicId}?once=${once}`).catch(err => {
-      console.error(err)
-    })
+    await http.get<string>(`/favorite/topic/${topicId}?once=${once}`)
   }
 
   /**
@@ -413,9 +435,7 @@ export class V2ex {
    */
   static async cancelCollectTopic(topicId: number, once: string) {
     // /unfavorite/topic/900126?once=34361
-    await http.get<string>(`/unfavorite/topic/${topicId}?once=${once}`).catch(err => {
-      console.error(err)
-    })
+    await http.get<string>(`/unfavorite/topic/${topicId}?once=${once}`)
   }
 
   /**
@@ -453,37 +473,5 @@ export class V2ex {
     })
     const hits: any[] = res.hits || []
     return hits.map(h => h._source)
-  }
-
-  /**
-   * 从链接中提取主题id
-   * @param topicLink 主题链接，如：`/t/1136705#reply50`、`https://www.v2ex.com/t/703733#reply12`
-   * @returns 主题id
-   */
-  static extractTopicIdFromLink(topicLink: string): number | undefined {
-    const match = topicLink.match(/t\/(\d+)/)
-    return match ? Number(match[1]) : undefined
-  }
-
-  /**
-   * 渲染一个页面，返回渲染后的html
-   * @param page 要渲染的html页面
-   * @param data 传入的数据
-   */
-  static renderPage(page: string, data: Record<string, unknown> = {}): string {
-    const templatePath = path.join(G.context.extensionPath, 'html', page)
-    /** eta 使用 <% %> 语法，默认不会和 Vue 的 {{ }} 冲突 */
-    const eta = new Eta({ useWith: true })
-    return eta.renderString(readFileSync(templatePath, 'utf-8'), data) as string
-  }
-
-  /**
-   * 打开测试页面
-   * @param context 插件上下文
-   */
-  static openTestPage() {
-    const item = new TreeNode('写了一个 VSCode 上可以逛 V2EX 的插件', false)
-    item.topicId = 703733
-    topicItemClick(item)
   }
 }

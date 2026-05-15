@@ -1,5 +1,7 @@
-import vscode from 'vscode'
+import { Eta } from 'eta'
+import { readFileSync } from 'fs'
 import path from 'path'
+import vscode from 'vscode'
 import { LoginRequiredError, AccountRestrictedError } from '../error'
 import { V2ex } from '../v2ex'
 import G from '../global'
@@ -71,7 +73,9 @@ export class TopicPanelController {
     this.key = V2ex.getTopicLinkById(input.topicId)
     this.topicId = input.topicId
     this.panel = createPanel(this.key, input.label)
-    this.panel.webview.html = V2ex.renderPage('topic.html', {
+    const templatePath = path.join(G.context.extensionPath, 'html', 'topic.html')
+    const eta = new Eta({ useWith: true })
+    this.panel.webview.html = eta.renderString(readFileSync(templatePath, 'utf-8'), {
       contextPath: G.getWebViewContextPath(this.panel.webview)
     })
     this.panel.webview.onDidReceiveMessage((message: TopicPanelMessage) => {
@@ -114,6 +118,7 @@ export class TopicPanelController {
         this.detail = detail
         this.panel.title = fmtPanelTitle(detail.title)
         this.render(detail)
+        G.checkUnreadNotification()
       })
       .catch((err: Error) => {
         console.error(err)

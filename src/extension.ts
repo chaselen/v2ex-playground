@@ -12,8 +12,6 @@ import CollectionProvider from './providers/CollectionProvider'
 import { V2ex } from './v2ex'
 import search from './commands/search'
 import setting from './commands/setting'
-import { DailyRes } from './type'
-import Config from './config'
 import { cleanupImagePreviewCache } from './imagePreview'
 
 export function activate(context: vscode.ExtensionContext) {
@@ -22,18 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 插件激活后直接获取节点信息缓存下来
   V2ex.getAllNodes()
-  // 检查登录是否有效
-  V2ex.checkCookie(G.getCookie()!).then(isLoginValid => {
-    console.log(`登录是否有效：${isLoginValid}`)
-    if (isLoginValid && Config.autoSignIn()) {
-      V2ex.daily().then(res => {
-        console.log(`每日签到结果：${res}`)
-        if (res === DailyRes.success) {
-          vscode.window.showInformationMessage('签到成功')
-        }
-      })
-    }
-  })
+  // 检查登录是否有效（自动签到由 checkCookie 内部处理）
+  V2ex.checkCookie(G.getCookie()!, true)
 
   // 列表数据
   const exploreProvider = new ExploreProvider()
@@ -137,7 +125,9 @@ export function activate(context: vscode.ExtensionContext) {
   )
 
   // 测试页面
-  // V2ex.openTestPage();
+  // const item = new TreeNode('写了一个 VSCode 上可以逛 V2EX 的插件', false)
+  // item.topicId = 703733
+  // topicItemClick(item)
 
   context.subscriptions.push(
     cDisposable1,

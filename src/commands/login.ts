@@ -1,8 +1,6 @@
 import { V2ex } from './../v2ex'
 import vscode from 'vscode'
 import G from '../global'
-import { DailyRes } from '../type'
-import Config from '../config'
 
 /**
  * 登录逻辑
@@ -40,15 +38,8 @@ export default async function login(): Promise<LoginResult> {
         await G.setCookie(cookie!)
         vscode.window.showInformationMessage('登录成功')
 
-        // 登录后签到
-        if (Config.autoSignIn()) {
-          V2ex.daily().then(res => {
-            console.log(`每日签到结果：${res}`)
-            if (res === DailyRes.success) {
-              vscode.window.showInformationMessage('签到成功')
-            }
-          })
-        }
+        // 登录后自动签到
+        V2ex.checkCookie(G.getCookie()!, true)
       } else {
         vscode.window.showErrorMessage('登录失败，Cookie无效')
       }

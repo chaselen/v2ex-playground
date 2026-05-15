@@ -1,6 +1,7 @@
 import { BaseProvider, TreeNode } from './BaseProvider'
 import { TreeItem } from 'vscode'
 import { V2ex } from '../v2ex'
+import G from '../global'
 
 export default class ExploreProvider extends BaseProvider {
   rootElements: TreeNode[]
@@ -45,6 +46,10 @@ export default class ExploreProvider extends BaseProvider {
         children.push(child)
       })
       console.log(`获取到【${root.label}】数据：${topics.length}条`)
+
+      // 每次展开标签页时检查 cookie 并自动签到
+      V2ex.checkCookie(G.getCookie()!, true)
+
       return children
     } catch (err) {
       throw err

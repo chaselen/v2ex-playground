@@ -1,9 +1,12 @@
 import { Node } from './type'
 import { ExtensionContext, Webview, Uri } from 'vscode'
+import vscode from 'vscode'
 
 export default class G {
   /** 插件上下文，在插件激活时赋值 */
   static context: ExtensionContext
+  /** 未读通知数，每次打开话题详情后更新 */
+  static unreadNoticeCount: number = 0
 
   /**
    * 获取WebView的上下文地址
@@ -70,5 +73,24 @@ export default class G {
       nodes.splice(i, 1)
     }
     this.setCustomNodes(nodes)
+  }
+
+  /**
+   * 检查未读通知数，大于0时弹出提醒
+   */
+  static checkUnreadNotification() {
+    const count = this.unreadNoticeCount
+    if (count <= 0) return
+
+    const timestamp = Date.now() / 1000
+    const lastTipTime = this.context.globalState.get<number>('unReadLastTipTime')
+    if (lastTipTime !== undefined && timestamp - lastTipTime <= 300) return
+
+    vscode.window.showInformationMessage(`您有 ${count} 条未读提醒`, '查看提醒').then(result => {
+      if (result === '查看提醒') {
+        vscode.env.openExternal(Uri.parse('https://www.v2ex.com/notifications'))
+      }
+    })
+    this.context.globalState.update('unReadLastTipTime', timestamp)
   }
 }
