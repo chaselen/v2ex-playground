@@ -126,7 +126,6 @@ function enhanceTopicContent(root) {
  * 话题页面应用
  */
 Vue.createApp({
-  template: '#topic-template',
   data() {
     return {
       state: {

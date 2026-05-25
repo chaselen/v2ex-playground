@@ -55,12 +55,14 @@ export class V2ex {
     cells.each((_, cell) => {
       const topicElement = $(cell).find('a.topic-link')
       const nodeElement = $(cell).find('a.node')
+      const countLivid = $(cell).find('.count_livid')
 
       const topicId = this.getTopicIdByLink(topicElement.attr('href')!)
       const topic = new Topic(topicId!)
       topic.title = topicElement.text().trim()
       topic.node.name = nodeElement.attr('href')?.split('go/')[1] || ''
       topic.node.title = nodeElement.text().trim()
+      topic.replies = Number(countLivid.text().trim()) || 0
       list.push(topic)
     })
 
@@ -86,11 +88,13 @@ export class V2ex {
     const list: Topic[] = []
     cells.each((_, cell) => {
       const topicElement = $(cell).find('a.topic-link')
+      const countLivid = $(cell).find('.count_livid')
 
       const topicId = this.getTopicIdByLink(topicElement.attr('href')!)
       const topic = new Topic(topicId!)
       topic.title = topicElement.text().trim()
       topic.node = new Node(nodeName, nodeTitle)
+      topic.replies = Number(countLivid.text().trim()) || 0
       list.push(topic)
     })
     return {

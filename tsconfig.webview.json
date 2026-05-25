@@ -7,6 +7,6 @@
     "moduleResolution": "Bundler",
     "types": ["vue"]
   },
-  "include": ["html/topic.js", "global.d.ts"],
+  "include": ["html/topic.js", "html/main.js", "global.d.ts"],
   "exclude": ["html/lib"]
 }

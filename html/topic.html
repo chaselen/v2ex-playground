@@ -10,9 +10,8 @@
   </head>
 
   <body>
-    <div id="app"></div>
-    <script type="text/x-template" id="topic-template">
-      <div class="container">
+    <div id="app">
+      <div class="topic-container">
         <div v-if="state.status === 'loading'" class="state-panel">
           <div class="spinner"></div>
           <div class="state-title">加载中</div>
@@ -42,9 +41,9 @@
 
           <div class="topic-meta">
             <a class="node" :href="'/go/' + topic.node.name">{{ topic.node.title }}</a>
-            <a class="user text-bold" :href="'/member/' + topic.authorName">{{
-              topic.authorName
-            }}</a>
+            <a class="user text-bold" :href="'/member/' + topic.authorName"
+              >{{ topic.authorName }}</a
+            >
             <span class="time"> · {{ topic.displayTime }} · {{ topic.visitCount }} 次点击</span>
           </div>
           <hr />
@@ -159,7 +158,7 @@
           <p v-else style="opacity: 0.5">您目前还不能回复，请先登录</p>
         </template>
       </div>
-    </script>
+    </div>
 
     <script src="<%= contextPath %>/html/lib/vue.global.prod.js"></script>
     <script src="<%= contextPath %>/html/lib/less.min.js"></script>

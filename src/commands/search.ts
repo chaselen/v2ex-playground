@@ -1,4 +1,3 @@
-import { TreeNode } from './../providers/BaseProvider'
 import { V2ex } from './../v2ex'
 import vscode from 'vscode'
 import topicItemClick from './topicItemClick'
@@ -79,7 +78,5 @@ async function showQuickPick(searchList: SoV2exSource[]) {
     _lastSearchList = null
     return
   }
-  const node = new TreeNode(select.title, false)
-  node.topicId = select.topicId
-  topicItemClick(node)
+  topicItemClick({ topicId: select.topicId, label: select.title })
 }

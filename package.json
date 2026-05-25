@@ -23,6 +23,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "v2ex.login",
+        "title": "登录V2EX",
+        "icon": "$(sign-in)"
+      },
+      {
         "command": "v2ex.copyLink",
         "title": "复制链接"
       },
@@ -35,57 +40,18 @@
         "title": "在浏览器中打开"
       },
       {
-        "command": "v2ex.login",
-        "title": "登录V2EX",
-        "icon": "$(sign-in)"
-      },
-      {
-        "command": "v2ex-explore.search",
+        "command": "v2ex-main.search",
         "title": "搜索",
         "icon": "$(search)"
       },
       {
-        "command": "v2ex-explore.settings",
+        "command": "v2ex-main.settings",
         "title": "设置",
         "icon": "$(gear)"
       },
       {
-        "command": "v2ex-explore.refreshAll",
+        "command": "v2ex-main.refresh",
         "title": "刷新",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "v2ex-explore.refreshNode",
-        "title": "刷新节点",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "v2ex-explore.addNode",
-        "title": "添加节点",
-        "icon": "$(add)"
-      },
-      {
-        "command": "v2ex-custom.refreshAll",
-        "title": "刷新",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "v2ex-custom.refreshNode",
-        "title": "刷新节点",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "v2ex-custom.removeNode",
-        "title": "删除节点"
-      },
-      {
-        "command": "v2ex-collection.refreshAll",
-        "title": "刷新",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "v2ex-collection.refreshNode",
-        "title": "刷新节点",
         "icon": "$(refresh)"
       }
     ],
@@ -101,96 +67,33 @@
     "views": {
       "v2ex": [
         {
-          "id": "v2ex-explore",
-          "name": "首页",
-          "icon": "resources/v.svg"
-        },
-        {
-          "id": "v2ex-custom",
-          "name": "自定义",
-          "icon": "resources/v.svg"
-        },
-        {
-          "id": "v2ex-collection",
-          "name": "收藏节点",
-          "icon": "resources/v.svg"
+          "id": "v2ex-main",
+          "name": "V2EX",
+          "type": "webview"
         }
       ]
     },
     "menus": {
       "view/title": [
         {
-          "command": "v2ex.login",
-          "when": "view == v2ex-explore",
+          "command": "v2ex-main.refresh",
+          "when": "view == v2ex-main",
           "group": "navigation@0"
         },
         {
-          "command": "v2ex-explore.search",
-          "when": "view == v2ex-explore",
+          "command": "v2ex-main.search",
+          "when": "view == v2ex-main",
           "group": "navigation@1"
         },
         {
-          "command": "v2ex-explore.settings",
-          "when": "view == v2ex-explore",
+          "command": "v2ex-main.settings",
+          "when": "view == v2ex-main",
           "group": "navigation@2"
         },
         {
-          "command": "v2ex-explore.refreshAll",
-          "when": "view == v2ex-explore",
-          "group": "navigation@3"
-        },
-        {
-          "command": "v2ex-explore.addNode",
-          "when": "view == v2ex-custom",
-          "group": "navigation@0"
-        },
-        {
-          "command": "v2ex-custom.refreshAll",
-          "when": "view == v2ex-custom",
-          "group": "navigation@1"
-        },
-        {
           "command": "v2ex.login",
-          "when": "view == v2ex-collection",
-          "group": "navigation@0"
-        },
-        {
-          "command": "v2ex-collection.refreshAll",
-          "when": "view == v2ex-collection",
-          "group": "navigation@1"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "v2ex.copyLink",
-          "when": "viewItem == item"
-        },
-        {
-          "command": "v2ex.copyTitleLink",
-          "when": "viewItem == item"
-        },
-        {
-          "command": "v2ex.viewInBrowser",
-          "when": "viewItem == item"
-        },
-        {
-          "command": "v2ex-explore.refreshNode",
-          "when": "view == v2ex-explore && viewItem == dir",
-          "group": "inline"
-        },
-        {
-          "command": "v2ex-custom.refreshNode",
-          "when": "view == v2ex-custom && viewItem == dir",
-          "group": "inline"
-        },
-        {
-          "command": "v2ex-custom.removeNode",
-          "when": "view == v2ex-custom && viewItem == dir"
-        },
-        {
-          "command": "v2ex-collection.refreshNode",
-          "when": "view == v2ex-collection && viewItem == dir",
-          "group": "inline"
+          "when": "view == v2ex-main",
+          "group": "navigation@3"
         }
       ]
     },
@@ -232,6 +135,7 @@
     "vue": "^3.5.34"
   },
   "dependencies": {
+    "@vscode-elements/elements": "^2.5.1",
     "axios": "~1.8.4",
     "cheerio": "^1.0.0",
     "dayjs": "^1.11.13",

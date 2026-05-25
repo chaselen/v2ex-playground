@@ -11,6 +11,9 @@ export class Topic {
   /** 节点 */
   public node: Node = new Node()
 
+  /** 回复数 */
+  public replies: number = 0
+
   /** 链接 */
   public get link(): string {
     return `https://www.v2ex.com/t/${this.id}`

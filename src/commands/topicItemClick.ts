@@ -1,4 +1,3 @@
-import { TreeNode } from '../providers/BaseProvider'
 import Config from '../config'
 import { TopicPanelController, TopicPanelInput } from '../controllers/TopicPanelController'
 import { V2ex } from '../v2ex'
@@ -12,10 +11,13 @@ const topicPanels: Record<string, TopicPanelController> = {}
 
 /**
  * 点击子节点打开详情页面
- * @param item 话题的子节点
+ * @param topic 话题参数
  */
-export default function topicItemClick(item: TreeNode | TopicPanelInput) {
-  const topic = normalizeTopicPanelOptions(item)
+export default function topicItemClick(topic: TopicPanelInput) {
+  if (Number.isNaN(topic.topicId)) {
+    throw new Error('打开话题面板缺少必要参数')
+  }
+
   const topicKey = V2ex.getTopicLinkById(topic.topicId)
 
   // 如果控制器已经存在，则直接激活
@@ -38,30 +40,4 @@ export default function topicItemClick(item: TreeNode | TopicPanelInput) {
     delete topicPanels[topicKey]
   })
   controller.load()
-}
-
-/**
- * 将树节点或轻量参数转换为控制器需要的最小数据
- * @param item 话题来源对象
- */
-function normalizeTopicPanelOptions(item: TreeNode | TopicPanelInput): TopicPanelInput {
-  if (item instanceof TreeNode) {
-    if (!item.topicId) {
-      throw new Error('打开话题面板缺少必要参数')
-    }
-
-    return {
-      topicId: item.topicId,
-      label: typeof item.label === 'string' ? item.label : V2ex.getTopicLinkById(item.topicId)
-    }
-  }
-
-  if (Number.isNaN(item.topicId)) {
-    throw new Error('打开话题面板缺少必要参数')
-  }
-
-  return {
-    topicId: item.topicId,
-    label: item.label
-  }
 }

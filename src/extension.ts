@@ -1,14 +1,9 @@
-import { TreeNode } from './providers/BaseProvider'
-import ExploreProvider from './providers/ExploreProvider'
 import vscode from 'vscode'
+import { EOL } from 'os'
+import MainViewProvider from './providers/MainViewProvider'
 import topicItemClick from './commands/topicItemClick'
 import login, { LoginResult } from './commands/login'
 import G from './global'
-import { EOL } from 'os'
-import CustomProvider from './providers/CustomProvider'
-import addNode from './commands/addNode'
-import removeNode from './commands/removeNode'
-import CollectionProvider from './providers/CollectionProvider'
 import { V2ex } from './v2ex'
 import search from './commands/search'
 import setting from './commands/setting'
@@ -23,128 +18,62 @@ export function activate(context: vscode.ExtensionContext) {
   // 检查登录是否有效（自动签到由 checkCookie 内部处理）
   V2ex.checkCookie(G.getCookie()!, true)
 
-  // 列表数据
-  const exploreProvider = new ExploreProvider()
-  vscode.window.createTreeView('v2ex-explore', {
-    treeDataProvider: exploreProvider,
-    showCollapseAll: true
-  })
-
-  const customProvider = new CustomProvider()
-  vscode.window.createTreeView('v2ex-custom', {
-    treeDataProvider: customProvider,
-    showCollapseAll: true
-  })
-
-  const collectionProvider = new CollectionProvider()
-  vscode.window.createTreeView('v2ex-collection', {
-    treeDataProvider: collectionProvider,
-    showCollapseAll: true
-  })
+  // 注册主视图 WebviewView
+  const mainViewProvider = new MainViewProvider()
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('v2ex-main', mainViewProvider, {
+      webviewOptions: { retainContextWhenHidden: true }
+    })
+  )
 
   // 公共事件：登录
-  let cDisposable1 = vscode.commands.registerCommand('v2ex.login', async () => {
-    const loginResult = await login()
-    if (loginResult === LoginResult.success || loginResult === LoginResult.logout) {
-      collectionProvider.refreshNodeList()
-    }
-  })
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.login', async () => {
+      const loginResult = await login()
+      if (loginResult === LoginResult.success || loginResult === LoginResult.logout) {
+        mainViewProvider.refresh()
+      }
+    })
+  )
 
   // 公共事件：复制链接
-  let cDisposable2 = vscode.commands.registerCommand('v2ex.copyLink', (item: TreeNode) =>
-    vscode.env.clipboard.writeText(item.link!)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.copyLink', (item: any) => {
+      const link = item?.link || V2ex.getTopicLinkById(item?.topicId)
+      if (link) vscode.env.clipboard.writeText(link)
+    })
   )
 
   // 公共事件：复制标题和链接
-  let cDisposable3 = vscode.commands.registerCommand('v2ex.copyTitleLink', (item: TreeNode) =>
-    vscode.env.clipboard.writeText(item.label + EOL + item.link)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.copyTitleLink', (item: any) => {
+      const link = item?.link || V2ex.getTopicLinkById(item?.topicId)
+      if (link) vscode.env.clipboard.writeText(item?.label + EOL + link)
+    })
   )
 
   // 公共事件：在浏览器中打开
-  let cDisposable4 = vscode.commands.registerCommand('v2ex.viewInBrowser', (item: TreeNode) =>
-    vscode.env.openExternal(vscode.Uri.parse(item.link!))
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.viewInBrowser', (item: any) => {
+      const link = item?.link || V2ex.getTopicLinkById(item?.topicId)
+      if (link) vscode.env.openExternal(vscode.Uri.parse(link))
+    })
   )
 
   // 公共事件：点击浏览帖子
-  let cDisposable5 = vscode.commands.registerCommand('v2ex.topicItemClick', (item: TreeNode) =>
-    topicItemClick(item)
-  )
-
-  // 首页视图事件：搜索
-  let homeDisposable1 = vscode.commands.registerCommand('v2ex-explore.search', () => search())
-
-  // 首页视图事件：设置
-  let homeDisposable2 = vscode.commands.registerCommand('v2ex-explore.settings', () => setting())
-
-  // 首页视图事件：刷新全部
-  let homeDisposable3 = vscode.commands.registerCommand('v2ex-explore.refreshAll', () =>
-    exploreProvider.refreshAll()
-  )
-
-  // 首页视图事件：刷新当前节点
-  let homeDisposable4 = vscode.commands.registerCommand(
-    'v2ex-explore.refreshNode',
-    (root: TreeNode) => exploreProvider.refreshRoot(root)
-  )
-
-  // 自定义视图事件：添加自定义节点
-  let cusDisposable1 = vscode.commands.registerCommand('v2ex-explore.addNode', async () => {
-    const isAdd = await addNode()
-    isAdd && customProvider.refreshNodeList()
-  })
-
-  // 自定义视图事件：刷新全部
-  let cusDisposable2 = vscode.commands.registerCommand('v2ex-custom.refreshAll', () =>
-    customProvider.refreshAll()
-  )
-
-  // 自定义视图事件：刷新当前节点
-  let cusDisposable3 = vscode.commands.registerCommand(
-    'v2ex-custom.refreshNode',
-    (root: TreeNode) => customProvider.refreshRoot(root)
-  )
-
-  // 自定义视图事件：删除自定义节点
-  let cusDisposable4 = vscode.commands.registerCommand(
-    'v2ex-custom.removeNode',
-    (root: TreeNode) => {
-      removeNode(root)
-      customProvider.refreshNodeList()
-    }
-  )
-
-  // 收藏视图事件：刷新全部
-  let colDisposable1 = vscode.commands.registerCommand('v2ex-collection.refreshAll', () =>
-    collectionProvider.refreshAll()
-  )
-
-  // 收藏视图事件：刷新当前节点
-  let colDisposable2 = vscode.commands.registerCommand(
-    'v2ex-collection.refreshNode',
-    (root: TreeNode) => collectionProvider.refreshRoot(root)
-  )
-
-  // 测试页面
-  // const item = new TreeNode('写了一个 VSCode 上可以逛 V2EX 的插件', false)
-  // item.topicId = 703733
-  // topicItemClick(item)
-
   context.subscriptions.push(
-    cDisposable1,
-    cDisposable2,
-    cDisposable3,
-    cDisposable4,
-    cDisposable5,
-    homeDisposable1,
-    homeDisposable2,
-    homeDisposable3,
-    homeDisposable4,
-    cusDisposable1,
-    cusDisposable2,
-    cusDisposable3,
-    cusDisposable4,
-    colDisposable1,
-    colDisposable2
+    vscode.commands.registerCommand('v2ex.topicItemClick', item => topicItemClick(item))
+  )
+
+  // 搜索
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex-main.search', () => search()))
+
+  // 设置
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex-main.settings', () => setting()))
+
+  // 刷新全部（view/title 按钮）
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex-main.refresh', () => mainViewProvider.refresh())
   )
 }
 
