@@ -34,4 +34,4 @@
 
 ## 预览
 
-![预览1.jpg](https://tva1.sinaimg.cn/large/007S8ZIlgy1gjoz8xtsgdj31hv0u07hp.jpg)
+![预览1.jpg](https://files.seeusercontent.com/2026/05/26/jY3c/pasted-image-1779785248512.webp)
