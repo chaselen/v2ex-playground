@@ -1,6 +1,6 @@
-import Config from '../config'
-import { TopicPanelController, TopicPanelInput } from '../controllers/TopicPanelController'
-import { V2ex } from '../v2ex'
+import Config from '@/config'
+import { TopicPanelController, TopicPanelInput } from '@/controllers/TopicPanelController'
+import { V2ex } from '@/v2ex'
 
 /**
  * 存放话题页面的控制器

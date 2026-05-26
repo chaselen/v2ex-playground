@@ -1,4 +1,4 @@
-import type { Node } from './v2ex/types'
+import type { Node } from '@/v2ex/types'
 import { ExtensionContext, Webview, Uri } from 'vscode'
 import vscode from 'vscode'
 

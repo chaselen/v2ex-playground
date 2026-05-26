@@ -2,10 +2,10 @@ import { Eta } from 'eta'
 import { readFileSync } from 'fs'
 import path from 'path'
 import vscode from 'vscode'
-import { AccountRestrictedError, LoginRequiredError, TopicDetail, V2ex } from '../v2ex'
-import G from '../global'
-import { openImagePreview } from '../features/imagePreview'
-import Config from '../config'
+import { AccountRestrictedError, LoginRequiredError, TopicDetail, V2ex } from '@/v2ex'
+import G from '@/global'
+import { openImagePreview } from '@/features/imagePreview'
+import Config from '@/config'
 
 /**
  * Webview 发给扩展侧的话题命令消息

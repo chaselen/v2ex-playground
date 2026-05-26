@@ -126,9 +126,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && tsc-alias -p tsconfig.json",
     "check:webview": "tsc -p tsconfig.webview.json --noEmit",
-    "watch": "tsc -watch -p ./",
+    "watch": "tsc -watch -p ./ & tsc-alias -p tsconfig.json -w",
     "package": "vsce package",
     "publish": "vsce publish"
   },
@@ -137,6 +137,7 @@
     "@types/vscode": "~1.86.0",
     "@types/vscode-webview": "^1.57.5",
     "prettier": "^3.8.3",
+    "tsc-alias": "^1.8.17",
     "typescript": "^5.8.3",
     "vue": "^3.5.34"
   },

@@ -2,9 +2,9 @@ import vscode from 'vscode'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { Eta } from 'eta'
-import G from '../global'
-import { LoginRequiredError, Node, Topic, V2ex } from '../v2ex'
-import { TopicPanelInput } from '../controllers/TopicPanelController'
+import G from '@/global'
+import { LoginRequiredError, Node, Topic, V2ex } from '@/v2ex'
+import { TopicPanelInput } from '@/controllers/TopicPanelController'
 
 /**
  * Webview 节点项

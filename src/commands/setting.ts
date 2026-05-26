@@ -1,5 +1,5 @@
 import vscode from 'vscode'
-import G from '../global'
+import G from '@/global'
 
 /**
  * 打开插件设置

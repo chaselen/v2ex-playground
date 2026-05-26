@@ -1,10 +1,10 @@
 import * as cheerio from 'cheerio'
-import http from '../core/http'
+import http from '@/core/http'
 import { AxiosResponse } from 'axios'
-import G from '../global'
+import G from '@/global'
 import vscode from 'vscode'
 import querystring from 'node:querystring'
-import Config from '../config'
+import Config from '@/config'
 import { Topic, Node, DailyRes, TopicDetail, TopicReply, SoV2exSort, SoV2exSource } from './types'
 
 /** 感谢接口响应 */
