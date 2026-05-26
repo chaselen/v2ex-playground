@@ -41,6 +41,8 @@ interface TopicPanelViewState {
   showRefresh?: boolean
   /** 查看帖子时是否显示图片 */
   showImages?: boolean
+  /** 是否可执行登录态操作 */
+  canOperate?: boolean
 }
 
 /**
@@ -149,7 +151,8 @@ export class TopicPanelController {
   render(topicDetail: TopicDetail) {
     this.postViewState({
       status: 'topic',
-      topic: topicDetail
+      topic: topicDetail,
+      canOperate: !!G.getCookie()
     })
   }
 
@@ -224,17 +227,11 @@ export class TopicPanelController {
       case 'refresh':
         return this.load()
       case 'collect':
-        return this.runTopicMutation('正在收藏', () =>
-          V2ex.collectTopic(this.detail.id, this.detail.once || '')
-        )
+        return this.runTopicMutation('正在收藏', () => V2ex.collectTopic(this.detail.id))
       case 'cancelCollect':
-        return this.runTopicMutation('正在取消收藏', () =>
-          V2ex.cancelCollectTopic(this.detail.id, this.detail.once || '')
-        )
+        return this.runTopicMutation('正在取消收藏', () => V2ex.cancelCollectTopic(this.detail.id))
       case 'thank':
-        return this.runTopicMutation('发送感谢', () =>
-          V2ex.thankTopic(this.detail.id, this.detail.once)
-        )
+        return this.runTopicMutation('发送感谢', () => V2ex.thankTopic(this.detail.id))
       case 'postReply':
         return this.handlePostReply(message)
       case 'thankReply':
@@ -298,7 +295,14 @@ export class TopicPanelController {
         title,
         location: vscode.ProgressLocation.Notification
       },
-      task
+      async () => {
+        try {
+          await task()
+        } catch (err) {
+          console.error(err)
+          vscode.window.showErrorMessage(getErrorMessage(err))
+        }
+      }
     )
   }
 
@@ -313,9 +317,7 @@ export class TopicPanelController {
       return
     }
 
-    return this.runTopicMutation('正在提交回复', () =>
-      V2ex.postReply(this.detail.link, content, this.detail.once)
-    )
+    return this.runTopicMutation('正在提交回复', () => V2ex.postReply(this.detail.link, content))
   }
 
   /**
@@ -334,13 +336,10 @@ export class TopicPanelController {
     }
 
     return this.runTopicAction('发送感谢', async () => {
-      const resp = await V2ex.thankReply(replyId, this.detail.once)
-      if (resp.success && resp.once) {
-        reply.thanked = true
-        reply.thanks++
-        this.detail.once = resp.once
-        this.render(this.detail)
-      }
+      await V2ex.thankReply(replyId)
+      reply.thanked = true
+      reply.thanks++
+      this.render(this.detail)
     })
   }
 }
@@ -351,6 +350,17 @@ export class TopicPanelController {
  */
 function fmtPanelTitle(title: string) {
   return title.length <= 15 ? title : title.slice(0, 15) + '...'
+}
+
+/**
+ * 获取错误提示文案
+ * @param err 异常对象
+ */
+function getErrorMessage(err: unknown) {
+  if (err instanceof Error && err.message) {
+    return err.message
+  }
+  return '操作失败'
 }
 
 /**

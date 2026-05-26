@@ -6,16 +6,15 @@ import G from './global'
 import vscode from 'vscode'
 import querystring from 'node:querystring'
 import Config from './config'
-import {
-  Topic,
-  Node,
-  DailyRes,
-  TopicDetail,
-  TopicReply,
-  ThankReplyResp,
-  SoV2exSort,
-  SoV2exSource
-} from './type'
+import { Topic, Node, DailyRes, TopicDetail, TopicReply, SoV2exSort, SoV2exSource } from './type'
+
+/** 感谢接口响应 */
+type ThankResponse = {
+  /** 是否成功 */
+  success: boolean
+  /** 错误消息 */
+  message?: string
+}
 
 export class V2ex {
   /** 域名 */
@@ -28,6 +27,17 @@ export class V2ex {
    */
   static getTopicLinkById(topicId: string | number) {
     return `${this.baseUrl}/t/${topicId}`
+  }
+
+  /**
+   * 获取 once 参数
+   * @returns once 参数
+   */
+  static async getOnce(): Promise<string> {
+    const { data } = await http.get<string>('/poll_once', {
+      responseType: 'text'
+    })
+    return data.trim()
   }
 
   /**
@@ -124,7 +134,9 @@ export class V2ex {
     if (pager) {
       const replies = await this.fetchAllReplies(topicId, pager.totalPage)
       topic.replies.push(...replies)
-      // 有时候会出现统计的回复数与实际获取到的回复数量不一致的问题，修正一下回复数量
+      /*
+       * 有时候会出现统计的回复数与实际获取到的回复数量不一致的问题，修正一下回复数量
+       */
       if (topic.replies.length > topic.replyCount) {
         topic.replyCount = topic.replies.length
       }
@@ -171,7 +183,6 @@ export class V2ex {
   private static parseTopicMeta($: cheerio.CheerioAPI, topicId: number): TopicDetail {
     const topic = new TopicDetail()
     topic.id = topicId
-    topic.once = $('a.light-toggle').attr('href')?.split('?once=')[1] || ''
     topic.title = $('.header > h1').text()
     const node = $('.header a[href^=/go/]')
     topic.node.name = node.attr('href')?.split('go/')[1] || ''
@@ -286,9 +297,9 @@ export class V2ex {
    * 提交回复
    * @param topicLink 话题链接，如：https://www.v2ex.com/t/703733
    * @param content 回复内容
-   * @param once 校验参数，可以从话题页面中获得
    */
-  static async postReply(topicLink: string, content: string, once: string) {
+  static async postReply(topicLink: string, content: string) {
+    const once = await this.getOnce()
     const params = {
       content,
       once
@@ -299,19 +310,33 @@ export class V2ex {
   /**
    * 感谢回复者
    * @param replyId 回复id
-   * @param once 校验参数
    */
-  static async thankReply(replyId: string, once: string): Promise<ThankReplyResp> {
-    const resp = await http.post<ThankReplyResp>(
+  static async thankReply(replyId: string): Promise<void> {
+    const once = await this.getOnce()
+    const resp = await http.post<ThankResponse>(
       `https://www.v2ex.com/thank/reply/${replyId}?once=${once}`
     )
     if (resp.status !== 200) {
-      return {
-        success: false,
-        once: undefined
-      }
+      throw new Error('感谢回复失败')
     }
-    return resp.data
+    if (!resp.data.success) {
+      throw new Error(resp.data.message || '感谢回复失败')
+    }
+  }
+
+  /**
+   * 向帖子发送感谢
+   * @param topicId 帖子id
+   */
+  static async thankTopic(topicId: number): Promise<void> {
+    const once = await this.getOnce()
+    const resp = await http.post<ThankResponse>(`/thank/topic/${topicId}?once=${once}`)
+    if (resp.status !== 200) {
+      throw new Error('感谢帖子失败')
+    }
+    if (!resp.data.success) {
+      throw new Error(resp.data.message || '感谢帖子失败')
+    }
   }
 
   /**
@@ -323,7 +348,7 @@ export class V2ex {
     if (!cookie) {
       return false
     }
-    // 前往一个需要登录的页面检测，如果被重定向，说明cookie无效
+    /* 前往一个需要登录的页面检测，如果被重定向，说明cookie无效 */
     const res = await http.get('/t', {
       headers: {
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -340,7 +365,7 @@ export class V2ex {
     return isValid
   }
 
-  // 缓存的节点信息
+  /** 缓存的节点信息 */
   private static _cachedNodes: Node[] = []
   /**
    * 获取所有节点
@@ -391,32 +416,30 @@ export class V2ex {
    * @returns {Promise<DailyRes>} 返回签到结果
    */
   static async daily(): Promise<DailyRes> {
-    // 查询时上次签到时间
+    /* 查询时上次签到时间 */
     const timestamp = new Date().getTime() / 1000
     const lastSignTime = G.context.globalState.get<number>('lastSignTime')
     if (lastSignTime !== undefined && timestamp - lastSignTime < 86400) {
-      // 最后签到时间小于1天
+      /* 最后签到时间小于1天 */
       return DailyRes.repetitive
     }
 
     const { data: html } = await http.get<string>('/mission/daily')
     const $ = cheerio.load(html)
-    // 已领取过时会提示：每日登录奖励已领取
+    /* 已领取过时会提示：每日登录奖励已领取 */
     if ($('.fa-ok-sign').length) {
-      G.context.globalState.update('lastSignTime', timestamp) // 设置最后签到时间
+      G.context.globalState.update('lastSignTime', timestamp)
       return DailyRes.repetitive
     }
-    // 未领取时有一个领取按钮，onclick内容是location.href = '/mission/daily/redeem?once=1111'
+    /* 未领取时有一个领取按钮 */
     const btn = $('input.super.normal.button')
     if (btn.length) {
-      if (/once=(\d+)/.test(btn.attr('onclick') || '')) {
-        const once = RegExp.$1
-        const { data: html2 } = await http.get<string>(`/mission/daily/redeem?once=${once}`)
-        const $2 = cheerio.load(html2)
-        if ($2('.fa-ok-sign').length) {
-          G.context.globalState.update('lastSignTime', timestamp) // 设置最后签到时间
-          return DailyRes.success
-        }
+      const once = await this.getOnce()
+      const { data: html2 } = await http.get<string>(`/mission/daily/redeem?once=${once}`)
+      const $2 = cheerio.load(html2)
+      if ($2('.fa-ok-sign').length) {
+        G.context.globalState.update('lastSignTime', timestamp)
+        return DailyRes.success
       }
     }
     return DailyRes.failed
@@ -425,33 +448,31 @@ export class V2ex {
   /**
    * 收藏帖子
    * @param topicId 帖子id
-   * @param once 收藏参数once
    */
-  static async collectTopic(topicId: number, once: string) {
-    // /favorite/topic/937439?once=34361
-    await http.get<string>(`/favorite/topic/${topicId}?once=${once}`)
+  static async collectTopic(topicId: number) {
+    const once = await this.getOnce()
+    const resp = await http.get<string>(`/favorite/topic/${topicId}?once=${once}`, {
+      maxRedirects: 0,
+      validateStatus: status => status >= 200 && status < 400
+    })
+    if (resp.status !== 302) {
+      throw new Error('收藏失败')
+    }
   }
 
   /**
    * 取消收藏帖子
    * @param topicId 帖子id
-   * @param once 收藏参数once
    */
-  static async cancelCollectTopic(topicId: number, once: string) {
-    // /unfavorite/topic/900126?once=34361
-    await http.get<string>(`/unfavorite/topic/${topicId}?once=${once}`)
-  }
-
-  /**
-   * 向帖子发送感谢
-   * @param topicId 帖子id
-   * @param once once参数
-   */
-  static async thankTopic(topicId: number, once: string): Promise<boolean> {
-    // POST /thank/topic/714502?once=30681
-    // 返回结果：{success: true, once: 30681}
-    const { data: res } = await http.post(`/thank/topic/${topicId}?once=${once}`)
-    return !!res.success
+  static async cancelCollectTopic(topicId: number) {
+    const once = await this.getOnce()
+    const resp = await http.get<string>(`/unfavorite/topic/${topicId}?once=${once}`, {
+      maxRedirects: 0,
+      validateStatus: status => status >= 200 && status < 400
+    })
+    if (resp.status !== 302) {
+      throw new Error('取消收藏失败')
+    }
   }
 
   /**

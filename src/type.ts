@@ -30,8 +30,6 @@ export class Topic {
 export class TopicDetail {
   /** id */
   public id: number = 0
-  /** 校验参数，可用来判断是否登录或登录是否有效 */
-  public once: string = ''
   /** 标题 */
   public title: string = ''
   /** 节点 */
@@ -165,13 +163,3 @@ export class SoV2exSource {
  * sov2ex的排序字段
  */
 export type SoV2exSort = 'sumup' | 'created'
-
-/**
- * 感谢回复的响应内容
- */
-export interface ThankReplyResp {
-  /** 是否成功 */
-  success: boolean
-  /** 新的once */
-  once: string | undefined
-}

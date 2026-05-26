@@ -60,7 +60,7 @@
           ></div>
           <div v-else class="topic-content">正文无内容</div>
 
-          <div v-if="topic.once" class="topic-toolbar">
+          <div v-if="state.canOperate" class="topic-toolbar">
             <a
               class="op refresh"
               href="javascript:;"
@@ -126,7 +126,7 @@
                   <span class="time">{{ reply.time }}</span>
                   <span v-if="reply.thanks > 0" class="thanks">♥ {{ reply.thanks }}</span>
                   <div class="reply-right">
-                    <template v-if="topic.once">
+                    <template v-if="state.canOperate">
                       <span v-if="reply.thanked" class="thanked">感谢已发送</span>
                       <a
                         v-else
@@ -152,7 +152,7 @@
             </div>
           </div>
 
-          <form v-if="topic.once" action="#" class="post-reply">
+          <form v-if="state.canOperate" action="#" class="post-reply">
             <textarea
               id="replyBox"
               maxlength="10000"

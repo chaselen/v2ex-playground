@@ -17,6 +17,7 @@ const vscode = acquireVsCodeApi()
  *   showLogin?: boolean
  *   showRefresh?: boolean
  *   showImages?: boolean
+ *   canOperate?: boolean
  * }} TopicRenderState
  */
 
@@ -288,7 +289,8 @@ Vue.createApp({
         message: '',
         showLogin: false,
         showRefresh: false,
-        showImages: true
+        showImages: true,
+        canOperate: false
       }
     }
   },
@@ -388,6 +390,7 @@ Vue.createApp({
       this.state.showLogin = Boolean(event.data.state.showLogin)
       this.state.showRefresh = Boolean(event.data.state.showRefresh)
       this.state.showImages = event.data.state.showImages !== false
+      this.state.canOperate = Boolean(event.data.state.canOperate)
       this.state.status = event.data.state.status
     }
   }
