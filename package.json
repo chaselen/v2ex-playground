@@ -3,7 +3,7 @@
   "icon": "resources/icon.png",
   "displayName": "V2EX Playground",
   "description": "V2EX 游乐场，上班时用来放（mō）松（yú）的插件",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "publisher": "chaselen",
   "repository": {
     "type": "git",
@@ -129,8 +129,8 @@
     "compile": "tsc -p ./ && tsc-alias -p tsconfig.json",
     "check:webview": "tsc -p tsconfig.webview.json --noEmit",
     "watch": "tsc -watch -p ./ & tsc-alias -p tsconfig.json -w",
-    "package": "vsce package",
-    "publish": "vsce publish"
+    "package": "npx @vscode/vsce@3.9.1 package",
+    "publish": "npx @vscode/vsce@3.9.1 publish"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",
