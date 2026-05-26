@@ -19,6 +19,9 @@ const vscode = acquireVsCodeApi()
  * }} TopicRenderState
  */
 
+/** 支持直接预览的图片后缀 */
+const SUPPORT_IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])
+
 /**
  * 向扩展侧发送消息
  * @param {string} command 命令名
@@ -49,11 +52,141 @@ function extractTopicId(anchor) {
 }
 
 /**
+ * 判断链接是否指向支持预览的图片
+ * @param {string} urlText 链接地址
+ * @returns {boolean}
+ */
+function isSupportImageUrl(urlText) {
+  try {
+    const url = new URL(urlText, document.baseURI)
+    const pathname = url.pathname.toLowerCase()
+    const ext = pathname.split('.').pop() || ''
+    return SUPPORT_IMAGE_TYPES.has(ext)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 判断链接是否指向支持预览的图片
+ * @param {HTMLAnchorElement} anchor 链接元素
+ * @returns {boolean}
+ */
+function isSupportImageLink(anchor) {
+  return isSupportImageUrl(anchor.href)
+}
+
+/**
+ * 判断是否使用修饰键打开原始链接
+ * @param {MouseEvent} event 鼠标事件
+ * @returns {boolean}
+ */
+function isOpenExternalClick(event) {
+  return event.metaKey || event.ctrlKey || event.altKey
+}
+
+/**
+ * 获取图片预览地址
+ * @param {HTMLImageElement} img 图片元素
+ * @returns {string}
+ */
+function getImagePreviewSrc(img) {
+  return img.dataset.previewSrc || img.currentSrc || img.src
+}
+
+/**
+ * 打开图片预览或原始链接
+ * @param {string} src 图片地址
+ * @param {MouseEvent} event 鼠标事件
+ */
+function openImage(src, event) {
+  if (isOpenExternalClick(event)) {
+    vsPostMessage('openExternal', { src })
+    return
+  }
+
+  vsPostMessage('browseImage', { src })
+}
+
+/**
+ * 转换 imgur 图片代理地址
+ * @param {HTMLImageElement} img 图片元素
+ */
+function proxyImgurImage(img) {
+  const originalSrc = img.currentSrc || img.src
+  img.dataset.previewSrc = originalSrc
+
+  if (img.src.startsWith('https://i.imgur.com/')) {
+    img.src = 'https://img.noobzone.ru/getimg.php?url=' + encodeURIComponent(originalSrc)
+  }
+}
+
+/**
+ * 给图片元素绑定预览行为
+ * @param {HTMLImageElement} img 图片元素
+ */
+function bindImagePreview(img) {
+  img.classList.add('image-preview-target')
+  img.title = '点击查看大图，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
+  img.onclick = event => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (!img.complete) {
+      return
+    }
+    openImage(getImagePreviewSrc(img), event)
+  }
+}
+
+/**
+ * 给图片链接绑定预览行为
+ * @param {HTMLAnchorElement} anchor 链接元素
+ */
+function bindImageLinkPreview(anchor) {
+  if (anchor.dataset.imagePreviewBound === 'true') {
+    return
+  }
+
+  const imageSrc = anchor.href
+
+  if (anchor.childNodes[0] && anchor.childNodes[0].nodeName === 'IMG') {
+    return
+  }
+
+  anchor.dataset.imagePreviewBound = 'true'
+  anchor.classList.add('image-preview-target')
+  anchor.title = '点击查看大图，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
+  anchor.addEventListener('click', event => {
+    event.preventDefault()
+    openImage(imageSrc, event)
+  })
+}
+
+/**
+ * 给站内帖子链接绑定扩展内跳转行为
+ * @param {HTMLAnchorElement} anchor 链接元素
+ */
+function bindTopicLink(anchor) {
+  const topicId = extractTopicId(anchor)
+  if (!topicId) {
+    return
+  }
+  anchor.dataset.topicId = topicId
+  anchor.href = 'javascript:;'
+  anchor.onclick = () => {
+    vsPostMessage('openTopic', {
+      topicId
+    })
+    return false
+  }
+}
+
+/**
  * 给内容区域挂载图片预览与站内跳转行为
  * @param {ParentNode} root 根节点
  */
 function enhanceTopicContent(root) {
-  // imgur 图片代理
   /** @type {NodeListOf<HTMLImageElement>} */
   const topicImages = root.querySelectorAll('.topic-content img')
 
@@ -61,64 +194,21 @@ function enhanceTopicContent(root) {
   const topicLinks = root.querySelectorAll('.topic-content a')
 
   topicImages.forEach(img => {
-    if (img.src.startsWith('https://i.imgur.com/')) {
-      img.src = 'https://img.noobzone.ru/getimg.php?url=' + encodeURIComponent(img.src)
+    proxyImgurImage(img)
+    bindImagePreview(img)
+  })
+
+  topicLinks.forEach(anchor => {
+    if (isSupportImageLink(anchor)) {
+      bindImageLinkPreview(anchor)
     }
   })
 
-  // 给图片添加查看图片功能
-  topicImages.forEach(img => {
-    img.style.cursor = 'zoom-in'
-    img.onclick = () => {
-      if (!img.complete) {
-        return
-      }
-      vsPostMessage('browseImage', {
-        src: img.src
-      })
-    }
-  })
-
-  // 图片地址的 a 标签，点击打开图片
-  const supportImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
-  supportImageTypes.forEach(type => {
-    topicLinks.forEach(anchor => {
-      if (!anchor.matches(`.topic-content a[href$=".${type}"]`)) {
-        return
-      }
-      const imageSrc = anchor.href
-      anchor.href = 'javascript:;'
-      anchor.onclick = () => false
-
-      if (anchor.childNodes[0] && anchor.childNodes[0].nodeName === 'IMG') {
-        return
-      }
-
-      anchor.addEventListener('click', () => {
-        vsPostMessage('browseImage', {
-          src: imageSrc
-        })
-      })
-    })
-  })
-
-  // 指向站内帖子的链接在扩展内打开
   topicLinks.forEach(anchor => {
     if (!anchor.matches('.topic-content a[href*="/t/"]')) {
       return
     }
-    const topicId = extractTopicId(anchor)
-    if (!topicId) {
-      return
-    }
-    anchor.dataset.topicId = topicId
-    anchor.href = 'javascript:;'
-    anchor.onclick = () => {
-      vsPostMessage('openTopic', {
-        topicId
-      })
-      return false
-    }
+    bindTopicLink(anchor)
   })
 }
 

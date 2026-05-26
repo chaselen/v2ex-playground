@@ -192,6 +192,8 @@ export class TopicPanelController {
     switch (message.command) {
       case 'browseImage':
         return this.runTopicAction('正在打开大图', () => openImagePreview(message.src || ''))
+      case 'openExternal':
+        return this.openExternal(message.src)
       case 'openTopic':
         if (message.topicId !== undefined) {
           this.openTopic(message.topicId)
@@ -244,6 +246,25 @@ export class TopicPanelController {
       label: `/t/${nextTopicId}`,
       topicId: nextTopicId
     } satisfies TopicPanelInput)
+  }
+
+  /**
+   * 在浏览器中打开链接
+   * @param link 链接地址
+   */
+  private openExternal(link?: string) {
+    if (!link) {
+      vscode.window.showWarningMessage('链接地址为空')
+      return
+    }
+
+    const uri = vscode.Uri.parse(link)
+    if (uri.scheme !== 'http' && uri.scheme !== 'https') {
+      vscode.window.showWarningMessage('仅支持打开 http 或 https 链接')
+      return
+    }
+
+    return vscode.env.openExternal(uri)
   }
 
   /**

@@ -42,6 +42,10 @@ vscode-tree {
   display: inline-block;
   vertical-align: middle;
 }
+/* 加载中文案 */
+.loading-text {
+  margin-left: 4px;
+}
 /* 添加节点按钮 */
 .add-node-btn {
   margin: 8px;

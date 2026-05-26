@@ -35,6 +35,29 @@ async function fileExists(uri: vscode.Uri) {
 }
 
 /**
+ * 规范化图片预览地址
+ * @param imageSrc 图片地址
+ */
+function normalizeImagePreviewSrc(imageSrc: string) {
+  if (!imageSrc.trim()) {
+    vscode.window.showWarningMessage('图片地址为空')
+    return ''
+  }
+
+  try {
+    const url = new URL(imageSrc)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      vscode.window.showWarningMessage('仅支持预览 http 或 https 图片')
+      return ''
+    }
+    return url.toString()
+  } catch {
+    vscode.window.showWarningMessage('图片地址格式不正确')
+    return ''
+  }
+}
+
+/**
  * 清理过期的图片缓存文件
  */
 export async function cleanupImagePreviewCache() {
@@ -71,7 +94,12 @@ export async function cleanupImagePreviewCache() {
  * @param imageSrc 图片地址
  */
 export async function openImagePreview(imageSrc: string) {
-  console.log('打开大图：', imageSrc)
+  const normalizedImageSrc = normalizeImagePreviewSrc(imageSrc)
+  if (!normalizedImageSrc) {
+    return
+  }
+
+  console.log('打开大图：', normalizedImageSrc)
 
   try {
     /**
@@ -79,7 +107,7 @@ export async function openImagePreview(imageSrc: string) {
      * 这里将远程图片落到临时文件，再交给 vscode.open 打开
      */
     const imageDir = getImagePreviewDir()
-    const imageHash = crypto.createHash('sha1').update(imageSrc).digest('hex')
+    const imageHash = crypto.createHash('sha1').update(normalizedImageSrc).digest('hex')
     const imageDirUri = vscode.Uri.file(imageDir)
 
     await vscode.workspace.fs.createDirectory(imageDirUri)
@@ -101,7 +129,7 @@ export async function openImagePreview(imageSrc: string) {
       return
     }
 
-    const res = await http.get(imageSrc, { responseType: 'arraybuffer' })
+    const res = await http.get(normalizedImageSrc, { responseType: 'arraybuffer' })
     const imageBuffer = Buffer.from(res.data)
 
     const ft = await import('file-type').then(m => m.fileTypeFromBuffer(imageBuffer))

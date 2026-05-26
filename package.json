@@ -122,6 +122,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
+    "check:webview": "tsc -p tsconfig.webview.json --noEmit",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
     "publish": "vsce publish"

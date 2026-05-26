@@ -14,22 +14,107 @@ const vscode = acquireVsCodeApi()
 
 const { createApp } = Vue
 
-const TAB_KEYS = ['explore', 'custom', 'collection']
+/**
+ * @typedef {'explore' | 'custom' | 'collection'} MainTabKey
+ */
 
+/**
+ * @typedef {{ explore: NodeItem[], custom: NodeItem[], collection: NodeItem[] }} MainTabs
+ */
+
+/**
+ * @typedef {'copyLink' | 'copyTitleLink' | 'viewInBrowser'} ContextMenuAction
+ */
+
+/** 主面板空状态文案 */
+const TAB_EMPTY_TEXT = {
+  explore: '暂无数据',
+  custom: '还没有添加自定义节点',
+  collection: '还没有收藏的节点'
+}
+
+/** @type {MainTabKey[]} */
+const TAB_KEYS = /** @type {MainTabKey[]} */ (Object.keys(TAB_EMPTY_TEXT))
+
+/** 右键菜单命令映射 */
+const CONTEXT_MENU_COMMANDS = {
+  copyLink: 'ctxCopyLink',
+  copyTitleLink: 'ctxCopyTitleLink',
+  viewInBrowser: 'ctxViewInBrowser'
+}
+
+/**
+ * 创建带前端状态的节点项
+ * @param {WebviewNode} node 原始节点
+ * @returns {NodeItem}
+ */
+function createNodeItem(node) {
+  return {
+    ...node,
+    loading: false,
+    children: null,
+    error: null
+  }
+}
+
+/**
+ * 合并节点数据并保留已加载状态
+ * @param {WebviewNode[]} nodes 最新节点
+ * @param {NodeItem[]} existing 已有节点
+ * @returns {NodeItem[]}
+ */
+function mergeNodeItems(nodes, existing) {
+  return nodes.map(node => {
+    const old = existing.find(item => item.id === node.id)
+    return old ? { ...old, ...node } : createNodeItem(node)
+  })
+}
+
+/**
+ * 补齐话题列表默认字段
+ * @param {WebviewTopic[]} topics 话题列表
+ * @returns {WebviewTopic[]}
+ */
+function normalizeTopics(topics) {
+  return topics.map(topic => ({
+    ...topic,
+    replies: topic.replies || 0
+  }))
+}
+
+/**
+ * 判断节点点击是否来自操作按钮或子项
+ * @param {Event} event 点击事件
+ * @returns {boolean}
+ */
+function isIgnoredNodeClick(event) {
+  const path = event.composedPath()
+  for (const el of path) {
+    if (el instanceof Element && el.getAttribute?.('slot') === 'actions') return true
+    if (el instanceof Element && el.matches?.('vscode-tree-item') && el !== event.currentTarget) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * 创建主面板 Vue 应用
+ */
 function createMainApp() {
   const app = createApp({
     data() {
       return {
         /** @type {number} */
         selectedIndex: 0,
-        /** @type {{ explore: NodeItem[], custom: NodeItem[], collection: NodeItem[] }} */
+        /** @type {MainTabs} */
         tabs: {
           explore: [],
           custom: [],
           collection: []
         },
         loggedIn: false,
-        /** @type {{ show: boolean, x: number, y: number, topic: WebviewTopic | null, items: Array<{ label: string, value: string }> }} */
+        /** @type {{ show: boolean, x: number, y: number, topic: WebviewTopic | null, items: Array<{ label: string, value: ContextMenuAction }> }} */
         ctxMenu: { show: false, x: 0, y: 0, topic: null, items: [] }
       }
     },
@@ -68,20 +153,10 @@ function createMainApp() {
        */
       onInitData(data) {
         this.loggedIn = data.loggedIn
-        const toNodeItem = (/** @type {WebviewNode} */ n) => ({
-          ...n,
-          loading: false,
-          children: null,
-          error: null
-        })
         /* 合并节点数据，保留已有的展开/加载/子话题状态 */
-        ;['explore', 'custom', 'collection'].forEach(key => {
+        TAB_KEYS.forEach(key => {
           const existing = /** @type {NodeItem[]} */ (this.tabs[key]) || []
-          // @ts-ignore
-          this.tabs[key] = data.tabs[key].map(n => {
-            const old = existing.find(e => e.id === n.id)
-            return old ? { ...old, ...n } : toNodeItem(n)
-          })
+          this.tabs[key] = mergeNodeItems(data.tabs[key], existing)
         })
       },
 
@@ -97,10 +172,7 @@ function createMainApp() {
           node.children = []
         } else {
           node.error = null
-          node.children = (data.children || []).map(t => ({
-            ...t,
-            replies: t.replies || 0
-          }))
+          node.children = normalizeTopics(data.children || [])
         }
       },
 
@@ -109,14 +181,20 @@ function createMainApp() {
        */
       onCustomNodesUpdated(data) {
         const existing = /** @type {NodeItem[]} */ (this.tabs.custom) || []
-        this.tabs.custom = data.nodes.map(n => {
-          const old = existing.find(e => e.id === n.id)
-          return old ? { ...old, ...n } : { ...n, loading: false, children: null, error: null }
-        })
+        this.tabs.custom = mergeNodeItems(data.nodes, existing)
       },
 
       /**
-       * @param {string} tab
+       * 获取空状态文案
+       * @param {MainTabKey} tab 标签 key
+       * @returns {string}
+       */
+      getEmptyText(tab) {
+        return TAB_EMPTY_TEXT[tab] || ''
+      },
+
+      /**
+       * @param {MainTabKey} tab
        * @param {string} nodeId
        * @returns {NodeItem | undefined}
        */
@@ -125,22 +203,12 @@ function createMainApp() {
       },
 
       /**
-       * @param {string} tab
+       * @param {MainTabKey} tab
        * @param {NodeItem} node
        * @param {Event} event
        */
       onNodeClick(tab, node, event) {
-        /* 通过 composedPath 判断点击来源：忽略操作按钮和子 tree-item */
-        const path = event.composedPath()
-        for (const el of path) {
-          if (el instanceof Element && el.getAttribute?.('slot') === 'actions') return
-          if (
-            el instanceof Element &&
-            el.matches?.('vscode-tree-item') &&
-            el !== event.currentTarget
-          )
-            return
-        }
+        if (isIgnoredNodeClick(event)) return
         if (node.loading) return
         if (node.children === null) {
           node.loading = true
@@ -176,19 +244,13 @@ function createMainApp() {
       },
 
       /**
-       * @param {CustomEvent} event
+       * @param {CustomEvent<{ value: ContextMenuAction }>} event
        */
       onContextMenuSelect(event) {
         const topic = this.ctxMenu.topic
         if (!topic) return
-        const value = event.detail?.value
-        if (value === 'copyLink') {
-          vscode.postMessage({ command: 'ctxCopyLink', topicId: topic.id, label: topic.title })
-        } else if (value === 'copyTitleLink') {
-          vscode.postMessage({ command: 'ctxCopyTitleLink', topicId: topic.id, label: topic.title })
-        } else if (value === 'viewInBrowser') {
-          vscode.postMessage({ command: 'ctxViewInBrowser', topicId: topic.id, label: topic.title })
-        }
+        const command = CONTEXT_MENU_COMMANDS[event.detail.value]
+        vscode.postMessage({ command, topicId: topic.id, label: topic.title })
         this.ctxMenu.show = false
       },
 
@@ -215,7 +277,7 @@ function createMainApp() {
       },
 
       /**
-       * @param {string} tab
+       * @param {MainTabKey} tab
        * @param {NodeItem} node
        */
       refreshNode(tab, node) {
@@ -230,7 +292,7 @@ function createMainApp() {
     }
   })
 
-  // 将 vscode- 前缀的元素视为原生 Web Component，保留 slot 属性
+  /* 将 vscode- 前缀的元素视为原生 Web Component，保留 slot 属性 */
   app.config.compilerOptions = {
     isCustomElement: (/** @type {string} */ tag) => tag.startsWith('vscode-')
   }
