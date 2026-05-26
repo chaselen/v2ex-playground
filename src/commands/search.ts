@@ -1,8 +1,8 @@
-import { V2ex } from './../v2ex'
+import { V2ex } from '../v2ex'
 import vscode from 'vscode'
 import topicItemClick from './topicItemClick'
 import dayjs from 'dayjs'
-import { SoV2exSource, SoV2exSort } from '../type'
+import { SoV2exSource, SoV2exSort } from '../v2ex'
 
 /**上次的搜索结果 */
 var _lastSearchList: SoV2exSource[] | null = null

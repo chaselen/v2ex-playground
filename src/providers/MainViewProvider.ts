@@ -3,9 +3,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { Eta } from 'eta'
 import G from '../global'
-import { V2ex } from '../v2ex'
-import { LoginRequiredError } from '../error'
-import { Node, Topic } from '../type'
+import { LoginRequiredError, Node, Topic, V2ex } from '../v2ex'
 import { TopicPanelInput } from '../controllers/TopicPanelController'
 
 /**

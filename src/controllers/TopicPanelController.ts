@@ -2,11 +2,9 @@ import { Eta } from 'eta'
 import { readFileSync } from 'fs'
 import path from 'path'
 import vscode from 'vscode'
-import { LoginRequiredError, AccountRestrictedError } from '../error'
-import { V2ex } from '../v2ex'
+import { AccountRestrictedError, LoginRequiredError, TopicDetail, V2ex } from '../v2ex'
 import G from '../global'
-import { TopicDetail } from '../type'
-import { openImagePreview } from '../imagePreview'
+import { openImagePreview } from '../features/imagePreview'
 import Config from '../config'
 
 /**

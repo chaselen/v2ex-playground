@@ -7,7 +7,7 @@ import G from './global'
 import { V2ex } from './v2ex'
 import search from './commands/search'
 import setting from './commands/setting'
-import { cleanupImagePreviewCache } from './imagePreview'
+import { cleanupImagePreviewCache } from './features/imagePreview'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context

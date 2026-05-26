@@ -2,7 +2,7 @@ import vscode from 'vscode'
 import os from 'node:os'
 import path from 'path'
 import crypto from 'node:crypto'
-import http from './http'
+import http from '../core/http'
 
 /**
  * 图片临时文件目录名

@@ -5,7 +5,7 @@ const vscode = acquireVsCodeApi()
 
 /**
  * 话题详情
- * @typedef {import('../src/type').TopicDetail} TopicDetail
+ * @typedef {import('../src/v2ex').TopicDetail} TopicDetail
  */
 
 /**

@@ -1,12 +1,11 @@
-import { AccountRestrictedError, LoginRequiredError } from './error'
 import * as cheerio from 'cheerio'
-import http from './http'
+import http from '../core/http'
 import { AxiosResponse } from 'axios'
-import G from './global'
+import G from '../global'
 import vscode from 'vscode'
 import querystring from 'node:querystring'
-import Config from './config'
-import { Topic, Node, DailyRes, TopicDetail, TopicReply, SoV2exSort, SoV2exSource } from './type'
+import Config from '../config'
+import { Topic, Node, DailyRes, TopicDetail, TopicReply, SoV2exSort, SoV2exSource } from './types'
 
 /** 感谢接口响应 */
 type ThankResponse = {
@@ -15,6 +14,12 @@ type ThankResponse = {
   /** 错误消息 */
   message?: string
 }
+
+/** 需要登录后访问 */
+export class LoginRequiredError extends Error {}
+
+/** 账号访问受限 */
+export class AccountRestrictedError extends Error {}
 
 export class V2ex {
   /** 域名 */
