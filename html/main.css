@@ -35,6 +35,18 @@ vscode-tab-panel[hidden] {
 vscode-tree {
   width: 100%;
 }
+/* 刷新中的节点图标 */
+.refresh-icon-loading {
+  animation: refresh-icon-spin 0.8s linear infinite;
+}
+@keyframes refresh-icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 .topic-title {
   overflow: hidden;
   text-overflow: ellipsis;

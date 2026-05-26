@@ -143,6 +143,9 @@ function createMainApp() {
           case 'customNodesUpdated':
             this.onCustomNodesUpdated(msg)
             break
+          case 'refreshLoadedNodes':
+            this.refreshLoadedNodes()
+            break
           default:
             break
         }
@@ -281,9 +284,21 @@ function createMainApp() {
        * @param {NodeItem} node
        */
       refreshNode(tab, node) {
-        node.children = null
+        if (node.loading) return
         node.loading = true
         vscode.postMessage({ command: 'refreshNode', tab, nodeId: node.id })
+      },
+
+      /**
+       * 刷新已加载过的节点
+       */
+      refreshLoadedNodes() {
+        TAB_KEYS.forEach(tab => {
+          this.tabs[tab].forEach(node => {
+            if (node.children === null) return
+            this.refreshNode(tab, node)
+          })
+        })
       },
 
       login() {

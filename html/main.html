@@ -32,6 +32,7 @@
                     <vscode-icon
                       slot="actions"
                       name="refresh"
+                      :class="{ 'refresh-icon-loading': node.loading }"
                       @click.stop="refreshNode('explore', node)"
                       title="刷新"
                     ></vscode-icon>
@@ -89,6 +90,7 @@
                     <vscode-icon
                       slot="actions"
                       name="refresh"
+                      :class="{ 'refresh-icon-loading': node.loading }"
                       @click.stop="refreshNode('custom', node)"
                       title="刷新"
                     ></vscode-icon>
@@ -122,7 +124,7 @@
                 </template>
                 <vscode-tree-item v-else>{{ getEmptyText('custom') }}</vscode-tree-item>
               </vscode-tree>
-              <vscode-button class="add-node-btn" @click="addNode">+ 添加节点</vscode-button>
+              <vscode-button icon="add" class="add-node-btn" @click="addNode">添加节点</vscode-button>
             </vscode-scrollable>
           </vscode-tab-panel>
 
@@ -141,6 +143,7 @@
                     <vscode-icon
                       slot="actions"
                       name="refresh"
+                      :class="{ 'refresh-icon-loading': node.loading }"
                       @click.stop="refreshNode('collection', node)"
                       title="刷新"
                     ></vscode-icon>

@@ -301,8 +301,15 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   /**
    * 刷新整个视图数据（外部调用）
    */
-  refresh() {
+  reloadViewData() {
     this._sendInitData()
+  }
+
+  /**
+   * 刷新 Webview 中已加载过的节点
+   */
+  refreshLoadedNodes() {
+    this._postMessage('refreshLoadedNodes')
   }
 
   /**

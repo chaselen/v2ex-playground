@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('v2ex.login', async () => {
       const loginResult = await login()
       if (loginResult === LoginResult.success || loginResult === LoginResult.logout) {
-        mainViewProvider.refresh()
+        mainViewProvider.reloadViewData()
       }
     })
   )
@@ -73,7 +73,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 刷新全部（view/title 按钮）
   context.subscriptions.push(
-    vscode.commands.registerCommand('v2ex-main.refresh', () => mainViewProvider.refresh())
+    vscode.commands.registerCommand('v2ex-main.refresh', () =>
+      mainViewProvider.refreshLoadedNodes()
+    )
   )
 }
 
