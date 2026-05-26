@@ -16,11 +16,15 @@ const vscode = acquireVsCodeApi()
  *   message?: string
  *   showLogin?: boolean
  *   showRefresh?: boolean
+ *   showImages?: boolean
  * }} TopicRenderState
  */
 
 /** 支持直接预览的图片后缀 */
 const SUPPORT_IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])
+
+/** 隐藏图片占位按钮 id 计数 */
+let hiddenImagePlaceholderCount = 0
 
 /**
  * 向扩展侧发送消息
@@ -113,7 +117,7 @@ function openImage(src, event) {
  * @param {HTMLImageElement} img 图片元素
  */
 function proxyImgurImage(img) {
-  const originalSrc = img.currentSrc || img.src
+  const originalSrc = img.dataset.previewSrc || img.currentSrc || img.src
   img.dataset.previewSrc = originalSrc
 
   if (img.src.startsWith('https://i.imgur.com/')) {
@@ -137,6 +141,64 @@ function bindImagePreview(img) {
     }
     openImage(getImagePreviewSrc(img), event)
   }
+}
+
+/**
+ * 创建隐藏图片后的占位按钮
+ * @param {HTMLImageElement} img 图片元素
+ * @returns {HTMLButtonElement}
+ */
+function createHiddenImageButton(img) {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'hidden-image-button'
+  button.title = '点击查看图片，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
+  button.innerHTML = '<span class="codicon codicon-file-media"></span><span>查看图片</span>'
+  button.addEventListener('click', event => {
+    event.preventDefault()
+    event.stopPropagation()
+    openImage(getImagePreviewSrc(img), event)
+  })
+  return button
+}
+
+/**
+ * 同步图片显示状态
+ * @param {HTMLImageElement} img 图片元素
+ * @param {boolean} showImages 是否显示图片
+ */
+function syncImageVisibility(img, showImages) {
+  const placeholderId =
+    img.dataset.hiddenImagePlaceholderId || `hidden-image-${++hiddenImagePlaceholderCount}`
+  img.dataset.hiddenImagePlaceholderId = placeholderId
+
+  /** @type {HTMLButtonElement | null} */
+  const existingButton = document.querySelector(
+    `.hidden-image-button[data-placeholder-id="${placeholderId}"]`
+  )
+
+  if (showImages) {
+    img.hidden = false
+    existingButton?.remove()
+    return
+  }
+
+  img.hidden = true
+
+  if (existingButton) {
+    return
+  }
+
+  const button = createHiddenImageButton(img)
+  button.dataset.placeholderId = placeholderId
+
+  const parentAnchor = img.closest('a')
+  if (parentAnchor && parentAnchor.parentNode) {
+    parentAnchor.insertAdjacentElement('afterend', button)
+    return
+  }
+
+  img.insertAdjacentElement('afterend', button)
 }
 
 /**
@@ -185,8 +247,9 @@ function bindTopicLink(anchor) {
 /**
  * 给内容区域挂载图片预览与站内跳转行为
  * @param {ParentNode} root 根节点
+ * @param {boolean} showImages 是否显示图片
  */
-function enhanceTopicContent(root) {
+function enhanceTopicContent(root, showImages) {
   /** @type {NodeListOf<HTMLImageElement>} */
   const topicImages = root.querySelectorAll('.topic-content img')
 
@@ -196,6 +259,7 @@ function enhanceTopicContent(root) {
   topicImages.forEach(img => {
     proxyImgurImage(img)
     bindImagePreview(img)
+    syncImageVisibility(img, showImages)
   })
 
   topicLinks.forEach(anchor => {
@@ -223,7 +287,8 @@ Vue.createApp({
         topic: undefined,
         message: '',
         showLogin: false,
-        showRefresh: false
+        showRefresh: false,
+        showImages: true
       }
     }
   },
@@ -246,6 +311,13 @@ Vue.createApp({
         return
       }
       this.applyContentEnhancements()
+    },
+
+    /**
+     * 图片显示配置变化后同步内容区域
+     */
+    'state.showImages'() {
+      this.applyContentEnhancements()
     }
   },
   mounted() {
@@ -261,7 +333,7 @@ Vue.createApp({
      */
     applyContentEnhancements() {
       this.$nextTick(() => {
-        enhanceTopicContent(document)
+        enhanceTopicContent(document, this.state.showImages)
       })
     },
 
@@ -315,6 +387,7 @@ Vue.createApp({
       this.state.message = event.data.state.message || ''
       this.state.showLogin = Boolean(event.data.state.showLogin)
       this.state.showRefresh = Boolean(event.data.state.showRefresh)
+      this.state.showImages = event.data.state.showImages !== false
       this.state.status = event.data.state.status
     }
   }

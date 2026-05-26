@@ -7,6 +7,7 @@ import { V2ex } from '../v2ex'
 import G from '../global'
 import { TopicDetail } from '../type'
 import { openImagePreview } from '../imagePreview'
+import Config from '../config'
 
 /**
  * Webview 发给扩展侧的话题命令消息
@@ -38,6 +39,8 @@ interface TopicPanelViewState {
   showLogin?: boolean
   /** 是否显示刷新按钮 */
   showRefresh?: boolean
+  /** 查看帖子时是否显示图片 */
+  showImages?: boolean
 }
 
 /**
@@ -66,6 +69,12 @@ export class TopicPanelController {
   /** 当前话题详情，仅在扩展侧维护 */
   private detail = new TopicDetail()
 
+  /** 当前视图状态 */
+  private viewState: TopicPanelViewState = { status: 'loading' }
+
+  /** 配置变更监听 */
+  private readonly configListener: vscode.Disposable
+
   /**
    * @param input 话题面板输入参数
    */
@@ -81,6 +90,12 @@ export class TopicPanelController {
     this.panel.webview.onDidReceiveMessage((message: TopicPanelMessage) => {
       this.handleMessage(message)
     })
+    this.configListener = vscode.workspace.onDidChangeConfiguration(event => {
+      if (event.affectsConfiguration('v2ex.browse.showImagesInTopic')) {
+        this.postViewState(this.viewState)
+      }
+    })
+    this.panel.onDidDispose(() => this.configListener.dispose())
   }
 
   /**
@@ -94,6 +109,7 @@ export class TopicPanelController {
    * 销毁当前面板
    */
   dispose() {
+    this.configListener.dispose()
     this.panel.dispose()
   }
 
@@ -173,11 +189,15 @@ export class TopicPanelController {
    * @param state 页面状态
    */
   private postViewState(state: TopicPanelViewState) {
+    this.viewState = state
     try {
       // 在 panel 被关闭后发送消息会抛出异常，这里保持兼容处理
       this.panel.webview.postMessage({
         command: 'renderState',
-        state
+        state: {
+          ...state,
+          showImages: Config.showImagesInTopic()
+        }
       })
     } catch (err) {
       console.log(err)

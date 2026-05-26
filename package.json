@@ -115,6 +115,11 @@
           "type": "boolean",
           "default": true,
           "description": "登录后自动进行每日签到"
+        },
+        "v2ex.browse.showImagesInTopic": {
+          "type": "boolean",
+          "default": true,
+          "description": "查看帖子时显示图片"
         }
       }
     }

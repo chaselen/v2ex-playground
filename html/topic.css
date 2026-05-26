@@ -109,6 +109,32 @@
   outline-offset: 2px;
 }
 
+.topic-content .hidden-image-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--vscode-button-border, var(--vscode-panel-border));
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+.topic-content .hidden-image-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.topic-content .hidden-image-button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
 .topic-content pre {
   font-family: inherit;
   white-space: pre;

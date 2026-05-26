@@ -18,4 +18,9 @@ export default class Config {
   static autoSignIn(): boolean {
     return vscode.workspace.getConfiguration().get<boolean>('v2ex.browse.autoSignIn', true)
   }
+
+  /** 查看帖子时是否显示图片 */
+  static showImagesInTopic(): boolean {
+    return vscode.workspace.getConfiguration().get<boolean>('v2ex.browse.showImagesInTopic', true)
+  }
 }
