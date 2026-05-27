@@ -12,6 +12,21 @@
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  color: var(--vscode-foreground, var(--vscode-sideBar-foreground));
+  --v2ex-webview-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --v2ex-webview-fg: var(--vscode-foreground, var(--vscode-sideBar-foreground));
+  --v2ex-main-content-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
+  --v2ex-widget-bg: var(
+    --vscode-sideBarSectionHeader-background,
+    var(--vscode-editorWidget-background)
+  );
+  --v2ex-border: var(--vscode-sideBar-border, var(--vscode-panel-border));
+  --semi-color-bg-0: var(--v2ex-webview-bg);
+  --semi-color-bg-1: var(--v2ex-widget-bg);
+  --semi-color-bg-2: var(--vscode-menu-background, var(--v2ex-widget-bg));
+  --semi-color-text-0: var(--v2ex-webview-fg);
+  --semi-color-border: var(--v2ex-border);
 }
 
 .main-tabs {
@@ -28,7 +43,28 @@
     flex: none;
     margin: 0;
     padding: 0 28px;
-    background: var(--vscode-editor-background);
+    border-bottom-color: var(--v2ex-border);
+    background: var(--v2ex-webview-bg);
+  }
+
+  .semi-tabs-tab {
+    margin: 0;
+    padding: 0 12px;
+    color: var(--v2ex-webview-fg);
+  }
+
+  .semi-tabs-tab:hover {
+    color: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+    background: var(--vscode-toolbar-hoverBackground, transparent);
+  }
+
+  .semi-tabs-tab-active,
+  .semi-tabs-tab-active:hover {
+    color: var(--vscode-sideBarTitle-foreground, var(--v2ex-webview-fg));
+  }
+
+  .semi-tabs-tab-line.semi-tabs-tab-active::before {
+    background-color: var(--vscode-focusBorder, var(--vscode-textLink-foreground));
   }
 
   .semi-tabs-content {
@@ -56,11 +92,6 @@
     min-height: 0;
     height: 100%;
     overflow: hidden;
-  }
-
-  .semi-tabs-tab {
-    margin: 0;
-    padding: 0 12px;
   }
 }
 
@@ -113,19 +144,36 @@
 }
 
 .node-tree {
+  color: var(--v2ex-webview-fg);
+
+  .semi-tree {
+    background: transparent;
+    color: inherit;
+  }
+
   .semi-tree-wrapper,
   .semi-tree-option-list {
     min-width: 0;
+    background: transparent;
   }
 
   .semi-tree-option {
     min-height: 26px;
+    color: var(--v2ex-webview-fg);
+    background: transparent;
+    outline-color: var(--vscode-focusBorder);
+
+    &:hover {
+      background: var(--vscode-list-hoverBackground, transparent);
+      color: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+    }
   }
 
-  .semi-tree-option:hover {
-    .node-actions {
-      opacity: 1;
-    }
+  .semi-tree-option-selected,
+  .semi-tree-option-selected:hover,
+  .semi-tree-option-on {
+    background: var(--vscode-list-inactiveSelectionBackground, var(--vscode-list-hoverBackground));
+    color: var(--vscode-list-inactiveSelectionForeground, var(--v2ex-webview-fg));
   }
 
   .semi-tree-option-label {
@@ -139,6 +187,15 @@
     display: block;
     min-width: 0;
     width: 100%;
+  }
+
+  .semi-tree-option-expand-icon,
+  .semi-tree-option-empty-icon {
+    color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
+  }
+
+  .semi-tree-option:hover .node-actions {
+    opacity: 1;
   }
 }
 
@@ -171,6 +228,11 @@
 }
 
 .node-label,
+.topic-title {
+  color: var(--v2ex-main-content-fg);
+}
+
+.node-label,
 .topic-title,
 .empty-text,
 .loading-text,
@@ -179,7 +241,7 @@
 }
 
 .loading-text {
-  color: var(--vscode-descriptionForeground);
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
 }
 
 .topic-row {
@@ -224,11 +286,17 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+
+  .semi-empty-description {
+    color: inherit;
+  }
 }
 
 .tree-footer {
   padding: 8px;
-  border-top: 1px solid var(--vscode-panel-border);
+  border-top: 1px solid var(--v2ex-border);
+  background: var(--v2ex-webview-bg);
 }
 
 .error-text {

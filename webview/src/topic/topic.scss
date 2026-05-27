@@ -5,6 +5,11 @@ $panel-border: var(--vscode-panel-border);
   width: 100%;
   height: 100vh;
   overflow: auto;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground, var(--vscode-foreground));
+  font-size: 14px;
+  --v2ex-webview-fg: var(--vscode-editor-foreground, var(--vscode-foreground));
+  --semi-color-text-0: var(--vscode-editor-foreground, var(--vscode-foreground));
 }
 
 .topic-container {
@@ -44,6 +49,24 @@ $panel-border: var(--vscode-panel-border);
   padding: 48px 20px;
 }
 
+.state-panel--loading {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--vscode-descriptionForeground, var(--vscode-foreground));
+}
+
+.state-loading-text {
+  display: inline-flex;
+  min-width: max-content;
+  color: var(--vscode-descriptionForeground, var(--vscode-foreground));
+  line-height: 1.4;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+}
+
 .state-actions {
   display: flex;
   gap: 8px;
@@ -53,6 +76,10 @@ $panel-border: var(--vscode-panel-border);
 
 .state-message {
   line-height: 1.6;
+}
+
+.topic-node-tag {
+  cursor: pointer;
 }
 
 .topic-content {
@@ -163,6 +190,18 @@ $panel-border: var(--vscode-panel-border);
     margin: 0 0 12px;
     font-size: 16px;
   }
+}
+
+.topic-divider {
+  opacity: 1;
+}
+
+.topic-divider--content-start {
+  margin: 10px 0 26px;
+}
+
+.topic-divider--reply-start {
+  margin: 26px 0 8px;
 }
 
 .reply h2 {

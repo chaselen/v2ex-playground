@@ -112,8 +112,9 @@ export default function TopicApp() {
   return (
     <main className="topic-shell">
       {state.status === 'loading' && (
-        <div className="state-panel">
-          <Spin size="middle" tip="加载中" />
+        <div className="state-panel state-panel--loading">
+          <Spin size="middle" />
+          <span className="state-loading-text">加载中</span>
         </div>
       )}
 
@@ -151,7 +152,11 @@ export default function TopicApp() {
           </header>
 
           <div className="topic-meta">
-            <Tag color="blue" onClick={() => openExternal('/go/' + topic.node.name)}>
+            <Tag
+              className="topic-node-tag"
+              color="blue"
+              onClick={() => openExternal('/go/' + topic.node.name)}
+            >
               {topic.node.title}
             </Tag>
             <a
@@ -166,7 +171,7 @@ export default function TopicApp() {
             </span>
           </div>
 
-          <Divider />
+          <Divider className="topic-divider topic-divider--content-start" />
 
           {topic.content ? (
             <section
@@ -227,7 +232,7 @@ export default function TopicApp() {
             </div>
           )}
 
-          <Divider />
+          <Divider className="topic-divider topic-divider--reply-start" />
 
           {topic.appends.map((append, index) => (
             <div key={`append-${index}`}>

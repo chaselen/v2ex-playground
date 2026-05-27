@@ -1,30 +1,91 @@
-$text-color: var(--vscode-editor-foreground);
+$text-color: var(--vscode-foreground, var(--vscode-editor-foreground));
 $background-color: var(--vscode-editor-background);
-$link-color: var(--vscode-textLink-foreground);
-$link-active-color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+$link-color: var(--vscode-textLink-foreground, var(--vscode-foreground));
+$link-active-color: var(
+  --vscode-textLink-activeForeground,
+  var(--vscode-textLink-foreground, var(--vscode-foreground))
+);
 
 :root {
   color: $text-color;
   background: $background-color;
+  color-scheme: light dark;
   font-family: var(--vscode-font-family);
   font-size: var(--vscode-font-size);
-  --semi-color-primary: #{$link-color};
-  --semi-color-primary-hover: #{$link-active-color};
-  --semi-color-primary-active: #{$link-active-color};
-  --semi-color-focus-border: var(--vscode-focusBorder);
+  --v2ex-webview-bg: #{$background-color};
+  --v2ex-webview-fg: #{$text-color};
+  --v2ex-widget-bg: var(--vscode-editorWidget-background, var(--vscode-input-background));
+  --v2ex-border: var(--vscode-panel-border, var(--vscode-widget-border));
+  --v2ex-hover-bg: var(--vscode-list-hoverBackground, var(--vscode-toolbar-hoverBackground));
+  --v2ex-active-bg: var(
+    --vscode-list-activeSelectionBackground,
+    var(--vscode-list-hoverBackground)
+  );
+  --v2ex-active-fg: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground));
+  --v2ex-secondary-button-bg: var(
+    --vscode-button-secondaryBackground,
+    var(
+      --vscode-list-inactiveSelectionBackground,
+      var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.18))
+    )
+  );
+  --v2ex-secondary-button-hover-bg: var(
+    --vscode-button-secondaryHoverBackground,
+    var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.26))
+  );
+  --v2ex-primary-button-bg: var(--vscode-button-background, #{$link-color});
+  --v2ex-primary-button-fg: var(--vscode-button-foreground, #{$background-color});
+  --v2ex-primary-button-hover-bg: var(--vscode-button-hoverBackground, #{$link-active-color});
+  --v2ex-tag-bg: var(
+    --vscode-list-inactiveSelectionBackground,
+    var(
+      --vscode-editor-inactiveSelectionBackground,
+      var(--vscode-sideBarSectionHeader-background, rgba(127, 127, 127, 0.16))
+    )
+  );
+  --v2ex-tag-fg: var(--vscode-editor-foreground, var(--vscode-foreground));
+  --v2ex-tag-hover-bg: var(--vscode-list-hoverBackground, var(--v2ex-hover-bg));
+  --v2ex-tag-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-tag-fg));
+  --semi-color-primary: var(--v2ex-primary-button-bg);
+  --semi-color-primary-hover: var(--v2ex-primary-button-hover-bg);
+  --semi-color-primary-active: var(--v2ex-primary-button-hover-bg);
+  --semi-color-primary-light-default: var(--v2ex-secondary-button-bg);
+  --semi-color-primary-light-hover: var(--v2ex-secondary-button-hover-bg);
+  --semi-color-primary-light-active: var(--v2ex-active-bg);
+  --semi-color-focus-border: var(--vscode-focusBorder, #{$link-color});
   --semi-color-bg-0: #{$background-color};
-  --semi-color-bg-1: var(--vscode-editorWidget-background);
-  --semi-color-bg-2: var(--vscode-editorWidget-background);
-  --semi-color-fill-0: var(--vscode-editor-inactiveSelectionBackground);
-  --semi-color-fill-1: var(--vscode-list-hoverBackground);
-  --semi-color-fill-2: var(--vscode-list-activeSelectionBackground);
+  --semi-color-bg-1: var(--v2ex-widget-bg);
+  --semi-color-bg-2: var(--v2ex-widget-bg);
+  --semi-color-fill-0: var(--v2ex-secondary-button-bg);
+  --semi-color-fill-1: var(--v2ex-hover-bg);
+  --semi-color-fill-2: var(--v2ex-active-bg);
   --semi-color-text-0: #{$text-color};
-  --semi-color-text-1: var(--vscode-descriptionForeground);
-  --semi-color-text-2: var(--vscode-descriptionForeground);
-  --semi-color-text-3: var(--vscode-input-placeholderForeground);
-  --semi-color-border: var(--vscode-panel-border);
-  --semi-color-danger: var(--vscode-errorForeground);
-  --semi-color-warning: var(--vscode-editorWarning-foreground);
+  --semi-color-text-1: var(
+    --vscode-icon-foreground,
+    var(--vscode-descriptionForeground, #{$text-color})
+  );
+  --semi-color-text-2: var(--vscode-descriptionForeground, #{$text-color});
+  --semi-color-text-3: var(
+    --vscode-input-placeholderForeground,
+    var(--vscode-descriptionForeground)
+  );
+  --semi-color-disabled-text: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
+  --semi-color-disabled-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --semi-color-disabled-fill: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --semi-color-border: var(--v2ex-border);
+  --semi-color-default: var(--v2ex-secondary-button-bg);
+  --semi-color-default-hover: var(--v2ex-secondary-button-hover-bg);
+  --semi-color-default-active: var(--v2ex-active-bg);
+  --semi-color-tertiary: var(--vscode-icon-foreground, var(--vscode-foreground));
+  --semi-color-tertiary-hover: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+  --semi-color-tertiary-active: var(--v2ex-active-fg);
+  --semi-color-tertiary-light-default: transparent;
+  --semi-color-tertiary-light-hover: var(--v2ex-hover-bg);
+  --semi-color-tertiary-light-active: var(--v2ex-active-bg);
+  --semi-color-overlay-bg: var(--vscode-menu-background, var(--v2ex-widget-bg));
+  --semi-color-shadow: var(--vscode-widget-shadow, transparent);
+  --semi-color-danger: var(--vscode-errorForeground, #f14c4c);
+  --semi-color-warning: var(--vscode-editorWarning-foreground, #cca700);
   --semi-border-radius-small: 4px;
   --semi-border-radius-medium: 4px;
 }
@@ -46,6 +107,8 @@ body,
 body {
   color: $text-color;
   background: $background-color;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
 }
 
 a {
@@ -64,4 +127,54 @@ textarea {
 
 .text-bold {
   font-weight: 700;
+}
+
+.semi-spin {
+  color: var(--vscode-progressBar-background, var(--vscode-textLink-foreground));
+}
+
+.semi-tag,
+.semi-tag[class*='semi-tag-'] {
+  border-color: var(--v2ex-tag-bg);
+  background: var(--v2ex-tag-bg);
+  background-color: var(--v2ex-tag-bg);
+  color: var(--v2ex-tag-fg);
+
+  &:hover {
+    border-color: var(--v2ex-primary-button-hover-bg);
+    background: var(--v2ex-tag-hover-bg);
+    background-color: var(--v2ex-tag-hover-bg);
+    color: var(--v2ex-tag-hover-fg);
+  }
+
+  .semi-tag-content {
+    color: inherit;
+  }
+}
+
+.semi-divider {
+  border-color: var(--v2ex-border);
+}
+
+.semi-divider-horizontal {
+  border-top-color: var(--v2ex-border);
+}
+
+.semi-dropdown-wrapper,
+.semi-portal {
+  .semi-dropdown {
+    border-color: var(--vscode-menu-border, var(--v2ex-border));
+    background: var(--vscode-menu-background, var(--v2ex-widget-bg));
+    color: var(--vscode-menu-foreground, var(--vscode-foreground));
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow, transparent);
+  }
+
+  .semi-dropdown-item {
+    color: var(--vscode-menu-foreground, var(--vscode-foreground));
+
+    &:hover {
+      background: var(--vscode-menu-selectionBackground, var(--v2ex-hover-bg));
+      color: var(--vscode-menu-selectionForeground, var(--vscode-foreground));
+    }
+  }
 }
