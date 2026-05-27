@@ -233,6 +233,7 @@ export default function NodeTree(props: NodeTreeProps) {
    * @param data 树项
    */
   function renderTopicRow(data: TreeItem) {
+    const topicTitle = data.title || data.label
     const menu = (
       <Dropdown.Menu>
         {contextMenuItems.map(item => (
@@ -247,15 +248,16 @@ export default function NodeTree(props: NodeTreeProps) {
     )
 
     return (
-      <Dropdown trigger="contextMenu" position="bottomLeft" render={menu}>
+      <Dropdown trigger="contextMenu" position="bottomLeft" clickToHide render={menu}>
         <div
           className="topic-row"
+          title={topicTitle}
           onClick={event => {
             stopTreeClick(event)
             openTopic(data)
           }}
         >
-          <span className="topic-title">{data.label}</span>
+          <span className="topic-title">{topicTitle}</span>
           {!!data.replies && data.replies > 0 && (
             <Badge
               count={data.replies}
