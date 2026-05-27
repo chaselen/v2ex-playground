@@ -1,0 +1,67 @@
+$text-color: var(--vscode-editor-foreground);
+$background-color: var(--vscode-editor-background);
+$link-color: var(--vscode-textLink-foreground);
+$link-active-color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+
+:root {
+  color: $text-color;
+  background: $background-color;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  --semi-color-primary: #{$link-color};
+  --semi-color-primary-hover: #{$link-active-color};
+  --semi-color-primary-active: #{$link-active-color};
+  --semi-color-focus-border: var(--vscode-focusBorder);
+  --semi-color-bg-0: #{$background-color};
+  --semi-color-bg-1: var(--vscode-editorWidget-background);
+  --semi-color-bg-2: var(--vscode-editorWidget-background);
+  --semi-color-fill-0: var(--vscode-editor-inactiveSelectionBackground);
+  --semi-color-fill-1: var(--vscode-list-hoverBackground);
+  --semi-color-fill-2: var(--vscode-list-activeSelectionBackground);
+  --semi-color-text-0: #{$text-color};
+  --semi-color-text-1: var(--vscode-descriptionForeground);
+  --semi-color-text-2: var(--vscode-descriptionForeground);
+  --semi-color-text-3: var(--vscode-input-placeholderForeground);
+  --semi-color-border: var(--vscode-panel-border);
+  --semi-color-danger: var(--vscode-errorForeground);
+  --semi-color-warning: var(--vscode-editorWarning-foreground);
+  --semi-border-radius-small: 4px;
+  --semi-border-radius-medium: 4px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  color: $text-color;
+  background: $background-color;
+}
+
+a {
+  color: $link-color;
+  text-decoration: none;
+
+  &:hover {
+    color: $link-active-color;
+  }
+}
+
+button,
+textarea {
+  font-family: inherit;
+}
+
+.text-bold {
+  font-weight: 700;
+}

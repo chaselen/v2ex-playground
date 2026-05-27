@@ -1,0 +1,279 @@
+$muted-color: var(--vscode-descriptionForeground);
+$panel-border: var(--vscode-panel-border);
+
+.topic-shell {
+  width: 100%;
+  height: 100vh;
+  overflow: auto;
+}
+
+.topic-container {
+  min-width: 360px;
+  max-width: 760px;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.topic-header {
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.35;
+  }
+}
+
+.topic-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-top: 12px;
+
+  .time {
+    min-width: 0;
+    overflow: hidden;
+    color: $muted-color;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.state-panel {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 48px 20px;
+}
+
+.state-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.state-message {
+  line-height: 1.6;
+}
+
+.topic-content {
+  line-height: 1.55;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  a {
+    word-break: break-all;
+
+    &:has(img) {
+      display: inline-block;
+      line-height: 0;
+      vertical-align: top;
+    }
+  }
+
+  img {
+    max-width: 100% !important;
+  }
+
+  .image-preview-target {
+    cursor: pointer;
+
+    &:hover {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+  }
+
+  .hidden-image-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    min-height: 28px;
+    padding: 4px 9px;
+    border: 1px solid var(--vscode-button-border, #{$panel-border});
+    border-radius: 4px;
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1.4;
+    vertical-align: middle;
+
+    &:hover {
+      background: var(--vscode-button-secondaryHoverBackground);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+  }
+
+  pre {
+    overflow-x: auto;
+    font-family: var(--vscode-editor-font-family, inherit);
+    white-space: pre;
+
+    > code {
+      display: block;
+      padding: 8px 12px;
+    }
+  }
+
+  code {
+    font-family: var(--vscode-editor-font-family, inherit);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  blockquote {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 12px;
+    border-left: 3px solid $panel-border;
+    background: var(--vscode-editorWidget-background);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  ol,
+  ul {
+    padding-left: 18px;
+  }
+
+  table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+
+    td,
+    th {
+      padding: 6px 12px;
+      border: 1px solid $panel-border;
+    }
+
+    tr:nth-child(2n) {
+      background-color: var(--vscode-editorWidget-background);
+    }
+  }
+
+  &.append h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+  }
+}
+
+.reply h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.topic-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 18px;
+}
+
+.toolbar-text,
+.toolbar-count,
+.muted {
+  color: $muted-color;
+}
+
+.toolbar-count {
+  margin-left: auto;
+}
+
+.reply-item {
+  padding: 14px 0;
+  border-bottom: 1px solid $panel-border;
+
+  &:hover {
+    .reply-actions .semi-button {
+      visibility: visible;
+    }
+  }
+}
+
+.reply-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-bottom: 8px;
+
+  .time,
+  .thanks {
+    color: $muted-color;
+  }
+}
+
+.thanked {
+  color: $muted-color;
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+
+  .semi-button {
+    visibility: hidden;
+  }
+}
+
+.user--author::after {
+  content: '楼主';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  padding: 1px 3px;
+  border: 1px solid var(--vscode-textLink-foreground);
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 400;
+}
+
+.floor {
+  display: inline-block;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: center;
+}
+
+.post-reply {
+  margin-top: 18px;
+
+  .submit {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topic-container {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .topic-meta,
+  .reply-meta,
+  .topic-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .toolbar-count,
+  .reply-actions {
+    margin-left: 0;
+  }
+}

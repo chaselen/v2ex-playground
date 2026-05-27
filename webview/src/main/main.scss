@@ -1,0 +1,236 @@
+@mixin ellipsis {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.main-container {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-tabs {
+  height: 100%;
+
+  &.semi-tabs {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .semi-tabs-bar {
+    flex: none;
+    margin: 0;
+    padding: 0 28px;
+    background: var(--vscode-editor-background);
+  }
+
+  .semi-tabs-content {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .semi-tabs-pane {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .semi-tabs-pane-active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .semi-tabs-pane-motion-overlay {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .semi-tabs-tab {
+    margin: 0;
+    padding: 0 12px;
+  }
+}
+
+.node-tree-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.node-tree-scroll {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+
+  .simplebar-content {
+    padding: 4px 18px 0 8px !important;
+  }
+
+  .simplebar-track.simplebar-vertical {
+    width: 8px;
+    background: transparent;
+  }
+
+  .simplebar-scrollbar::before {
+    inset: 2px;
+    border-radius: 999px;
+    background: var(--vscode-scrollbarSlider-background);
+    opacity: 1;
+  }
+
+  .simplebar-scrollbar.simplebar-visible::before,
+  .simplebar-track:hover .simplebar-scrollbar::before {
+    opacity: 1;
+  }
+
+  .simplebar-track:hover .simplebar-scrollbar::before {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+  }
+
+  .simplebar-track.simplebar-horizontal {
+    display: none;
+  }
+
+  .simplebar-placeholder {
+    width: auto !important;
+  }
+}
+
+.node-tree {
+  .semi-tree-wrapper,
+  .semi-tree-option-list {
+    min-width: 0;
+  }
+
+  .semi-tree-option {
+    min-height: 26px;
+  }
+
+  .semi-tree-option:hover {
+    .node-actions {
+      opacity: 1;
+    }
+  }
+
+  .semi-tree-option-label {
+    min-width: 0;
+    flex: 1;
+    margin-left: 2px;
+    padding: 2px 4px;
+  }
+
+  .semi-tree-option-label-text {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.node-tree-scroll,
+.node-tree {
+  .simplebar-content-wrapper,
+  .simplebar-mask,
+  .simplebar-offset {
+    min-height: 0;
+  }
+
+  .simplebar-content-wrapper {
+    outline: none;
+  }
+
+  .simplebar-mask {
+    background: transparent;
+  }
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+
+  &--empty {
+    min-height: 18px;
+  }
+}
+
+.node-label,
+.topic-title,
+.empty-text,
+.loading-text,
+.error-text {
+  @include ellipsis;
+}
+
+.loading-text {
+  color: var(--vscode-descriptionForeground);
+}
+
+.topic-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  cursor: pointer;
+
+  .semi-badge {
+    flex: none;
+    margin-right: 4px;
+  }
+}
+
+.topic-title {
+  flex: 1;
+}
+
+.topic-badge-count {
+  background-color: var(--vscode-badge-background, var(--semi-color-danger));
+  color: var(--vscode-badge-foreground, #fff);
+}
+
+.node-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.empty-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.tree-footer {
+  padding: 8px;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.error-text {
+  color: var(--vscode-errorForeground, #f14c4c);
+}

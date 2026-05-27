@@ -1,47 +1,11 @@
-import { Eta } from 'eta'
-import { readFileSync } from 'fs'
 import path from 'path'
 import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail, V2ex } from '@/v2ex'
 import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import Config from '@/config'
-
-/**
- * Webview 发给扩展侧的话题命令消息
- */
-export interface TopicPanelMessage {
-  /** 命令名 */
-  command: string
-  /** 图片地址 */
-  src?: string
-  /** 话题 id */
-  topicId?: string | number
-  /** 回复内容 */
-  content?: string
-  /** 回复 id */
-  replyId?: string
-}
-
-/**
- * 发往 webview 的话题页面状态
- */
-interface TopicPanelViewState {
-  /** 页面状态 */
-  status: 'loading' | 'topic' | 'error'
-  /** 话题详情 */
-  topic?: TopicDetail
-  /** 错误文案 */
-  message?: string
-  /** 是否显示登录按钮 */
-  showLogin?: boolean
-  /** 是否显示刷新按钮 */
-  showRefresh?: boolean
-  /** 查看帖子时是否显示图片 */
-  showImages?: boolean
-  /** 是否可执行登录态操作 */
-  canOperate?: boolean
-}
+import { renderWebviewHtml } from '@/core/webviewHtml'
+import { TopicPanelMessage, TopicPanelViewState } from '@/shared/webview'
 
 /**
  * 打开话题面板所需的最小参数
@@ -82,11 +46,7 @@ export class TopicPanelController {
     this.key = V2ex.getTopicLinkById(input.topicId)
     this.topicId = input.topicId
     this.panel = createPanel(this.key, input.label)
-    const templatePath = path.join(G.context.extensionPath, 'html', 'topic.html')
-    const eta = new Eta({ useWith: true })
-    this.panel.webview.html = eta.renderString(readFileSync(templatePath, 'utf-8'), {
-      contextPath: G.getWebViewContextPath(this.panel.webview)
-    })
+    this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'topic.html')
     this.panel.webview.onDidReceiveMessage((message: TopicPanelMessage) => {
       this.handleMessage(message)
     })

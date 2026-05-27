@@ -1,40 +1,10 @@
 import vscode from 'vscode'
-import { readFileSync } from 'fs'
 import path from 'path'
-import { Eta } from 'eta'
 import G from '@/global'
 import { LoginRequiredError, Node, Topic, V2ex } from '@/v2ex'
 import { TopicPanelInput } from '@/controllers/TopicPanelController'
-
-/**
- * Webview 节点项
- */
-export interface WebviewNode {
-  id: string
-  label: string
-  nodeName?: string
-}
-
-/**
- * Webview 话题项
- */
-export interface WebviewTopic {
-  id: number
-  title: string
-  replies: number
-}
-
-/**
- * Webview 接收的初始化数据
- */
-export interface InitData {
-  tabs: {
-    explore: WebviewNode[]
-    custom: WebviewNode[]
-    collection: WebviewNode[]
-  }
-  loggedIn: boolean
-}
+import { renderWebviewHtml } from '@/core/webviewHtml'
+import { InitData, WebviewNode, WebviewTopic } from '@/shared/webview'
 
 export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView
@@ -55,14 +25,10 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 渲染 Eta 模板
+   * 渲染 Webview 页面
    */
   private _getHtml(webview: vscode.Webview): string {
-    const templatePath = path.join(G.context.extensionPath, 'html', 'main.html')
-    const eta = new Eta({ useWith: true })
-    return eta.renderString(readFileSync(templatePath, 'utf-8'), {
-      contextPath: G.getWebViewContextPath(webview)
-    })
+    return renderWebviewHtml(webview, 'main.html')
   }
 
   /**

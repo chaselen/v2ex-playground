@@ -126,27 +126,36 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./ && tsc-alias -p tsconfig.json",
-    "check:webview": "tsc -p tsconfig.webview.json --noEmit",
-    "watch": "tsc -watch -p ./ & tsc-alias -p tsconfig.json -w",
+    "build:webview": "vite build --config webview/vite.config.ts",
+    "check:webview": "tsc -p webview/tsconfig.json --noEmit",
+    "compile": "npm run build:webview && tsc -p ./ && tsc-alias -p tsconfig.json",
+    "watch:webview": "vite build --watch --config webview/vite.config.ts",
+    "watch": "npm run watch:webview & tsc -watch -p ./ & tsc-alias -p tsconfig.json -w",
     "package": "npx @vscode/vsce@3.9.1 package",
     "publish": "npx @vscode/vsce@3.9.1 publish"
   },
   "devDependencies": {
+    "@douyinfe/semi-icons": "^2.99.2",
+    "@douyinfe/semi-ui": "^2.99.2",
     "@types/node": "^20.19.0",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
     "@types/vscode": "~1.86.0",
     "@types/vscode-webview": "^1.57.5",
+    "@vitejs/plugin-react": "^6.0.2",
     "prettier": "^3.8.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "sass": "^1.100.0",
+    "simplebar-react": "^3.3.2",
     "tsc-alias": "^1.8.17",
     "typescript": "^5.8.3",
-    "vue": "^3.5.34"
+    "vite": "^8.0.14"
   },
   "dependencies": {
-    "@vscode-elements/elements": "^2.5.1",
     "axios": "~1.8.4",
     "cheerio": "^1.0.0",
     "dayjs": "^1.11.13",
-    "eta": "^4.6.0",
     "file-type": "^20.5.0",
     "form-data": "^4.0.2"
   }
