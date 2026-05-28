@@ -133,6 +133,7 @@ function getTreeItem(data?: TreeNodeData): TreeItem {
 export default function NodeTree(props: NodeTreeProps) {
   const { tab, nodes, loggedIn, onAddNode, onExpandNode, onRefreshNode, onRemoveNode } = props
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
+  const [selectedTopicKey, setSelectedTopicKey] = useState<string>()
 
   /** 树组件数据 */
   const treeData = useMemo(() => nodes.map(node => createNodeTreeItem(tab, node)), [nodes, tab])
@@ -250,14 +251,7 @@ export default function NodeTree(props: NodeTreeProps) {
 
     return (
       <Dropdown trigger="contextMenu" position="bottomLeft" clickToHide render={menu}>
-        <div
-          className="topic-row"
-          title={topicTitle}
-          onClick={event => {
-            stopTreeClick(event)
-            openTopic(data)
-          }}
-        >
+        <div className="topic-row" title={topicTitle}>
           <span className="topic-title">{topicTitle}</span>
           {!!data.replies && data.replies > 0 && (
             <Badge
@@ -329,6 +323,22 @@ export default function NodeTree(props: NodeTreeProps) {
     onExpandNode(tab, node.id)
   }
 
+  /**
+   * 处理树选中
+   * @param selectedKey 选中节点 key
+   * @param selected 是否选中
+   * @param selectedNode 选中节点
+   */
+  function handleSelect(selectedKey: string, selected: boolean, selectedNode: TreeNodeData) {
+    const data = getTreeItem(selectedNode)
+    if (!selected || data.type !== 'topic') {
+      return
+    }
+
+    setSelectedTopicKey(selectedKey)
+    openTopic(data)
+  }
+
   if (!nodes.length) {
     return (
       <section className="node-tree-panel">
@@ -368,6 +378,7 @@ export default function NodeTree(props: NodeTreeProps) {
       <SimpleBar className="node-tree-scroll" autoHide={false}>
         <Tree
           expandedKeys={expandedKeys}
+          value={selectedTopicKey}
           treeData={treeData}
           blockNode
           motion={false}
@@ -375,6 +386,7 @@ export default function NodeTree(props: NodeTreeProps) {
           className="node-tree"
           renderLabel={renderLabel}
           onExpand={handleExpand}
+          onSelect={handleSelect}
         />
       </SimpleBar>
 
