@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Banner, Button, Divider, Spin, Tag, TextArea } from '@douyinfe/semi-ui'
+import {
+  Banner,
+  Button,
+  Divider,
+  Popconfirm,
+  Spin,
+  TextArea,
+  Toast,
+  Tooltip
+} from '@douyinfe/semi-ui'
+import { IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
 import { enhanceTopicContentAfterRender, normalizeHtml } from '../shared/topicContent'
 import { postVsCodeMessage } from '../shared/vscode'
 import type { TopicPanelViewState } from '../../../src/shared/webview'
@@ -44,8 +54,19 @@ export default function TopicApp() {
    * 提交回复
    */
   function onSubmit() {
+    const content = replyContent.trim()
+
+    if (!content) {
+      Toast.warning('回复内容不能为空')
+      requestAnimationFrame(() => {
+        const textarea = document.querySelector<HTMLTextAreaElement>('.post-reply textarea')
+        textarea?.focus()
+      })
+      return
+    }
+
     postVsCodeMessage('postReply', {
-      content: replyContent.trim()
+      content
     })
   }
 
@@ -57,6 +78,13 @@ export default function TopicApp() {
     postVsCodeMessage('thankReply', {
       replyId
     })
+  }
+
+  /**
+   * 感谢主题创建者
+   */
+  function thankTopic() {
+    postCommand('thank')
   }
 
   /**
@@ -152,13 +180,14 @@ export default function TopicApp() {
           </header>
 
           <div className="topic-meta">
-            <Tag
+            <Button
               className="topic-node-tag"
-              color="blue"
+              size="small"
+              type="tertiary"
               onClick={() => openExternal('/go/' + topic.node.name)}
             >
               {topic.node.title}
-            </Tag>
+            </Button>
             <a
               className="user text-bold"
               href="javascript:;"
@@ -184,42 +213,29 @@ export default function TopicApp() {
 
           {state.canOperate && (
             <div className="topic-toolbar">
-              <Button
-                size="small"
-                theme="borderless"
-                type="tertiary"
-                onClick={() => postCommand('refresh')}
-              >
+              <Button size="small" type="secondary" onClick={() => postCommand('refresh')}>
                 刷新页面
               </Button>
               {!topic.isCollected ? (
-                <Button
-                  size="small"
-                  theme="borderless"
-                  type="tertiary"
-                  onClick={() => postCommand('collect')}
-                >
+                <Button size="small" type="secondary" onClick={() => postCommand('collect')}>
                   加入收藏
                 </Button>
               ) : (
-                <Button
-                  size="small"
-                  theme="borderless"
-                  type="tertiary"
-                  onClick={() => postCommand('cancelCollect')}
-                >
+                <Button size="small" type="secondary" onClick={() => postCommand('cancelCollect')}>
                   取消收藏
                 </Button>
               )}
               {topic.canThank && !topic.isThanked && (
-                <Button
-                  size="small"
-                  theme="borderless"
-                  type="tertiary"
-                  onClick={() => postCommand('thank')}
+                <Popconfirm
+                  title="你确定要向本主题创建者发送谢意？"
+                  okText="确认"
+                  cancelText="取消"
+                  onConfirm={thankTopic}
                 >
-                  感谢
-                </Button>
+                  <Button size="small" type="secondary">
+                    感谢
+                  </Button>
+                </Popconfirm>
               )}
               {topic.canThank && topic.isThanked && (
                 <span className="toolbar-text">感谢已发送</span>
@@ -265,23 +281,37 @@ export default function TopicApp() {
                         {reply.thanked ? (
                           <span className="thanked">感谢已发送</span>
                         ) : (
+                          <Popconfirm
+                            title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
+                            okText="确认"
+                            cancelText="取消"
+                            onConfirm={() => thankReply(reply.replyId)}
+                          >
+                            <span className="reply-action-popconfirm-trigger">
+                              <Tooltip content="感谢回复者">
+                                <Button
+                                  aria-label="感谢回复者"
+                                  className="reply-action-button"
+                                  icon={<IconHeartStroked />}
+                                  size="small"
+                                  theme="borderless"
+                                  type="tertiary"
+                                />
+                              </Tooltip>
+                            </span>
+                          </Popconfirm>
+                        )}
+                        <Tooltip content="回复">
                           <Button
+                            aria-label="回复"
+                            className="reply-action-button"
+                            icon={<IconReply />}
                             size="small"
                             theme="borderless"
                             type="tertiary"
-                            onClick={() => thankReply(reply.replyId)}
-                          >
-                            感谢回复者
-                          </Button>
-                        )}
-                        <Button
-                          size="small"
-                          theme="borderless"
-                          type="tertiary"
-                          onClick={() => floorReply(reply.userName, reply.floor)}
-                        >
-                          回复
-                        </Button>
+                            onClick={() => floorReply(reply.userName, reply.floor)}
+                          />
+                        </Tooltip>
                       </>
                     )}
                     <span className="floor">{reply.floor}</span>
@@ -305,12 +335,13 @@ export default function TopicApp() {
             >
               <TextArea
                 value={replyContent}
-                maxLength={10000}
+                maxCount={10000}
                 autosize={{ minRows: 5, maxRows: 12 }}
                 placeholder="请尽量让自己的回复能够对别人有帮助"
+                showClear
                 onChange={value => setReplyContent(String(value || ''))}
               />
-              <Button className="submit" type="primary" htmlType="submit">
+              <Button className="submit" theme="solid" type="primary" htmlType="submit">
                 回复
               </Button>
             </form>

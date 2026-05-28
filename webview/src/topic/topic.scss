@@ -1,15 +1,39 @@
-$muted-color: var(--vscode-descriptionForeground);
-$panel-border: var(--vscode-panel-border);
+$muted-color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+$panel-border: var(--v2ex-border);
 
 .topic-shell {
   width: 100%;
   height: 100vh;
   overflow: auto;
-  background: var(--vscode-editor-background);
-  color: var(--vscode-editor-foreground, var(--vscode-foreground));
   font-size: 14px;
+  --v2ex-webview-bg: var(--vscode-editor-background);
   --v2ex-webview-fg: var(--vscode-editor-foreground, var(--vscode-foreground));
-  --semi-color-text-0: var(--vscode-editor-foreground, var(--vscode-foreground));
+  --v2ex-widget-bg: var(
+    --vscode-editorWidget-background,
+    var(--vscode-input-background, var(--v2ex-webview-bg))
+  );
+  --v2ex-overlay-bg: var(
+    --vscode-editorHoverWidget-background,
+    var(--vscode-menu-background, var(--v2ex-widget-bg))
+  );
+  --v2ex-input-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --v2ex-input-fg: var(--vscode-input-foreground, var(--v2ex-webview-fg));
+  --v2ex-border-base: var(
+    --vscode-panel-border,
+    var(--vscode-editorWidget-border, var(--vscode-widget-border, transparent))
+  );
+  --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-hover-bg: var(
+    --vscode-toolbar-hoverBackground,
+    var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.14))
+  );
+  --v2ex-active-bg: var(
+    --vscode-editor-inactiveSelectionBackground,
+    var(--vscode-list-activeSelectionBackground, var(--v2ex-hover-bg))
+  );
+  --v2ex-active-fg: var(--vscode-list-activeSelectionForeground, var(--v2ex-webview-fg));
+  background: var(--v2ex-webview-bg);
+  color: var(--v2ex-webview-fg);
 }
 
 .topic-container {
@@ -55,13 +79,13 @@ $panel-border: var(--vscode-panel-border);
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: var(--vscode-descriptionForeground, var(--vscode-foreground));
+  color: $muted-color;
 }
 
 .state-loading-text {
   display: inline-flex;
   min-width: max-content;
-  color: var(--vscode-descriptionForeground, var(--vscode-foreground));
+  color: $muted-color;
   line-height: 1.4;
   white-space: nowrap;
   writing-mode: horizontal-tb;
@@ -79,7 +103,7 @@ $panel-border: var(--vscode-panel-border);
 }
 
 .topic-node-tag {
-  cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .topic-content {
@@ -105,7 +129,7 @@ $panel-border: var(--vscode-panel-border);
     cursor: pointer;
 
     &:hover {
-      outline: 1px solid var(--vscode-focusBorder);
+      outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 2px;
     }
   }
@@ -119,19 +143,19 @@ $panel-border: var(--vscode-panel-border);
     padding: 4px 9px;
     border: 1px solid var(--vscode-button-border, #{$panel-border});
     border-radius: 4px;
-    background: var(--vscode-button-secondaryBackground);
-    color: var(--vscode-button-secondaryForeground);
+    background: var(--v2ex-default-bg);
+    color: var(--vscode-button-secondaryForeground, var(--v2ex-webview-fg));
     cursor: pointer;
     font: inherit;
     line-height: 1.4;
     vertical-align: middle;
 
     &:hover {
-      background: var(--vscode-button-secondaryHoverBackground);
+      background: var(--v2ex-default-hover-bg);
     }
 
     &:focus-visible {
-      outline: 1px solid var(--vscode-focusBorder);
+      outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 2px;
     }
   }
@@ -158,7 +182,7 @@ $panel-border: var(--vscode-panel-border);
     margin-right: 0;
     padding: 12px;
     border-left: 3px solid $panel-border;
-    background: var(--vscode-editorWidget-background);
+    background: var(--v2ex-widget-bg);
 
     p {
       margin: 0;
@@ -182,7 +206,7 @@ $panel-border: var(--vscode-panel-border);
     }
 
     tr:nth-child(2n) {
-      background-color: var(--vscode-editorWidget-background);
+      background-color: var(--v2ex-widget-bg);
     }
   }
 
@@ -231,7 +255,7 @@ $panel-border: var(--vscode-panel-border);
   border-bottom: 1px solid $panel-border;
 
   &:hover {
-    .reply-actions .semi-button {
+    .reply-actions .reply-action-button {
       visibility: visible;
     }
   }
@@ -260,7 +284,11 @@ $panel-border: var(--vscode-panel-border);
   gap: 4px;
   margin-left: auto;
 
-  .semi-button {
+  .reply-action-popconfirm-trigger {
+    display: inline-flex;
+  }
+
+  .reply-action-button {
     visibility: hidden;
   }
 }
@@ -280,19 +308,30 @@ $panel-border: var(--vscode-panel-border);
 
 .floor {
   display: inline-block;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
-  background-color: var(--vscode-editor-inactiveSelectionBackground);
-  font-size: 10px;
+  min-width: 16px;
+  color: $muted-color;
+  font-size: 12px;
   font-weight: 500;
-  line-height: 20px;
+  line-height: 1.4;
   text-align: center;
 }
 
 .post-reply {
   margin-top: 18px;
+
+  .semi-input-textarea-wrapper {
+    border: 1px solid var(--vscode-input-border, #{$panel-border});
+    border-radius: 4px;
+    background: var(--v2ex-input-bg);
+  }
+
+  .semi-input-textarea-wrapper:hover {
+    border-color: var(--v2ex-border);
+  }
+
+  .semi-input-textarea-wrapper-focus {
+    border-color: var(--v2ex-focus-border);
+  }
 
   .submit {
     margin-top: 10px;

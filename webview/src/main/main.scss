@@ -12,21 +12,32 @@
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
-  color: var(--vscode-foreground, var(--vscode-sideBar-foreground));
   --v2ex-webview-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
-  --v2ex-webview-fg: var(--vscode-foreground, var(--vscode-sideBar-foreground));
+  --v2ex-webview-fg: var(--vscode-sideBar-foreground, var(--vscode-foreground));
   --v2ex-main-content-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
   --v2ex-widget-bg: var(
     --vscode-sideBarSectionHeader-background,
-    var(--vscode-editorWidget-background)
+    var(--vscode-editorWidget-background, var(--v2ex-webview-bg))
   );
-  --v2ex-border: var(--vscode-sideBar-border, var(--vscode-panel-border));
-  --semi-color-bg-0: var(--v2ex-webview-bg);
-  --semi-color-bg-1: var(--v2ex-widget-bg);
-  --semi-color-bg-2: var(--vscode-menu-background, var(--v2ex-widget-bg));
-  --semi-color-text-0: var(--v2ex-webview-fg);
-  --semi-color-border: var(--v2ex-border);
+  --v2ex-overlay-bg: var(--vscode-menu-background, var(--v2ex-widget-bg));
+  --v2ex-input-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --v2ex-border-base: var(
+    --vscode-sideBar-border,
+    var(--vscode-panel-border, var(--vscode-widget-border, transparent))
+  );
+  --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-hover-bg: var(
+    --vscode-list-hoverBackground,
+    var(--vscode-toolbar-hoverBackground, transparent)
+  );
+  --v2ex-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+  --v2ex-active-bg: var(
+    --vscode-list-inactiveSelectionBackground,
+    var(--vscode-list-activeSelectionBackground, var(--v2ex-hover-bg))
+  );
+  --v2ex-active-fg: var(--vscode-list-inactiveSelectionForeground, var(--v2ex-webview-fg));
+  background: var(--v2ex-webview-bg);
+  color: var(--v2ex-webview-fg);
 }
 
 .main-tabs {
@@ -54,8 +65,8 @@
   }
 
   .semi-tabs-tab:hover {
-    color: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
-    background: var(--vscode-toolbar-hoverBackground, transparent);
+    color: var(--v2ex-hover-fg);
+    background: var(--v2ex-hover-bg);
   }
 
   .semi-tabs-tab-active,
@@ -64,7 +75,7 @@
   }
 
   .semi-tabs-tab-line.semi-tabs-tab-active::before {
-    background-color: var(--vscode-focusBorder, var(--vscode-textLink-foreground));
+    background-color: var(--v2ex-focus-border);
   }
 
   .semi-tabs-content {
@@ -161,19 +172,19 @@
     min-height: 26px;
     color: var(--v2ex-webview-fg);
     background: transparent;
-    outline-color: var(--vscode-focusBorder);
+    outline-color: var(--v2ex-focus-border);
 
     &:hover {
-      background: var(--vscode-list-hoverBackground, transparent);
-      color: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+      background: var(--v2ex-hover-bg);
+      color: var(--v2ex-hover-fg);
     }
   }
 
   .semi-tree-option-selected,
   .semi-tree-option-selected:hover,
   .semi-tree-option-on {
-    background: var(--vscode-list-inactiveSelectionBackground, var(--vscode-list-hoverBackground));
-    color: var(--vscode-list-inactiveSelectionForeground, var(--v2ex-webview-fg));
+    background: var(--v2ex-active-bg);
+    color: var(--v2ex-active-fg);
   }
 
   .semi-tree-option-label {
@@ -288,8 +299,20 @@
   padding: 16px;
   color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
 
+  .semi-empty {
+    text-align: center;
+  }
+
   .semi-empty-description {
     color: inherit;
+  }
+
+  .semi-empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
   }
 }
 

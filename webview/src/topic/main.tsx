@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './TopicApp'
+import '@douyinfe/semi-ui/react19-adapter'
 import '@douyinfe/semi-ui/dist/css/semi.min.css'
 import '../shared/styles.scss'
 import './topic.scss'

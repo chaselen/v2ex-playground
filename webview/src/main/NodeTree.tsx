@@ -334,7 +334,7 @@ export default function NodeTree(props: NodeTreeProps) {
         <div className="empty-panel">
           <Empty description={emptyText}>
             {tab === 'collection' && !loggedIn && (
-              <Button size="small" type="primary" onClick={login}>
+              <Button size="small" type="primary" theme="solid" onClick={login}>
                 登录
               </Button>
             )}
@@ -345,7 +345,7 @@ export default function NodeTree(props: NodeTreeProps) {
             <Button
               block
               type="primary"
-              theme="light"
+              theme="solid"
               size="small"
               icon={<IconPlus />}
               onClick={onAddNode}
@@ -378,7 +378,7 @@ export default function NodeTree(props: NodeTreeProps) {
           <Button
             block
             type="primary"
-            theme="light"
+            theme="solid"
             size="small"
             icon={<IconPlus />}
             onClick={onAddNode}
