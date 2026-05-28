@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Tabs } from '@douyinfe/semi-ui'
 import NodeTree from './NodeTree'
-import { postVsCodeMessage } from '../shared/vscode'
+import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
 import {
   EXPLORE_NODES,
   type InitData,
@@ -88,9 +88,9 @@ export default function MainApp() {
    * @param tab 标签 key
    * @param nodeId 节点 id
    */
-  function expandNode(tab: MainTabKey, nodeId: string) {
+  async function expandNode(tab: MainTabKey, nodeId: string) {
     setNodeLoading(tab, nodeId)
-    postVsCodeMessage('expandNode', { tab, nodeId })
+    await requestNodeChildren('expandNode', tab, nodeId)
   }
 
   /**
@@ -98,24 +98,34 @@ export default function MainApp() {
    * @param tab 标签 key
    * @param nodeId 节点 id
    */
-  function refreshNode(tab: MainTabKey, nodeId: string) {
+  async function refreshNode(tab: MainTabKey, nodeId: string) {
     setNodeLoading(tab, nodeId)
-    postVsCodeMessage('refreshNode', { tab, nodeId })
+    await requestNodeChildren('refreshNode', tab, nodeId)
   }
 
   /**
    * 删除自定义节点
    * @param nodeId 节点 id
    */
-  function removeNode(nodeId: string) {
-    postVsCodeMessage('removeNode', { nodeId })
+  async function removeNode(nodeId: string) {
+    try {
+      const data = await requestVsCodeMessage('removeNode', { nodeId })
+      onCustomNodesUpdated(data)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   /**
    * 添加自定义节点
    */
-  function addNode() {
-    postVsCodeMessage('addNode')
+  async function addNode() {
+    try {
+      const data = await requestVsCodeMessage('addNode')
+      onCustomNodesUpdated(data)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   /**
@@ -161,6 +171,30 @@ export default function MainApp() {
   }
 
   /**
+   * 请求节点话题列表
+   * @param command 命令名
+   * @param tab 标签 key
+   * @param nodeId 节点 id
+   */
+  async function requestNodeChildren(
+    command: 'expandNode' | 'refreshNode',
+    tab: MainTabKey,
+    nodeId: string
+  ) {
+    try {
+      const data = await requestVsCodeMessage(command, { tab, nodeId })
+      onNodeChildren(data)
+    } catch (err) {
+      onNodeChildren({
+        tab,
+        nodeId,
+        children: [],
+        error: (err as Error).message
+      })
+    }
+  }
+
+  /**
    * 处理自定义节点更新
    * @param data 自定义节点数据
    */
@@ -187,7 +221,7 @@ export default function MainApp() {
           if (node.children === null || node.loading) {
             return node
           }
-          postVsCodeMessage('refreshNode', { tab, nodeId: node.id })
+          requestNodeChildren('refreshNode', tab, node.id)
           return { ...node, loading: true }
         })
       })
@@ -204,15 +238,6 @@ export default function MainApp() {
     function onMessage(event: MessageEvent) {
       const msg = event.data
       switch (msg.command) {
-        case 'initData':
-          onInitData(msg)
-          break
-        case 'nodeChildren':
-          onNodeChildren(msg)
-          break
-        case 'customNodesUpdated':
-          onCustomNodesUpdated(msg)
-          break
         case 'refreshLoadedNodes':
           refreshLoadedNodes()
           break
@@ -222,7 +247,9 @@ export default function MainApp() {
     }
 
     window.addEventListener('message', onMessage)
-    postVsCodeMessage('ready')
+    requestVsCodeMessage('ready')
+      .then(onInitData)
+      .catch(err => console.error(err))
 
     return () => {
       window.removeEventListener('message', onMessage)

@@ -5,7 +5,13 @@ import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
-import { TopicPanelMessage, TopicPanelViewState } from '@/shared/webview'
+import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import {
+  TopicPanelMessage,
+  TopicPanelRpcCommands,
+  TopicPanelViewState,
+  TopicPanelWebviewEvents
+} from '@/shared/webview'
 
 /**
  * 打开话题面板所需的最小参数
@@ -30,6 +36,9 @@ export class TopicPanelController {
   /** 话题面板 */
   private readonly panel: vscode.WebviewPanel
 
+  /** Webview RPC 桥接器 */
+  private readonly rpc: WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>
+
   /** 当前话题详情，仅在扩展侧维护 */
   private detail = new TopicDetail()
 
@@ -47,15 +56,20 @@ export class TopicPanelController {
     this.topicId = input.topicId
     this.panel = createPanel(this.key, input.label)
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'topic.html')
-    this.panel.webview.onDidReceiveMessage((message: TopicPanelMessage) => {
-      this.handleMessage(message)
-    })
+    this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
+      this.panel.webview
+    )
+    this.registerRpcHandlers()
+    this.rpc.listen()
     this.configListener = vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('v2ex.browse.showImagesInTopic')) {
         this.postViewState(this.viewState)
       }
     })
-    this.panel.onDidDispose(() => this.configListener.dispose())
+    this.panel.onDidDispose(() => {
+      this.configListener.dispose()
+      this.rpc.dispose()
+    })
   }
 
   /**
@@ -70,6 +84,7 @@ export class TopicPanelController {
    */
   dispose() {
     this.configListener.dispose()
+    this.rpc.dispose()
     this.panel.dispose()
   }
 
@@ -84,22 +99,13 @@ export class TopicPanelController {
   /**
    * 加载当前话题
    */
-  load() {
-    this.postViewState({
-      status: 'loading'
-    })
-
-    V2ex.getTopicDetail(this.topicId)
-      .then(detail => {
-        this.detail = detail
-        this.panel.title = fmtPanelTitle(detail.title)
-        this.render(detail)
-        G.checkUnreadNotification()
-      })
-      .catch((err: Error) => {
-        console.error(err)
-        this.renderError(err)
-      })
+  async load() {
+    try {
+      await this.reloadTopic(true)
+    } catch (err) {
+      console.error(err)
+      this.renderError(err as Error)
+    }
   }
 
   /**
@@ -151,64 +157,74 @@ export class TopicPanelController {
    */
   private postViewState(state: TopicPanelViewState) {
     this.viewState = state
-    try {
-      // 在 panel 被关闭后发送消息会抛出异常，这里保持兼容处理
-      this.panel.webview.postMessage({
-        command: 'renderState',
-        state: {
-          ...state,
-          showImages: Config.showImagesInTopic()
-        }
-      })
-    } catch (err) {
-      console.log(err)
-    }
+    this.rpc.post('renderState', {
+      state: {
+        ...state,
+        showImages: Config.showImagesInTopic()
+      }
+    })
   }
 
   /**
-   * 处理 webview 发来的消息
-   * @param message 页面消息
+   * 注册 Webview RPC 处理器
    */
-  private handleMessage(message: TopicPanelMessage) {
-    switch (message.command) {
-      case 'browseImage':
-        return this.runTopicAction('正在打开大图', () => openImagePreview(message.src || ''))
-      case 'openExternal':
-        return this.openExternal(message.src)
-      case 'openTopic':
-        if (message.topicId !== undefined) {
-          this.openTopic(message.topicId)
-        }
-        return
-      case 'login':
-        return vscode.commands.executeCommand('v2ex.login')
-      case 'refresh':
-        return this.load()
-      case 'collect':
-        return this.runTopicMutation('正在收藏', () => V2ex.collectTopic(this.detail.id))
-      case 'cancelCollect':
-        return this.runTopicMutation('正在取消收藏', () => V2ex.cancelCollectTopic(this.detail.id))
-      case 'thank':
-        return this.runTopicMutation('发送感谢', () => V2ex.thankTopic(this.detail.id))
-      case 'postReply':
-        return this.handlePostReply(message)
-      case 'thankReply':
-        return this.handleThankReply(message)
-      default:
-        return
-    }
+  private registerRpcHandlers() {
+    this.rpc.handle('browseImage', msg => openImagePreview(String(msg.src || '')))
+    this.rpc.handle('openExternal', msg => this.openExternal(String(msg.src || '')))
+    this.rpc.handle('openTopic', msg => {
+      if (msg.topicId !== undefined) {
+        this.openTopic(msg.topicId)
+      }
+    })
+    this.rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
+    this.rpc.handle('refresh', () => this.refreshTopic())
+    this.rpc.handle('collect', () => this.runTopicMutation(() => V2ex.collectTopic(this.detail.id)))
+    this.rpc.handle('cancelCollect', () =>
+      this.runTopicMutation(() => V2ex.cancelCollectTopic(this.detail.id))
+    )
+    this.rpc.handle('thank', () => this.runTopicMutation(() => V2ex.thankTopic(this.detail.id)))
+    this.rpc.handle('postReply', msg => this.handlePostReply(msg))
+    this.rpc.handle('thankReply', msg => this.handleThankReply(msg))
   }
 
   /**
    * 统一处理会导致页面整体刷新的话题操作
-   * @param title 进度标题
    * @param task 具体任务
    */
-  private runTopicMutation(title: string, task: () => Promise<unknown>) {
-    return this.runTopicAction(title, async () => {
-      await task()
-      this.load()
-    })
+  private async runTopicMutation(task: () => Promise<unknown>) {
+    await task()
+    await this.reloadTopic(false)
+  }
+
+  /**
+   * 刷新话题并向页面同步
+   * @param showLoading 是否显示整页加载状态
+   */
+  private async reloadTopic(showLoading: boolean) {
+    if (showLoading) {
+      this.postViewState({
+        status: 'loading'
+      })
+    }
+
+    const detail = await V2ex.getTopicDetail(this.topicId)
+    this.detail = detail
+    this.panel.title = fmtPanelTitle(detail.title)
+    this.render(detail)
+    G.checkUnreadNotification()
+  }
+
+  /**
+   * 手动刷新话题
+   */
+  private async refreshTopic() {
+    try {
+      await this.reloadTopic(true)
+    } catch (err) {
+      console.error(err)
+      this.renderError(err as Error)
+      throw err
+    }
   }
 
   /**
@@ -243,46 +259,23 @@ export class TopicPanelController {
   }
 
   /**
-   * 统一执行带进度提示的话题操作
-   * @param title 进度标题
-   * @param task 具体任务
-   */
-  private runTopicAction(title: string, task: () => Thenable<void> | Promise<void>) {
-    return vscode.window.withProgress(
-      {
-        title,
-        location: vscode.ProgressLocation.Notification
-      },
-      async () => {
-        try {
-          await task()
-        } catch (err) {
-          console.error(err)
-          vscode.window.showErrorMessage(getErrorMessage(err))
-        }
-      }
-    )
-  }
-
-  /**
    * 处理提交回复
    * @param message 页面消息
    */
   private handlePostReply(message: TopicPanelMessage) {
     const { content } = message
     if (!content) {
-      vscode.window.showWarningMessage('请输入回复内容')
-      return
+      throw new Error('请输入回复内容')
     }
 
-    return this.runTopicMutation('正在提交回复', () => V2ex.postReply(this.detail.link, content))
+    return this.runTopicMutation(() => V2ex.postReply(this.detail.link, content))
   }
 
   /**
    * 处理感谢回复者
    * @param message 页面消息
    */
-  private handleThankReply(message: TopicPanelMessage) {
+  private async handleThankReply(message: TopicPanelMessage) {
     const { replyId } = message
     if (!replyId) {
       return
@@ -293,12 +286,10 @@ export class TopicPanelController {
       return
     }
 
-    return this.runTopicAction('发送感谢', async () => {
-      await V2ex.thankReply(replyId)
-      reply.thanked = true
-      reply.thanks++
-      this.render(this.detail)
-    })
+    await V2ex.thankReply(replyId)
+    reply.thanked = true
+    reply.thanks++
+    this.render(this.detail)
   }
 }
 
@@ -308,17 +299,6 @@ export class TopicPanelController {
  */
 function fmtPanelTitle(title: string) {
   return title.length <= 15 ? title : title.slice(0, 15) + '...'
-}
-
-/**
- * 获取错误提示文案
- * @param err 异常对象
- */
-function getErrorMessage(err: unknown) {
-  if (err instanceof Error && err.message) {
-    return err.message
-  }
-  return '操作失败'
 }
 
 /**

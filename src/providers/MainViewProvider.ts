@@ -3,11 +3,23 @@ import path from 'path'
 import G from '@/global'
 import { LoginRequiredError, Node, Topic, V2ex } from '@/v2ex'
 import { TopicPanelInput } from '@/controllers/TopicPanelController'
+import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
-import { EXPLORE_NODES, InitData, WebviewNode, WebviewTopic } from '@/shared/webview'
+import {
+  CustomNodesUpdatedData,
+  EXPLORE_NODES,
+  InitData,
+  MainTabKey,
+  MainViewRpcCommands,
+  MainViewWebviewEvents,
+  NodeChildrenData,
+  WebviewNode,
+  WebviewTopic
+} from '@/shared/webview'
 
 export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView
+  private _rpc?: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this._view = webviewView
@@ -19,8 +31,17 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getHtml(webviewView.webview)
 
-    webviewView.webview.onDidReceiveMessage(async message => {
-      await this._handleMessage(message)
+    this._rpc = new WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>(
+      webviewView.webview
+    )
+    this._registerRpcHandlers(this._rpc)
+    this._rpc.listen()
+    webviewView.onDidDispose(() => {
+      this._rpc?.dispose()
+      if (this._view === webviewView) {
+        this._view = undefined
+        this._rpc = undefined
+      }
     })
   }
 
@@ -32,72 +53,28 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 处理 webview 消息
+   * 注册 Webview RPC 处理器
+   * @param rpc Webview RPC 桥接器
    */
-  private async _handleMessage(message: any) {
-    const msg = message as { command: string; [key: string]: any }
-
-    switch (msg.command) {
-      case 'ready':
-        await this._sendInitData()
-        break
-
-      case 'expandNode':
-        await this._handleExpandNode(msg.tab, msg.nodeId)
-        break
-
-      case 'openTopic':
-        vscode.commands.executeCommand('v2ex.topicItemClick', {
-          topicId: msg.topicId,
-          label: msg.title
-        } satisfies TopicPanelInput)
-        break
-
-      case 'search':
-        vscode.commands.executeCommand('v2ex-main.search')
-        break
-
-      case 'login':
-        vscode.commands.executeCommand('v2ex.login')
-        break
-
-      case 'addNode':
-        await this._handleAddNode()
-        break
-
-      case 'removeNode':
-        await this._handleRemoveNode(msg.nodeId)
-        break
-
-      case 'refreshAll':
-        await this._sendInitData()
-        break
-
-      case 'refreshNode':
-        await this._handleRefreshNode(msg.tab, msg.nodeId)
-        break
-
-      case 'ctxCopyLink':
-        vscode.commands.executeCommand('v2ex.copyLink', msg)
-        break
-
-      case 'ctxCopyTitleLink':
-        vscode.commands.executeCommand('v2ex.copyTitleLink', msg)
-        break
-
-      case 'ctxViewInBrowser':
-        vscode.commands.executeCommand('v2ex.viewInBrowser', msg)
-        break
-
-      default:
-        break
-    }
+  private _registerRpcHandlers(rpc: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>) {
+    rpc.handle('ready', () => this._getInitData())
+    rpc.handle('refreshAll', () => this._getInitData())
+    rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.nodeId))
+    rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId))
+    rpc.handle('addNode', () => this._handleAddNode())
+    rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
+    rpc.handle('openTopic', msg => this._openTopic(msg.topicId, msg.title))
+    rpc.handle('search', () => vscode.commands.executeCommand('v2ex-main.search'))
+    rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
+    rpc.handle('ctxCopyLink', msg => vscode.commands.executeCommand('v2ex.copyLink', msg))
+    rpc.handle('ctxCopyTitleLink', msg => vscode.commands.executeCommand('v2ex.copyTitleLink', msg))
+    rpc.handle('ctxViewInBrowser', msg => vscode.commands.executeCommand('v2ex.viewInBrowser', msg))
   }
 
   /**
-   * 发送初始数据
+   * 获取初始数据
    */
-  private async _sendInitData() {
+  private async _getInitData(): Promise<InitData> {
     const customNodes = G.getCustomNodes().map(n => ({
       id: n.name,
       label: n.title,
@@ -120,20 +97,22 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
     const loggedIn = !!G.getCookie()
 
-    this._postMessage('initData', {
+    return {
       tabs: {
         explore: EXPLORE_NODES,
         custom: customNodes,
         collection: collectionNodes
       },
       loggedIn
-    } satisfies InitData)
+    }
   }
 
   /**
    * 展开节点时获取话题列表
+   * @param tab 标签 key
+   * @param nodeId 节点 id
    */
-  private async _handleExpandNode(tab: string, nodeId: string) {
+  private async _handleExpandNode(tab: MainTabKey, nodeId: string): Promise<NodeChildrenData> {
     try {
       let topics: Topic[] = []
 
@@ -153,26 +132,40 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       // check cookie 自动签到
       V2ex.checkCookie(G.getCookie()!, true)
 
-      this._postMessage('nodeChildren', {
+      return {
         tab,
         nodeId,
         children
-      })
+      }
     } catch (err) {
       console.error(err)
-      this._postMessage('nodeChildren', {
+      return {
         tab,
         nodeId,
         children: [],
         error: (err as Error).message
-      })
+      }
+    }
+  }
+
+  /**
+   * 获取自定义节点视图数据
+   */
+  private _getCustomNodesData(): CustomNodesUpdatedData {
+    const customNodes = G.getCustomNodes()
+    return {
+      nodes: customNodes.map(n => ({
+        id: n.name,
+        label: n.title,
+        nodeName: n.name
+      }))
     }
   }
 
   /**
    * 添加自定义节点
    */
-  private async _handleAddNode() {
+  private async _handleAddNode(): Promise<CustomNodesUpdatedData> {
     const nodes = await vscode.window.withProgress(
       {
         title: '获取节点信息',
@@ -192,7 +185,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     })
 
     if (!select) {
-      return
+      return this._getCustomNodesData()
     }
 
     const isAdd = G.addCustomNode({
@@ -201,63 +194,56 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     })
 
     if (isAdd) {
-      const customNodes = G.getCustomNodes()
-      this._postMessage('customNodesUpdated', {
-        nodes: customNodes.map(n => ({
-          id: n.name,
-          label: n.title,
-          nodeName: n.name
-        }))
-      })
+      return this._getCustomNodesData()
     } else {
       vscode.window.showInformationMessage('节点已经存在，无需再添加')
+      return this._getCustomNodesData()
     }
   }
 
   /**
    * 删除自定义节点
+   * @param nodeId 节点 id
    */
-  private async _handleRemoveNode(nodeId: string) {
+  private async _handleRemoveNode(nodeId: string): Promise<CustomNodesUpdatedData> {
     G.removeCustomNode(nodeId)
-    const customNodes = G.getCustomNodes()
-    this._postMessage('customNodesUpdated', {
-      nodes: customNodes.map(n => ({
-        id: n.name,
-        label: n.title,
-        nodeName: n.name
-      }))
-    })
+    return this._getCustomNodesData()
   }
 
   /**
    * 刷新节点
+   * @param tab 标签 key
+   * @param nodeId 节点 id
    */
-  private async _handleRefreshNode(tab: string, nodeId: string) {
-    await this._handleExpandNode(tab, nodeId)
+  private async _handleRefreshNode(tab: MainTabKey, nodeId: string): Promise<NodeChildrenData> {
+    return this._handleExpandNode(tab, nodeId)
+  }
+
+  /**
+   * 打开话题
+   * @param topicId 话题 id
+   * @param title 话题标题
+   */
+  private _openTopic(topicId: unknown, title: unknown) {
+    vscode.commands.executeCommand('v2ex.topicItemClick', {
+      topicId: Number(topicId),
+      label: String(title || '')
+    } satisfies TopicPanelInput)
   }
 
   /**
    * 刷新整个视图数据（外部调用）
    */
   reloadViewData() {
-    this._sendInitData()
+    this._getInitData()
+      .then(data => this._rpc?.post('initData', data))
+      .catch(err => console.error(err))
   }
 
   /**
    * 刷新 Webview 中已加载过的节点
    */
   refreshLoadedNodes() {
-    this._postMessage('refreshLoadedNodes')
-  }
-
-  /**
-   * 向 webview 发送消息
-   */
-  private _postMessage(command: string, data?: any) {
-    try {
-      this._view?.webview.postMessage({ command, ...data })
-    } catch (err) {
-      console.log(err)
-    }
+    this._rpc?.post('refreshLoadedNodes')
   }
 }

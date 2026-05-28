@@ -1,9 +1,6 @@
-import type { WebviewNode, WebviewTopic } from '../../../src/shared/webview'
+import type { MainTabKey, WebviewNode, WebviewTopic } from '../../../src/shared/webview'
 
-/**
- * 主面板标签 key
- */
-export type MainTabKey = 'explore' | 'custom' | 'collection'
+export type { MainTabKey }
 
 /**
  * 带前端状态的节点项

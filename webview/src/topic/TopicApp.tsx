@@ -11,8 +11,11 @@ import {
 } from '@douyinfe/semi-ui'
 import { IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
 import { enhanceTopicContentAfterRender, normalizeHtml } from '../shared/topicContent'
-import { postVsCodeMessage } from '../shared/vscode'
+import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
 import type { TopicPanelViewState } from '../../../src/shared/webview'
+
+/** 话题请求命令 */
+type TopicRequestCommand = 'collect' | 'cancelCollect' | 'thank' | 'postReply'
 
 /**
  * 话题页面应用
@@ -28,6 +31,11 @@ export default function TopicApp() {
     canOperate: false
   })
   const [replyContent, setReplyContent] = useState('')
+  const [collecting, setCollecting] = useState(false)
+  const [cancelingCollect, setCancelingCollect] = useState(false)
+  const [thankingTopic, setThankingTopic] = useState(false)
+  const [postingReply, setPostingReply] = useState(false)
+  const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const topic = state.topic
   const showImages = state.showImages !== false
 
@@ -51,9 +59,33 @@ export default function TopicApp() {
   }
 
   /**
+   * 执行话题请求
+   * @param command 命令名
+   * @param setLoading 加载状态更新函数
+   * @param payload 附加参数
+   * @param onSuccess 成功回调
+   */
+  async function requestTopicAction(
+    command: TopicRequestCommand,
+    setLoading: (loading: boolean) => void,
+    payload: object = {},
+    onSuccess?: () => void
+  ) {
+    setLoading(true)
+    try {
+      await requestVsCodeMessage(command, payload)
+      onSuccess?.()
+    } catch (err) {
+      Toast.error((err as Error).message || '操作失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
    * 提交回复
    */
-  function onSubmit() {
+  async function onSubmit() {
     const content = replyContent.trim()
 
     if (!content) {
@@ -65,26 +97,29 @@ export default function TopicApp() {
       return
     }
 
-    postVsCodeMessage('postReply', {
-      content
-    })
+    await requestTopicAction('postReply', setPostingReply, { content }, () => setReplyContent(''))
   }
 
   /**
    * 感谢回复者
    * @param replyId 回复 id
    */
-  function thankReply(replyId: string) {
-    postVsCodeMessage('thankReply', {
-      replyId
-    })
+  async function thankReply(replyId: string) {
+    setPendingThankReplyIds(current => [...current, replyId])
+    try {
+      await requestVsCodeMessage('thankReply', { replyId })
+    } catch (err) {
+      Toast.error((err as Error).message || '操作失败')
+    } finally {
+      setPendingThankReplyIds(current => current.filter(id => id !== replyId))
+    }
   }
 
   /**
    * 感谢主题创建者
    */
   function thankTopic() {
-    postCommand('thank')
+    requestTopicAction('thank', setThankingTopic)
   }
 
   /**
@@ -217,11 +252,21 @@ export default function TopicApp() {
                 刷新页面
               </Button>
               {!topic.isCollected ? (
-                <Button size="small" type="secondary" onClick={() => postCommand('collect')}>
+                <Button
+                  size="small"
+                  type="secondary"
+                  loading={collecting}
+                  onClick={() => requestTopicAction('collect', setCollecting)}
+                >
                   加入收藏
                 </Button>
               ) : (
-                <Button size="small" type="secondary" onClick={() => postCommand('cancelCollect')}>
+                <Button
+                  size="small"
+                  type="secondary"
+                  loading={cancelingCollect}
+                  onClick={() => requestTopicAction('cancelCollect', setCancelingCollect)}
+                >
                   取消收藏
                 </Button>
               )}
@@ -232,7 +277,7 @@ export default function TopicApp() {
                   cancelText="取消"
                   onConfirm={thankTopic}
                 >
-                  <Button size="small" type="secondary">
+                  <Button size="small" type="secondary" loading={thankingTopic}>
                     感谢
                   </Button>
                 </Popconfirm>
@@ -293,6 +338,7 @@ export default function TopicApp() {
                                   aria-label="感谢回复者"
                                   className="reply-action-button"
                                   icon={<IconHeartStroked />}
+                                  loading={pendingThankReplyIds.includes(reply.replyId)}
                                   size="small"
                                   theme="borderless"
                                   type="tertiary"
@@ -341,7 +387,13 @@ export default function TopicApp() {
                 showClear
                 onChange={value => setReplyContent(String(value || ''))}
               />
-              <Button className="submit" theme="solid" type="primary" htmlType="submit">
+              <Button
+                className="submit"
+                theme="solid"
+                type="primary"
+                htmlType="submit"
+                loading={postingReply}
+              >
                 回复
               </Button>
             </form>
