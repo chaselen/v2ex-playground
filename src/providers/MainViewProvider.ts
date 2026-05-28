@@ -4,7 +4,7 @@ import G from '@/global'
 import { LoginRequiredError, Node, Topic, V2ex } from '@/v2ex'
 import { TopicPanelInput } from '@/controllers/TopicPanelController'
 import { renderWebviewHtml } from '@/core/webviewHtml'
-import { InitData, WebviewNode, WebviewTopic } from '@/shared/webview'
+import { EXPLORE_NODES, InitData, WebviewNode, WebviewTopic } from '@/shared/webview'
 
 export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView
@@ -98,7 +98,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 发送初始数据
    */
   private async _sendInitData() {
-    const exploreNodes = this._getExploreNodes()
     const customNodes = G.getCustomNodes().map(n => ({
       id: n.name,
       label: n.title,
@@ -123,37 +122,12 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
     this._postMessage('initData', {
       tabs: {
-        explore: exploreNodes,
+        explore: EXPLORE_NODES,
         custom: customNodes,
         collection: collectionNodes
       },
       loggedIn
     } satisfies InitData)
-  }
-
-  /**
-   * 获取首页预置节点
-   */
-  private _getExploreNodes(): WebviewNode[] {
-    const tabConfig: Array<{ id: string; label: string }> = [
-      { id: 'tech', label: '技术' },
-      { id: 'creative', label: '创意' },
-      { id: 'play', label: '好玩' },
-      { id: 'apple', label: 'Apple' },
-      { id: 'jobs', label: '酷工作' },
-      { id: 'deals', label: '交易' },
-      { id: 'city', label: '城市' },
-      { id: 'qna', label: '问与答' },
-      { id: 'hot', label: '最热' },
-      { id: 'all', label: '全部' },
-      { id: 'r2', label: 'R2' },
-      { id: 'nodes', label: '节点' }
-    ]
-    return tabConfig.map(t => ({
-      id: t.id,
-      label: t.label,
-      nodeName: t.id
-    }))
   }
 
   /**

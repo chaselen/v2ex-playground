@@ -9,6 +9,22 @@ export interface WebviewNode {
   nodeName?: string
 }
 
+/** 首页预置节点 */
+export const EXPLORE_NODES: WebviewNode[] = [
+  { id: 'tech', label: '技术', nodeName: 'tech' },
+  { id: 'creative', label: '创意', nodeName: 'creative' },
+  { id: 'play', label: '好玩', nodeName: 'play' },
+  { id: 'apple', label: 'Apple', nodeName: 'apple' },
+  { id: 'jobs', label: '酷工作', nodeName: 'jobs' },
+  { id: 'deals', label: '交易', nodeName: 'deals' },
+  { id: 'city', label: '城市', nodeName: 'city' },
+  { id: 'qna', label: '问与答', nodeName: 'qna' },
+  { id: 'hot', label: '最热', nodeName: 'hot' },
+  { id: 'all', label: '全部', nodeName: 'all' },
+  { id: 'r2', label: 'R2', nodeName: 'r2' },
+  { id: 'nodes', label: '节点', nodeName: 'nodes' }
+]
+
 /**
  * Webview 话题项
  */

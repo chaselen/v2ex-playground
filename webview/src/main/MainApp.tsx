@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { Tabs } from '@douyinfe/semi-ui'
 import NodeTree from './NodeTree'
 import { postVsCodeMessage } from '../shared/vscode'
-import type { InitData, WebviewNode, WebviewTopic } from '../../../src/shared/webview'
+import {
+  EXPLORE_NODES,
+  type InitData,
+  type WebviewNode,
+  type WebviewTopic
+} from '../../../src/shared/webview'
 import type { MainTabKey, MainTabs, NodeItem } from './types'
 
 /** 主面板标签 key */
@@ -51,7 +56,7 @@ export default function MainApp() {
   const [activeTab, setActiveTab] = useState<MainTabKey>('explore')
   const [loggedIn, setLoggedIn] = useState(false)
   const [tabs, setTabs] = useState<MainTabs>({
-    explore: [],
+    explore: EXPLORE_NODES.map(createNodeItem),
     custom: [],
     collection: []
   })

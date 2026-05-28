@@ -64,13 +64,7 @@
     color: var(--v2ex-webview-fg);
   }
 
-  .semi-tabs-tab:hover {
-    color: var(--v2ex-hover-fg);
-    background: var(--v2ex-hover-bg);
-  }
-
-  .semi-tabs-tab-active,
-  .semi-tabs-tab-active:hover {
+  .semi-tabs-tab-active {
     color: var(--vscode-sideBarTitle-foreground, var(--v2ex-webview-fg));
   }
 
@@ -121,7 +115,7 @@
   height: 100%;
 
   .simplebar-content {
-    padding: 4px 18px 0 8px !important;
+    padding: 4px 8px 0 !important;
   }
 
   .simplebar-track.simplebar-vertical {
@@ -301,6 +295,24 @@
 
   .semi-empty {
     text-align: center;
+  }
+
+  .semi-empty-image {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .empty-illustration {
+    width: 136px;
+    height: 136px;
+  }
+
+  .semi-empty-title {
+    margin: 0 0 6px;
+    color: var(--v2ex-main-content-fg);
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   .semi-empty-description {

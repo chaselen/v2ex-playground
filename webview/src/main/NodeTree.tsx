@@ -3,6 +3,7 @@ import type { MouseEvent } from 'react'
 import { Badge, Button, Dropdown, Empty, Tree } from '@douyinfe/semi-ui'
 import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
+import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import { postVsCodeMessage } from '../shared/vscode'
 import type { MainTabKey, NodeItem, ContextMenuAction, TreeItem } from './types'
@@ -332,7 +333,11 @@ export default function NodeTree(props: NodeTreeProps) {
     return (
       <section className="node-tree-panel">
         <div className="empty-panel">
-          <Empty description={emptyText}>
+          <Empty
+            title={emptyText}
+            image={<IllustrationNoContent className="empty-illustration" />}
+            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+          >
             {tab === 'collection' && !loggedIn && (
               <Button size="small" type="primary" theme="solid" onClick={login}>
                 登录
