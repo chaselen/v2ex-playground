@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio'
-import axios, { AxiosResponse } from 'axios'
+import axios, { AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import {
   AccountRestrictedError,
   Topic,
@@ -15,7 +15,7 @@ import {
   SoV2exSource,
   AccountOverview
 } from './types'
-import { gfwProxyInterceptor } from '@/core/interceptors'
+import { createGfwProxyInterceptor } from '@/core/interceptors'
 
 export class V2exClient {
   /** 域名 */
@@ -37,13 +37,15 @@ export class V2exClient {
   /**
    * @param getCookie 获取 V2EX Cookie
    * @param setCookie 设置 V2EX Cookie
+   * @param getProxyUrl 返回代理URL，无代理时返回 undefined
    */
   constructor(
     private readonly getCookie: GetCookie,
-    private readonly setCookie: SetCookie
+    private readonly setCookie: SetCookie,
+    getProxyUrl: () => string | undefined
   ) {
     // 代理
-    this.http.interceptors.request.use(gfwProxyInterceptor)
+    this.http.interceptors.request.use(createGfwProxyInterceptor(getProxyUrl))
     // cookie
     this.http.interceptors.request.use(config => {
       const reqUrl = new URL(config.url || '', config.baseURL)
@@ -496,7 +498,7 @@ export class V2exClient {
     const $ = cheerio.load(html)
     /* 已领取过时会提示：每日登录奖励已领取 */
     if ($('.fa-ok-sign').length) {
-      return DailyRes.repetitive
+      return 'repetitive'
     }
     /* 未领取时有一个领取按钮 */
     const btn = $('input.super.normal.button')
@@ -505,10 +507,10 @@ export class V2exClient {
       const { data: html2 } = await this.http.get<string>(`/mission/daily/redeem?once=${once}`)
       const $2 = cheerio.load(html2)
       if ($2('.fa-ok-sign').length) {
-        return DailyRes.success
+        return 'success'
       }
     }
-    return DailyRes.failed
+    return 'failed'
   }
 
   /**

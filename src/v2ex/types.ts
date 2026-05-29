@@ -117,17 +117,8 @@ export interface Node {
   title: string
 }
 
-/**
- * 签到结果
- */
-export enum DailyRes {
-  /**签到成功 */
-  success = '签到成功',
-  /**重复签到 */
-  repetitive = '重复签到',
-  /**签到失败 */
-  failed = '签到失败'
-}
+/** 签到结果 */
+export type DailyRes = 'success' | 'repetitive' | 'failed'
 
 /**
  * 账户概览
