@@ -55,7 +55,7 @@ function checkProxyUrl(url: string) {
 function getGfwHostList() {
   if (_gfwList.length <= 0) {
     console.log('加载gfw列表...')
-    const fp = path.resolve(__dirname, '../../resources/gfwlist.txt')
+    const fp = path.resolve(__dirname, '../resources/gfwlist.txt')
     let str = fs.readFileSync(fp, 'utf-8')
     // base64解码
     str = Buffer.from(str, 'base64').toString('utf-8')
