@@ -2,13 +2,13 @@
   "compilerOptions": {
     "module": "node16",
     "moduleResolution": "node16",
-    "target": "es6",
+    "target": "es2022",
     "outDir": "out",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     },
-    "lib": ["es6", "DOM"],
+    "lib": ["es2022", "DOM"],
     "sourceMap": true,
     "rootDir": "src",
     "skipLibCheck": true,
