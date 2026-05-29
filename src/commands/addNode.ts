@@ -1,4 +1,3 @@
-import { V2ex } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
 
@@ -13,7 +12,7 @@ export default async function addNode(): Promise<boolean> {
       location: vscode.ProgressLocation.Notification
     },
     () => {
-      return V2ex.getAllNodes()
+      return G.V2ex.getAllNodes()
     }
   )
 

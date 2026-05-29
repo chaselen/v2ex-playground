@@ -1,2 +1,2 @@
-export { AccountRestrictedError, LoginRequiredError, V2ex } from './client'
+export { V2exClient } from './client'
 export * from './types'

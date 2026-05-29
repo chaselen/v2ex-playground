@@ -1,6 +1,6 @@
 import path from 'path'
 import vscode from 'vscode'
-import { AccountRestrictedError, LoginRequiredError, TopicDetail, V2ex } from '@/v2ex'
+import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import Config from '@/config'
@@ -40,7 +40,28 @@ export class TopicPanelController {
   private readonly rpc: WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>
 
   /** 当前话题详情，仅在扩展侧维护 */
-  private detail = new TopicDetail()
+  private detail: TopicDetail = {
+    id: 0,
+    title: '',
+    node: {
+      name: '',
+      title: ''
+    },
+    authorAvatar: '',
+    authorName: '',
+    displayTime: '',
+    visitCount: 0,
+    content: '',
+    appends: [],
+    collectCount: 0,
+    thankCount: 0,
+    isCollected: false,
+    isThanked: false,
+    canThank: true,
+    collectParamT: null,
+    replyCount: 0,
+    replies: []
+  }
 
   /** 当前视图状态 */
   private viewState: TopicPanelViewState = { status: 'loading' }
@@ -52,7 +73,7 @@ export class TopicPanelController {
    * @param input 话题面板输入参数
    */
   constructor(input: TopicPanelInput) {
-    this.key = V2ex.getTopicLinkById(input.topicId)
+    this.key = G.V2ex.getTopicLinkById(input.topicId)
     this.topicId = input.topicId
     this.panel = createPanel(this.key, input.label)
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'topic.html')
@@ -178,11 +199,13 @@ export class TopicPanelController {
     })
     this.rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
     this.rpc.handle('refresh', () => this.refreshTopic())
-    this.rpc.handle('collect', () => this.runTopicMutation(() => V2ex.collectTopic(this.detail.id)))
-    this.rpc.handle('cancelCollect', () =>
-      this.runTopicMutation(() => V2ex.cancelCollectTopic(this.detail.id))
+    this.rpc.handle('collect', () =>
+      this.runTopicMutation(() => G.V2ex.collectTopic(this.detail.id))
     )
-    this.rpc.handle('thank', () => this.runTopicMutation(() => V2ex.thankTopic(this.detail.id)))
+    this.rpc.handle('cancelCollect', () =>
+      this.runTopicMutation(() => G.V2ex.cancelCollectTopic(this.detail.id))
+    )
+    this.rpc.handle('thank', () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)))
     this.rpc.handle('postReply', msg => this.handlePostReply(msg))
     this.rpc.handle('thankReply', msg => this.handleThankReply(msg))
   }
@@ -207,7 +230,7 @@ export class TopicPanelController {
       })
     }
 
-    const detail = await V2ex.getTopicDetail(this.topicId)
+    const detail = await G.V2ex.getTopicDetail(this.topicId)
     this.detail = detail
     this.panel.title = fmtPanelTitle(detail.title)
     this.render(detail)
@@ -268,7 +291,7 @@ export class TopicPanelController {
       throw new Error('请输入回复内容')
     }
 
-    return this.runTopicMutation(() => V2ex.postReply(this.detail.link, content))
+    return this.runTopicMutation(() => G.V2ex.postReply(this.topicId, content))
   }
 
   /**
@@ -286,7 +309,7 @@ export class TopicPanelController {
       return
     }
 
-    await V2ex.thankReply(replyId)
+    await G.V2ex.thankReply(replyId)
     reply.thanked = true
     reply.thanks++
     this.render(this.detail)

@@ -1,132 +1,120 @@
+/** 感谢接口响应 */
+export interface ThankResponse {
+  /** 是否成功 */
+  success: boolean
+  /** 错误消息 */
+  message?: string
+}
+
+/** 需要登录后访问 */
+export class LoginRequiredError extends Error {}
+
+/** 账号访问受限 */
+export class AccountRestrictedError extends Error {}
+
+/** 获取 V2EX Cookie */
+export type GetCookie = () => string | undefined
+
+/** 设置 V2EX Cookie */
+export type SetCookie = (cookie: string) => void | Promise<void>
+
 /**
  * 话题
  */
-export class Topic {
+export interface Topic {
   /** 主题id */
-  public id: number
+  id: number
 
   /** 标题 */
-  public title: string = ''
+  title: string
 
   /** 节点 */
-  public node: Node = new Node()
+  node: Node
 
   /** 回复数 */
-  public replies: number = 0
-
-  /** 链接 */
-  public get link(): string {
-    return `https://www.v2ex.com/t/${this.id}`
-  }
-
-  constructor(id: number) {
-    this.id = id
-  }
+  replies: number
 }
 
 /**
  * 话题详情
  */
-export class TopicDetail {
+export interface TopicDetail {
   /** id */
-  public id: number = 0
+  id: number
   /** 标题 */
-  public title: string = ''
+  title: string
   /** 节点 */
-  public node: Node = new Node()
+  node: Node
   /** 作者头像 */
-  public authorAvatar: string = ''
+  authorAvatar: string
   /** 作者名字 */
-  public authorName: string = ''
+  authorName: string
   /** 时间 */
-  public displayTime: string = ''
+  displayTime: string
   /** 点击次数 */
-  public visitCount: number = 0
+  visitCount: number
   /** 内容 */
-  public content: string = ''
+  content: string
   /** 追加内容 */
-  public appends: TopicAppend[] = []
+  appends: TopicAppend[]
   /** 收藏人数 */
-  public collectCount: number = 0
+  collectCount: number
   /** 感谢人数 */
-  public thankCount: number = 0
+  thankCount: number
   /** 是否已收藏 */
-  public isCollected: boolean = false
+  isCollected: boolean
   /** 是否已感谢 */
-  public isThanked: boolean = false
+  isThanked: boolean
   /** 是否能发送感谢（自己的帖子不能发送感谢） */
-  public canThank: boolean = true
+  canThank: boolean
   /** 收藏/取消收藏参数t */
-  public collectParamT: string | null = null
+  collectParamT: string | null
   /** 回复总条数 */
-  public replyCount: number = 0
+  replyCount: number
   /** 回复 */
-  public replies: TopicReply[] = []
-
-  /** 链接 */
-  public get link(): string {
-    return `https://www.v2ex.com/t/${this.id}`
-  }
-
-  /** 从一个对象中创建一个TopicDetail实例 */
-  static from(obj: any) {
-    const topicDetail = new TopicDetail()
-    const source: any = {}
-    Object.keys(topicDetail).forEach(key => {
-      if (key in obj) {
-        source[key] = obj[key]
-      }
-    })
-    Object.assign(topicDetail, source)
-    return topicDetail
-  }
+  replies: TopicReply[]
 }
 
 /**
  * 话题追加内容
  */
-export class TopicAppend {
+export interface TopicAppend {
   /** 追加时间 */
-  public time: String = ''
+  time: string
   /** 追加内容 */
-  public content: string = ''
+  content: string
 }
 
 /**
  * 话题回复
  */
-export class TopicReply {
+export interface TopicReply {
   /** 回复id */
-  public replyId: string = ''
+  replyId: string
   /** 用户头像 */
-  public userAvatar: string = ''
+  userAvatar: string
   /** 用户名 */
-  public userName: string = ''
+  userName: string
   /** 回复时间 */
-  public time: string = ''
+  time: string
   /** 楼层 */
-  public floor: string = ''
+  floor: string
   /** 回复内容 */
-  public content: string = ''
+  content: string
   /** 感谢数 ❤ */
-  public thanks: number = 0
+  thanks: number
   /** 感谢已发送 */
-  public thanked: boolean = false
+  thanked: boolean
 }
 
 /**
  * 节点
  */
-export class Node {
+export interface Node {
   /** 节点名称 */
-  public name: string = ''
+  name: string
   /** 节点标题（显示的名称） */
-  public title: string = ''
-
-  constructor(name: string = '', title: string = '') {
-    this.name = name
-    this.title = title
-  }
+  title: string
 }
 
 /**
@@ -142,21 +130,35 @@ export enum DailyRes {
 }
 
 /**
+ * 账户概览
+ */
+export interface AccountOverview {
+  /** 未读提醒数量 */
+  unreadNoticeCount: number
+  /** 金币数量 */
+  gold: number
+  /** 银币数量 */
+  silver: number
+  /** 铜币数量 */
+  bronze: number
+}
+
+/**
  * sov2ex搜索结果的source字段
  */
-export class SoV2exSource {
+export interface SoV2exSource {
   /**帖子id */
-  public id: number = 0
+  id: number
   /**发帖人 */
-  public member: string = ''
+  member: string
   /**帖子标题 */
-  public title: string = ''
+  title: string
   /**帖子内容 */
-  public content: string = ''
+  content: string
   /**回复数量 */
-  public replies: number = 0
+  replies: number
   /**发帖时间 */
-  public created: string = ''
+  created: string
 }
 
 /**

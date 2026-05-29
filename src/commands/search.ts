@@ -1,8 +1,8 @@
-import { V2ex } from '@/v2ex'
 import vscode from 'vscode'
 import topicItemClick from './topicItemClick'
 import dayjs from 'dayjs'
 import { SoV2exSource, SoV2exSort } from '@/v2ex'
+import G from '@/global'
 
 /**上次的搜索结果 */
 var _lastSearchList: SoV2exSource[] | null = null
@@ -44,7 +44,7 @@ async function showInputBox() {
   }
   let sortType: SoV2exSort = sort === '权重' ? 'sumup' : 'created'
 
-  const searchList = await V2ex.search(q, sortType, 0, 50)
+  const searchList = await G.V2ex.search(q, sortType, 0, 50)
   console.log(`<${q}>搜索到${searchList.length}条结果`)
   if (searchList.length <= 0) {
     vscode.window.showInformationMessage('没有找到相关内容')

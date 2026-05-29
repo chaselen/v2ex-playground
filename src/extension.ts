@@ -4,19 +4,23 @@ import MainViewProvider from '@/providers/MainViewProvider'
 import topicItemClick from '@/commands/topicItemClick'
 import login, { LoginResult } from '@/commands/login'
 import G from '@/global'
-import { V2ex } from '@/v2ex'
+import { V2exClient } from '@/v2ex'
 import search from '@/commands/search'
 import setting from '@/commands/setting'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
+  G.V2ex = new V2exClient(
+    () => G.getCookie(),
+    cookie => G.setCookie(cookie)
+  )
   cleanupImagePreviewCache()
 
   // 插件激活后直接获取节点信息缓存下来
-  V2ex.getAllNodes()
-  // 检查登录是否有效（自动签到由 checkCookie 内部处理）
-  V2ex.checkCookie(G.getCookie()!, true)
+  G.V2ex.getAllNodes()
+  // 检查登录是否有效
+  G.V2ex.checkCookie(G.getCookie()!)
 
   // 注册主视图 WebviewView
   const mainViewProvider = new MainViewProvider()
@@ -39,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
   // 公共事件：复制链接
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.copyLink', (item: any) => {
-      const link = item?.link || V2ex.getTopicLinkById(item?.topicId)
+      const link = item?.link || G.V2ex.getTopicLinkById(item?.topicId)
       if (link) vscode.env.clipboard.writeText(link)
     })
   )
@@ -47,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
   // 公共事件：复制标题和链接
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.copyTitleLink', (item: any) => {
-      const link = item?.link || V2ex.getTopicLinkById(item?.topicId)
+      const link = item?.link || G.V2ex.getTopicLinkById(item?.topicId)
       if (link) vscode.env.clipboard.writeText(item?.label + EOL + link)
     })
   )
@@ -55,7 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
   // 公共事件：在浏览器中打开
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.viewInBrowser', (item: any) => {
-      const link = item?.link || V2ex.getTopicLinkById(item?.topicId)
+      const link = item?.link || G.V2ex.getTopicLinkById(item?.topicId)
       if (link) vscode.env.openExternal(vscode.Uri.parse(link))
     })
   )

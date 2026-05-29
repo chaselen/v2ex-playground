@@ -69,6 +69,7 @@
         {
           "id": "v2ex-main",
           "name": "V2EX",
+          "icon": "resources/v.svg",
           "type": "webview"
         }
       ]

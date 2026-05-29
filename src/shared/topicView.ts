@@ -1,4 +1,4 @@
-import type { TopicDetail } from '../v2ex/types'
+import type { TopicDetail } from '../v2ex'
 import type { MainViewRpcCommands } from './mainView'
 import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
 

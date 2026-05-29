@@ -1,7 +1,7 @@
 import vscode from 'vscode'
 import path from 'path'
 import G from '@/global'
-import { LoginRequiredError, Node, Topic, V2ex } from '@/v2ex'
+import { LoginRequiredError, Node, Topic } from '@/v2ex'
 import { TopicPanelInput } from '@/controllers/TopicPanelController'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
@@ -83,7 +83,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
     let collectionNodes: WebviewNode[] = []
     try {
-      const rawNodes = await V2ex.getCollectionNodes()
+      const rawNodes = await G.V2ex.getCollectionNodes()
       collectionNodes = rawNodes.map(n => ({
         id: n.name,
         label: n.title,
@@ -117,9 +117,9 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       let topics: Topic[] = []
 
       if (tab === 'explore') {
-        topics = await V2ex.getTopicListByTab(nodeId)
+        topics = await G.V2ex.getTopicListByTab(nodeId)
       } else {
-        const res = await V2ex.getTopicListByNode(nodeId)
+        const res = await G.V2ex.getTopicListByNode(nodeId)
         topics = res.list
       }
 
@@ -129,8 +129,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         replies: t.replies
       }))
 
-      // check cookie 自动签到
-      V2ex.checkCookie(G.getCookie()!, true)
+      // 检查登录是否有效
+      G.V2ex.checkCookie(G.getCookie()!)
 
       return {
         tab,
@@ -171,7 +171,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         title: '获取节点信息',
         location: vscode.ProgressLocation.Notification
       },
-      () => V2ex.getAllNodes()
+      () => G.V2ex.getAllNodes()
     )
 
     const items = nodes.map(n => ({

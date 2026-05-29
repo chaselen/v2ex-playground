@@ -1,4 +1,3 @@
-import { V2ex } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
 
@@ -32,14 +31,14 @@ export default async function login(): Promise<LoginResult> {
       location: vscode.ProgressLocation.Notification
     },
     async () => {
-      const isCookieValid = await V2ex.checkCookie(cookie!)
+      const isCookieValid = await G.V2ex.checkCookie(cookie!)
       console.log('Cookie是否有效：', isCookieValid)
       if (isCookieValid) {
         await G.setCookie(cookie!)
         vscode.window.showInformationMessage('登录成功')
 
-        // 登录后自动签到
-        V2ex.checkCookie(G.getCookie()!, true)
+        // 登录后刷新 Cookie 状态
+        G.V2ex.checkCookie(G.getCookie()!)
       } else {
         vscode.window.showErrorMessage('登录失败，Cookie无效')
       }

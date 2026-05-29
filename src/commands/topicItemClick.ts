@@ -1,6 +1,6 @@
 import Config from '@/config'
 import { TopicPanelController, TopicPanelInput } from '@/controllers/TopicPanelController'
-import { V2ex } from '@/v2ex'
+import G from '@/global'
 
 /**
  * 存放话题页面的控制器
@@ -18,7 +18,7 @@ export default function topicItemClick(topic: TopicPanelInput) {
     throw new Error('打开话题面板缺少必要参数')
   }
 
-  const topicKey = V2ex.getTopicLinkById(topic.topicId)
+  const topicKey = G.V2ex.getTopicLinkById(topic.topicId)
 
   // 如果控制器已经存在，则直接激活
   let controller = topicPanels[topicKey]
