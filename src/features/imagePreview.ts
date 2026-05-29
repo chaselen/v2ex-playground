@@ -3,6 +3,7 @@ import os from 'node:os'
 import path from 'path'
 import crypto from 'node:crypto'
 import http from '@/core/http'
+import { fileTypeFromBuffer } from 'file-type'
 
 /**
  * 图片临时文件目录名
@@ -132,7 +133,7 @@ export async function openImagePreview(imageSrc: string) {
     const res = await http.get(normalizedImageSrc, { responseType: 'arraybuffer' })
     const imageBuffer = Buffer.from(res.data)
 
-    const ft = await import('file-type').then(m => m.fileTypeFromBuffer(imageBuffer))
+    const ft = await fileTypeFromBuffer(imageBuffer)
     if (!ft) {
       throw new Error('获取文件类型失败')
     }

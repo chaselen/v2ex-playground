@@ -19,7 +19,8 @@
   "keywords": [
     "v2ex"
   ],
-  "main": "./out/extension.js",
+  "type": "module",
+  "main": "./out/extension.cjs",
   "contributes": {
     "commands": [
       {
@@ -126,13 +127,13 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run typecheck && npm run build:webview && node esbuild.config.mts --production",
+    "vscode:prepublish": "npm run typecheck && npm run build:webview && node esbuild.config.ts --production",
     "build:webview": "vite build --config webview/vite.config.ts",
     "check:webview": "tsc -p webview/tsconfig.json --noEmit",
-    "compile": "npm run build:webview && node esbuild.config.mts",
+    "compile": "npm run build:webview && node esbuild.config.ts",
     "typecheck": "tsc -p ./ --noEmit",
     "watch:webview": "vite build --watch --config webview/vite.config.ts",
-    "watch:extension": "node esbuild.config.mts --watch",
+    "watch:extension": "node esbuild.config.ts --watch",
     "watch:typecheck": "tsc -p ./ --noEmit --watch",
     "watch": "npm run watch:webview & npm run watch:extension & npm run watch:typecheck",
     "package": "npx @vscode/vsce@3.9.1 package",

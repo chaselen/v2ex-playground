@@ -6,7 +6,7 @@ const isWatch = process.argv.includes('--watch')
 const config: esbuild.BuildOptions = {
   entryPoints: ['src/extension.ts'],
   bundle: true,
-  outfile: 'out/extension.js',
+  outfile: 'out/extension.cjs',
   platform: 'node',
   format: 'cjs',
   target: 'es2022',
