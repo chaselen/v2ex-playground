@@ -12,6 +12,8 @@
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  font-size: var(--v2ex-main-font-size);
+  --v2ex-main-font-size: 13px;
   --v2ex-webview-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
   --v2ex-webview-fg: var(--vscode-sideBar-foreground, var(--vscode-foreground));
   --v2ex-main-content-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
@@ -62,6 +64,10 @@
     margin: 0;
     padding: 0 12px;
     color: var(--v2ex-webview-fg);
+  }
+
+  .semi-tabs-tab-button {
+    font-size: inherit;
   }
 
   .semi-tabs-tab-active {
@@ -311,7 +317,6 @@
   .semi-empty-title {
     margin: 0 0 6px;
     color: var(--v2ex-main-content-fg);
-    font-size: 13px;
     line-height: 1.4;
   }
 
@@ -336,4 +341,21 @@
 
 .error-text {
   color: var(--vscode-errorForeground, #f14c4c);
+}
+
+.main-container {
+  .semi-tabs-tab,
+  .semi-tree-option,
+  .semi-button,
+  .semi-empty,
+  .semi-empty-title,
+  .semi-empty-description,
+  .semi-tree-option-label,
+  .semi-tree-option-label-text {
+    font-size: var(--v2ex-main-font-size);
+  }
+}
+
+.semi-dropdown-item {
+  font-size: var(--v2ex-main-font-size, 13px);
 }
