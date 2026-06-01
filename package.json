@@ -131,6 +131,8 @@
     "build:webview": "vite build --config webview/vite.config.ts",
     "check:webview": "tsc -p webview/tsconfig.json --noEmit",
     "compile": "npm run build:webview && node esbuild.config.ts",
+    "test": "npm run test:v2ex",
+    "test:v2ex": "vitest run --config vitest.config.ts",
     "typecheck": "tsc -p ./ --noEmit",
     "watch:webview": "vite build --watch --config webview/vite.config.ts",
     "watch:extension": "node esbuild.config.ts --watch",
@@ -159,6 +161,7 @@
     "sass": "^1.100.0",
     "simplebar-react": "^3.3.2",
     "typescript": "^5.8.3",
-    "vite": "^8.0.14"
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
   }
 }

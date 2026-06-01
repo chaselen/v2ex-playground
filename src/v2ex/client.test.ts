@@ -1,0 +1,186 @@
+import { describe, expect, test } from 'vitest'
+import { V2exClient } from './client'
+import type { AccountOverview, Node, SoV2exSource, Topic, TopicDetail } from './types'
+
+const v2exCookie = process.env.V2EX_COOKIE
+let storedCookie = v2exCookie
+
+const client = new V2exClient(
+  () => storedCookie,
+  cookie => {
+    storedCookie = cookie
+  },
+  () => undefined
+)
+
+/**
+ * 可选登录态测试
+ */
+const authTest = v2exCookie ? test : test.skip
+
+/**
+ * 校验话题列表项
+ * @param topic 话题列表项
+ */
+function expectTopic(topic: Topic) {
+  expect(topic.id).toEqual(expect.any(Number))
+  expect(topic.id).toBeGreaterThan(0)
+  expect(topic.title).toEqual(expect.any(String))
+  expect(topic.title.length).toBeGreaterThan(0)
+  expect(topic.node.name).toEqual(expect.any(String))
+  expect(topic.node.title).toEqual(expect.any(String))
+  expect(topic.replies).toEqual(expect.any(Number))
+  expect(topic.replies).toBeGreaterThanOrEqual(0)
+}
+
+/**
+ * 校验节点
+ * @param node 节点
+ */
+function expectNode(node: Node) {
+  expect(node.name).toEqual(expect.any(String))
+  expect(node.name.length).toBeGreaterThan(0)
+  expect(node.title).toEqual(expect.any(String))
+  expect(node.title.length).toBeGreaterThan(0)
+}
+
+/**
+ * 校验话题详情
+ * @param detail 话题详情
+ */
+function expectTopicDetail(detail: TopicDetail) {
+  expect(detail.id).toEqual(expect.any(Number))
+  expect(detail.id).toBeGreaterThan(0)
+  expect(detail.title).toEqual(expect.any(String))
+  expect(detail.title.length).toBeGreaterThan(0)
+  expectNode(detail.node)
+  expect(detail.authorName).toEqual(expect.any(String))
+  expect(detail.authorName.length).toBeGreaterThan(0)
+  expect(detail.displayTime).toEqual(expect.any(String))
+  expect(detail.visitCount).toEqual(expect.any(Number))
+  expect(detail.visitCount).toBeGreaterThanOrEqual(0)
+  expect(detail.content).toEqual(expect.any(String))
+  expect(Array.isArray(detail.appends)).toBe(true)
+  expect(detail.collectCount).toEqual(expect.any(Number))
+  expect(detail.thankCount).toEqual(expect.any(Number))
+  expect(detail.replyCount).toEqual(expect.any(Number))
+  expect(Array.isArray(detail.replies)).toBe(true)
+}
+
+/**
+ * 校验账户概览
+ * @param overview 账户概览
+ */
+function expectAccountOverview(overview: AccountOverview) {
+  expect(overview.unreadNoticeCount).toEqual(expect.any(Number))
+  expect(overview.gold).toEqual(expect.any(Number))
+  expect(overview.silver).toEqual(expect.any(Number))
+  expect(overview.bronze).toEqual(expect.any(Number))
+  expect(overview.unreadNoticeCount).toBeGreaterThanOrEqual(0)
+  expect(overview.gold).toBeGreaterThanOrEqual(0)
+  expect(overview.silver).toBeGreaterThanOrEqual(0)
+  expect(overview.bronze).toBeGreaterThanOrEqual(0)
+}
+
+/**
+ * 校验 SoV2EX 搜索结果
+ * @param source 搜索结果
+ */
+function expectSearchSource(source: SoV2exSource) {
+  expect(source.id).toEqual(expect.any(Number))
+  expect(source.id).toBeGreaterThan(0)
+  expect(source.member).toEqual(expect.any(String))
+  expect(source.title).toEqual(expect.any(String))
+  expect(source.title.length).toBeGreaterThan(0)
+  expect(source.content).toEqual(expect.any(String))
+  expect(source.replies).toEqual(expect.any(Number))
+  expect(source.created).toEqual(expect.any(String))
+}
+
+describe('V2exClient real requests', () => {
+  test('builds and parses topic links', () => {
+    expect(client.getTopicLinkById(703733)).toBe('https://www.v2ex.com/t/703733')
+    expect(client.getTopicLinkById('1136705')).toBe('https://www.v2ex.com/t/1136705')
+    expect(client.getTopicIdByLink('/t/1136705#reply50')).toBe(1136705)
+    expect(client.getTopicIdByLink('https://www.v2ex.com/t/703733#reply12')).toBe(703733)
+    expect(client.getTopicIdByLink('/go/v2ex')).toBeUndefined()
+  })
+
+  test('gets once token', async () => {
+    await expect(client.getOnce()).resolves.toMatch(/^\d+$/)
+  })
+
+  test('gets topics by tab', async () => {
+    const topics = await client.getTopicListByTab('tech')
+
+    expect(topics.length).toBeGreaterThan(0)
+    expectTopic(topics[0])
+  })
+
+  test('gets topics by node', async () => {
+    const result = await client.getTopicListByNode('v2ex')
+
+    expect(result.totalPage).toEqual(expect.any(Number))
+    expect(result.totalPage).toBeGreaterThanOrEqual(0)
+    expect(result.list.length).toBeGreaterThan(0)
+    expectTopic(result.list[0])
+    expect(result.list[0].node.name).toBe('v2ex')
+  })
+
+  test('gets topic detail from a known public topic', async () => {
+    const detail = await client.getTopicDetail(703733)
+
+    expect(detail.id).toBe(703733)
+    expect(detail.title).toBe('写了一个 VSCode 上可以逛 V2EX 的插件')
+    expect(detail.node).toEqual({
+      name: 'create',
+      title: '分享创造'
+    })
+    expect(detail.authorName).toBe('chaselen')
+    expect(detail.displayTime).toBe('2020 年 9 月 3 日')
+    expect(detail.content).toContain('V2EX Playground')
+    expect(detail.replyCount).toBeGreaterThanOrEqual(42)
+    expect(detail.replies.length).toBeGreaterThanOrEqual(42)
+    expect(detail.replies[0]).toMatchObject({
+      replyId: '9452335',
+      userName: 'polaa',
+      floor: '1'
+    })
+    expectTopicDetail(detail)
+  })
+
+  test('gets all nodes', async () => {
+    const nodes = await client.getAllNodes()
+
+    expect(nodes.length).toBeGreaterThan(0)
+    expectNode(nodes[0])
+  })
+
+  test('searches SoV2EX', async () => {
+    const results = await client.search('vscode')
+
+    expect(Array.isArray(results)).toBe(true)
+    if (results.length) {
+      expectSearchSource(results[0])
+    }
+  })
+
+  authTest('checks cookie from V2EX_COOKIE', async () => {
+    await expect(client.checkCookie(v2exCookie!)).resolves.toBe(true)
+  })
+
+  authTest('gets account overview with V2EX_COOKIE', async () => {
+    const overview = await client.getAccountOverview()
+
+    expectAccountOverview(overview)
+  })
+
+  authTest('gets collection nodes with V2EX_COOKIE', async () => {
+    const nodes = await client.getCollectionNodes()
+
+    expect(Array.isArray(nodes)).toBe(true)
+    if (nodes.length) {
+      expectNode(nodes[0])
+    }
+  })
+})
