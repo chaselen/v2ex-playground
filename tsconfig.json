@@ -3,9 +3,8 @@
     "module": "preserve",
     "moduleResolution": "bundler",
     "target": "es2022",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "lib": ["es2022", "DOM"],
     "skipLibCheck": true,
