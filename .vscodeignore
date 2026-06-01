@@ -1,11 +1,24 @@
-.vscode/**
-.vscode-test/**
-out/test/**
-src/**
-.gitignore
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/.eslintrc.json
+# 默认全部忽略，仅放行扩展运行时必需文件
+**
+
+# VS Code Marketplace 展示与许可文件
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+
+# 扩展入口产物
+!out/extension.cjs
+
+# Webview 构建产物
+!html/**
+
+# 扩展图标和运行时资源
+!resources/**/*.svg
+!resources/*.png
+!resources/gfwlist.txt
+
+# 即使目录被放行，也排除无运行价值的文件
+**/.DS_Store
 **/*.map
-**/*.ts
-webview/**
+*.vsix
