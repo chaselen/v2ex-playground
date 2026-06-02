@@ -59,7 +59,7 @@ function isOpenExternalClick(event: MouseEvent): boolean {
  * @param img 图片元素
  */
 function getImagePreviewSrc(img: HTMLImageElement): string {
-  return img.dataset.previewSrc || img.currentSrc || img.src
+  return img.currentSrc || img.src || img.dataset.previewSrc || ''
 }
 
 /**
