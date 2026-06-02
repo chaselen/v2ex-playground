@@ -1,6 +1,7 @@
 import vscode from 'vscode'
 import path from 'path'
 import { EOL } from 'os'
+import autoDailySignIn from '@/commands/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Node, Topic } from '@/v2ex'
 import { TopicPanelInput } from '@/controllers/TopicPanelController'
@@ -38,7 +39,16 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     )
     this._registerRpcHandlers(this._rpc)
     this._rpc.listen()
+    if (webviewView.visible) {
+      autoDailySignIn()
+    }
+    const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
+      if (webviewView.visible) {
+        autoDailySignIn()
+      }
+    })
     webviewView.onDidDispose(() => {
+      visibilityDisposable.dispose()
       this._rpc?.dispose()
       if (this._view === webviewView) {
         this._view = undefined
