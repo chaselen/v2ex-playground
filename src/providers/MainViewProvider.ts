@@ -84,20 +84,22 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     }))
 
     let collectionNodes: WebviewNode[] = []
-    try {
-      const rawNodes = await G.V2ex.getCollectionNodes()
-      collectionNodes = rawNodes.map(n => ({
-        id: n.name,
-        label: n.title,
-        nodeName: n.name
-      }))
-    } catch (err) {
-      if (err instanceof LoginRequiredError) {
-        collectionNodes = []
+    const loggedIn = !!G.getCookie()
+
+    if (loggedIn) {
+      try {
+        const rawNodes = await G.V2ex.getCollectionNodes()
+        collectionNodes = rawNodes.map(n => ({
+          id: n.name,
+          label: n.title,
+          nodeName: n.name
+        }))
+      } catch (err) {
+        if (err instanceof LoginRequiredError) {
+          collectionNodes = []
+        }
       }
     }
-
-    const loggedIn = !!G.getCookie()
 
     return {
       tabs: {

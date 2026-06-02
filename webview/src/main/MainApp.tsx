@@ -50,11 +50,27 @@ function normalizeTopics(topics: WebviewTopic[]): WebviewTopic[] {
 }
 
 /**
+ * 判断消息是否为初始化数据
+ * @param msg 扩展侧消息
+ */
+function isInitDataMessage(msg: unknown): msg is InitData & { command: 'initData' } {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'command' in msg &&
+    msg.command === 'initData' &&
+    'tabs' in msg &&
+    'loggedIn' in msg
+  )
+}
+
+/**
  * 主面板应用
  */
 export default function MainApp() {
   const [activeTab, setActiveTab] = useState<MainTabKey>('explore')
   const [loggedIn, setLoggedIn] = useState(false)
+  const [initializing, setInitializing] = useState(true)
   const [tabs, setTabs] = useState<MainTabs>({
     explore: EXPLORE_NODES.map(createNodeItem),
     custom: [],
@@ -134,6 +150,7 @@ export default function MainApp() {
    */
   function onInitData(data: InitData) {
     setLoggedIn(data.loggedIn)
+    setInitializing(false)
     setTabs(current => ({
       explore: mergeNodeItems(data.tabs.explore, current.explore),
       custom: mergeNodeItems(data.tabs.custom, current.custom),
@@ -237,19 +254,23 @@ export default function MainApp() {
      */
     function onMessage(event: MessageEvent) {
       const msg = event.data
-      switch (msg.command) {
-        case 'refreshLoadedNodes':
-          refreshLoadedNodes()
-          break
-        default:
-          break
+      if (isInitDataMessage(msg)) {
+        onInitData(msg)
+        return
+      }
+
+      if (msg.command === 'refreshLoadedNodes') {
+        refreshLoadedNodes()
       }
     }
 
     window.addEventListener('message', onMessage)
     requestVsCodeMessage('ready')
       .then(onInitData)
-      .catch(err => console.error(err))
+      .catch(err => {
+        setInitializing(false)
+        console.error(err)
+      })
 
     return () => {
       window.removeEventListener('message', onMessage)
@@ -294,6 +315,7 @@ export default function MainApp() {
             tab="collection"
             nodes={tabs.collection}
             loggedIn={loggedIn}
+            loading={initializing}
             onExpandNode={expandNode}
             onRefreshNode={refreshNode}
             onRemoveNode={removeNode}

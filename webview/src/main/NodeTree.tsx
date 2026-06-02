@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
-import { Badge, Button, Dropdown, Empty, Tree } from '@douyinfe/semi-ui'
+import { Badge, Button, Dropdown, Empty, Spin, Tree } from '@douyinfe/semi-ui'
 import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
@@ -12,6 +12,7 @@ interface NodeTreeProps {
   tab: MainTabKey
   nodes: NodeItem[]
   loggedIn: boolean
+  loading?: boolean
   onAddNode?: () => void
   onExpandNode: (tab: MainTabKey, nodeId: string) => void
   onRefreshNode: (tab: MainTabKey, nodeId: string) => void
@@ -107,7 +108,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
  */
 function createNodeTreeItem(tab: MainTabKey, node: NodeItem): TreeItem {
   return {
-    key: `node:${node.id}`,
+    key: getNodeKey(node.id),
     label: node.label,
     type: 'node',
     tab,
@@ -127,11 +128,35 @@ function getTreeItem(data?: TreeNodeData): TreeItem {
 }
 
 /**
+ * 获取节点树项 key
+ * @param nodeId 节点 id
+ */
+function getNodeKey(nodeId: string): string {
+  return `node:${nodeId}`
+}
+
+/**
+ * 从话题树项 key 中读取节点 key
+ * @param topicKey 话题树项 key
+ * @param tab 标签 key
+ */
+function getNodeKeyFromTopicKey(topicKey: string, tab: MainTabKey): string | undefined {
+  const prefix = `topic:${tab}:`
+  if (!topicKey.startsWith(prefix)) {
+    return undefined
+  }
+
+  const nodeId = topicKey.slice(prefix.length).split(':')[0]
+  return nodeId ? getNodeKey(nodeId) : undefined
+}
+
+/**
  * 节点树
  * @param props 组件参数
  */
 export default function NodeTree(props: NodeTreeProps) {
-  const { tab, nodes, loggedIn, onAddNode, onExpandNode, onRefreshNode, onRemoveNode } = props
+  const { tab, nodes, loggedIn, loading, onAddNode, onExpandNode, onRefreshNode, onRemoveNode } =
+    props
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
   const [selectedTopicKey, setSelectedTopicKey] = useState<string>()
 
@@ -140,6 +165,25 @@ export default function NodeTree(props: NodeTreeProps) {
 
   /** 当前空状态文案 */
   const emptyText = tab === 'collection' && !loggedIn ? '还未登录，请先登录' : emptyTexts[tab]
+
+  useEffect(() => {
+    // 当前节点 key 集合
+    const nodeKeys = new Set(nodes.map(node => getNodeKey(node.id)))
+
+    setExpandedKeys(current => {
+      const next = current.filter(key => nodeKeys.has(key))
+      return next.length === current.length ? current : next
+    })
+
+    if (!selectedTopicKey) {
+      return
+    }
+
+    const selectedNodeKey = getNodeKeyFromTopicKey(selectedTopicKey, tab)
+    if (selectedNodeKey && !nodeKeys.has(selectedNodeKey)) {
+      setSelectedTopicKey(undefined)
+    }
+  }, [nodes, selectedTopicKey, tab])
 
   /**
    * 打开话题
@@ -337,6 +381,16 @@ export default function NodeTree(props: NodeTreeProps) {
 
     setSelectedTopicKey(selectedKey)
     openTopic(data)
+  }
+
+  if (loading) {
+    return (
+      <section className="node-tree-panel">
+        <div className="loading-panel">
+          <Spin size="middle" />
+        </div>
+      </section>
+    )
   }
 
   if (!nodes.length) {

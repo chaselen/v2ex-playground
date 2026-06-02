@@ -333,6 +333,18 @@
   }
 }
 
+.loading-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--v2ex-main-content-fg);
+
+  .semi-spin-wrapper {
+    color: var(--v2ex-focus-border, var(--vscode-progressBar-background));
+  }
+}
+
 .tree-footer {
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);
