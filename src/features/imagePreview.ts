@@ -59,6 +59,45 @@ function normalizeImagePreviewSrc(imageSrc: string) {
 }
 
 /**
+ * 下载远程图片
+ * @param imageSrc 图片地址
+ */
+async function downloadImageBuffer(imageSrc: string) {
+  return vscode.window.withProgress(
+    {
+      title: '正在下载图片',
+      location: vscode.ProgressLocation.Notification,
+      cancellable: true
+    },
+    async (progress, token) => {
+      const abortController = new AbortController()
+      token.onCancellationRequested(() => abortController.abort())
+
+      progress.report({ message: '请求图片' })
+      const res = await http.get(imageSrc, {
+        responseType: 'arraybuffer',
+        signal: abortController.signal
+      })
+      const imageBuffer = Buffer.from(res.data)
+
+      progress.report({ message: '识别图片类型' })
+      const ft = await fileTypeFromBuffer(imageBuffer)
+      if (!ft) {
+        throw new Error('获取文件类型失败')
+      }
+      if (!ft.mime.startsWith('image/')) {
+        throw new Error(`不是有效的图片类型：${ft.mime}`)
+      }
+
+      return {
+        buffer: imageBuffer,
+        ext: ft.ext
+      }
+    }
+  )
+}
+
+/**
  * 清理过期的图片缓存文件
  */
 export async function cleanupImagePreviewCache() {
@@ -130,23 +169,19 @@ export async function openImagePreview(imageSrc: string) {
       return
     }
 
-    const res = await http.get(normalizedImageSrc, { responseType: 'arraybuffer' })
-    const imageBuffer = Buffer.from(res.data)
+    const imageData = await downloadImageBuffer(normalizedImageSrc)
+    const imageUri = vscode.Uri.file(path.join(imageDir, `${imageHash}.${imageData.ext}`))
 
-    const ft = await fileTypeFromBuffer(imageBuffer)
-    if (!ft) {
-      throw new Error('获取文件类型失败')
-    }
-    if (!ft.mime.startsWith('image/')) {
-      throw new Error(`不是有效的图片类型：${ft.mime}`)
-    }
-
-    const imageUri = vscode.Uri.file(path.join(imageDir, `${imageHash}.${ft.ext}`))
     if (!(await fileExists(imageUri))) {
-      await vscode.workspace.fs.writeFile(imageUri, imageBuffer)
+      await vscode.workspace.fs.writeFile(imageUri, imageData.buffer)
     }
+
     await vscode.commands.executeCommand('vscode.open', imageUri)
   } catch (e: any) {
+    if (e?.code === 'ERR_CANCELED') {
+      return
+    }
+
     vscode.window.showErrorMessage(`下载图片失败：${e.message}`)
   }
 }
