@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio'
 import axios, { AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { parse as parseCookieHeader } from 'cookie'
 import { CookieJar } from 'tough-cookie'
+import type { AnyNode } from 'domhandler'
 import {
   AccountRestrictedError,
   Topic,
@@ -142,6 +143,80 @@ export class V2exClient {
   }
 
   /**
+   * 获取我的主题列表
+   * @param path 列表路径
+   * @param page 页码
+   */
+  private async getMyTopicList(
+    path: '/my/topics' | '/my/following',
+    page: number
+  ): Promise<{ totalPage: number; list: Topic[] }> {
+    const res = await this.http.get<string>(`${path}?p=${page}`)
+    this.checkRedirect(res)
+
+    const $ = cheerio.load(res.data)
+    const cells = $('#Main > .box').last().children('.cell.item')
+
+    return {
+      totalPage: this.parseTopicListTotalPage($),
+      list: this.parseTopicListCells($, cells)
+    }
+  }
+
+  /**
+   * 解析话题列表分页总页数
+   * @param $ cheerio 实例
+   */
+  private parseTopicListTotalPage($: cheerio.CheerioAPI): number {
+    const pageNumbers = $('.ps_container a.page_current, .ps_container a.page_normal')
+      .map((_, element) => Number($(element).text().trim()) || 0)
+      .get()
+    const inputMax = Number($('.ps_container input.page_input').attr('max') || 0)
+
+    return Math.max(1, inputMax, ...pageNumbers)
+  }
+
+  /**
+   * 解析话题列表项
+   * @param $ cheerio 实例
+   * @param cells 话题列表元素
+   * @param fallbackNode 固定节点信息
+   */
+  private parseTopicListCells(
+    $: cheerio.CheerioAPI,
+    cells: cheerio.Cheerio<AnyNode>,
+    fallbackNode?: Node
+  ): Topic[] {
+    const list: Topic[] = []
+
+    cells.each((_, cell) => {
+      const topicElement = $(cell).find('a.topic-link')
+      const topicHref = topicElement.attr('href')
+      const topicId = topicHref ? this.getTopicIdByLink(topicHref) : undefined
+
+      if (!topicId) {
+        return
+      }
+
+      const nodeElement = $(cell).find('a.node')
+      const nodeHref = nodeElement.attr('href') || ''
+      const countLivid = $(cell).find('.count_livid')
+
+      list.push({
+        id: topicId,
+        title: topicElement.text().trim(),
+        node: {
+          name: fallbackNode?.name || nodeHref.split('go/')[1] || '',
+          title: fallbackNode?.title || nodeElement.text().trim()
+        },
+        replies: Number(countLivid.text().trim()) || 0
+      })
+    })
+
+    return list
+  }
+
+  /**
    * 根据话题 id 获取话题链接
    * @param topicId 话题 id
    * @example "703733" -> "https://www.v2ex.com/t/703733"
@@ -182,25 +257,7 @@ export class V2exClient {
     const $ = cheerio.load(html)
     const cells = $('#Main > .box').eq(0).children('.cell.item')
 
-    const list: Topic[] = []
-    cells.each((_, cell) => {
-      const topicElement = $(cell).find('a.topic-link')
-      const nodeElement = $(cell).find('a.node')
-      const countLivid = $(cell).find('.count_livid')
-
-      const topicId = this.getTopicIdByLink(topicElement.attr('href')!)
-      list.push({
-        id: topicId!,
-        title: topicElement.text().trim(),
-        node: {
-          name: nodeElement.attr('href')?.split('go/')[1] || '',
-          title: nodeElement.text().trim()
-        },
-        replies: Number(countLivid.text().trim()) || 0
-      })
-    })
-
-    return list
+    return this.parseTopicListCells($, cells)
   }
 
   /**
@@ -217,28 +274,31 @@ export class V2exClient {
     const $ = cheerio.load(html)
     const nodeTitle = $('.node-breadcrumb').text().split('›')[1].trim()
     const cells = $('#TopicsNode .cell[class*="t_"]')
-    const totalPage = $('.ps_container .page_normal').last().text()
-
-    const list: Topic[] = []
-    cells.each((_, cell) => {
-      const topicElement = $(cell).find('a.topic-link')
-      const countLivid = $(cell).find('.count_livid')
-
-      const topicId = this.getTopicIdByLink(topicElement.attr('href')!)
-      list.push({
-        id: topicId!,
-        title: topicElement.text().trim(),
-        node: {
-          name: nodeName,
-          title: nodeTitle
-        },
-        replies: Number(countLivid.text().trim()) || 0
-      })
-    })
     return {
-      totalPage: Number(totalPage),
-      list: list
+      totalPage: this.parseTopicListTotalPage($),
+      list: this.parseTopicListCells($, cells, {
+        name: nodeName,
+        title: nodeTitle
+      })
     }
+  }
+
+  /**
+   * 获取我收藏的主题
+   * @param page 页码
+   * @example https://www.v2ex.com/my/topics?p=2
+   */
+  async getCollectionTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
+    return this.getMyTopicList('/my/topics', page)
+  }
+
+  /**
+   * 获取特别关注的主题
+   * @param page 页码
+   * @example https://www.v2ex.com/my/following?p=2
+   */
+  async getSpecialFollowingTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
+    return this.getMyTopicList('/my/following', page)
   }
 
   /**

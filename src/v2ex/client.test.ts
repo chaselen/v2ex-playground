@@ -27,6 +27,19 @@ function expectTopic(topic: Topic) {
 }
 
 /**
+ * 校验分页话题列表
+ * @param result 分页话题列表
+ */
+function expectTopicListResult(result: { totalPage: number; list: Topic[] }) {
+  expect(result.totalPage).toEqual(expect.any(Number))
+  expect(result.totalPage).toBeGreaterThanOrEqual(1)
+  expect(Array.isArray(result.list)).toBe(true)
+  if (result.list.length) {
+    expectTopic(result.list[0])
+  }
+}
+
+/**
  * 校验节点
  * @param node 节点
  */
@@ -185,5 +198,17 @@ describe('V2exClient real requests', () => {
     if (nodes.length) {
       expectNode(nodes[0])
     }
+  })
+
+  authTest('gets collection topics with V2EX_COOKIE', async () => {
+    const result = await client.getCollectionTopics()
+
+    expectTopicListResult(result)
+  })
+
+  authTest('gets special following topics with V2EX_COOKIE', async () => {
+    const result = await client.getSpecialFollowingTopics()
+
+    expectTopicListResult(result)
   })
 })
