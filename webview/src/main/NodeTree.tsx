@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
-import { Badge, Button, Dropdown, Empty, Spin, Tree } from '@douyinfe/semi-ui'
+import { Badge, Button, Dropdown, Empty, Pagination, Spin, Tree } from '@douyinfe/semi-ui'
 import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
@@ -16,6 +16,7 @@ interface NodeTreeProps {
   onAddNode?: () => void
   onExpandNode: (tab: MainTabKey, nodeId: string) => void
   onRefreshNode: (tab: MainTabKey, nodeId: string) => void
+  onPageChange: (tab: MainTabKey, nodeId: string, page: number) => void
   onRemoveNode: (nodeId: string) => void
 }
 
@@ -90,7 +91,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
     ]
   }
 
-  return node.children.map(topic => ({
+  const topicItems: TreeItem[] = node.children.map(topic => ({
     key: `topic:${tab}:${node.id}:${topic.id}`,
     label: topic.title,
     title: topic.title,
@@ -99,6 +100,25 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
     replies: topic.replies,
     isLeaf: true
   }))
+
+  if (tab === 'explore' || node.totalPage <= 1) {
+    return topicItems
+  }
+
+  return [
+    ...topicItems,
+    {
+      key: `pagination:${tab}:${node.id}`,
+      label: `第 ${node.page} / ${node.totalPage} 页`,
+      type: 'pagination',
+      tab,
+      nodeId: node.id,
+      page: node.page,
+      totalPage: node.totalPage,
+      loading: node.loading,
+      isLeaf: true
+    }
+  ]
 }
 
 /**
@@ -114,6 +134,8 @@ function createNodeTreeItem(tab: MainTabKey, node: NodeItem): TreeItem {
     tab,
     nodeId: node.id,
     loading: node.loading,
+    page: node.page,
+    totalPage: node.totalPage,
     isLeaf: false,
     children: createNodeChildren(tab, node)
   }
@@ -155,8 +177,17 @@ function getNodeKeyFromTopicKey(topicKey: string, tab: MainTabKey): string | und
  * @param props 组件参数
  */
 export default function NodeTree(props: NodeTreeProps) {
-  const { tab, nodes, loggedIn, loading, onAddNode, onExpandNode, onRefreshNode, onRemoveNode } =
-    props
+  const {
+    tab,
+    nodes,
+    loggedIn,
+    loading,
+    onAddNode,
+    onExpandNode,
+    onRefreshNode,
+    onPageChange,
+    onRemoveNode
+  } = props
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
   const [selectedTopicKey, setSelectedTopicKey] = useState<string>()
 
@@ -315,6 +346,35 @@ export default function NodeTree(props: NodeTreeProps) {
   }
 
   /**
+   * 渲染节点分页
+   * @param data 树项
+   */
+  function renderPaginationRow(data: TreeItem) {
+    if (!data.nodeId || !data.page || !data.totalPage) {
+      return null
+    }
+
+    return (
+      <div className="node-pagination" onClick={stopTreeClick} onMouseDown={stopTreeClick}>
+        <Pagination
+          size="small"
+          pageSize={1}
+          total={data.totalPage}
+          currentPage={data.page}
+          disabled={data.loading}
+          hoverShowPageSelect
+          onPageChange={page => {
+            if (page !== data.page) {
+              onPageChange(tab, data.nodeId!, page)
+            }
+          }}
+        />
+        <span className="node-page-summary">{`第 ${data.page} / ${data.totalPage} 页`}</span>
+      </div>
+    )
+  }
+
+  /**
    * 渲染树节点标签
    * @param label 节点标签
    * @param treeNode Semi 树节点
@@ -328,6 +388,7 @@ export default function NodeTree(props: NodeTreeProps) {
         {data.type === 'loading' && <span className="loading-text">{label}</span>}
         {data.type === 'error' && <span className="error-text">{label}</span>}
         {data.type === 'empty' && <span className="empty-text">{label}</span>}
+        {data.type === 'pagination' && renderPaginationRow(data)}
         {data.type === 'node' && (
           <>
             <span className="node-label">{label}</span>

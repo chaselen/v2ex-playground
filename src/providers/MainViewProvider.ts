@@ -71,8 +71,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _registerRpcHandlers(rpc: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>) {
     rpc.handle('ready', () => this._getInitData())
     rpc.handle('refreshAll', () => this._getInitData())
-    rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.nodeId))
-    rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId))
+    rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.nodeId, msg.page))
+    rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId, msg.page))
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
     rpc.handle('openTopic', msg => this._openTopic(msg.topicId, msg.title))
@@ -125,16 +125,23 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 展开节点时获取话题列表
    * @param tab 标签 key
    * @param nodeId 节点 id
+   * @param page 页码
    */
-  private async _handleExpandNode(tab: MainTabKey, nodeId: string): Promise<NodeChildrenData> {
+  private async _handleExpandNode(
+    tab: MainTabKey,
+    nodeId: string,
+    page = 1
+  ): Promise<NodeChildrenData> {
     try {
       let topics: Topic[] = []
+      let totalPage = 1
 
       if (tab === 'explore') {
         topics = await G.V2ex.getTopicListByTab(nodeId)
       } else {
-        const res = await G.V2ex.getTopicListByNode(nodeId)
+        const res = await G.V2ex.getTopicListByNode(nodeId, page)
         topics = res.list
+        totalPage = Math.max(res.totalPage || 1, 1)
       }
 
       const children: WebviewTopic[] = topics.map(t => ({
@@ -149,6 +156,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       return {
         tab,
         nodeId,
+        page,
+        totalPage,
         children
       }
     } catch (err) {
@@ -156,6 +165,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       return {
         tab,
         nodeId,
+        page,
+        totalPage: 1,
         children: [],
         error: (err as Error).message
       }
@@ -228,9 +239,14 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 刷新节点
    * @param tab 标签 key
    * @param nodeId 节点 id
+   * @param page 页码
    */
-  private async _handleRefreshNode(tab: MainTabKey, nodeId: string): Promise<NodeChildrenData> {
-    return this._handleExpandNode(tab, nodeId)
+  private async _handleRefreshNode(
+    tab: MainTabKey,
+    nodeId: string,
+    page = 1
+  ): Promise<NodeChildrenData> {
+    return this._handleExpandNode(tab, nodeId, page)
   }
 
   /**

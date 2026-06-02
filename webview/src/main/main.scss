@@ -236,6 +236,10 @@
   &--empty {
     min-height: 18px;
   }
+
+  &--pagination {
+    min-height: 30px;
+  }
 }
 
 .node-label,
@@ -276,6 +280,58 @@
 .topic-badge-count {
   background-color: var(--vscode-badge-background, var(--semi-color-danger));
   color: var(--vscode-badge-foreground, #fff);
+}
+
+.node-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0 4px;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+
+  .semi-page {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: none;
+    color: inherit;
+  }
+
+  .node-page-summary {
+    flex: 1;
+    min-width: 0;
+    color: inherit;
+    @include ellipsis;
+  }
+
+  .semi-page-item {
+    flex: none;
+    border-color: transparent;
+    background: transparent;
+    color: var(--v2ex-main-content-fg);
+  }
+
+  .semi-page-item:hover {
+    background: var(
+      --vscode-toolbar-hoverBackground,
+      var(--vscode-button-secondaryHoverBackground, var(--semi-color-fill-1))
+    );
+    color: var(--v2ex-hover-fg);
+  }
+
+  .semi-page-item-active,
+  .semi-page-item-active:hover {
+    background: var(--v2ex-active-bg);
+    color: var(--v2ex-active-fg);
+  }
+
+  .semi-page-item-disabled,
+  .semi-page-item-disabled:hover {
+    color: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
+    background: transparent;
+  }
 }
 
 .node-actions {
@@ -363,7 +419,9 @@
   .semi-empty-title,
   .semi-empty-description,
   .semi-tree-option-label,
-  .semi-tree-option-label-text {
+  .semi-tree-option-label-text,
+  .semi-page,
+  .semi-page-item {
     font-size: var(--v2ex-main-font-size);
   }
 }

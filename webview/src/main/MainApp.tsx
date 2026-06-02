@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Tabs } from '@douyinfe/semi-ui'
 import NodeTree from './NodeTree'
-import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
+import { requestVsCodeMessage } from '../shared/vscode'
 import {
   EXPLORE_NODES,
   type InitData,
@@ -21,6 +21,8 @@ function createNodeItem(node: WebviewNode): NodeItem {
   return {
     ...node,
     loading: false,
+    page: 1,
+    totalPage: 1,
     children: null,
     error: null
   }
@@ -106,7 +108,7 @@ export default function MainApp() {
    */
   async function expandNode(tab: MainTabKey, nodeId: string) {
     setNodeLoading(tab, nodeId)
-    await requestNodeChildren('expandNode', tab, nodeId)
+    await requestNodeChildren('expandNode', tab, nodeId, 1)
   }
 
   /**
@@ -115,8 +117,20 @@ export default function MainApp() {
    * @param nodeId 节点 id
    */
   async function refreshNode(tab: MainTabKey, nodeId: string) {
+    const node = tabs[tab].find(item => item.id === nodeId)
     setNodeLoading(tab, nodeId)
-    await requestNodeChildren('refreshNode', tab, nodeId)
+    await requestNodeChildren('refreshNode', tab, nodeId, node?.page || 1)
+  }
+
+  /**
+   * 切换节点页码
+   * @param tab 标签 key
+   * @param nodeId 节点 id
+   * @param page 页码
+   */
+  async function changeNodePage(tab: MainTabKey, nodeId: string, page: number) {
+    setNodeLoading(tab, nodeId)
+    await requestNodeChildren('expandNode', tab, nodeId, page)
   }
 
   /**
@@ -165,6 +179,8 @@ export default function MainApp() {
   function onNodeChildren(data: {
     tab: MainTabKey
     nodeId: string
+    page: number
+    totalPage: number
     children: WebviewTopic[]
     error?: string
   }) {
@@ -174,6 +190,8 @@ export default function MainApp() {
           ...node,
           loading: false,
           error: data.error,
+          page: data.page || node.page,
+          totalPage: data.totalPage || node.totalPage,
           children: node.children || []
         }
       }
@@ -182,6 +200,8 @@ export default function MainApp() {
         ...node,
         loading: false,
         error: null,
+        page: data.page || 1,
+        totalPage: data.totalPage || 1,
         children: normalizeTopics(data.children || [])
       }
     })
@@ -192,19 +212,23 @@ export default function MainApp() {
    * @param command 命令名
    * @param tab 标签 key
    * @param nodeId 节点 id
+   * @param page 页码
    */
   async function requestNodeChildren(
     command: 'expandNode' | 'refreshNode',
     tab: MainTabKey,
-    nodeId: string
+    nodeId: string,
+    page = 1
   ) {
     try {
-      const data = await requestVsCodeMessage(command, { tab, nodeId })
+      const data = await requestVsCodeMessage(command, { tab, nodeId, page })
       onNodeChildren(data)
     } catch (err) {
       onNodeChildren({
         tab,
         nodeId,
+        page,
+        totalPage: 1,
         children: [],
         error: (err as Error).message
       })
@@ -238,7 +262,7 @@ export default function MainApp() {
           if (node.children === null || node.loading) {
             return node
           }
-          requestNodeChildren('refreshNode', tab, node.id)
+          requestNodeChildren('refreshNode', tab, node.id, node.page)
           return { ...node, loading: true }
         })
       })
@@ -296,6 +320,7 @@ export default function MainApp() {
             loggedIn={loggedIn}
             onExpandNode={expandNode}
             onRefreshNode={refreshNode}
+            onPageChange={changeNodePage}
             onRemoveNode={removeNode}
           />
         </Tabs.TabPane>
@@ -307,6 +332,7 @@ export default function MainApp() {
             onAddNode={addNode}
             onExpandNode={expandNode}
             onRefreshNode={refreshNode}
+            onPageChange={changeNodePage}
             onRemoveNode={removeNode}
           />
         </Tabs.TabPane>
@@ -318,6 +344,7 @@ export default function MainApp() {
             loading={initializing}
             onExpandNode={expandNode}
             onRefreshNode={refreshNode}
+            onPageChange={changeNodePage}
             onRemoveNode={removeNode}
           />
         </Tabs.TabPane>

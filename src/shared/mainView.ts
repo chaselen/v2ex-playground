@@ -57,6 +57,10 @@ export interface NodeChildrenData {
   tab: MainTabKey
   /** 节点 id */
   nodeId: string
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
   /** 话题列表 */
   children: WebviewTopic[]
   /** 错误文案 */
@@ -77,8 +81,14 @@ export interface CustomNodesUpdatedData {
 export interface MainViewRpcCommands {
   ready: WebviewRpcDefinition<object, InitData>
   refreshAll: WebviewRpcDefinition<object, InitData>
-  expandNode: WebviewRpcDefinition<{ tab: MainTabKey; nodeId: string }, NodeChildrenData>
-  refreshNode: WebviewRpcDefinition<{ tab: MainTabKey; nodeId: string }, NodeChildrenData>
+  expandNode: WebviewRpcDefinition<
+    { tab: MainTabKey; nodeId: string; page?: number },
+    NodeChildrenData
+  >
+  refreshNode: WebviewRpcDefinition<
+    { tab: MainTabKey; nodeId: string; page?: number },
+    NodeChildrenData
+  >
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
   removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>

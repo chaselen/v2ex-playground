@@ -7,6 +7,8 @@ export type { MainTabKey }
  */
 export interface NodeItem extends WebviewNode {
   loading: boolean
+  page: number
+  totalPage: number
   children: WebviewTopic[] | null
   error: string | null
 }
@@ -19,7 +21,7 @@ export type MainTabs = Record<MainTabKey, NodeItem[]>
 /**
  * 树节点类型
  */
-export type TreeItemType = 'node' | 'topic' | 'loading' | 'error' | 'empty'
+export type TreeItemType = 'node' | 'topic' | 'pagination' | 'loading' | 'error' | 'empty'
 
 /**
  * 右键菜单动作
@@ -38,6 +40,8 @@ export interface TreeItem {
   topicId?: number
   title?: string
   replies?: number
+  page?: number
+  totalPage?: number
   loading?: boolean
   isLeaf?: boolean
   children?: TreeItem[]
