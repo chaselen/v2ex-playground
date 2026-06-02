@@ -65,10 +65,20 @@ function expectTopicDetail(detail: TopicDetail) {
  * @param overview 账户概览
  */
 function expectAccountOverview(overview: AccountOverview) {
+  expect(overview.avatar).toEqual(expect.any(String))
+  expect(overview.username).toEqual(expect.any(String))
+  expect(overview.nodeCollectionCount).toEqual(expect.any(Number))
+  expect(overview.topicCollectionCount).toEqual(expect.any(Number))
+  expect(overview.specialFollowingCount).toEqual(expect.any(Number))
+  expect(overview.activityPercent).toEqual(expect.any(Number))
   expect(overview.unreadNoticeCount).toEqual(expect.any(Number))
   expect(overview.gold).toEqual(expect.any(Number))
   expect(overview.silver).toEqual(expect.any(Number))
   expect(overview.bronze).toEqual(expect.any(Number))
+  expect(overview.nodeCollectionCount).toBeGreaterThanOrEqual(0)
+  expect(overview.topicCollectionCount).toBeGreaterThanOrEqual(0)
+  expect(overview.specialFollowingCount).toBeGreaterThanOrEqual(0)
+  expect(overview.activityPercent).toBeGreaterThanOrEqual(0)
   expect(overview.unreadNoticeCount).toBeGreaterThanOrEqual(0)
   expect(overview.gold).toBeGreaterThanOrEqual(0)
   expect(overview.silver).toBeGreaterThanOrEqual(0)

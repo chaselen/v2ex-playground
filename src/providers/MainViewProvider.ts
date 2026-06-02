@@ -15,6 +15,7 @@ import {
   MainTabKey,
   MainViewRpcCommands,
   MainViewWebviewEvents,
+  WebviewAccountOverview,
   NodeChildrenData,
   WebviewNode,
   WebviewTopic
@@ -76,6 +77,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
     rpc.handle('openTopic', msg => this._openTopic(msg.topicId, msg.title))
+    rpc.handle('openExternal', msg => this._openExternal(msg.path))
     rpc.handle('search', () => vscode.commands.executeCommand('v2ex-main.search'))
     rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
     rpc.handle('ctxCopyLink', msg => this._copyLink(msg.topicId))
@@ -94,6 +96,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     }))
 
     let collectionNodes: WebviewNode[] = []
+    let accountOverview: WebviewAccountOverview | undefined
     const loggedIn = !!G.getCookie()
 
     if (loggedIn) {
@@ -109,6 +112,14 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
           collectionNodes = []
         }
       }
+
+      try {
+        accountOverview = await G.V2ex.getAccountOverview()
+      } catch (err) {
+        if (!(err instanceof LoginRequiredError)) {
+          console.error(err)
+        }
+      }
     }
 
     return {
@@ -117,7 +128,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         custom: customNodes,
         collection: collectionNodes
       },
-      loggedIn
+      loggedIn,
+      accountOverview
     }
   }
 
@@ -259,6 +271,15 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       topicId: Number(topicId),
       label: String(title || '')
     } satisfies TopicPanelInput)
+  }
+
+  /**
+   * 在浏览器中打开 V2EX 链接
+   * @param targetPath 目标路径
+   */
+  private _openExternal(targetPath: string) {
+    const url = new URL(targetPath, G.V2ex.baseUrl)
+    vscode.env.openExternal(vscode.Uri.parse(url.toString()))
   }
 
   /**

@@ -34,6 +34,32 @@ export interface WebviewTopic {
   replies: number
 }
 
+/**
+ * Webview 账户概览
+ */
+export interface WebviewAccountOverview {
+  /** 头像地址 */
+  avatar: string
+  /** 用户名 */
+  username: string
+  /** 节点收藏数量 */
+  nodeCollectionCount: number
+  /** 主题收藏数量 */
+  topicCollectionCount: number
+  /** 特别关注数量 */
+  specialFollowingCount: number
+  /** 活跃度百分比 */
+  activityPercent: number
+  /** 未读提醒数量 */
+  unreadNoticeCount: number
+  /** 金币数量 */
+  gold: number
+  /** 银币数量 */
+  silver: number
+  /** 铜币数量 */
+  bronze: number
+}
+
 /** 主面板标签 key */
 export type MainTabKey = 'explore' | 'custom' | 'collection'
 
@@ -47,6 +73,7 @@ export interface InitData {
     collection: WebviewNode[]
   }
   loggedIn: boolean
+  accountOverview?: WebviewAccountOverview
 }
 
 /**
@@ -92,6 +119,7 @@ export interface MainViewRpcCommands {
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
   removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>
+  openExternal: WebviewRpcDefinition<{ path: string }, void>
   search: WebviewRpcDefinition<object, void>
   login: WebviewRpcDefinition<object, void>
   ctxCopyLink: WebviewRpcDefinition<{ topicId: number; label: string }, void>

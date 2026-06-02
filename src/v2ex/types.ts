@@ -121,6 +121,18 @@ export type DailyRes = 'success' | 'repetitive' | 'failed'
  * 账户概览
  */
 export interface AccountOverview {
+  /** 头像地址 */
+  avatar: string
+  /** 用户名 */
+  username: string
+  /** 节点收藏数量 */
+  nodeCollectionCount: number
+  /** 主题收藏数量 */
+  topicCollectionCount: number
+  /** 特别关注数量 */
+  specialFollowingCount: number
+  /** 活跃度百分比 */
+  activityPercent: number
   /** 未读提醒数量 */
   unreadNoticeCount: number
   /** 金币数量 */

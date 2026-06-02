@@ -55,19 +55,27 @@
   .semi-tabs-bar {
     flex: none;
     margin: 0;
-    padding: 0 28px;
+    padding: 0 12px;
     border-bottom-color: var(--v2ex-border);
     background: var(--v2ex-webview-bg);
   }
 
   .semi-tabs-tab {
     margin: 0;
-    padding: 0 12px;
+    font-size: var(--v2ex-main-font-size);
     color: var(--v2ex-webview-fg);
   }
 
+  .semi-tabs-bar-line.semi-tabs-bar-top .semi-tabs-tab:not(:last-of-type) {
+    margin-right: 12px;
+  }
+
   .semi-tabs-tab-button {
-    font-size: inherit;
+    font-size: var(--v2ex-main-font-size);
+  }
+
+  .semi-tabs-tab-line.semi-tabs-tab-top.semi-tabs-tab-medium {
+    font-size: var(--v2ex-main-font-size);
   }
 
   .semi-tabs-tab-active {
@@ -405,6 +413,303 @@
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);
   background: var(--v2ex-webview-bg);
+}
+
+.my-panel {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.my-scroll {
+  height: 100%;
+  min-height: 0;
+
+  .simplebar-content {
+    padding: 8px !important;
+  }
+
+  .simplebar-track.simplebar-vertical {
+    width: 8px;
+    background: transparent;
+  }
+
+  .simplebar-scrollbar::before {
+    inset: 2px;
+    border-radius: 999px;
+    background: var(--vscode-scrollbarSlider-background);
+    opacity: 1;
+  }
+
+  .simplebar-track.simplebar-horizontal {
+    display: none;
+  }
+}
+
+.my-card {
+  overflow: hidden;
+  border: 1px solid var(--v2ex-border);
+  border-radius: 8px;
+  background: var(--v2ex-widget-bg);
+  color: var(--v2ex-main-content-fg);
+}
+
+.my-link {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 1px var(--v2ex-focus-border);
+  }
+}
+
+.my-profile {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 10px;
+}
+
+.my-avatar-link {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.my-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--v2ex-default-bg);
+  color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
+}
+
+.my-identity {
+  min-width: 0;
+  padding: 2px 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--v2ex-main-content-fg);
+  @include ellipsis;
+}
+
+.my-help-icon {
+  color: var(--vscode-icon-foreground, var(--vscode-descriptionForeground));
+}
+
+.my-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 6px 14px 12px;
+}
+
+.my-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0 6px;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  text-align: center;
+
+  &:hover {
+    background: var(--v2ex-hover-bg);
+  }
+
+  & + & {
+    border-left: 1px solid var(--v2ex-border);
+  }
+
+  strong,
+  span {
+    max-width: 100%;
+    @include ellipsis;
+  }
+
+  strong {
+    font-size: 16px;
+    line-height: 1.15;
+    font-weight: 600;
+    color: var(--v2ex-main-content-fg);
+  }
+
+  span {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+.my-activity,
+.my-wallet {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  border-top: 1px solid var(--v2ex-border);
+}
+
+.my-activity {
+  min-height: 46px;
+  padding: 0 14px;
+}
+
+.my-activity-progress {
+  flex: 1;
+  min-width: 0;
+
+  .semi-progress-line {
+    margin: 0;
+  }
+
+  .semi-progress-line-text {
+    min-width: 34px;
+    color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+    font-size: 14px;
+    font-weight: 600;
+    text-align: right;
+  }
+}
+
+.my-wallet {
+  min-height: 50px;
+  padding: 0 14px;
+  gap: 8px;
+}
+
+.my-notice {
+  flex: 1;
+  min-width: 56px;
+  padding: 2px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--v2ex-main-content-fg);
+  @include ellipsis;
+}
+
+.my-balance {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 64%;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--v2ex-default-bg);
+  color: var(--v2ex-main-content-fg);
+  font-size: 14px;
+  font-weight: 700;
+
+  span {
+    @include ellipsis;
+  }
+
+  &:hover {
+    background: var(--v2ex-default-hover-bg);
+  }
+}
+
+.my-coin {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.35),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.08);
+
+  &--gold {
+    background: linear-gradient(135deg, #f5dd65, #b68f18);
+  }
+
+  &--silver {
+    background: linear-gradient(135deg, #e4e7eb, #8d949d);
+  }
+
+  &--bronze {
+    background: linear-gradient(135deg, #f4a171, #b95f39);
+  }
+}
+
+.my-help-icon {
+  flex: none;
+  font-size: 14px;
+}
+
+.my-help {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 4px;
+  color: var(--vscode-icon-foreground, var(--vscode-descriptionForeground));
+
+  &:hover {
+    background: var(--v2ex-hover-bg);
+  }
+}
+
+@media (max-width: 300px) {
+  .my-profile {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px 10px 8px;
+  }
+
+  .my-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .my-avatar-link {
+    width: 36px;
+    height: 36px;
+  }
+
+  .my-stats,
+  .my-activity,
+  .my-wallet {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .my-stat {
+    padding: 0 4px;
+  }
+
+  .my-wallet {
+    gap: 6px;
+  }
+
+  .my-notice {
+    min-width: 48px;
+  }
+
+  .my-balance {
+    max-width: 66%;
+    padding: 4px 7px;
+  }
+
+  .my-coin {
+    width: 15px;
+    height: 15px;
+  }
 }
 
 .error-text {

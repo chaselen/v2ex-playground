@@ -276,11 +276,36 @@ export class V2exClient {
     const { data: html } = await this.http.get<string>('/')
     const $ = cheerio.load(html)
     const overview: AccountOverview = {
+      avatar: '',
+      username: '',
+      nodeCollectionCount: 0,
+      topicCollectionCount: 0,
+      specialFollowingCount: 0,
+      activityPercent: 0,
       unreadNoticeCount: 0,
       gold: 0,
       silver: 0,
       bronze: 0
     }
+
+    const accountBox = $('#Rightbar > .box').has('#member-activity').first()
+    const avatar = accountBox.find('td[width="48"] img.avatar').first()
+    const activityStyle =
+      accountBox.find('#member-activity .member-activity-done').attr('style') || ''
+
+    overview.avatar = avatar.attr('src') || ''
+    overview.username =
+      accountBox.find('a[href^="/member/"]').first().text().trim() || avatar.attr('alt') || ''
+    overview.nodeCollectionCount = Number(
+      accountBox.find('a[href="/my/nodes"] .bigger').first().text().trim() || 0
+    )
+    overview.topicCollectionCount = Number(
+      accountBox.find('a[href="/my/topics"] .bigger').first().text().trim() || 0
+    )
+    overview.specialFollowingCount = Number(
+      accountBox.find('a[href="/my/following"] .bigger').first().text().trim() || 0
+    )
+    overview.activityPercent = Number(activityStyle.match(/width\s*:\s*([\d.]+)%/)?.[1] || 0)
 
     const unreadText = $('#Rightbar a[href="/notifications"]').first().text().trim()
     overview.unreadNoticeCount = Number(unreadText.match(/(\d+)\s*未读提醒/)?.[1] || 0)

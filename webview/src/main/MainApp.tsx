@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Tabs } from '@douyinfe/semi-ui'
+import MyAccountPanel from './MyAccountPanel'
 import NodeTree from './NodeTree'
 import { requestVsCodeMessage } from '../shared/vscode'
 import {
   EXPLORE_NODES,
   type InitData,
+  type WebviewAccountOverview,
   type WebviewNode,
   type WebviewTopic
 } from '../../../src/shared/webview'
@@ -12,6 +14,9 @@ import type { MainTabKey, MainTabs, NodeItem } from './types'
 
 /** 主面板标签 key */
 const tabKeys: MainTabKey[] = ['explore', 'custom', 'collection']
+
+/** 主面板全部标签 key */
+type MainPanelTabKey = MainTabKey | 'my'
 
 /**
  * 创建带前端状态的节点项
@@ -70,8 +75,9 @@ function isInitDataMessage(msg: unknown): msg is InitData & { command: 'initData
  * 主面板应用
  */
 export default function MainApp() {
-  const [activeTab, setActiveTab] = useState<MainTabKey>('explore')
+  const [activeTab, setActiveTab] = useState<MainPanelTabKey>('explore')
   const [loggedIn, setLoggedIn] = useState(false)
+  const [accountOverview, setAccountOverview] = useState<WebviewAccountOverview>()
   const [initializing, setInitializing] = useState(true)
   const [tabs, setTabs] = useState<MainTabs>({
     explore: EXPLORE_NODES.map(createNodeItem),
@@ -164,6 +170,7 @@ export default function MainApp() {
    */
   function onInitData(data: InitData) {
     setLoggedIn(data.loggedIn)
+    setAccountOverview(data.accountOverview)
     setInitializing(false)
     setTabs(current => ({
       explore: mergeNodeItems(data.tabs.explore, current.explore),
@@ -308,10 +315,11 @@ export default function MainApp() {
         tabPosition="top"
         type="line"
         size="medium"
+        collapsible="auto"
         className="main-tabs"
         contentStyle={{ height: '100%', minHeight: 0, overflow: 'hidden' }}
         tabPaneMotion={false}
-        onChange={value => setActiveTab(value as MainTabKey)}
+        onChange={value => setActiveTab(value as MainPanelTabKey)}
       >
         <Tabs.TabPane itemKey="explore" tab="首页">
           <NodeTree
@@ -347,6 +355,9 @@ export default function MainApp() {
             onPageChange={changeNodePage}
             onRemoveNode={removeNode}
           />
+        </Tabs.TabPane>
+        <Tabs.TabPane itemKey="my" tab="我的">
+          <MyAccountPanel loading={initializing} loggedIn={loggedIn} overview={accountOverview} />
         </Tabs.TabPane>
       </Tabs>
     </main>
