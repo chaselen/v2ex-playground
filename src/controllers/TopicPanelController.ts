@@ -2,6 +2,7 @@ import path from 'path'
 import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
+import topicItemClick from '@/commands/topicItemClick'
 import { openImagePreview } from '@/features/imagePreview'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
@@ -256,7 +257,7 @@ export class TopicPanelController {
    */
   private openTopic(topicId: string | number) {
     const nextTopicId = Number(topicId)
-    vscode.commands.executeCommand('v2ex.topicItemClick', {
+    topicItemClick({
       label: `/t/${nextTopicId}`,
       topicId: nextTopicId
     } satisfies TopicPanelInput)

@@ -1,8 +1,10 @@
 import vscode from 'vscode'
 import path from 'path'
+import { EOL } from 'os'
 import G from '@/global'
 import { LoginRequiredError, Node, Topic } from '@/v2ex'
 import { TopicPanelInput } from '@/controllers/TopicPanelController'
+import topicItemClick from '@/commands/topicItemClick'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
@@ -66,9 +68,9 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('openTopic', msg => this._openTopic(msg.topicId, msg.title))
     rpc.handle('search', () => vscode.commands.executeCommand('v2ex-main.search'))
     rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
-    rpc.handle('ctxCopyLink', msg => vscode.commands.executeCommand('v2ex.copyLink', msg))
-    rpc.handle('ctxCopyTitleLink', msg => vscode.commands.executeCommand('v2ex.copyTitleLink', msg))
-    rpc.handle('ctxViewInBrowser', msg => vscode.commands.executeCommand('v2ex.viewInBrowser', msg))
+    rpc.handle('ctxCopyLink', msg => this._copyLink(msg.topicId))
+    rpc.handle('ctxCopyTitleLink', msg => this._copyTitleLink(msg.topicId, msg.label))
+    rpc.handle('ctxViewInBrowser', msg => this._viewInBrowser(msg.topicId))
   }
 
   /**
@@ -225,10 +227,38 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param title 话题标题
    */
   private _openTopic(topicId: unknown, title: unknown) {
-    vscode.commands.executeCommand('v2ex.topicItemClick', {
+    topicItemClick({
       topicId: Number(topicId),
       label: String(title || '')
     } satisfies TopicPanelInput)
+  }
+
+  /**
+   * 复制话题链接
+   * @param topicId 话题 id
+   */
+  private _copyLink(topicId: number) {
+    const link = G.V2ex.getTopicLinkById(topicId)
+    vscode.env.clipboard.writeText(link)
+  }
+
+  /**
+   * 复制话题标题和链接
+   * @param topicId 话题 id
+   * @param label 话题标题
+   */
+  private _copyTitleLink(topicId: number, label: string) {
+    const link = G.V2ex.getTopicLinkById(topicId)
+    vscode.env.clipboard.writeText(label + EOL + link)
+  }
+
+  /**
+   * 在浏览器中打开话题
+   * @param topicId 话题 id
+   */
+  private _viewInBrowser(topicId: number) {
+    const link = G.V2ex.getTopicLinkById(topicId)
+    vscode.env.openExternal(vscode.Uri.parse(link))
   }
 
   /**

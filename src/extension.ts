@@ -1,7 +1,5 @@
 import vscode from 'vscode'
-import { EOL } from 'os'
 import MainViewProvider from '@/providers/MainViewProvider'
-import topicItemClick from '@/commands/topicItemClick'
 import login, { LoginResult } from '@/commands/login'
 import G from '@/global'
 import { V2exClient } from '@/v2ex'
@@ -38,35 +36,6 @@ export function activate(context: vscode.ExtensionContext) {
         mainViewProvider.reloadViewData()
       }
     })
-  )
-
-  // 公共事件：复制链接
-  context.subscriptions.push(
-    vscode.commands.registerCommand('v2ex.copyLink', (item: any) => {
-      const link = item?.link || G.V2ex.getTopicLinkById(item?.topicId)
-      if (link) vscode.env.clipboard.writeText(link)
-    })
-  )
-
-  // 公共事件：复制标题和链接
-  context.subscriptions.push(
-    vscode.commands.registerCommand('v2ex.copyTitleLink', (item: any) => {
-      const link = item?.link || G.V2ex.getTopicLinkById(item?.topicId)
-      if (link) vscode.env.clipboard.writeText(item?.label + EOL + link)
-    })
-  )
-
-  // 公共事件：在浏览器中打开
-  context.subscriptions.push(
-    vscode.commands.registerCommand('v2ex.viewInBrowser', (item: any) => {
-      const link = item?.link || G.V2ex.getTopicLinkById(item?.topicId)
-      if (link) vscode.env.openExternal(vscode.Uri.parse(link))
-    })
-  )
-
-  // 公共事件：点击浏览帖子
-  context.subscriptions.push(
-    vscode.commands.registerCommand('v2ex.topicItemClick', item => topicItemClick(item))
   )
 
   // 搜索
