@@ -210,9 +210,28 @@ $panel-border: var(--v2ex-border);
     }
   }
 
-  &.append h2 {
-    margin: 0 0 12px;
-    font-size: 16px;
+  &.append {
+    padding: 10px 12px;
+    border-left: 3px solid color-mix(in srgb, var(--vscode-textLink-foreground) 70%, transparent);
+    background: color-mix(in srgb, var(--vscode-textLink-foreground) 6%, transparent);
+
+    h2 {
+      margin: 0 0 10px;
+      color: $muted-color;
+      font-size: 15px;
+    }
+
+    .append-time {
+      font-weight: 500;
+    }
+
+    p:last-child,
+    ul:last-child,
+    ol:last-child,
+    pre:last-child,
+    blockquote:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 
@@ -226,6 +245,14 @@ $panel-border: var(--v2ex-border);
 
 .topic-divider--reply-start {
   margin: 26px 0 8px;
+}
+
+.topic-divider--append-start {
+  margin: 26px 0 8px;
+}
+
+.topic-divider--append-end {
+  margin: 16px 0;
 }
 
 .reply h2 {
@@ -308,6 +335,7 @@ $panel-border: var(--v2ex-border);
 
 .floor {
   display: inline-block;
+  margin-left: 4px;
   min-width: 16px;
   color: $muted-color;
   font-size: 12px;

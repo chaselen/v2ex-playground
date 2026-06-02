@@ -293,17 +293,26 @@ export default function TopicApp() {
             </div>
           )}
 
-          <Divider className="topic-divider topic-divider--reply-start" />
+          {!!topic.appends.length && (
+            <Divider className="topic-divider topic-divider--append-start" />
+          )}
 
           {topic.appends.map((append, index) => (
             <div key={`append-${index}`}>
               <section className="topic-content append">
-                <h2>第 {index + 1} 条附言</h2>
+                <h2>
+                  第 {index + 1} 条附言
+                  {append.time && <span className="append-time"> · {append.time}</span>}
+                </h2>
                 <div dangerouslySetInnerHTML={{ __html: normalizeHtml(append.content) }} />
               </section>
-              <Divider />
+              {index < topic.appends.length - 1 && (
+                <Divider className="topic-divider topic-divider--append-end" />
+              )}
             </div>
           ))}
+
+          <Divider className="topic-divider topic-divider--reply-start" />
 
           <section className="reply">
             {topic.replies.length ? <h2>共 {topic.replyCount} 条回复</h2> : <h2>暂无回复</h2>}
