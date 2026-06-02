@@ -1,5 +1,17 @@
 # 更新日志
 
+## [1.7.0]
+
+- feat: Webview 改为 React + Vite + Semi Design 工程化实现，优化主面板与帖子页交互
+- feat: 新增自动每日签到能力，扩展激活和主面板可见时自动尝试签到
+- feat: 收藏节点支持加载状态，并在刷新后重置节点树展开状态
+- feat: 下载图片时显示进度通知
+- refactor: 重构 V2EX 客户端与 Webview RPC 通信，增强扩展侧和 Webview 侧类型约束
+- refactor: 使用 esbuild 替换 tsc 编译输出，收敛 VSIX 打包文件范围
+- refactor: 移除插件内自定义代理配置，网络代理请使用 VS Code 的 `http.proxy` 设置
+- fix: 修复话题树节点选中、右键菜单关闭和登录 Cookie 处理问题
+- fix: 优化 VS Code 主题和高对比主题适配
+
 ## [1.6.1]
 
 - fix: 修复上个版本打包安装后无法正常显示的问题

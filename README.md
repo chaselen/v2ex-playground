@@ -25,6 +25,29 @@
 - [x] 话题收藏、话题感谢
 - [x] 话题搜索
 - [x] 感谢回复者
+- [x] 话题图片预览、隐藏和下载
+
+---
+
+## 设置项
+
+- `v2ex.browse.openInNewTab`：始终在新标签页中打开帖子，默认 `true`
+- `v2ex.browse.autoSignIn`：登录后自动进行每日签到，默认 `true`
+- `v2ex.browse.showImagesInTopic`：查看帖子时显示图片，默认 `true`
+
+## 代理说明
+
+插件不再提供应用内自定义代理配置。如需通过代理访问 V2EX，可优先使用 VS Code 自带代理设置。
+
+在 VS Code 图形界面中打开设置，搜索 `http.proxy` 或 `Proxy`，找到 `Http: Proxy` 后填入代理地址，例如 `http://127.0.0.1:7890`。也可以直接在 `settings.json` 中配置：
+
+```json
+{
+  "http.proxy": "http://127.0.0.1:7890"
+}
+```
+
+也可以在 Proxifier 等代理软件中添加域名规则，让 `v2ex.com` 和 `*.v2ex.com` 走代理。
 
 ---
 
