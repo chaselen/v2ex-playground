@@ -1,13 +1,14 @@
 import * as cheerio from 'cheerio'
 import axios, { AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import { parse as parseCookieHeader } from 'cookie'
+import { CookieJar } from 'tough-cookie'
 import {
   AccountRestrictedError,
   Topic,
   Node,
   DailyRes,
-  GetCookie,
+  LoginExpiredHandler,
   LoginRequiredError,
-  SetCookie,
   ThankResponse,
   TopicDetail,
   TopicReply,
@@ -16,42 +17,128 @@ import {
   AccountOverview
 } from './types'
 
+/** V2EX 请求超时时间 */
+const v2exRequestTimeout = 15000
+
+/** V2EX 公共请求头 */
+const v2exRequestHeaders = {
+  // 需要用一个合法的UA，否则访问某些页面会出错
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+  'Accept-Language': 'zh-CN,zh;q=0.9'
+}
+
 export class V2exClient {
   /** 域名 */
   readonly baseUrl = 'https://www.v2ex.com'
 
+  /** V2EX Cookie 存储 */
+  private readonly cookieJar = new CookieJar()
+
   /** v2ex 请求客户端 */
   private readonly http = axios.create({
     baseURL: this.baseUrl,
-    headers: {
-      // 需要用一个合法的UA，否则访问某些页面会出错
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
-      'Accept-Language': 'zh-CN,zh;q=0.9'
-    },
-    timeout: 15000
+    headers: v2exRequestHeaders,
+    timeout: v2exRequestTimeout
   })
 
   /**
-   * @param getCookie 获取 V2EX Cookie
-   * @param setCookie 设置 V2EX Cookie
+   * @param initialCookie 初始 V2EX Cookie
+   * @param onLoginExpired 登录失效回调
    */
   constructor(
-    private readonly getCookie: GetCookie,
-    private readonly setCookie: SetCookie
+    initialCookie?: string,
+    private readonly onLoginExpired?: LoginExpiredHandler
   ) {
-    // cookie
+    this.setCookie(initialCookie || '')
+
     this.http.interceptors.request.use(config => {
       const reqUrl = new URL(config.url || '', config.baseURL)
-      // 添加v2ex的cookie
+      // 添加 V2EX Cookie
       if (reqUrl.host === 'v2ex.com' || reqUrl.host.endsWith('.v2ex.com')) {
         if (config.headers['Cookie'] === undefined) {
-          config.headers['Cookie'] = this.getCookie() || ''
+          config.headers['Cookie'] = this.getCookie(reqUrl.toString())
         }
       }
       return config
     })
+    this.http.interceptors.response.use(response => {
+      this.updateCookieFromResponse(response)
+      return response
+    })
+  }
+
+  /**
+   * 获取当前 V2EX Cookie
+   * @param url 目标链接
+   */
+  getCookie(url = this.baseUrl): string {
+    return this.cookieJar.getCookieStringSync(url)
+  }
+
+  /**
+   * 设置当前 V2EX Cookie
+   * @param cookie Cookie 字符串
+   */
+  setCookie(cookie: string): void {
+    this.cookieJar.removeAllCookiesSync()
+    if (!cookie) {
+      return
+    }
+    this.writeCookie(cookie, this.baseUrl)
+  }
+
+  /**
+   * 写入 Cookie 字符串
+   * @param cookie Cookie 或 Set-Cookie 字符串
+   * @param url Cookie 所属链接
+   */
+  private writeCookie(cookie: string, url: string): void {
+    if (!cookie.includes(';')) {
+      this.cookieJar.setCookieSync(cookie, url)
+      return
+    }
+
+    const parsedCookie = parseCookieHeader(cookie)
+    Object.entries(parsedCookie).forEach(([name, value]) => {
+      this.cookieJar.setCookieSync(`${name}=${value}`, url)
+    })
+  }
+
+  /**
+   * 从响应头更新 Cookie
+   * @param response HTTP 响应
+   */
+  private updateCookieFromResponse(response: AxiosResponse): void {
+    const setCookie = response.headers['set-cookie']
+    if (!setCookie) {
+      return
+    }
+
+    const responseUrl = this.getResponseUrl(response)
+    const cookies = Array.isArray(setCookie) ? setCookie : [setCookie]
+    cookies.forEach(cookie => this.cookieJar.setCookieSync(cookie, responseUrl))
+  }
+
+  /**
+   * 获取响应对应的最终链接
+   * @param response HTTP 响应
+   */
+  private getResponseUrl(response: AxiosResponse): string {
+    return (
+      response.request?.res?.responseUrl ||
+      response.request?._redirectable?._currentUrl ||
+      new URL(response.config.url || '', response.config.baseURL || this.baseUrl).toString()
+    )
+  }
+
+  /**
+   * 通知登录失效
+   */
+  private notifyLoginExpired(): void {
+    this.setCookie('')
+    void this.onLoginExpired?.()
   }
 
   /**
@@ -217,8 +304,7 @@ export class V2exClient {
   private checkRedirect(res: AxiosResponse): void {
     if (res.request._redirectable._redirectCount > 0) {
       if (res.request.path.indexOf('/signin') >= 0) {
-        // 登录失效，删除cookie
-        this.setCookie('')
+        this.notifyLoginExpired()
         throw new LoginRequiredError('你要查看的页面需要先登录')
       }
       if (res.request.path === '/') {
@@ -422,20 +508,38 @@ export class V2exClient {
 
   /**
    * 检查cookie是否有效
-   * @param cookie 检查的cookie
    */
-  async checkCookie(cookie: string): Promise<boolean> {
+  async checkCookie(): Promise<boolean> {
+    const cookie = this.getCookie()
     if (!cookie) {
       return false
     }
-    /* 前往一个需要登录的页面检测，如果被重定向，说明cookie无效 */
-    const res = await this.http.get('/t', {
+    const isCookieValid = await this.tryLogin(cookie)
+    if (!isCookieValid) {
+      this.notifyLoginExpired()
+    }
+    return isCookieValid
+  }
+
+  /**
+   * 尝试使用 Cookie 登录
+   * @param cookie 待检查的 Cookie
+   */
+  async tryLogin(cookie: string): Promise<boolean> {
+    if (!cookie) {
+      return false
+    }
+    const { data: html } = await axios.get<string>(this.baseUrl, {
       headers: {
+        ...v2exRequestHeaders,
         // eslint-disable-next-line @typescript-eslint/naming-convention
         Cookie: cookie
-      }
+      },
+      timeout: v2exRequestTimeout
     })
-    return res.request._redirectable._redirectCount <= 0
+    const $ = cheerio.load(html)
+    // 如果显示了用户活跃度，表示cookie有效
+    return $('#member-activity').length > 0
   }
 
   /** 缓存的节点信息 */
@@ -466,11 +570,7 @@ export class V2exClient {
    */
   async getCollectionNodes(): Promise<Node[]> {
     const res = await this.http.get<string>('/my/nodes')
-    if (res.request._redirectable._redirectCount > 0) {
-      // 登录失效，删除cookie
-      this.setCookie('')
-      throw new LoginRequiredError('你要查看的页面需要先登录')
-    }
+    this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
     const nodes: Node[] = []

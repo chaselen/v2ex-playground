@@ -1,5 +1,6 @@
 import vscode from 'vscode'
 import G from '@/global'
+import { normalizeLoginCookie } from '@/shared/cookie'
 
 /**
  * 登录逻辑
@@ -8,7 +9,8 @@ import G from '@/global'
 export default async function login(): Promise<LoginResult> {
   let cookie = await vscode.window.showInputBox({
     placeHolder: 'V2EX Cookie',
-    prompt: '在此处粘贴从浏览器中复制的 Cookie 以登录。（如要退出，请清空 Cookie 并回车确认）',
+    prompt:
+      '粘贴完整 Cookie、A2="..." 或单独的 A2 值以登录。（如要退出，请清空 Cookie 并回车确认）',
     value: G.getCookie()
   })
   // 如果用户撤销输入，如ESC，则为undefined
@@ -16,13 +18,18 @@ export default async function login(): Promise<LoginResult> {
     return LoginResult.cancel
   }
   cookie = (cookie || '').trim()
-  // 容错处理：如果用户把前面的键也复制进去了，则手动去掉前面的cookie:
-  cookie = cookie.replace(/^cookie: /i, '')
 
   // 清除cookie
   if (!cookie) {
     await G.setCookie('')
     return LoginResult.logout
+  }
+  const loginCookie = normalizeLoginCookie(cookie)
+  if (!loginCookie) {
+    vscode.window.showErrorMessage(
+      '登录失败，Cookie 格式不正确，请确认内容包含 A2="..." 或直接粘贴 A2 值'
+    )
+    return LoginResult.failed
   }
 
   const isLoginSuccess = await vscode.window.withProgress(
@@ -31,14 +38,11 @@ export default async function login(): Promise<LoginResult> {
       location: vscode.ProgressLocation.Notification
     },
     async () => {
-      const isCookieValid = await G.V2ex.checkCookie(cookie!)
+      const isCookieValid = await G.V2ex.tryLogin(loginCookie)
       console.log('Cookie是否有效：', isCookieValid)
       if (isCookieValid) {
-        await G.setCookie(cookie!)
+        await G.setCookie(loginCookie)
         vscode.window.showInformationMessage('登录成功')
-
-        // 登录后刷新 Cookie 状态
-        G.V2ex.checkCookie(G.getCookie()!)
       } else {
         vscode.window.showErrorMessage('登录失败，Cookie无效')
       }

@@ -3,14 +3,8 @@ import { V2exClient } from './client'
 import type { AccountOverview, Node, SoV2exSource, Topic, TopicDetail } from './types'
 
 const v2exCookie = process.env.V2EX_COOKIE
-let storedCookie = v2exCookie
 
-const client = new V2exClient(
-  () => storedCookie,
-  cookie => {
-    storedCookie = cookie
-  }
-)
+const client = new V2exClient(v2exCookie)
 
 /**
  * 可选登录态测试
@@ -164,8 +158,8 @@ describe('V2exClient real requests', () => {
     }
   })
 
-  authTest('checks cookie from V2EX_COOKIE', async () => {
-    await expect(client.checkCookie(v2exCookie!)).resolves.toBe(true)
+  authTest('tries login from V2EX_COOKIE', async () => {
+    await expect(client.tryLogin(v2exCookie!)).resolves.toBe(true)
   })
 
   authTest('gets account overview with V2EX_COOKIE', async () => {

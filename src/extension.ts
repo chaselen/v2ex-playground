@@ -10,16 +10,13 @@ import { cleanupImagePreviewCache } from '@/features/imagePreview'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
-  G.V2ex = new V2exClient(
-    () => G.getCookie(),
-    cookie => G.setCookie(cookie)
-  )
+  G.V2ex = new V2exClient(G.getCookie(), () => G.setCookie(''))
   cleanupImagePreviewCache()
 
   // 插件激活后直接获取节点信息缓存下来
   G.V2ex.getAllNodes()
   // 检查登录是否有效
-  G.V2ex.checkCookie(G.getCookie()!)
+  G.V2ex.checkCookie()
   // 插件激活后尝试自动签到
   autoDailySignIn()
 

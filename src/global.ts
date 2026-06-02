@@ -1,4 +1,5 @@
 import type { Node, V2exClient } from '@/v2ex'
+import { normalizeLoginCookie } from '@/shared/cookie'
 import { ExtensionContext, Webview, Uri } from 'vscode'
 import vscode from 'vscode'
 
@@ -23,13 +24,19 @@ export default class G {
    * @param cookie cookie
    */
   static async setCookie(cookie: string) {
-    await this.context.globalState.update('cookie', cookie)
+    const loginCookie = normalizeLoginCookie(cookie)
+    this.V2ex?.setCookie(loginCookie)
+    await this.context.globalState.update('cookie', loginCookie)
   }
 
   /**
    * 获取cookie
    */
   static getCookie(): string | undefined {
+    const cookie = normalizeLoginCookie(this.V2ex?.getCookie())
+    if (cookie) {
+      return cookie
+    }
     return this.context.globalState.get('cookie')
   }
 

@@ -12,11 +12,8 @@ export class LoginRequiredError extends Error {}
 /** 账号访问受限 */
 export class AccountRestrictedError extends Error {}
 
-/** 获取 V2EX Cookie */
-export type GetCookie = () => string | undefined
-
-/** 设置 V2EX Cookie */
-export type SetCookie = (cookie: string) => void | Promise<void>
+/** 登录失效回调 */
+export type LoginExpiredHandler = () => void | Promise<void>
 
 /**
  * 话题

@@ -144,7 +144,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       }))
 
       // 检查登录是否有效
-      G.V2ex.checkCookie(G.getCookie()!)
+      G.V2ex.checkCookie()
 
       return {
         tab,
