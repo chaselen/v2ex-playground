@@ -174,7 +174,7 @@ export default function MainApp() {
           ...node,
           loading: false,
           error: data.error,
-          children: []
+          children: node.children || []
         }
       }
 

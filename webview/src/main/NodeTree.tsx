@@ -46,7 +46,7 @@ const emptyTexts: Record<MainTabKey, string> = {
  * @param node 节点项
  */
 function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
-  if (node.loading) {
+  if (node.loading && node.children === null) {
     return [
       {
         key: `loading:${node.id}`,
@@ -68,7 +68,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
     ]
   }
 
-  if (node.error) {
+  if (node.error && !node.children.length) {
     return [
       {
         key: `error:${node.id}`,
@@ -265,6 +265,7 @@ export default function NodeTree(props: NodeTreeProps) {
           type="tertiary"
           size="small"
           icon={<IconRefresh />}
+          loading={data.loading}
           title="刷新"
           aria-label="刷新"
           disabled={data.loading}
