@@ -9,8 +9,7 @@ const client = new V2exClient(
   () => storedCookie,
   cookie => {
     storedCookie = cookie
-  },
-  () => undefined
+  }
 )
 
 /**

@@ -1,6 +1,4 @@
 import axios from 'axios'
-import Config from '@/config'
-import { createGfwProxyInterceptor } from './interceptors'
 
 const http = axios.create({
   headers: {
@@ -12,7 +10,5 @@ const http = axios.create({
   },
   timeout: 15000
 })
-
-http.interceptors.request.use(createGfwProxyInterceptor(() => Config.proxyUrl()))
 
 export default http

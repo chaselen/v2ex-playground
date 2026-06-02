@@ -108,11 +108,6 @@
           "default": true,
           "description": "始终在新标签页中打开帖子"
         },
-        "v2ex.browse.proxyUrl": {
-          "type": "string",
-          "default": "",
-          "markdownDescription": "代理设置，如 `http://127.0.0.1:7890`。暂时只支持 `http` 代理"
-        },
         "v2ex.browse.autoSignIn": {
           "type": "boolean",
           "default": true,
