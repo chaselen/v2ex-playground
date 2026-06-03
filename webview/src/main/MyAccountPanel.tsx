@@ -253,10 +253,16 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
   }
 
   /**
-   * 打开我的消息
+   * 切换我的内容标签
+   * @param tab 内容标签 key
    */
-  function openMessages() {
-    setActiveContentTab('messages')
+  function changeContentTab(tab: MyContentTabKey) {
+    // 有未读提醒时强制刷新第一页，避免展示已缓存的旧消息
+    if (tab === 'messages' && overview?.unreadNoticeCount && !notificationList.loading) {
+      loadMyNotifications(1)
+    }
+
+    setActiveContentTab(tab)
   }
 
   /**
@@ -576,7 +582,11 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
           </div>
 
           <footer className="my-wallet">
-            <button type="button" className="my-link my-notice" onClick={openMessages}>
+            <button
+              type="button"
+              className="my-link my-notice"
+              onClick={() => changeContentTab('messages')}
+            >
               {overview.unreadNoticeCount} 未读提醒
             </button>
             <button
@@ -610,7 +620,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             size="small"
             className="my-content-tabs"
             tabPaneMotion={false}
-            onChange={value => setActiveContentTab(value as MyContentTabKey)}
+            onChange={value => changeContentTab(value as MyContentTabKey)}
           >
             <Tabs.TabPane itemKey="topicCollection" tab="主题收藏">
               {renderMyTopicList('topicCollection', '暂无收藏主题')}
@@ -627,7 +637,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
                     <Badge
                       count={overview.unreadNoticeCount}
                       overflowCount={99}
-                      countClassName="topic-badge-count"
+                      countClassName="my-message-badge-count"
                     />
                   )}
                 </span>

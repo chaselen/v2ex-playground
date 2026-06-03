@@ -738,6 +738,22 @@
   }
 }
 
+.my-message-badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--vscode-badge-foreground, #fff) !important;
+  background-color: var(--vscode-badge-background, var(--semi-color-danger)) !important;
+  box-shadow: 0 0 0 1px var(--v2ex-webview-bg);
+}
+
 .my-topic-list {
   display: flex;
   flex-direction: column;
