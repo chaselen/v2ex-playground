@@ -139,7 +139,7 @@ function expectSearchSource(source: SoV2exSource) {
   expect(source.created).toEqual(expect.any(String))
 }
 
-describe('V2exClient real requests', () => {
+describe.concurrent('V2exClient real requests', () => {
   test('builds and parses topic links', () => {
     expect(client.getTopicLinkById(703733)).toBe('https://www.v2ex.com/t/703733')
     expect(client.getTopicLinkById('1136705')).toBe('https://www.v2ex.com/t/1136705')
