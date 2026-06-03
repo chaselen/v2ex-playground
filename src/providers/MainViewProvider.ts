@@ -53,9 +53,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     this._accountOverviewChangedDisposable = G.V2ex.onAccountOverviewChanged(
       (overview, oldOverview) => this._handleAccountOverviewChanged(overview, oldOverview)
     )
-    if (webviewView.visible) {
-      autoDailySignIn()
-    }
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
         autoDailySignIn()
