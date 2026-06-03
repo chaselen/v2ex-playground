@@ -5,16 +5,44 @@
   "tasks": [
     {
       "type": "npm",
+      "script": "compile",
+      "problemMatcher": [],
+      "detail": "Build Webview assets and extension runtime",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "type": "npm",
+      "script": "typecheck",
+      "problemMatcher": "$tsc",
+      "detail": "Check extension TypeScript types",
+      "group": "build"
+    },
+    {
+      "type": "npm",
+      "script": "check:webview",
+      "problemMatcher": "$tsc",
+      "detail": "Check Webview TypeScript types",
+      "group": "build"
+    },
+    {
+      "type": "npm",
+      "script": "test:v2ex",
+      "problemMatcher": [],
+      "detail": "Run V2EX Vitest tests",
+      "group": "test"
+    },
+    {
+      "type": "npm",
       "script": "watch",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "presentation": {
         "reveal": "never"
       },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "group": "build"
     }
   ]
 }
