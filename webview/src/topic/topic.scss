@@ -408,7 +408,18 @@ $panel-border: var(--v2ex-border);
   height: 36px;
   border: 1px solid var(--vscode-button-border, #{$panel-border});
   border-radius: 6px;
+  background: var(--v2ex-widget-bg);
+  color: var(--v2ex-webview-fg);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+
+  &:hover {
+    background: var(--v2ex-hover-bg);
+  }
+
+  &:active {
+    background: var(--v2ex-active-bg);
+    color: var(--v2ex-active-fg);
+  }
 }
 
 @media (max-width: 480px) {
