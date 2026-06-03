@@ -99,7 +99,7 @@
         "v2ex.browse.autoSignIn": {
           "type": "boolean",
           "default": true,
-          "description": "登录后自动进行每日签到"
+          "description": "自动进行每日签到"
         },
         "v2ex.browse.showImagesInTopic": {
           "type": "boolean",
