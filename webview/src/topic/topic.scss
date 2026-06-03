@@ -260,6 +260,43 @@ $panel-border: var(--v2ex-border);
   margin: 16px 0;
 }
 
+.topic-empty-content {
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+  border: 1px dashed $panel-border;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--v2ex-widget-bg) 68%, transparent);
+  color: $muted-color;
+
+  .semi-empty {
+    max-width: 280px;
+    text-align: center;
+  }
+
+  .semi-empty-image {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .topic-empty-illustration {
+    width: 104px;
+    height: 104px;
+  }
+
+  .semi-empty-title {
+    margin: 0 0 6px;
+    color: var(--v2ex-webview-fg);
+    line-height: 1.4;
+  }
+
+  .semi-empty-description {
+    color: inherit;
+    line-height: 1.5;
+  }
+}
+
 .reply h2 {
   margin: 0 0 12px;
   font-size: 16px;

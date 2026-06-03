@@ -3,6 +3,7 @@ import {
   Banner,
   Button,
   Divider,
+  Empty,
   Pagination,
   Popconfirm,
   Spin,
@@ -11,6 +12,7 @@ import {
   Tooltip
 } from '@douyinfe/semi-ui'
 import { IconArrowDown, IconArrowUp, IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
+import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { enhanceTopicContentAfterRender, normalizeHtml } from '../shared/topicContent'
 import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
 import type { TopicPanelViewState } from '../../../src/shared/webview'
@@ -276,7 +278,14 @@ export default function TopicApp() {
               dangerouslySetInnerHTML={{ __html: topicContentHtml }}
             />
           ) : (
-            <section className="topic-content muted">正文无内容</section>
+            <section className="topic-empty-content">
+              <Empty
+                title="正文无内容"
+                description="这个话题没有填写正文，可以直接查看回复"
+                image={<IllustrationNoContent className="topic-empty-illustration" />}
+                darkModeImage={<IllustrationNoContentDark className="topic-empty-illustration" />}
+              />
+            </section>
           )}
 
           {state.canOperate && (
