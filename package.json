@@ -64,6 +64,24 @@
       ]
     },
     "menus": {
+      "commandPalette": [
+        {
+          "command": "v2ex.login",
+          "when": "false"
+        },
+        {
+          "command": "v2ex-main.search",
+          "when": "false"
+        },
+        {
+          "command": "v2ex-main.settings",
+          "when": "false"
+        },
+        {
+          "command": "v2ex-main.refresh",
+          "when": "false"
+        }
+      ],
       "view/title": [
         {
           "command": "v2ex-main.refresh",
