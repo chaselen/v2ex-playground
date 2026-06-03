@@ -350,8 +350,7 @@ export class V2exClient {
 
     const accountBox = $('#Rightbar > .box').has('#member-activity').first()
     const avatar = accountBox.find('td[width="48"] img.avatar').first()
-    const activityStyle =
-      accountBox.find('#member-activity .member-activity-done').attr('style') || ''
+    const activityHtml = accountBox.find('#member-activity').html() || ''
 
     overview.avatar = avatar.attr('src') || ''
     overview.username =
@@ -365,7 +364,25 @@ export class V2exClient {
     overview.specialFollowingCount = Number(
       accountBox.find('a[href="/my/following"] .bigger').first().text().trim() || 0
     )
-    overview.activityPercent = Number(activityStyle.match(/width\s*:\s*([\d.]+)%/)?.[1] || 0)
+    /*
+    V2EX 的活跃度条在不同状态下会使用不同的内部元素类名：
+
+    已满时：
+    <div id="member-activity">
+      <div class="member-activity-done" style="width: 100%;"></div>
+    </div>
+
+    未满时：
+    <div id="member-activity">
+      <div class="member-activity-bar">
+        <div class="member-activity-start" style="width: 18%;"></div>
+      </div>
+    </div>
+
+    因此这里直接从 #member-activity 的内部 HTML 中匹配 width，避免后续站点调整
+    活跃度内部类名或嵌套层级时导致解析遗漏
+    */
+    overview.activityPercent = Number(activityHtml.match(/width\s*:\s*([\d.]+)%/)?.[1] || 0)
 
     const unreadText = $('#Rightbar a[href="/notifications"]').first().text().trim()
     overview.unreadNoticeCount = Number(unreadText.match(/(\d+)\s*未读提醒/)?.[1] || 0)
