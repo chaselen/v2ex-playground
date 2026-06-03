@@ -78,6 +78,10 @@ export interface TopicDetail {
   collectParamT: string | null
   /** 回复总条数 */
   replyCount: number
+  /** 当前回复页码 */
+  replyCurrentPage: number
+  /** 回复总页数 */
+  replyTotalPage: number
   /** 回复 */
   replies: TopicReply[]
 }

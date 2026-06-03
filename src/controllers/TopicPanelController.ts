@@ -61,6 +61,8 @@ export class TopicPanelController {
     canThank: true,
     collectParamT: null,
     replyCount: 0,
+    replyCurrentPage: 1,
+    replyTotalPage: 1,
     replies: []
   }
 
@@ -209,6 +211,7 @@ export class TopicPanelController {
     this.rpc.handle('thank', () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)))
     this.rpc.handle('postReply', msg => this.handlePostReply(msg))
     this.rpc.handle('thankReply', msg => this.handleThankReply(msg))
+    this.rpc.handle('loadReplyPage', msg => this.handleLoadReplyPage(msg))
   }
 
   /**
@@ -231,7 +234,7 @@ export class TopicPanelController {
       })
     }
 
-    const detail = await G.V2ex.getTopicDetail(this.topicId)
+    const detail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
     this.detail = detail
     this.panel.title = fmtPanelTitle(detail.title)
     this.render(detail)
@@ -313,6 +316,21 @@ export class TopicPanelController {
     reply.thanked = true
     reply.thanks++
     this.render(this.detail)
+  }
+
+  /**
+   * 处理回复翻页
+   * @param message 页面消息
+   */
+  private async handleLoadReplyPage(message: TopicPanelMessage) {
+    const replyPage = Number(message.replyPage)
+    if (!Number.isFinite(replyPage)) {
+      return
+    }
+
+    const detail = await G.V2ex.getTopicDetail(this.topicId, replyPage)
+    this.detail = detail
+    this.render(detail)
   }
 }
 

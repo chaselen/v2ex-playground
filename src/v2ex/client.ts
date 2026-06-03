@@ -379,27 +379,20 @@ export class V2exClient {
   /**
    * 获取话题详情内容
    * @param topicId 话题id
+   * @param page 回复页码
    */
-  async getTopicDetail(topicId: number): Promise<TopicDetail> {
-    const res = await this.http.get<string>(`/t/${topicId}?p=1`)
+  async getTopicDetail(topicId: number, page = 1): Promise<TopicDetail> {
+    const replyPage = this.normalizePage(page)
+    const res = await this.http.get<string>(`/t/${topicId}?p=${replyPage}`)
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
     this.updateAccountOverviewFromHtml($)
     const topic = this.parseTopicMeta($, topicId)
     topic.replies = this.parseReplies($)
+    topic.replyTotalPage = this.parsePagerTotalPage($)
+    topic.replyCurrentPage = Math.min(replyPage, topic.replyTotalPage)
 
-    const pager = this.findReplyPager($)
-    if (pager) {
-      const replies = await this.fetchAllReplies(topicId, pager.totalPage)
-      topic.replies.push(...replies)
-      /*
-       * 有时候会出现统计的回复数与实际获取到的回复数量不一致的问题，修正一下回复数量
-       */
-      if (topic.replies.length > topic.replyCount) {
-        topic.replyCount = topic.replies.length
-      }
-    }
     return topic
   }
 
@@ -617,6 +610,8 @@ export class V2exClient {
       canThank: true,
       collectParamT: null,
       replyCount: 0,
+      replyCurrentPage: 1,
+      replyTotalPage: 1,
       replies: []
     }
     const node = $('.header a[href^=/go/]')
@@ -657,9 +652,17 @@ export class V2exClient {
       topicBoxIndex = 2
     }
     const topicBox = boxes.eq(topicBoxIndex)
-    topic.replyCount =
-      parseInt(topicBox.children('div.cell').eq(0).find('span.gray').text().split('•')[0]) || 0
+    topic.replyCount = this.parseReplyCount(topicBox)
     return topic
+  }
+
+  /**
+   * 解析回复总数
+   * @param topicBox 回复列表外层容器
+   */
+  private parseReplyCount(topicBox: cheerio.Cheerio<AnyNode>): number {
+    const headerText = topicBox.children('div.cell').first().find('span.gray').first().text()
+    return Number(headerText.match(/(\d+)\s*条回复/)?.[1] || 0)
   }
 
   /**
@@ -690,42 +693,15 @@ export class V2exClient {
   }
 
   /**
-   * 查找回复分页器
-   * @param $ cheerio 实例
+   * 归一化页码
+   * @param page 原始页码
    */
-  private findReplyPager($: cheerio.CheerioAPI): { totalPage: number } | null {
-    let topicBoxIndex = 1
-    const boxes = $('#Main > .box')
-    if (boxes.eq(1).attr('id') === 'topic-tip-box') {
-      topicBoxIndex = 2
+  private normalizePage(page?: number): number {
+    if (!Number.isFinite(page)) {
+      return 1
     }
-    const topicBox = boxes.eq(topicBoxIndex)
-    const pager = topicBox.find('.cell:not([id]) table')
-    if (!pager.length) return null
-    const totalPage = parseInt(pager.find('td').eq(0).children('a').last().text())
-    return { totalPage }
-  }
 
-  /**
-   * 获取所有分页回复
-   * @param topicId 话题id
-   * @param totalPage 总页数
-   */
-  private async fetchAllReplies(topicId: number, totalPage: number): Promise<TopicReply[]> {
-    const replies: TopicReply[] = []
-    const promises = Array.from({ length: totalPage - 1 }, (_, i) =>
-      this.http.get<string>(`/t/${topicId}?p=${i + 2}`)
-    )
-    try {
-      const resList = await Promise.all(promises)
-      resList.forEach(res => {
-        const $ = cheerio.load(res.data)
-        replies.push(...this.parseReplies($))
-      })
-    } catch (error) {
-      console.error('获取分页回复失败', error)
-    }
-    return replies
+    return Math.max(1, Math.floor(Number(page)))
   }
 
   /**

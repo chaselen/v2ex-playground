@@ -260,6 +260,28 @@ $panel-border: var(--v2ex-border);
   font-size: 16px;
 }
 
+.reply-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reply-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  row-gap: 8px;
+}
+
+.reply-pagination--top {
+  margin: 0 0 8px;
+}
+
+.reply-pagination--bottom {
+  margin-top: 14px;
+}
+
 .topic-toolbar {
   display: flex;
   align-items: center;

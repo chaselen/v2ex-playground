@@ -3,6 +3,7 @@ import {
   Banner,
   Button,
   Divider,
+  Pagination,
   Popconfirm,
   Spin,
   TextArea,
@@ -15,7 +16,7 @@ import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
 import type { TopicPanelViewState } from '../../../src/shared/webview'
 
 /** 话题请求命令 */
-type TopicRequestCommand = 'collect' | 'cancelCollect' | 'thank' | 'postReply'
+type TopicRequestCommand = 'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'loadReplyPage'
 
 /**
  * 话题页面应用
@@ -35,6 +36,7 @@ export default function TopicApp() {
   const [cancelingCollect, setCancelingCollect] = useState(false)
   const [thankingTopic, setThankingTopic] = useState(false)
   const [postingReply, setPostingReply] = useState(false)
+  const [loadingReplyPage, setLoadingReplyPage] = useState(false)
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const topic = state.topic
   const showImages = state.showImages !== false
@@ -132,6 +134,20 @@ export default function TopicApp() {
     requestAnimationFrame(() => {
       const textarea = document.querySelector<HTMLTextAreaElement>('.post-reply textarea')
       textarea?.focus()
+    })
+  }
+
+  /**
+   * 加载回复页
+   * @param replyPage 回复页码
+   */
+  async function loadReplyPage(replyPage: number) {
+    if (!topic || replyPage === topic.replyCurrentPage) {
+      return
+    }
+
+    await requestTopicAction('loadReplyPage', setLoadingReplyPage, { replyPage }, () => {
+      document.querySelector('.reply')?.scrollIntoView({ block: 'start' })
     })
   }
 
@@ -315,7 +331,24 @@ export default function TopicApp() {
           <Divider className="topic-divider topic-divider--reply-start" />
 
           <section className="reply">
-            {topic.replies.length ? <h2>共 {topic.replyCount} 条回复</h2> : <h2>暂无回复</h2>}
+            <div className="reply-heading">
+              {topic.replies.length ? <h2>共 {topic.replyCount} 条回复</h2> : <h2>暂无回复</h2>}
+              {loadingReplyPage && <Spin size="small" />}
+            </div>
+
+            {topic.replyTotalPage > 1 && (
+              <Pagination
+                className="reply-pagination reply-pagination--top"
+                currentPage={topic.replyCurrentPage}
+                disabled={loadingReplyPage}
+                hideOnSinglePage
+                pageSize={1}
+                showQuickJumper
+                showTotal
+                total={topic.replyTotalPage}
+                onPageChange={loadReplyPage}
+              />
+            )}
 
             {topic.replies.map(reply => (
               <div key={reply.replyId} className="reply-item">
@@ -378,6 +411,20 @@ export default function TopicApp() {
                 />
               </div>
             ))}
+
+            {topic.replyTotalPage > 1 && (
+              <Pagination
+                className="reply-pagination reply-pagination--bottom"
+                currentPage={topic.replyCurrentPage}
+                disabled={loadingReplyPage}
+                hideOnSinglePage
+                pageSize={1}
+                showQuickJumper
+                showTotal
+                total={topic.replyTotalPage}
+                onPageChange={loadReplyPage}
+              />
+            )}
           </section>
 
           {state.canOperate ? (

@@ -77,6 +77,10 @@ function expectTopicDetail(detail: TopicDetail) {
   expect(detail.collectCount).toEqual(expect.any(Number))
   expect(detail.thankCount).toEqual(expect.any(Number))
   expect(detail.replyCount).toEqual(expect.any(Number))
+  expect(detail.replyCurrentPage).toEqual(expect.any(Number))
+  expect(detail.replyCurrentPage).toBeGreaterThanOrEqual(1)
+  expect(detail.replyTotalPage).toEqual(expect.any(Number))
+  expect(detail.replyTotalPage).toBeGreaterThanOrEqual(1)
   expect(Array.isArray(detail.replies)).toBe(true)
 }
 
@@ -179,6 +183,7 @@ describe('V2exClient real requests', () => {
     expect(detail.content).toContain('V2EX Playground')
     expect(detail.replyCount).toBeGreaterThanOrEqual(42)
     expect(detail.replies.length).toBeGreaterThanOrEqual(42)
+    expect(detail.replyCurrentPage).toBe(1)
     expect(detail.replies[0]).toMatchObject({
       replyId: '9452335',
       userName: 'polaa',

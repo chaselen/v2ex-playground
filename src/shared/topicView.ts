@@ -16,6 +16,8 @@ export interface TopicPanelMessage {
   content?: string
   /** 回复 id */
   replyId?: string
+  /** 回复页码 */
+  replyPage?: number
 }
 
 /**
@@ -52,6 +54,7 @@ export interface TopicPanelRpcCommands {
   thank: WebviewRpcDefinition<object, void>
   postReply: WebviewRpcDefinition<{ content: string }, void>
   thankReply: WebviewRpcDefinition<{ replyId: string }, void>
+  loadReplyPage: WebviewRpcDefinition<{ replyPage: number }, void>
 }
 
 /**
@@ -77,4 +80,7 @@ export type WebviewRequestRpcCommands = Pick<
   | 'addNode'
   | 'removeNode'
 > &
-  Pick<TopicPanelRpcCommands, 'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'thankReply'>
+  Pick<
+    TopicPanelRpcCommands,
+    'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'thankReply' | 'loadReplyPage'
+  >
