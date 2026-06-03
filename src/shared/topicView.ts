@@ -69,6 +69,12 @@ export interface TopicPanelWebviewEvents {
  */
 export type WebviewRequestRpcCommands = Pick<
   MainViewRpcCommands,
-  'ready' | 'expandNode' | 'refreshNode' | 'getMyTopics' | 'addNode' | 'removeNode'
+  | 'ready'
+  | 'expandNode'
+  | 'refreshNode'
+  | 'getMyTopics'
+  | 'getMyNotifications'
+  | 'addNode'
+  | 'removeNode'
 > &
   Pick<TopicPanelRpcCommands, 'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'thankReply'>

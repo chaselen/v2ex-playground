@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { Avatar, Badge, Button, Empty, Pagination, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconHelpCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
@@ -8,10 +8,13 @@ import LoginPrompt from './LoginPrompt'
 import TopicRow from './TopicRow'
 import type {
   MyContentTabKey,
+  MyNotificationListData,
   MyTopicListData,
   WebviewAccountOverview,
+  WebviewNotification,
   WebviewTopic
 } from '../../../src/shared/webview'
+import { normalizeHtml } from '../shared/topicContent'
 
 interface MyAccountPanelProps {
   /** 是否加载中 */
@@ -60,6 +63,24 @@ interface MyTopicListState {
 /** 我的主题列表状态映射 */
 type MyTopicListsState = Record<MyContentTopicTabKey, MyTopicListState>
 
+/** 我的消息列表状态 */
+interface MyNotificationListState {
+  /** 是否加载中 */
+  loading: boolean
+  /** 是否已加载 */
+  loaded: boolean
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
+  /** 消息总数 */
+  totalCount: number
+  /** 消息列表 */
+  notifications: WebviewNotification[]
+  /** 错误文案 */
+  error: string | null
+}
+
 /** 创建我的主题列表状态 */
 function createMyTopicListState(): MyTopicListState {
   return {
@@ -68,6 +89,19 @@ function createMyTopicListState(): MyTopicListState {
     page: 1,
     totalPage: 1,
     topics: [],
+    error: null
+  }
+}
+
+/** 创建我的消息列表状态 */
+function createMyNotificationListState(): MyNotificationListState {
+  return {
+    loading: false,
+    loaded: false,
+    page: 1,
+    totalPage: 1,
+    totalCount: 0,
+    notifications: [],
     error: null
   }
 }
@@ -91,9 +125,19 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     topicCollection: createMyTopicListState(),
     specialFollowing: createMyTopicListState()
   })
+  const [notificationList, setNotificationList] = useState<MyNotificationListState>(
+    createMyNotificationListState
+  )
 
   useEffect(() => {
-    if (!loggedIn || activeContentTab === 'messages') {
+    if (!loggedIn) {
+      return
+    }
+
+    if (activeContentTab === 'messages') {
+      if (!notificationList.loaded && !notificationList.loading) {
+        loadMyNotifications(1)
+      }
       return
     }
 
@@ -103,7 +147,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     }
 
     loadMyTopics(activeContentTab, 1)
-  }, [activeContentTab, loggedIn])
+  }, [activeContentTab, loggedIn, notificationList.loaded, notificationList.loading])
 
   /**
    * 加载我的主题列表
@@ -155,6 +199,46 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
   }
 
   /**
+   * 加载我的消息列表
+   * @param page 页码
+   */
+  async function loadMyNotifications(page: number) {
+    setNotificationList(current => ({
+      ...current,
+      loading: true,
+      error: null
+    }))
+
+    try {
+      const data = await requestVsCodeMessage('getMyNotifications', { page })
+      onMyNotificationsLoaded(data)
+    } catch (err) {
+      setNotificationList(current => ({
+        ...current,
+        loading: false,
+        loaded: true,
+        error: (err as Error).message
+      }))
+    }
+  }
+
+  /**
+   * 处理我的消息列表加载结果
+   * @param data 我的消息列表数据
+   */
+  function onMyNotificationsLoaded(data: MyNotificationListData) {
+    setNotificationList({
+      loading: false,
+      loaded: true,
+      page: data.page || 1,
+      totalPage: data.totalPage || 1,
+      totalCount: data.totalCount || 0,
+      notifications: data.notifications || [],
+      error: null
+    })
+  }
+
+  /**
    * 打开统计项
    * @param target 统计目标
    */
@@ -188,6 +272,82 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
         title={topic.title}
         replies={topic.replies}
       />
+    )
+  }
+
+  /**
+   * 处理消息内容链接点击
+   * @param event 鼠标事件
+   * @param notification 提醒消息
+   */
+  function handleNotificationClick(
+    event: MouseEvent<HTMLDivElement>,
+    notification: WebviewNotification
+  ) {
+    const target = event.target instanceof Element ? event.target : null
+    const anchor = target?.closest('a')
+
+    if (!anchor) {
+      return
+    }
+
+    event.preventDefault()
+    const href = anchor.getAttribute('href') || ''
+
+    if (anchor.classList.contains('topic-link') && notification.topicId) {
+      postVsCodeMessage('openTopic', {
+        topicId: notification.topicId,
+        title: notification.topicTitle || anchor.textContent || ''
+      })
+      return
+    }
+
+    if (href) {
+      openExternal(href)
+    }
+  }
+
+  /**
+   * 渲染消息行
+   * @param notification 提醒消息
+   */
+  function renderNotificationItem(notification: WebviewNotification) {
+    return (
+      <div className="my-notification-item" key={notification.id}>
+        <button
+          type="button"
+          className="my-link my-notification-avatar-link"
+          title={notification.username}
+          onClick={() =>
+            openExternal(notification.memberPath || `/member/${notification.username}`)
+          }
+        >
+          <Avatar
+            size="extra-extra-small"
+            shape="square"
+            src={notification.avatar}
+            alt={notification.username}
+            className="my-notification-avatar"
+          >
+            <IconUser />
+          </Avatar>
+        </button>
+        <div
+          className="my-notification-body"
+          onClick={event => handleNotificationClick(event, notification)}
+        >
+          <div className="my-notification-meta">
+            <span dangerouslySetInnerHTML={{ __html: normalizeHtml(notification.summaryHtml) }} />
+            {!!notification.time && <time>{notification.time}</time>}
+          </div>
+          {!!notification.payloadHtml && (
+            <div
+              className="my-notification-payload"
+              dangerouslySetInnerHTML={{ __html: normalizeHtml(notification.payloadHtml) }}
+            />
+          )}
+        </div>
+      </div>
     )
   }
 
@@ -260,22 +420,69 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     )
   }
 
-  /**
-   * 渲染消息占位内容
-   */
   function renderMessages() {
+    const state = notificationList
+
+    if (state.loading && !state.loaded) {
+      return (
+        <div className="my-content-state">
+          <Spin size="middle" />
+        </div>
+      )
+    }
+
+    if (state.error) {
+      return (
+        <div className="my-content-state">
+          <Empty
+            title="加载失败"
+            description={state.error}
+            image={<IllustrationNoContent className="empty-illustration" />}
+            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+          />
+          <Button size="small" onClick={() => loadMyNotifications(state.page)}>
+            重试
+          </Button>
+        </div>
+      )
+    }
+
+    if (!state.notifications.length) {
+      return (
+        <div className="my-content-state">
+          <Empty
+            title="暂无消息"
+            image={<IllustrationNoContent className="empty-illustration" />}
+            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+          />
+        </div>
+      )
+    }
+
     return (
-      <div className="my-content-state">
-        <Empty
-          title="消息列表稍后接入"
-          description="当前可先在浏览器中查看 V2EX 提醒"
-          image={<IllustrationNoContent className="empty-illustration" />}
-          darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
-        />
-        <Button size="small" onClick={() => openExternal('/notifications')}>
-          打开提醒
-        </Button>
-      </div>
+      <>
+        <div className="my-notification-list">
+          {state.notifications.map(renderNotificationItem)}
+        </div>
+        {state.totalPage > 1 && (
+          <div className="my-content-pagination">
+            <Pagination
+              size="small"
+              pageSize={1}
+              total={state.totalPage}
+              currentPage={state.page}
+              disabled={state.loading}
+              hoverShowPageSelect
+              onPageChange={page => {
+                if (page !== state.page) {
+                  loadMyNotifications(page)
+                }
+              }}
+            />
+            <span>{`第 ${state.page} / ${state.totalPage} 页，共 ${state.totalCount} 条`}</span>
+          </div>
+        )}
+      </>
     )
   }
 

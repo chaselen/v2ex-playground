@@ -3,7 +3,7 @@ import path from 'path'
 import { EOL } from 'os'
 import autoDailySignIn from '@/commands/dailySignIn'
 import G from '@/global'
-import { LoginRequiredError, Node, Topic } from '@/v2ex'
+import { LoginRequiredError, Node, Topic, V2exNotification } from '@/v2ex'
 import { TopicPanelInput } from '@/controllers/TopicPanelController'
 import topicItemClick from '@/commands/topicItemClick'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
@@ -16,9 +16,11 @@ import {
   MainViewRpcCommands,
   MainViewWebviewEvents,
   MyContentTabKey,
+  MyNotificationListData,
   MyTopicListData,
   WebviewAccountOverview,
   NodeChildrenData,
+  WebviewNotification,
   WebviewNode,
   WebviewTopic
 } from '@/shared/webview'
@@ -77,6 +79,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.nodeId, msg.page))
     rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId, msg.page))
     rpc.handle('getMyTopics', msg => this._handleGetMyTopics(msg.tab, msg.page))
+    rpc.handle('getMyNotifications', msg => this._handleGetMyNotifications(msg.page))
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
     rpc.handle('openTopic', msg => this._openTopic(msg.topicId, msg.title))
@@ -280,6 +283,29 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       totalPage: Math.max(result.totalPage || 1, 1),
       topics: result.list.map(topic => this._toWebviewTopic(topic))
     }
+  }
+
+  /**
+   * 获取我的提醒消息列表
+   * @param page 页码
+   */
+  private async _handleGetMyNotifications(page = 1): Promise<MyNotificationListData> {
+    const result = await G.V2ex.getNotifications(page)
+
+    return {
+      page,
+      totalPage: Math.max(result.totalPage || 1, 1),
+      totalCount: result.totalCount,
+      notifications: result.list.map(notification => this._toWebviewNotification(notification))
+    }
+  }
+
+  /**
+   * 转换 Webview 提醒消息数据
+   * @param notification 领域提醒消息
+   */
+  private _toWebviewNotification(notification: V2exNotification): WebviewNotification {
+    return notification
   }
 
   /**

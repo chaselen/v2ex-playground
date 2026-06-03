@@ -144,6 +144,32 @@ export interface AccountOverview {
 }
 
 /**
+ * 提醒消息
+ */
+export interface V2exNotification {
+  /** 提醒 id */
+  id: number
+  /** 用户头像 */
+  avatar: string
+  /** 用户名 */
+  username: string
+  /** 用户主页路径 */
+  memberPath: string
+  /** 提醒摘要 HTML */
+  summaryHtml: string
+  /** 话题 id */
+  topicId?: number
+  /** 话题标题 */
+  topicTitle?: string
+  /** 话题路径 */
+  topicPath?: string
+  /** 展示时间 */
+  time: string
+  /** 消息正文 HTML */
+  payloadHtml: string
+}
+
+/**
  * sov2ex搜索结果的source字段
  */
 export interface SoV2exSource {

@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vitest'
 import { V2exClient } from './client'
-import type { AccountOverview, Node, SoV2exSource, Topic, TopicDetail } from './types'
+import type {
+  AccountOverview,
+  Node,
+  SoV2exSource,
+  Topic,
+  TopicDetail,
+  V2exNotification
+} from './types'
 
 const v2exCookie = process.env.V2EX_COOKIE
 
@@ -96,6 +103,21 @@ function expectAccountOverview(overview: AccountOverview) {
   expect(overview.gold).toBeGreaterThanOrEqual(0)
   expect(overview.silver).toBeGreaterThanOrEqual(0)
   expect(overview.bronze).toBeGreaterThanOrEqual(0)
+}
+
+/**
+ * 校验提醒消息
+ * @param notification 提醒消息
+ */
+function expectNotification(notification: V2exNotification) {
+  expect(notification.id).toEqual(expect.any(Number))
+  expect(notification.id).toBeGreaterThan(0)
+  expect(notification.avatar).toEqual(expect.any(String))
+  expect(notification.username).toEqual(expect.any(String))
+  expect(notification.memberPath).toEqual(expect.any(String))
+  expect(notification.summaryHtml).toEqual(expect.any(String))
+  expect(notification.time).toEqual(expect.any(String))
+  expect(notification.payloadHtml).toEqual(expect.any(String))
 }
 
 /**
@@ -210,5 +232,18 @@ describe('V2exClient real requests', () => {
     const result = await client.getSpecialFollowingTopics()
 
     expectTopicListResult(result)
+  })
+
+  authTest('gets notifications with V2EX_COOKIE', async () => {
+    const result = await client.getNotifications()
+
+    expect(result.totalPage).toEqual(expect.any(Number))
+    expect(result.totalPage).toBeGreaterThanOrEqual(1)
+    expect(result.totalCount).toEqual(expect.any(Number))
+    expect(result.totalCount).toBeGreaterThanOrEqual(0)
+    expect(Array.isArray(result.list)).toBe(true)
+    if (result.list.length) {
+      expectNotification(result.list[0])
+    }
   })
 })

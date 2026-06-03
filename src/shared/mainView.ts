@@ -64,6 +64,32 @@ export interface WebviewAccountOverview {
   bronze: number
 }
 
+/**
+ * Webview 提醒消息项
+ */
+export interface WebviewNotification {
+  /** 提醒 id */
+  id: number
+  /** 用户头像 */
+  avatar: string
+  /** 用户名 */
+  username: string
+  /** 用户主页路径 */
+  memberPath: string
+  /** 提醒摘要 HTML */
+  summaryHtml: string
+  /** 话题 id */
+  topicId?: number
+  /** 话题标题 */
+  topicTitle?: string
+  /** 话题路径 */
+  topicPath?: string
+  /** 展示时间 */
+  time: string
+  /** 消息正文 HTML */
+  payloadHtml: string
+}
+
 /** 主面板标签 key */
 export type MainTabKey = 'explore' | 'custom' | 'collection'
 
@@ -116,6 +142,20 @@ export interface MyTopicListData {
 }
 
 /**
+ * 我的消息列表数据
+ */
+export interface MyNotificationListData {
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
+  /** 消息总数 */
+  totalCount: number
+  /** 消息列表 */
+  notifications: WebviewNotification[]
+}
+
+/**
  * 自定义节点更新数据
  */
 export interface CustomNodesUpdatedData {
@@ -141,6 +181,7 @@ export interface MainViewRpcCommands {
     { tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>; page?: number },
     MyTopicListData
   >
+  getMyNotifications: WebviewRpcDefinition<{ page?: number }, MyNotificationListData>
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
   removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>

@@ -766,6 +766,96 @@
   }
 }
 
+.my-notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.my-notification-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 6px;
+  border-radius: 6px;
+  color: var(--v2ex-main-content-fg);
+
+  &:hover {
+    background: var(--v2ex-hover-bg);
+  }
+}
+
+.my-notification-avatar-link {
+  align-self: start;
+  width: 28px;
+  height: 28px;
+}
+
+.my-notification-avatar {
+  width: 24px;
+  height: 24px;
+}
+
+.my-notification-body {
+  min-width: 0;
+}
+
+.my-notification-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  line-height: 1.5;
+
+  strong {
+    color: var(--v2ex-main-content-fg);
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--vscode-textLink-foreground, var(--v2ex-link-fg));
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  a:hover {
+    color: var(--vscode-textLink-activeForeground, var(--v2ex-hover-fg));
+    text-decoration: underline;
+  }
+
+  time {
+    flex: none;
+    color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+    font-size: 11px;
+  }
+}
+
+.my-notification-payload {
+  min-width: 0;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--v2ex-widget-bg);
+  color: var(--v2ex-main-content-fg);
+  line-height: 1.55;
+  word-break: break-word;
+
+  a {
+    color: var(--vscode-textLink-foreground, var(--v2ex-link-fg));
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  a:hover {
+    color: var(--vscode-textLink-activeForeground, var(--v2ex-hover-fg));
+    text-decoration: underline;
+  }
+}
+
 .my-content-state {
   display: flex;
   flex-direction: column;

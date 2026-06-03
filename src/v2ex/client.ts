@@ -15,7 +15,8 @@ import {
   TopicReply,
   SoV2exSort,
   SoV2exSource,
-  AccountOverview
+  AccountOverview,
+  V2exNotification
 } from './types'
 
 /** V2EX 请求超时时间 */
@@ -158,16 +159,16 @@ export class V2exClient {
     const cells = $('#Main > .box').last().children('.cell.item')
 
     return {
-      totalPage: this.parseTopicListTotalPage($),
+      totalPage: this.parsePagerTotalPage($),
       list: this.parseTopicListCells($, cells)
     }
   }
 
   /**
-   * 解析话题列表分页总页数
+   * 解析通用分页组件总页数
    * @param $ cheerio 实例
    */
-  private parseTopicListTotalPage($: cheerio.CheerioAPI): number {
+  private parsePagerTotalPage($: cheerio.CheerioAPI): number {
     const pageNumbers = $('.ps_container a.page_current, .ps_container a.page_normal')
       .map((_, element) => Number($(element).text().trim()) || 0)
       .get()
@@ -276,7 +277,7 @@ export class V2exClient {
     const nodeTitle = $('.node-breadcrumb').text().split('›')[1].trim()
     const cells = $('#TopicsNode .cell[class*="t_"]')
     return {
-      totalPage: this.parseTopicListTotalPage($),
+      totalPage: this.parsePagerTotalPage($),
       list: this.parseTopicListCells($, cells, {
         name: nodeName,
         title: nodeTitle
@@ -300,6 +301,56 @@ export class V2exClient {
    */
   async getSpecialFollowingTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
     return this.getMyTopicList('/my/following', page)
+  }
+
+  /**
+   * 获取提醒消息列表
+   * @param page 页码
+   * @example https://www.v2ex.com/notifications?p=2
+   */
+  async getNotifications(
+    page = 1
+  ): Promise<{ totalPage: number; totalCount: number; list: V2exNotification[] }> {
+    const res = await this.http.get<string>(`/notifications?p=${page}`)
+    this.checkRedirect(res)
+
+    const $ = cheerio.load(res.data)
+    const totalCount = Number($('.header .fr strong.gray').first().text().trim() || 0)
+    const list: V2exNotification[] = []
+
+    $('#notifications > .cell[id^="n_"]').each((_, element) => {
+      const cell = $(element)
+      const avatar = cell.find('img.avatar').first()
+      const member = cell.find('a[href^="/member/"]').first()
+      const summary = cell.find('span.fade').first()
+      const topic = summary.find('a.topic-link').first()
+      const topicPath = topic.attr('href') || ''
+      const topicId = topicPath ? this.getTopicIdByLink(topicPath) : undefined
+      const id = Number((cell.attr('id') || '').replace(/^n_/, '')) || 0
+
+      if (!id) {
+        return
+      }
+
+      list.push({
+        id,
+        avatar: avatar.attr('src') || '',
+        username: member.text().trim() || avatar.attr('alt') || '',
+        memberPath: member.attr('href') || '',
+        summaryHtml: summary.html()?.trim() || '',
+        topicId,
+        topicTitle: topic.text().trim() || undefined,
+        topicPath: topicPath || undefined,
+        time: cell.find('span.snow').first().text().trim(),
+        payloadHtml: cell.find('.payload').first().html()?.trim() || ''
+      })
+    })
+
+    return {
+      totalPage: this.parsePagerTotalPage($),
+      totalCount,
+      list
+    }
   }
 
   /**
