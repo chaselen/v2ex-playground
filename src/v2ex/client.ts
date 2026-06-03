@@ -200,7 +200,8 @@ export class V2exClient {
 
       const nodeElement = $(cell).find('a.node')
       const nodeHref = nodeElement.attr('href') || ''
-      const countLivid = $(cell).find('.count_livid')
+      // 在/my/topics页面中，自己的帖子回复数元素名为.count_orange
+      const countElement = $(cell).find('.count_livid, .count_orange')
 
       list.push({
         id: topicId,
@@ -209,7 +210,7 @@ export class V2exClient {
           name: fallbackNode?.name || nodeHref.split('go/')[1] || '',
           title: fallbackNode?.title || nodeElement.text().trim()
         },
-        replies: Number(countLivid.text().trim()) || 0
+        replies: Number(countElement.text().trim()) || 0
       })
     })
 

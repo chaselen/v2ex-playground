@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
-import { Badge, Button, Dropdown, Empty, Pagination, Spin, Tree } from '@douyinfe/semi-ui'
+import { Button, Empty, Pagination, Spin, Tree } from '@douyinfe/semi-ui'
 import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import { postVsCodeMessage } from '../shared/vscode'
 import LoginPrompt from './LoginPrompt'
-import type { MainTabKey, NodeItem, ContextMenuAction, TreeItem } from './types'
+import TopicRow from './TopicRow'
+import type { MainTabKey, NodeItem, TreeItem } from './types'
 
 interface NodeTreeProps {
   tab: MainTabKey
@@ -19,20 +20,6 @@ interface NodeTreeProps {
   onRefreshNode: (tab: MainTabKey, nodeId: string) => void
   onPageChange: (tab: MainTabKey, nodeId: string, page: number) => void
   onRemoveNode: (nodeId: string) => void
-}
-
-/** 右键菜单项 */
-const contextMenuItems: Array<{ action: ContextMenuAction; label: string }> = [
-  { action: 'copyLink', label: '复制链接' },
-  { action: 'copyTitleLink', label: '复制标题和链接' },
-  { action: 'viewInBrowser', label: '在浏览器中打开' }
-]
-
-/** 右键菜单命令映射 */
-const contextMenuCommands: Record<ContextMenuAction, string> = {
-  copyLink: 'ctxCopyLink',
-  copyTitleLink: 'ctxCopyTitleLink',
-  viewInBrowser: 'ctxViewInBrowser'
 }
 
 /** 主面板空状态文案 */
@@ -218,17 +205,6 @@ export default function NodeTree(props: NodeTreeProps) {
   }, [nodes, selectedTopicKey, tab])
 
   /**
-   * 打开话题
-   * @param data 树项
-   */
-  function openTopic(data: TreeItem) {
-    if (!data.topicId) {
-      return
-    }
-    postVsCodeMessage('openTopic', { topicId: data.topicId, title: data.title || data.label })
-  }
-
-  /**
    * 刷新节点
    * @param data 树项
    */
@@ -248,22 +224,6 @@ export default function NodeTree(props: NodeTreeProps) {
       return
     }
     onRemoveNode(data.nodeId)
-  }
-
-  /**
-   * 发送右键菜单命令
-   * @param action 菜单动作
-   * @param data 树项
-   */
-  function postContextMenuCommand(action: ContextMenuAction, data: TreeItem) {
-    if (!data.topicId) {
-      return
-    }
-
-    postVsCodeMessage(contextMenuCommands[action], {
-      topicId: data.topicId,
-      label: data.title || data.label
-    })
   }
 
   /**
@@ -313,37 +273,8 @@ export default function NodeTree(props: NodeTreeProps) {
    */
   function renderTopicRow(data: TreeItem) {
     const topicTitle = data.title || data.label
-    const menu = (
-      <Dropdown.Menu>
-        {contextMenuItems.map(item => (
-          <Dropdown.Item
-            key={item.action}
-            onClick={() => postContextMenuCommand(item.action, data)}
-          >
-            {item.label}
-          </Dropdown.Item>
-        ))}
-      </Dropdown.Menu>
-    )
 
-    return (
-      <Dropdown trigger="contextMenu" position="bottomLeft" clickToHide render={menu}>
-        <div className="topic-row" title={topicTitle}>
-          <span className="topic-title">{topicTitle}</span>
-          {!!data.replies && data.replies > 0 && (
-            <Badge
-              count={data.replies}
-              overflowCount={99}
-              countClassName="topic-badge-count"
-              countStyle={{
-                backgroundColor: 'var(--vscode-badge-background)',
-                color: 'var(--vscode-badge-foreground)'
-              }}
-            />
-          )}
-        </div>
-      </Dropdown>
-    )
+    return <TopicRow topicId={data.topicId!} title={topicTitle} replies={data.replies} />
   }
 
   /**
@@ -436,7 +367,6 @@ export default function NodeTree(props: NodeTreeProps) {
     }
 
     setSelectedTopicKey(selectedKey)
-    openTopic(data)
   }
 
   if (loading) {

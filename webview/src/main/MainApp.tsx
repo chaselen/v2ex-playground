@@ -357,7 +357,12 @@ export default function MainApp() {
           />
         </Tabs.TabPane>
         <Tabs.TabPane itemKey="my" tab="我的">
-          <MyAccountPanel loading={initializing} loggedIn={loggedIn} overview={accountOverview} />
+          <MyAccountPanel
+            loading={initializing}
+            loggedIn={loggedIn}
+            overview={accountOverview}
+            onOpenNodeCollection={() => setActiveTab('collection')}
+          />
         </Tabs.TabPane>
       </Tabs>
     </main>

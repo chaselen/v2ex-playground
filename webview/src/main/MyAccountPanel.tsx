@@ -1,10 +1,17 @@
-import { Avatar, Empty, Progress, Spin } from '@douyinfe/semi-ui'
+import { useEffect, useState } from 'react'
+import { Avatar, Badge, Button, Empty, Pagination, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconHelpCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
-import { postVsCodeMessage } from '../shared/vscode'
+import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
 import LoginPrompt from './LoginPrompt'
-import type { WebviewAccountOverview } from '../../../src/shared/webview'
+import TopicRow from './TopicRow'
+import type {
+  MyContentTabKey,
+  MyTopicListData,
+  WebviewAccountOverview,
+  WebviewTopic
+} from '../../../src/shared/webview'
 
 interface MyAccountPanelProps {
   /** 是否加载中 */
@@ -13,17 +20,57 @@ interface MyAccountPanelProps {
   loggedIn: boolean
   /** 账户概览 */
   overview?: WebviewAccountOverview
+  /** 打开节点收藏 */
+  onOpenNodeCollection: () => void
 }
 
 /** 收藏统计字段 */
 type AccountStatKey = 'nodeCollectionCount' | 'topicCollectionCount' | 'specialFollowingCount'
 
 /** 收藏统计项 */
-const statItems: Array<{ key: AccountStatKey; label: string; path: string }> = [
-  { key: 'nodeCollectionCount', label: '节点收藏', path: '/my/nodes' },
-  { key: 'topicCollectionCount', label: '主题收藏', path: '/my/topics' },
-  { key: 'specialFollowingCount', label: '特别关注', path: '/my/following' }
+const statItems: Array<{
+  key: AccountStatKey
+  label: string
+  target: 'nodes' | MyContentTopicTabKey
+}> = [
+  { key: 'nodeCollectionCount', label: '节点收藏', target: 'nodes' },
+  { key: 'topicCollectionCount', label: '主题收藏', target: 'topicCollection' },
+  { key: 'specialFollowingCount', label: '特别关注', target: 'specialFollowing' }
 ]
+
+/** 我的主题内容标签 key */
+type MyContentTopicTabKey = Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
+
+/** 我的主题列表状态 */
+interface MyTopicListState {
+  /** 是否加载中 */
+  loading: boolean
+  /** 是否已加载 */
+  loaded: boolean
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
+  /** 话题列表 */
+  topics: WebviewTopic[]
+  /** 错误文案 */
+  error: string | null
+}
+
+/** 我的主题列表状态映射 */
+type MyTopicListsState = Record<MyContentTopicTabKey, MyTopicListState>
+
+/** 创建我的主题列表状态 */
+function createMyTopicListState(): MyTopicListState {
+  return {
+    loading: false,
+    loaded: false,
+    page: 1,
+    totalPage: 1,
+    topics: [],
+    error: null
+  }
+}
 
 /**
  * 打开 V2EX 链接
@@ -38,7 +85,199 @@ function openExternal(path: string) {
  * @param props 组件参数
  */
 export default function MyAccountPanel(props: MyAccountPanelProps) {
-  const { loading, loggedIn, overview } = props
+  const { loading, loggedIn, overview, onOpenNodeCollection } = props
+  const [activeContentTab, setActiveContentTab] = useState<MyContentTabKey>('topicCollection')
+  const [topicLists, setTopicLists] = useState<MyTopicListsState>({
+    topicCollection: createMyTopicListState(),
+    specialFollowing: createMyTopicListState()
+  })
+
+  useEffect(() => {
+    if (!loggedIn || activeContentTab === 'messages') {
+      return
+    }
+
+    const state = topicLists[activeContentTab]
+    if (state.loaded || state.loading) {
+      return
+    }
+
+    loadMyTopics(activeContentTab, 1)
+  }, [activeContentTab, loggedIn])
+
+  /**
+   * 加载我的主题列表
+   * @param tab 我的主题内容标签 key
+   * @param page 页码
+   */
+  async function loadMyTopics(tab: MyContentTopicTabKey, page: number) {
+    setTopicLists(current => ({
+      ...current,
+      [tab]: {
+        ...current[tab],
+        loading: true,
+        error: null
+      }
+    }))
+
+    try {
+      const data = await requestVsCodeMessage('getMyTopics', { tab, page })
+      onMyTopicListLoaded(data)
+    } catch (err) {
+      setTopicLists(current => ({
+        ...current,
+        [tab]: {
+          ...current[tab],
+          loading: false,
+          loaded: true,
+          error: (err as Error).message
+        }
+      }))
+    }
+  }
+
+  /**
+   * 处理我的主题列表加载结果
+   * @param data 我的主题列表数据
+   */
+  function onMyTopicListLoaded(data: MyTopicListData) {
+    setTopicLists(current => ({
+      ...current,
+      [data.tab]: {
+        loading: false,
+        loaded: true,
+        page: data.page || 1,
+        totalPage: data.totalPage || 1,
+        topics: data.topics || [],
+        error: null
+      }
+    }))
+  }
+
+  /**
+   * 打开统计项
+   * @param target 统计目标
+   */
+  function openStatTarget(target: 'nodes' | MyContentTopicTabKey) {
+    if (target === 'nodes') {
+      onOpenNodeCollection()
+      return
+    }
+
+    setActiveContentTab(target)
+  }
+
+  /**
+   * 打开我的消息
+   */
+  function openMessages() {
+    setActiveContentTab('messages')
+  }
+
+  /**
+   * 渲染主题行
+   * @param topic 话题
+   */
+  function renderTopicItem(topic: WebviewTopic) {
+    return (
+      <TopicRow
+        key={topic.id}
+        topicId={topic.id}
+        as="button"
+        className="my-topic-item"
+        title={topic.title}
+        replies={topic.replies}
+      />
+    )
+  }
+
+  /**
+   * 渲染我的主题列表
+   * @param tab 我的主题内容标签 key
+   * @param emptyTitle 空状态标题
+   */
+  function renderMyTopicList(tab: MyContentTopicTabKey, emptyTitle: string) {
+    const state = topicLists[tab]
+
+    if (state.loading && !state.loaded) {
+      return (
+        <div className="my-content-state">
+          <Spin size="middle" />
+        </div>
+      )
+    }
+
+    if (state.error) {
+      return (
+        <div className="my-content-state">
+          <Empty
+            title="加载失败"
+            description={state.error}
+            image={<IllustrationNoContent className="empty-illustration" />}
+            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+          />
+          <Button size="small" onClick={() => loadMyTopics(tab, state.page)}>
+            重试
+          </Button>
+        </div>
+      )
+    }
+
+    if (!state.topics.length) {
+      return (
+        <div className="my-content-state">
+          <Empty
+            title={emptyTitle}
+            image={<IllustrationNoContent className="empty-illustration" />}
+            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <>
+        <div className="my-topic-list">{state.topics.map(renderTopicItem)}</div>
+        {state.totalPage > 1 && (
+          <div className="my-content-pagination">
+            <Pagination
+              size="small"
+              pageSize={1}
+              total={state.totalPage}
+              currentPage={state.page}
+              disabled={state.loading}
+              hoverShowPageSelect
+              onPageChange={page => {
+                if (page !== state.page) {
+                  loadMyTopics(tab, page)
+                }
+              }}
+            />
+            <span>{`第 ${state.page} / ${state.totalPage} 页`}</span>
+          </div>
+        )}
+      </>
+    )
+  }
+
+  /**
+   * 渲染消息占位内容
+   */
+  function renderMessages() {
+    return (
+      <div className="my-content-state">
+        <Empty
+          title="消息列表稍后接入"
+          description="当前可先在浏览器中查看 V2EX 提醒"
+          image={<IllustrationNoContent className="empty-illustration" />}
+          darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+        />
+        <Button size="small" onClick={() => openExternal('/notifications')}>
+          打开提醒
+        </Button>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -112,7 +351,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
                 type="button"
                 className="my-link my-stat"
                 key={item.key}
-                onClick={() => openExternal(item.path)}
+                onClick={() => openStatTarget(item.target)}
               >
                 <strong>{overview[item.key]}</strong>
                 <span>{item.label}</span>
@@ -134,11 +373,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
           </div>
 
           <footer className="my-wallet">
-            <button
-              type="button"
-              className="my-link my-notice"
-              onClick={() => openExternal('/notifications')}
-            >
+            <button type="button" className="my-link my-notice" onClick={openMessages}>
               {overview.unreadNoticeCount} 未读提醒
             </button>
             <button
@@ -164,6 +399,41 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             </button>
           </footer>
         </article>
+
+        <section className="my-content">
+          <Tabs
+            activeKey={activeContentTab}
+            type="button"
+            size="small"
+            className="my-content-tabs"
+            tabPaneMotion={false}
+            onChange={value => setActiveContentTab(value as MyContentTabKey)}
+          >
+            <Tabs.TabPane itemKey="topicCollection" tab="主题收藏">
+              {renderMyTopicList('topicCollection', '暂无收藏主题')}
+            </Tabs.TabPane>
+            <Tabs.TabPane itemKey="specialFollowing" tab="特别关注">
+              {renderMyTopicList('specialFollowing', '暂无特别关注')}
+            </Tabs.TabPane>
+            <Tabs.TabPane
+              itemKey="messages"
+              tab={
+                <span className="my-message-tab">
+                  <span>消息</span>
+                  {!!overview.unreadNoticeCount && (
+                    <Badge
+                      count={overview.unreadNoticeCount}
+                      overflowCount={99}
+                      countClassName="topic-badge-count"
+                    />
+                  )}
+                </span>
+              }
+            >
+              {renderMessages()}
+            </Tabs.TabPane>
+          </Tabs>
+        </section>
       </SimpleBar>
     </section>
   )

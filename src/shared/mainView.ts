@@ -31,6 +31,10 @@ export const EXPLORE_NODES: WebviewNode[] = [
 export interface WebviewTopic {
   id: number
   title: string
+  /** 节点名称 */
+  nodeName?: string
+  /** 节点标题 */
+  nodeTitle?: string
   replies: number
 }
 
@@ -94,6 +98,23 @@ export interface NodeChildrenData {
   error?: string
 }
 
+/** 我的内容标签 key */
+export type MyContentTabKey = 'topicCollection' | 'specialFollowing' | 'messages'
+
+/**
+ * 我的主题列表数据
+ */
+export interface MyTopicListData {
+  /** 标签 key */
+  tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
+  /** 话题列表 */
+  topics: WebviewTopic[]
+}
+
 /**
  * 自定义节点更新数据
  */
@@ -115,6 +136,10 @@ export interface MainViewRpcCommands {
   refreshNode: WebviewRpcDefinition<
     { tab: MainTabKey; nodeId: string; page?: number },
     NodeChildrenData
+  >
+  getMyTopics: WebviewRpcDefinition<
+    { tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>; page?: number },
+    MyTopicListData
   >
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
   removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>

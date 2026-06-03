@@ -15,6 +15,8 @@ import {
   MainTabKey,
   MainViewRpcCommands,
   MainViewWebviewEvents,
+  MyContentTabKey,
+  MyTopicListData,
   WebviewAccountOverview,
   NodeChildrenData,
   WebviewNode,
@@ -74,6 +76,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('refreshAll', () => this._getInitData())
     rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.nodeId, msg.page))
     rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId, msg.page))
+    rpc.handle('getMyTopics', msg => this._handleGetMyTopics(msg.tab, msg.page))
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
     rpc.handle('openTopic', msg => this._openTopic(msg.topicId, msg.title))
@@ -156,11 +159,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         totalPage = Math.max(res.totalPage || 1, 1)
       }
 
-      const children: WebviewTopic[] = topics.map(t => ({
-        id: t.id,
-        title: t.title,
-        replies: t.replies
-      }))
+      const children = topics.map(t => this._toWebviewTopic(t))
 
       // 检查登录是否有效
       G.V2ex.checkCookie()
@@ -259,6 +258,42 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     page = 1
   ): Promise<NodeChildrenData> {
     return this._handleExpandNode(tab, nodeId, page)
+  }
+
+  /**
+   * 获取我的主题内容列表
+   * @param tab 我的内容标签 key
+   * @param page 页码
+   */
+  private async _handleGetMyTopics(
+    tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>,
+    page = 1
+  ): Promise<MyTopicListData> {
+    const result =
+      tab === 'topicCollection'
+        ? await G.V2ex.getCollectionTopics(page)
+        : await G.V2ex.getSpecialFollowingTopics(page)
+
+    return {
+      tab,
+      page,
+      totalPage: Math.max(result.totalPage || 1, 1),
+      topics: result.list.map(topic => this._toWebviewTopic(topic))
+    }
+  }
+
+  /**
+   * 转换 Webview 话题数据
+   * @param topic 领域话题
+   */
+  private _toWebviewTopic(topic: Topic): WebviewTopic {
+    return {
+      id: topic.id,
+      title: topic.title,
+      nodeName: topic.node?.name,
+      nodeTitle: topic.node?.title,
+      replies: topic.replies
+    }
   }
 
   /**
