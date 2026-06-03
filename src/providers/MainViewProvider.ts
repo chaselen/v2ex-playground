@@ -181,6 +181,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     try {
       let topics: Topic[] = []
       let totalPage = 1
+      let totalCount = 0
 
       if (tab === 'explore') {
         topics = await G.V2ex.getTopicListByTab(nodeId)
@@ -188,6 +189,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         const res = await G.V2ex.getTopicListByNode(nodeId, page)
         topics = res.list
         totalPage = Math.max(res.totalPage || 1, 1)
+        totalCount = Math.max(res.totalCount || 0, 0)
       }
 
       const children = topics.map(t => this._toWebviewTopic(t))
@@ -200,6 +202,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         nodeId,
         page,
         totalPage,
+        totalCount,
         children
       }
     } catch (err) {
@@ -209,6 +212,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         nodeId,
         page,
         totalPage: 1,
+        totalCount: 0,
         children: [],
         error: (err as Error).message
       }

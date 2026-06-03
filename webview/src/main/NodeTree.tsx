@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
-import { Button, Empty, Pagination, Spin, Tree } from '@douyinfe/semi-ui'
+import { Button, Empty, Spin, Tree } from '@douyinfe/semi-ui'
 import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import { postVsCodeMessage } from '../shared/vscode'
 import LoginPrompt from './LoginPrompt'
+import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
 import type { MainTabKey, NodeItem, TreeItem } from './types'
 
@@ -97,12 +98,13 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
     ...topicItems,
     {
       key: `pagination:${tab}:${node.id}`,
-      label: `第 ${node.page} / ${node.totalPage} 页`,
+      label: '分页',
       type: 'pagination',
       tab,
       nodeId: node.id,
       page: node.page,
       totalPage: node.totalPage,
+      totalCount: node.totalCount,
       loading: node.loading,
       isLeaf: true
     }
@@ -124,6 +126,7 @@ function createNodeTreeItem(tab: MainTabKey, node: NodeItem): TreeItem {
     loading: node.loading,
     page: node.page,
     totalPage: node.totalPage,
+    totalCount: node.totalCount,
     isLeaf: false,
     children: createNodeChildren(tab, node)
   }
@@ -288,20 +291,17 @@ export default function NodeTree(props: NodeTreeProps) {
 
     return (
       <div className="node-pagination" onClick={stopTreeClick} onMouseDown={stopTreeClick}>
-        <Pagination
-          size="small"
-          pageSize={1}
-          total={data.totalPage}
+        <MainPagination
           currentPage={data.page}
+          totalPage={data.totalPage}
+          totalCount={data.totalCount}
           disabled={data.loading}
-          hoverShowPageSelect
           onPageChange={page => {
             if (page !== data.page) {
               onPageChange(tab, data.nodeId!, page)
             }
           }}
         />
-        <span className="node-page-summary">{`第 ${data.page} / ${data.totalPage} 页`}</span>
       </div>
     )
   }

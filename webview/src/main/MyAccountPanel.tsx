@@ -1,10 +1,11 @@
 import { useEffect, useState, type MouseEvent } from 'react'
-import { Avatar, Badge, Button, Empty, Pagination, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
+import { Avatar, Badge, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconHelpCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
 import LoginPrompt from './LoginPrompt'
+import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
 import type {
   MyContentTabKey,
@@ -358,6 +359,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
    */
   function renderMyTopicList(tab: MyContentTopicTabKey, emptyTitle: string) {
     const state = topicLists[tab]
+    const totalCount = tab === 'topicCollection' ? overview?.topicCollectionCount : undefined
 
     if (state.loading && !state.loaded) {
       return (
@@ -400,20 +402,17 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
         <div className="my-topic-list">{state.topics.map(renderTopicItem)}</div>
         {state.totalPage > 1 && (
           <div className="my-content-pagination">
-            <Pagination
-              size="small"
-              pageSize={1}
-              total={state.totalPage}
+            <MainPagination
               currentPage={state.page}
+              totalPage={state.totalPage}
+              totalCount={totalCount}
               disabled={state.loading}
-              hoverShowPageSelect
               onPageChange={page => {
                 if (page !== state.page) {
                   loadMyTopics(tab, page)
                 }
               }}
             />
-            <span>{`第 ${state.page} / ${state.totalPage} 页`}</span>
           </div>
         )}
       </>
@@ -466,20 +465,17 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
         </div>
         {state.totalPage > 1 && (
           <div className="my-content-pagination">
-            <Pagination
-              size="small"
-              pageSize={1}
-              total={state.totalPage}
+            <MainPagination
               currentPage={state.page}
+              totalPage={state.totalPage}
+              totalCount={state.totalCount}
               disabled={state.loading}
-              hoverShowPageSelect
               onPageChange={page => {
                 if (page !== state.page) {
                   loadMyNotifications(page)
                 }
               }}
             />
-            <span>{`第 ${state.page} / ${state.totalPage} 页，共 ${state.totalCount} 条`}</span>
           </div>
         )}
       </>

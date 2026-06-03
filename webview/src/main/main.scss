@@ -293,6 +293,7 @@
 .node-pagination {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 6px;
   width: 100%;
   min-width: 0;
@@ -307,11 +308,13 @@
     color: inherit;
   }
 
-  .node-page-summary {
-    flex: 1;
+  .main-pagination-summary {
+    flex: 0 1 auto;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: inherit;
-    @include ellipsis;
+    white-space: nowrap;
   }
 
   .semi-page-item {
@@ -882,6 +885,7 @@
 .my-content-pagination {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   min-width: 0;
   padding: 8px 0 4px;
@@ -891,10 +895,13 @@
     flex: none;
   }
 
-  span {
-    flex: 1;
+  .main-pagination-summary {
+    flex: 0 1 auto;
     min-width: 0;
-    @include ellipsis;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+    white-space: nowrap;
   }
 }
 

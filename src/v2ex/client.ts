@@ -292,7 +292,7 @@ export class V2exClient {
   async getTopicListByNode(
     nodeName: string,
     page = 1
-  ): Promise<{ totalPage: number; list: Topic[] }> {
+  ): Promise<{ totalPage: number; totalCount: number; list: Topic[] }> {
     const { data: html } = await this.http.get(`/go/${nodeName}?p=${page}`)
     const $ = cheerio.load(html)
     this.updateAccountOverviewFromHtml($)
@@ -300,11 +300,21 @@ export class V2exClient {
     const cells = $('#TopicsNode .cell[class*="t_"]')
     return {
       totalPage: this.parsePagerTotalPage($),
+      totalCount: this.parseNodeTopicTotalCount($),
       list: this.parseTopicListCells($, cells, {
         name: nodeName,
         title: nodeTitle
       })
     }
+  }
+
+  /**
+   * 解析节点主题总数
+   * @param $ cheerio 实例
+   */
+  private parseNodeTopicTotalCount($: cheerio.CheerioAPI): number {
+    const text = $('.node-header .topic-count strong').first().text().trim()
+    return Number(text.replace(/,/g, '')) || 0
   }
 
   /**

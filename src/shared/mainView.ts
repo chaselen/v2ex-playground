@@ -122,6 +122,8 @@ export interface NodeChildrenData {
   page: number
   /** 总页数 */
   totalPage: number
+  /** 主题总数 */
+  totalCount: number
   /** 话题列表 */
   children: WebviewTopic[]
   /** 错误文案 */

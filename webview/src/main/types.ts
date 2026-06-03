@@ -9,6 +9,7 @@ export interface NodeItem extends WebviewNode {
   loading: boolean
   page: number
   totalPage: number
+  totalCount: number
   children: WebviewTopic[] | null
   error: string | null
 }
@@ -42,6 +43,7 @@ export interface TreeItem {
   replies?: number
   page?: number
   totalPage?: number
+  totalCount?: number
   loading?: boolean
   isLeaf?: boolean
   children?: TreeItem[]

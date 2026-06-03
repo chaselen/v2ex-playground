@@ -28,6 +28,7 @@ function createNodeItem(node: WebviewNode): NodeItem {
     loading: false,
     page: 1,
     totalPage: 1,
+    totalCount: 0,
     children: null,
     error: null
   }
@@ -223,6 +224,7 @@ export default function MainApp() {
     nodeId: string
     page: number
     totalPage: number
+    totalCount: number
     children: WebviewTopic[]
     error?: string
   }) {
@@ -234,6 +236,7 @@ export default function MainApp() {
           error: data.error,
           page: data.page || node.page,
           totalPage: data.totalPage || node.totalPage,
+          totalCount: data.totalCount || node.totalCount,
           children: node.children || []
         }
       }
@@ -244,6 +247,7 @@ export default function MainApp() {
         error: null,
         page: data.page || 1,
         totalPage: data.totalPage || 1,
+        totalCount: data.totalCount || 0,
         children: normalizeTopics(data.children || [])
       }
     })
@@ -271,6 +275,7 @@ export default function MainApp() {
         nodeId,
         page,
         totalPage: 1,
+        totalCount: 0,
         children: [],
         error: (err as Error).message
       })

@@ -164,6 +164,8 @@ describe('V2exClient real requests', () => {
 
     expect(result.totalPage).toEqual(expect.any(Number))
     expect(result.totalPage).toBeGreaterThanOrEqual(0)
+    expect(result.totalCount).toEqual(expect.any(Number))
+    expect(result.totalCount).toBeGreaterThan(0)
     expect(result.list.length).toBeGreaterThan(0)
     expectTopic(result.list[0])
     expect(result.list[0].node.name).toBe('v2ex')
