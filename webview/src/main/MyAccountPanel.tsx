@@ -1,8 +1,9 @@
-import { Avatar, Button, Empty, Progress, Spin } from '@douyinfe/semi-ui'
+import { Avatar, Empty, Progress, Spin } from '@douyinfe/semi-ui'
 import { IconHelpCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import { postVsCodeMessage } from '../shared/vscode'
+import LoginPrompt from './LoginPrompt'
 import type { WebviewAccountOverview } from '../../../src/shared/webview'
 
 interface MyAccountPanelProps {
@@ -23,13 +24,6 @@ const statItems: Array<{ key: AccountStatKey; label: string; path: string }> = [
   { key: 'topicCollectionCount', label: '主题收藏', path: '/my/topics' },
   { key: 'specialFollowingCount', label: '特别关注', path: '/my/following' }
 ]
-
-/**
- * 登录
- */
-function login() {
-  postVsCodeMessage('login')
-}
 
 /**
  * 打开 V2EX 链接
@@ -56,21 +50,23 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     )
   }
 
-  if (!loggedIn || !overview) {
+  if (!loggedIn) {
+    return (
+      <section className="my-panel">
+        <LoginPrompt />
+      </section>
+    )
+  }
+
+  if (!overview) {
     return (
       <section className="my-panel">
         <div className="empty-panel">
           <Empty
-            title={loggedIn ? '暂无账户概览' : '还未登录，请先登录'}
+            title="暂无账户概览"
             image={<IllustrationNoContent className="empty-illustration" />}
             darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
-          >
-            {!loggedIn && (
-              <Button size="small" type="primary" theme="solid" onClick={login}>
-                登录
-              </Button>
-            )}
-          </Empty>
+          />
         </div>
       </section>
     )

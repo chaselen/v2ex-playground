@@ -6,6 +6,7 @@ import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import { postVsCodeMessage } from '../shared/vscode'
+import LoginPrompt from './LoginPrompt'
 import type { MainTabKey, NodeItem, ContextMenuAction, TreeItem } from './types'
 
 interface NodeTreeProps {
@@ -194,8 +195,8 @@ export default function NodeTree(props: NodeTreeProps) {
   /** 树组件数据 */
   const treeData = useMemo(() => nodes.map(node => createNodeTreeItem(tab, node)), [nodes, tab])
 
-  /** 当前空状态文案 */
-  const emptyText = tab === 'collection' && !loggedIn ? '还未登录，请先登录' : emptyTexts[tab]
+  /** 是否显示登录提示 */
+  const showLoginPrompt = tab === 'collection' && !loggedIn
 
   useEffect(() => {
     // 当前节点 key 集合
@@ -400,13 +401,6 @@ export default function NodeTree(props: NodeTreeProps) {
   }
 
   /**
-   * 登录
-   */
-  function login() {
-    postVsCodeMessage('login')
-  }
-
-  /**
    * 处理树展开
    * @param nextExpandedKeys 展开的节点
    * @param context 展开上下文
@@ -458,19 +452,17 @@ export default function NodeTree(props: NodeTreeProps) {
   if (!nodes.length) {
     return (
       <section className="node-tree-panel">
-        <div className="empty-panel">
-          <Empty
-            title={emptyText}
-            image={<IllustrationNoContent className="empty-illustration" />}
-            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
-          >
-            {tab === 'collection' && !loggedIn && (
-              <Button size="small" type="primary" theme="solid" onClick={login}>
-                登录
-              </Button>
-            )}
-          </Empty>
-        </div>
+        {showLoginPrompt ? (
+          <LoginPrompt />
+        ) : (
+          <div className="empty-panel">
+            <Empty
+              title={emptyTexts[tab]}
+              image={<IllustrationNoContent className="empty-illustration" />}
+              darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+            />
+          </div>
+        )}
         {tab === 'custom' && (
           <div className="tree-footer">
             <Button

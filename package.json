@@ -126,6 +126,7 @@
   },
   "devDependencies": {
     "@douyinfe/semi-icons": "^2.99.2",
+    "@douyinfe/semi-illustrations": "^2.99.2",
     "@douyinfe/semi-ui": "^2.99.2",
     "@types/node": "^22.18.0",
     "@types/react": "^19.2.15",
@@ -135,6 +136,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "axios": "^1.16.1",
     "cheerio": "^1.2.0",
+    "cookie": "^1.1.1",
     "dayjs": "^1.11.21",
     "esbuild": "^0.28.0",
     "file-type": "^22.0.1",
@@ -143,7 +145,6 @@
     "react-dom": "^19.2.6",
     "sass": "^1.100.0",
     "simplebar-react": "^3.3.2",
-    "cookie": "^1.1.1",
     "tough-cookie": "^6.0.1",
     "typescript": "^5.8.3",
     "vite": "^8.0.14",
