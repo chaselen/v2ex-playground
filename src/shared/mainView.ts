@@ -93,6 +93,9 @@ export interface WebviewNotification {
 /** 主面板标签 key */
 export type MainTabKey = 'explore' | 'custom' | 'collection'
 
+/** 主面板全部标签 key */
+export type MainPanelTabKey = MainTabKey | 'my'
+
 /**
  * Webview 接收的初始化数据
  */
@@ -104,6 +107,7 @@ export interface InitData {
   }
   loggedIn: boolean
   accountOverview?: WebviewAccountOverview
+  selectedTab?: MainPanelTabKey
 }
 
 /**
@@ -164,6 +168,24 @@ export interface CustomNodesUpdatedData {
 }
 
 /**
+ * 账户概览变化数据
+ */
+export interface AccountOverviewChangedData {
+  /** 最新账户概览 */
+  overview: WebviewAccountOverview
+  /** 旧账户概览 */
+  oldOverview?: WebviewAccountOverview
+}
+
+/**
+ * 主面板标签切换数据
+ */
+export interface SelectMainTabData {
+  /** 目标标签 key */
+  tab: MainPanelTabKey
+}
+
+/**
  * 主面板 Webview RPC 命令
  */
 export interface MainViewRpcCommands {
@@ -199,4 +221,6 @@ export interface MainViewRpcCommands {
 export interface MainViewWebviewEvents {
   initData: WebviewEventDefinition<InitData>
   refreshLoadedNodes: WebviewEventDefinition<object>
+  accountOverviewChanged: WebviewEventDefinition<AccountOverviewChangedData>
+  selectMainTab: WebviewEventDefinition<SelectMainTabData>
 }

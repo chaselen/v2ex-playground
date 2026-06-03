@@ -11,6 +11,16 @@ import { cleanupImagePreviewCache } from '@/features/imagePreview'
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
   G.V2ex = new V2exClient(G.getCookie(), () => G.setCookie(''))
+  const mainViewProvider = new MainViewProvider()
+
+  context.subscriptions.push(
+    G.V2ex.onAccountOverviewChanged((overview, oldOverview) => {
+      G.unreadNoticeCount = overview.unreadNoticeCount
+      G.checkUnreadNotification(overview.unreadNoticeCount, oldOverview?.unreadNoticeCount, () =>
+        mainViewProvider.openTab('my')
+      )
+    })
+  )
   cleanupImagePreviewCache()
 
   // 插件激活后直接获取节点信息缓存下来
@@ -21,7 +31,6 @@ export function activate(context: vscode.ExtensionContext) {
   autoDailySignIn()
 
   // 注册主视图 WebviewView
-  const mainViewProvider = new MainViewProvider()
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('v2ex-main', mainViewProvider, {
       webviewOptions: { retainContextWhenHidden: true }

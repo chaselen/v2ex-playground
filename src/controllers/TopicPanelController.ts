@@ -235,7 +235,6 @@ export class TopicPanelController {
     this.detail = detail
     this.panel.title = fmtPanelTitle(detail.title)
     this.render(detail)
-    G.checkUnreadNotification()
   }
 
   /**

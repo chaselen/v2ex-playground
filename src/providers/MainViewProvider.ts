@@ -13,6 +13,7 @@ import {
   EXPLORE_NODES,
   InitData,
   MainTabKey,
+  MainPanelTabKey,
   MainViewRpcCommands,
   MainViewWebviewEvents,
   MyContentTabKey,
@@ -24,10 +25,14 @@ import {
   WebviewNode,
   WebviewTopic
 } from '@/shared/webview'
+import type { AccountOverview } from '@/v2ex'
 
 export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView
   private _rpc?: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>
+  private _webviewReady = false
+  private _pendingSelectedTab?: MainPanelTabKey
+  private _accountOverviewChangedDisposable?: { dispose: () => void }
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this._view = webviewView
@@ -44,6 +49,10 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     )
     this._registerRpcHandlers(this._rpc)
     this._rpc.listen()
+    this._accountOverviewChangedDisposable?.dispose()
+    this._accountOverviewChangedDisposable = G.V2ex.onAccountOverviewChanged(
+      (overview, oldOverview) => this._handleAccountOverviewChanged(overview, oldOverview)
+    )
     if (webviewView.visible) {
       autoDailySignIn()
     }
@@ -54,10 +63,13 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     })
     webviewView.onDidDispose(() => {
       visibilityDisposable.dispose()
+      this._accountOverviewChangedDisposable?.dispose()
+      this._accountOverviewChangedDisposable = undefined
       this._rpc?.dispose()
       if (this._view === webviewView) {
         this._view = undefined
         this._rpc = undefined
+        this._webviewReady = false
       }
     })
   }
@@ -74,7 +86,10 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param rpc Webview RPC 桥接器
    */
   private _registerRpcHandlers(rpc: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>) {
-    rpc.handle('ready', () => this._getInitData())
+    rpc.handle('ready', () => {
+      this._webviewReady = true
+      return this._getInitData()
+    })
     rpc.handle('refreshAll', () => this._getInitData())
     rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.nodeId, msg.page))
     rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId, msg.page))
@@ -89,6 +104,18 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('ctxCopyLink', msg => this._copyLink(msg.topicId))
     rpc.handle('ctxCopyTitleLink', msg => this._copyTitleLink(msg.topicId, msg.label))
     rpc.handle('ctxViewInBrowser', msg => this._viewInBrowser(msg.topicId))
+  }
+
+  /**
+   * 处理账户概览变化
+   * @param overview 最新账户概览
+   * @param oldOverview 旧账户概览
+   */
+  private _handleAccountOverviewChanged(overview: AccountOverview, oldOverview?: AccountOverview) {
+    this._rpc?.post('accountOverviewChanged', {
+      overview,
+      oldOverview
+    })
   }
 
   /**
@@ -135,7 +162,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         collection: collectionNodes
       },
       loggedIn,
-      accountOverview
+      accountOverview,
+      selectedTab: this.consumePendingSelectedTab()
     }
   }
 
@@ -385,5 +413,39 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    */
   refreshLoadedNodes() {
     this._rpc?.post('refreshLoadedNodes')
+  }
+
+  /**
+   * 打开指定标签
+   * @param tab 标签 key
+   */
+  async openTab(tab: MainPanelTabKey) {
+    this._pendingSelectedTab = tab
+    await vscode.commands.executeCommand('v2ex-main.focus')
+    this.postPendingSelectedTab()
+  }
+
+  /**
+   * 发送待切换标签
+   */
+  private postPendingSelectedTab() {
+    if (!this._pendingSelectedTab || !this._rpc || !this._webviewReady) {
+      return
+    }
+
+    const selectedTab = this._pendingSelectedTab
+    this._pendingSelectedTab = undefined
+    this._rpc.post('selectMainTab', {
+      tab: selectedTab
+    })
+  }
+
+  /**
+   * 取出待切换标签
+   */
+  private consumePendingSelectedTab() {
+    const selectedTab = this._pendingSelectedTab
+    this._pendingSelectedTab = undefined
+    return selectedTab
   }
 }

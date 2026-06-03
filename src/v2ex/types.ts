@@ -16,6 +16,16 @@ export class AccountRestrictedError extends Error {}
 export type LoginExpiredHandler = () => void | Promise<void>
 
 /**
+ * 账户概览变化回调
+ * @param overview 最新账户概览
+ * @param oldOverview 旧账户概览
+ */
+export type AccountOverviewChangedHandler = (
+  overview: AccountOverview,
+  oldOverview?: AccountOverview
+) => void | Promise<void>
+
+/**
  * 话题
  */
 export interface Topic {

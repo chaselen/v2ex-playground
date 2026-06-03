@@ -4,8 +4,11 @@ import MyAccountPanel from './MyAccountPanel'
 import NodeTree from './NodeTree'
 import { requestVsCodeMessage } from '../shared/vscode'
 import {
+  type AccountOverviewChangedData,
   EXPLORE_NODES,
   type InitData,
+  type MainPanelTabKey,
+  type SelectMainTabData,
   type WebviewAccountOverview,
   type WebviewNode,
   type WebviewTopic
@@ -14,9 +17,6 @@ import type { MainTabKey, MainTabs, NodeItem } from './types'
 
 /** 主面板标签 key */
 const tabKeys: MainTabKey[] = ['explore', 'custom', 'collection']
-
-/** 主面板全部标签 key */
-type MainPanelTabKey = MainTabKey | 'my'
 
 /**
  * 创建带前端状态的节点项
@@ -68,6 +68,38 @@ function isInitDataMessage(msg: unknown): msg is InitData & { command: 'initData
     msg.command === 'initData' &&
     'tabs' in msg &&
     'loggedIn' in msg
+  )
+}
+
+/**
+ * 判断消息是否为账户概览变化
+ * @param msg 扩展侧消息
+ */
+function isAccountOverviewChangedMessage(
+  msg: unknown
+): msg is AccountOverviewChangedData & { command: 'accountOverviewChanged' } {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'command' in msg &&
+    msg.command === 'accountOverviewChanged' &&
+    'overview' in msg
+  )
+}
+
+/**
+ * 判断消息是否为主面板标签切换
+ * @param msg 扩展侧消息
+ */
+function isSelectMainTabMessage(
+  msg: unknown
+): msg is SelectMainTabData & { command: 'selectMainTab' } {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'command' in msg &&
+    msg.command === 'selectMainTab' &&
+    'tab' in msg
   )
 }
 
@@ -171,6 +203,9 @@ export default function MainApp() {
   function onInitData(data: InitData) {
     setLoggedIn(data.loggedIn)
     setAccountOverview(data.accountOverview)
+    if (data.selectedTab) {
+      setActiveTab(data.selectedTab)
+    }
     setInitializing(false)
     setTabs(current => ({
       explore: mergeNodeItems(data.tabs.explore, current.explore),
@@ -287,6 +322,16 @@ export default function MainApp() {
       const msg = event.data
       if (isInitDataMessage(msg)) {
         onInitData(msg)
+        return
+      }
+
+      if (isAccountOverviewChangedMessage(msg)) {
+        setAccountOverview(msg.overview)
+        return
+      }
+
+      if (isSelectMainTabMessage(msg)) {
+        setActiveTab(msg.tab)
         return
       }
 

@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio'
-import axios, { AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import { parse as parseCookieHeader } from 'cookie'
 import { CookieJar } from 'tough-cookie'
 import type { AnyNode } from 'domhandler'
@@ -10,6 +10,7 @@ import {
   DailyRes,
   LoginExpiredHandler,
   LoginRequiredError,
+  AccountOverviewChangedHandler,
   ThankResponse,
   TopicDetail,
   TopicReply,
@@ -37,6 +38,12 @@ export class V2exClient {
 
   /** V2EX Cookie 存储 */
   private readonly cookieJar = new CookieJar()
+
+  /** 缓存的账户概览 */
+  private accountOverview?: AccountOverview
+
+  /** 账户概览变化监听器 */
+  private readonly accountOverviewChangedHandlers = new Set<AccountOverviewChangedHandler>()
 
   /** v2ex 请求客户端 */
   private readonly http = axios.create({
@@ -85,10 +92,22 @@ export class V2exClient {
    */
   setCookie(cookie: string): void {
     this.cookieJar.removeAllCookiesSync()
+    this.accountOverview = undefined
     if (!cookie) {
       return
     }
     this.writeCookie(cookie, this.baseUrl)
+  }
+
+  /**
+   * 监听账户概览变化
+   * @param handler 账户概览变化回调
+   */
+  onAccountOverviewChanged(handler: AccountOverviewChangedHandler): { dispose: () => void } {
+    this.accountOverviewChangedHandlers.add(handler)
+    return {
+      dispose: () => this.accountOverviewChangedHandlers.delete(handler)
+    }
   }
 
   /**
@@ -156,6 +175,7 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
+    this.updateAccountOverviewFromHtml($)
     const cells = $('#Main > .box').last().children('.cell.item')
 
     return {
@@ -257,6 +277,7 @@ export class V2exClient {
   async getTopicListByTab(tab: string): Promise<Topic[]> {
     const { data: html } = await this.http.get(`/?tab=${tab}`)
     const $ = cheerio.load(html)
+    this.updateAccountOverviewFromHtml($)
     const cells = $('#Main > .box').eq(0).children('.cell.item')
 
     return this.parseTopicListCells($, cells)
@@ -274,6 +295,7 @@ export class V2exClient {
   ): Promise<{ totalPage: number; list: Topic[] }> {
     const { data: html } = await this.http.get(`/go/${nodeName}?p=${page}`)
     const $ = cheerio.load(html)
+    this.updateAccountOverviewFromHtml($)
     const nodeTitle = $('.node-breadcrumb').text().split('›')[1].trim()
     const cells = $('#TopicsNode .cell[class*="t_"]')
     return {
@@ -315,6 +337,7 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
+    this.updateAccountOverviewFromHtml($)
     const totalCount = Number($('.header .fr strong.gray').first().text().trim() || 0)
     const list: V2exNotification[] = []
 
@@ -362,6 +385,7 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
+    this.updateAccountOverviewFromHtml($)
     const topic = this.parseTopicMeta($, topicId)
     topic.replies = this.parseReplies($)
 
@@ -383,10 +407,61 @@ export class V2exClient {
    * 获取账户概览
    *
    * 包含未读提醒数量和账户余额
+   * @param options 获取选项
    */
-  async getAccountOverview(): Promise<AccountOverview> {
+  async getAccountOverview(options: { force?: boolean } = {}): Promise<AccountOverview> {
+    if (!options.force && this.accountOverview) {
+      return this.accountOverview
+    }
+
     const { data: html } = await this.http.get<string>('/')
     const $ = cheerio.load(html)
+    return this.updateAccountOverviewFromHtml($) || this.createEmptyAccountOverview()
+  }
+
+  /**
+   * 创建空账户概览
+   */
+  private createEmptyAccountOverview(): AccountOverview {
+    return {
+      avatar: '',
+      username: '',
+      nodeCollectionCount: 0,
+      topicCollectionCount: 0,
+      specialFollowingCount: 0,
+      activityPercent: 0,
+      unreadNoticeCount: 0,
+      gold: 0,
+      silver: 0,
+      bronze: 0
+    }
+  }
+
+  /**
+   * 从 HTML 中解析并更新账户概览缓存
+   * @param $ cheerio 实例
+   */
+  private updateAccountOverviewFromHtml($: cheerio.CheerioAPI): AccountOverview | undefined {
+    const overview = this.parseAccountOverview($)
+    if (!overview) {
+      return undefined
+    }
+
+    const oldOverview = this.accountOverview
+    this.accountOverview = overview
+
+    if (!oldOverview || !this.isSameAccountOverview(overview, oldOverview)) {
+      this.notifyAccountOverviewChanged(overview, oldOverview)
+    }
+
+    return overview
+  }
+
+  /**
+   * 从 HTML 中解析账户概览
+   * @param $ cheerio 实例
+   */
+  private parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | undefined {
     const overview: AccountOverview = {
       avatar: '',
       username: '',
@@ -401,6 +476,10 @@ export class V2exClient {
     }
 
     const accountBox = $('#Rightbar > .box').has('#member-activity').first()
+    if (!accountBox.length) {
+      return undefined
+    }
+
     const avatar = accountBox.find('td[width="48"] img.avatar').first()
     const activityHtml = accountBox.find('#member-activity').html() || ''
 
@@ -444,7 +523,42 @@ export class V2exClient {
     overview.silver = balances[1] || 0
     overview.bronze = balances[2] || 0
 
+    if (!overview.username && !overview.avatar) {
+      return undefined
+    }
+
     return overview
+  }
+
+  /**
+   * 判断账户概览是否一致
+   * @param overview 最新账户概览
+   * @param oldOverview 旧账户概览
+   */
+  private isSameAccountOverview(overview: AccountOverview, oldOverview: AccountOverview): boolean {
+    return (
+      overview.avatar === oldOverview.avatar &&
+      overview.username === oldOverview.username &&
+      overview.nodeCollectionCount === oldOverview.nodeCollectionCount &&
+      overview.topicCollectionCount === oldOverview.topicCollectionCount &&
+      overview.specialFollowingCount === oldOverview.specialFollowingCount &&
+      overview.activityPercent === oldOverview.activityPercent &&
+      overview.unreadNoticeCount === oldOverview.unreadNoticeCount &&
+      overview.gold === oldOverview.gold &&
+      overview.silver === oldOverview.silver &&
+      overview.bronze === oldOverview.bronze
+    )
+  }
+
+  /**
+   * 通知账户概览变化
+   * @param overview 最新账户概览
+   * @param oldOverview 旧账户概览
+   */
+  private notifyAccountOverviewChanged(overview: AccountOverview, oldOverview?: AccountOverview) {
+    this.accountOverviewChangedHandlers.forEach(handler => {
+      void handler(overview, oldOverview)
+    })
   }
 
   /**
@@ -707,6 +821,7 @@ export class V2exClient {
     }
     const { data: html } = await this.http.get<string>('/planes')
     const $ = cheerio.load(html)
+    this.updateAccountOverviewFromHtml($)
     const nodes: Node[] = []
     $('a.item_node').each((_, element) => {
       nodes.push({
@@ -727,6 +842,7 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
+    this.updateAccountOverviewFromHtml($)
     const nodes: Node[] = []
     $('#my-nodes > a.fav-node').each((_, element) => {
       nodes.push({
@@ -745,6 +861,7 @@ export class V2exClient {
   async daily(): Promise<DailyRes> {
     const { data: html } = await this.http.get<string>('/mission/daily')
     const $ = cheerio.load(html)
+    this.updateAccountOverviewFromHtml($)
     /* 已领取过时会提示：每日登录奖励已领取 */
     if ($('.fa-ok-sign').length) {
       return 'repetitive'
