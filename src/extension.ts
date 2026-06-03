@@ -1,7 +1,7 @@
 import vscode from 'vscode'
 import MainViewProvider from '@/providers/MainViewProvider'
 import login, { LoginResult } from '@/commands/login'
-import autoDailySignIn from '@/commands/dailySignIn'
+import autoDailySignIn from '@/features/dailySignIn'
 import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import search from '@/commands/search'

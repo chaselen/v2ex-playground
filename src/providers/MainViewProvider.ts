@@ -1,11 +1,10 @@
 import vscode from 'vscode'
 import path from 'path'
 import { EOL } from 'os'
-import autoDailySignIn from '@/commands/dailySignIn'
+import autoDailySignIn from '@/features/dailySignIn'
 import G from '@/global'
-import { LoginRequiredError, Node, Topic, V2exNotification } from '@/v2ex'
-import { TopicPanelInput } from '@/controllers/TopicPanelController'
-import topicItemClick from '@/commands/topicItemClick'
+import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
+import openTopic from '@/features/openTopic'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
@@ -94,7 +93,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('getMyNotifications', msg => this._handleGetMyNotifications(msg.page))
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
-    rpc.handle('openTopic', msg => this._openTopic(msg.topicId, msg.title))
+    rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
     rpc.handle('openExternal', msg => this._openExternal(msg.path))
     rpc.handle('search', () => vscode.commands.executeCommand('v2ex-main.search'))
     rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
@@ -349,18 +348,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       nodeTitle: topic.node?.title,
       replies: topic.replies
     }
-  }
-
-  /**
-   * 打开话题
-   * @param topicId 话题 id
-   * @param title 话题标题
-   */
-  private _openTopic(topicId: unknown, title: unknown) {
-    topicItemClick({
-      topicId: Number(topicId),
-      label: String(title || '')
-    } satisfies TopicPanelInput)
   }
 
   /**

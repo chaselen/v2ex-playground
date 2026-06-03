@@ -1,5 +1,6 @@
 import Config from '@/config'
-import { TopicPanelController, TopicPanelInput } from '@/controllers/TopicPanelController'
+import { TopicPanelController } from '@/controllers/TopicPanelController'
+import type { TopicPanelInput } from '@/controllers/TopicPanelController'
 import G from '@/global'
 
 /**
@@ -10,15 +11,16 @@ import G from '@/global'
 const topicPanels: Record<string, TopicPanelController> = {}
 
 /**
- * 点击子节点打开详情页面
+ * 打开话题详情页面
  * @param topic 话题参数
  */
-export default function topicItemClick(topic: TopicPanelInput) {
-  if (Number.isNaN(topic.topicId)) {
+export default function openTopic(topic: TopicPanelInput) {
+  const topicId = Number(topic.topicId)
+  if (Number.isNaN(topicId)) {
     throw new Error('打开话题面板缺少必要参数')
   }
 
-  const topicKey = G.V2ex.getTopicLinkById(topic.topicId)
+  const topicKey = G.V2ex.getTopicLinkById(topicId)
 
   // 如果控制器已经存在，则直接激活
   let controller = topicPanels[topicKey]
@@ -34,7 +36,7 @@ export default function topicItemClick(topic: TopicPanelInput) {
     })
   }
 
-  controller = new TopicPanelController(topic)
+  controller = new TopicPanelController({ ...topic, topicId })
   topicPanels[topicKey] = controller
   controller.onDidDispose(() => {
     delete topicPanels[topicKey]

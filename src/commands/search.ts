@@ -1,5 +1,5 @@
 import vscode from 'vscode'
-import topicItemClick from './topicItemClick'
+import openTopic from '@/features/openTopic'
 import dayjs from 'dayjs'
 import { SoV2exSource, SoV2exSort } from '@/v2ex'
 import G from '@/global'
@@ -78,5 +78,5 @@ async function showQuickPick(searchList: SoV2exSource[]) {
     _lastSearchList = null
     return
   }
-  topicItemClick({ topicId: select.topicId, label: select.title })
+  openTopic({ topicId: select.topicId, label: select.title })
 }

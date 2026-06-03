@@ -2,7 +2,7 @@ import path from 'path'
 import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
-import topicItemClick from '@/commands/topicItemClick'
+import openTopic from '@/features/openTopic'
 import { openImagePreview } from '@/features/imagePreview'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
@@ -21,7 +21,7 @@ export interface TopicPanelInput {
   /** 话题标题 */
   label: string
   /** 话题 id */
-  topicId: number
+  topicId: number | string
 }
 
 /**
@@ -76,8 +76,9 @@ export class TopicPanelController {
    * @param input 话题面板输入参数
    */
   constructor(input: TopicPanelInput) {
-    this.key = G.V2ex.getTopicLinkById(input.topicId)
-    this.topicId = input.topicId
+    const topicId = normalizeTopicId(input.topicId)
+    this.key = G.V2ex.getTopicLinkById(topicId)
+    this.topicId = topicId
     this.panel = createPanel(this.key, input.label)
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'topic.html')
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
@@ -258,10 +259,9 @@ export class TopicPanelController {
    * @param topicId 话题 id
    */
   private openTopic(topicId: string | number) {
-    const nextTopicId = Number(topicId)
-    topicItemClick({
-      label: `/t/${nextTopicId}`,
-      topicId: nextTopicId
+    openTopic({
+      label: `/t/${topicId}`,
+      topicId
     } satisfies TopicPanelInput)
   }
 
@@ -364,4 +364,16 @@ function createPanel(id: string, label: string): vscode.WebviewPanel {
   )
   panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
   return panel
+}
+
+/**
+ * 归一化话题 id
+ * @param topicId 话题 id
+ */
+function normalizeTopicId(topicId: number | string): number {
+  const normalizedTopicId = Number(topicId)
+  if (Number.isNaN(normalizedTopicId)) {
+    throw new Error('打开话题面板缺少必要参数')
+  }
+  return normalizedTopicId
 }
