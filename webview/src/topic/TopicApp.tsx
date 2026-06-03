@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Banner,
   Button,
@@ -10,7 +10,7 @@ import {
   Toast,
   Tooltip
 } from '@douyinfe/semi-ui'
-import { IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
+import { IconArrowDown, IconArrowUp, IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
 import { enhanceTopicContentAfterRender, normalizeHtml } from '../shared/topicContent'
 import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
 import type { TopicPanelViewState } from '../../../src/shared/webview'
@@ -38,6 +38,7 @@ export default function TopicApp() {
   const [postingReply, setPostingReply] = useState(false)
   const [loadingReplyPage, setLoadingReplyPage] = useState(false)
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
+  const topicShellRef = useRef<HTMLElement>(null)
   const topic = state.topic
   const showImages = state.showImages !== false
 
@@ -58,6 +59,22 @@ export default function TopicApp() {
    */
   function openExternal(src: string) {
     postVsCodeMessage('openExternal', { src: new URL(src, document.baseURI).toString() })
+  }
+
+  /**
+   * 滚动到帖子顶部
+   */
+  function scrollToTop() {
+    topicShellRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  /**
+   * 滚动到帖子底部
+   */
+  function scrollToBottom() {
+    const topicShell = topicShellRef.current
+
+    topicShell?.scrollTo({ top: topicShell.scrollHeight, behavior: 'smooth' })
   }
 
   /**
@@ -189,7 +206,7 @@ export default function TopicApp() {
   }, [topic, showImages])
 
   return (
-    <main className="topic-shell">
+    <main className="topic-shell" ref={topicShellRef}>
       {state.status === 'loading' && (
         <div className="state-panel state-panel--loading">
           <Spin size="middle" />
@@ -457,6 +474,33 @@ export default function TopicApp() {
             <p className="muted">您目前还不能回复，请先登录</p>
           )}
         </article>
+      )}
+
+      {state.status === 'topic' && topic && (
+        <div className="scroll-actions">
+          <Tooltip content="滚动到顶部" position="left">
+            <Button
+              aria-label="滚动到顶部"
+              className="scroll-action-button"
+              icon={<IconArrowUp />}
+              size="large"
+              theme="solid"
+              type="tertiary"
+              onClick={scrollToTop}
+            />
+          </Tooltip>
+          <Tooltip content="滚动到底部" position="left">
+            <Button
+              aria-label="滚动到底部"
+              className="scroll-action-button"
+              icon={<IconArrowDown />}
+              size="large"
+              theme="solid"
+              type="tertiary"
+              onClick={scrollToBottom}
+            />
+          </Tooltip>
+        </div>
       )}
     </main>
   )
