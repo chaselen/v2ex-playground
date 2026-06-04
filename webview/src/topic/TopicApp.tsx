@@ -487,28 +487,24 @@ export default function TopicApp() {
 
       {state.status === 'topic' && topic && (
         <div className="scroll-actions">
-          <Tooltip content="滚动到顶部" position="left">
-            <Button
-              aria-label="滚动到顶部"
-              className="scroll-action-button"
-              icon={<IconArrowUp />}
-              size="large"
-              theme="solid"
-              type="tertiary"
-              onClick={scrollToTop}
-            />
-          </Tooltip>
-          <Tooltip content="滚动到底部" position="left">
-            <Button
-              aria-label="滚动到底部"
-              className="scroll-action-button"
-              icon={<IconArrowDown />}
-              size="large"
-              theme="solid"
-              type="tertiary"
-              onClick={scrollToBottom}
-            />
-          </Tooltip>
+          <Button
+            aria-label="滚动到顶部"
+            className="scroll-action-button"
+            icon={<IconArrowUp />}
+            size="large"
+            theme="solid"
+            type="tertiary"
+            onClick={scrollToTop}
+          />
+          <Button
+            aria-label="滚动到底部"
+            className="scroll-action-button"
+            icon={<IconArrowDown />}
+            size="large"
+            theme="solid"
+            type="tertiary"
+            onClick={scrollToBottom}
+          />
         </div>
       )}
     </main>
