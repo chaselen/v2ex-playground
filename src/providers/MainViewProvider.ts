@@ -1,7 +1,7 @@
 import vscode from 'vscode'
 import path from 'path'
 import { EOL } from 'os'
-import autoDailySignIn from '@/features/dailySignIn'
+import autoDailySignIn, { dailySignIn, getDailySignInStatus } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import openTopic from '@/features/openTopic'
@@ -20,6 +20,7 @@ import {
   MyTopicListData,
   WebviewAccountOverview,
   NodeChildrenData,
+  WebviewDailySignInData,
   WebviewNotification,
   WebviewNode,
   WebviewTopic
@@ -91,6 +92,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId, msg.page))
     rpc.handle('getMyTopics', msg => this._handleGetMyTopics(msg.tab, msg.page))
     rpc.handle('getMyNotifications', msg => this._handleGetMyNotifications(msg.page))
+    rpc.handle('getDailySignInStatus', () => this._handleGetDailySignInStatus())
+    rpc.handle('dailySignIn', () => this._handleDailySignIn())
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
     rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
@@ -326,6 +329,20 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       totalCount: result.totalCount,
       notifications: result.list.map(notification => this._toWebviewNotification(notification))
     }
+  }
+
+  /**
+   * 获取每日签到状态
+   */
+  private _handleGetDailySignInStatus(): Promise<WebviewDailySignInData> {
+    return getDailySignInStatus()
+  }
+
+  /**
+   * 执行每日签到
+   */
+  private _handleDailySignIn(): Promise<WebviewDailySignInData> {
+    return dailySignIn()
   }
 
   /**

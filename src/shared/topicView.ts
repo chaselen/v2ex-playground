@@ -77,6 +77,8 @@ export type WebviewRequestRpcCommands = Pick<
   | 'refreshNode'
   | 'getMyTopics'
   | 'getMyNotifications'
+  | 'getDailySignInStatus'
+  | 'dailySignIn'
   | 'addNode'
   | 'removeNode'
 > &

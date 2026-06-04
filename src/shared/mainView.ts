@@ -161,6 +161,19 @@ export interface MyNotificationListData {
   notifications: WebviewNotification[]
 }
 
+/** 每日签到结果 */
+export type WebviewDailySignInResult = 'success' | 'repetitive' | 'failed'
+
+/**
+ * 每日签到数据
+ */
+export interface WebviewDailySignInData {
+  /** 今日是否已签到 */
+  signedIn: boolean
+  /** 签到结果 */
+  result?: WebviewDailySignInResult
+}
+
 /**
  * 自定义节点更新数据
  */
@@ -206,6 +219,8 @@ export interface MainViewRpcCommands {
     MyTopicListData
   >
   getMyNotifications: WebviewRpcDefinition<{ page?: number }, MyNotificationListData>
+  getDailySignInStatus: WebviewRpcDefinition<object, WebviewDailySignInData>
+  dailySignIn: WebviewRpcDefinition<object, WebviewDailySignInData>
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
   removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>

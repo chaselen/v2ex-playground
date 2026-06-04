@@ -1,6 +1,6 @@
 import { useEffect, useState, type MouseEvent } from 'react'
 import { Avatar, Badge, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
-import { IconHelpCircle, IconUser } from '@douyinfe/semi-icons'
+import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
@@ -129,6 +129,8 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
   const [notificationList, setNotificationList] = useState<MyNotificationListState>(
     createMyNotificationListState
   )
+  const [dailySignedIn, setDailySignedIn] = useState(false)
+  const [dailySignInLoading, setDailySignInLoading] = useState(false)
 
   useEffect(() => {
     if (!loggedIn) {
@@ -149,6 +151,34 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     loadMyTopics(activeContentTab, 1)
   }, [activeContentTab, loggedIn, notificationList.loaded, notificationList.loading])
+
+  useEffect(() => {
+    let disposed = false
+
+    if (!loggedIn) {
+      setDailySignedIn(false)
+      setDailySignInLoading(false)
+      return
+    }
+
+    setDailySignInLoading(true)
+    requestVsCodeMessage('getDailySignInStatus')
+      .then(data => {
+        if (!disposed) {
+          setDailySignedIn(data.signedIn)
+        }
+      })
+      .catch(err => console.error(err))
+      .finally(() => {
+        if (!disposed) {
+          setDailySignInLoading(false)
+        }
+      })
+
+    return () => {
+      disposed = true
+    }
+  }, [loggedIn])
 
   /**
    * 加载我的主题列表
@@ -263,6 +293,26 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     }
 
     setActiveContentTab(tab)
+  }
+
+  /**
+   * 执行每日签到
+   */
+  async function handleDailySignIn() {
+    if (dailySignedIn || dailySignInLoading) {
+      return
+    }
+
+    setDailySignInLoading(true)
+
+    try {
+      const data = await requestVsCodeMessage('dailySignIn')
+      setDailySignedIn(data.signedIn)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDailySignInLoading(false)
+    }
   }
 
   /**
@@ -611,6 +661,20 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
               <IconHelpCircle className="my-help-icon" />
             </button>
           </footer>
+
+          <div className="my-daily-sign-in">
+            <Button
+              theme={dailySignedIn ? 'light' : 'solid'}
+              type={dailySignedIn ? 'tertiary' : 'primary'}
+              size="small"
+              icon={dailySignedIn ? <IconTickCircle /> : <IconGiftStroked />}
+              loading={dailySignInLoading}
+              disabled={dailySignedIn}
+              onClick={handleDailySignIn}
+            >
+              {dailySignedIn ? '今日已签到' : '签到'}
+            </Button>
+          </div>
         </article>
 
         <section className="my-content">

@@ -840,29 +840,31 @@ export class V2exClient {
   }
 
   /**
-   * 每日签到
-   *
-   * @returns {Promise<DailyRes>} 返回签到结果
+   * 查询每日签到状态
    */
-  async daily(): Promise<DailyRes> {
+  async getDailySignInStatus(): Promise<boolean> {
     const { data: html } = await this.http.get<string>('/mission/daily')
     const $ = cheerio.load(html)
     this.updateAccountOverviewFromHtml($)
-    /* 已领取过时会提示：每日登录奖励已领取 */
-    if ($('.fa-ok-sign').length) {
+    // 已领取过时会提示：每日登录奖励已领取
+    return $('.fa-ok-sign').length > 0
+  }
+
+  /**
+   * 每日签到
+   * @returns 签到结果
+   */
+  async dailySignIn(): Promise<DailyRes> {
+    if (await this.getDailySignInStatus()) {
       return 'repetitive'
     }
-    /* 未领取时有一个领取按钮 */
-    const btn = $('input.super.normal.button')
-    if (btn.length) {
-      const once = await this.getOnce()
-      const { data: html2 } = await this.http.get<string>(`/mission/daily/redeem?once=${once}`)
-      const $2 = cheerio.load(html2)
-      if ($2('.fa-ok-sign').length) {
-        return 'success'
-      }
-    }
-    return 'failed'
+
+    const once = await this.getOnce()
+    const { data: html } = await this.http.get<string>(`/mission/daily/redeem?once=${once}`)
+    const $2 = cheerio.load(html)
+    this.updateAccountOverviewFromHtml($2)
+
+    return $2('.fa-ok-sign').length > 0 ? 'success' : 'failed'
   }
 
   /**

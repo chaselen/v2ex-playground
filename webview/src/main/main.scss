@@ -594,6 +594,19 @@
   gap: 8px;
 }
 
+.my-daily-sign-in {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 14px 12px;
+
+  .semi-button {
+    max-width: 100%;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+}
+
 .my-notice {
   flex: 1;
   min-width: 56px;
@@ -937,7 +950,8 @@
 
   .my-stats,
   .my-activity,
-  .my-wallet {
+  .my-wallet,
+  .my-daily-sign-in {
     padding-right: 10px;
     padding-left: 10px;
   }
