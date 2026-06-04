@@ -2,7 +2,6 @@ import * as cheerio from 'cheerio'
 import axios, { AxiosResponse } from 'axios'
 import { parse as parseCookieHeader } from 'cookie'
 import { CookieJar } from 'tough-cookie'
-import type { AnyNode } from 'domhandler'
 import {
   AccountRestrictedError,
   Topic,
@@ -19,6 +18,9 @@ import {
   AccountOverview,
   V2exNotification
 } from './types'
+
+/** Cheerio 选择结果 */
+type CheerioSelection = ReturnType<cheerio.CheerioAPI>
 
 /** V2EX 请求超时时间 */
 const v2exRequestTimeout = 15000
@@ -205,7 +207,7 @@ export class V2exClient {
    */
   private parseTopicListCells(
     $: cheerio.CheerioAPI,
-    cells: cheerio.Cheerio<AnyNode>,
+    cells: CheerioSelection,
     fallbackNode?: Node
   ): Topic[] {
     const list: Topic[] = []
@@ -670,7 +672,7 @@ export class V2exClient {
    * 解析回复总数
    * @param topicBox 回复列表外层容器
    */
-  private parseReplyCount(topicBox: cheerio.Cheerio<AnyNode>): number {
+  private parseReplyCount(topicBox: CheerioSelection): number {
     const headerText = topicBox.children('div.cell').first().find('span.gray').first().text()
     return Number(headerText.match(/(\d+)\s*条回复/)?.[1] || 0)
   }
