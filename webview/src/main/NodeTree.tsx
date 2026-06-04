@@ -277,7 +277,14 @@ export default function NodeTree(props: NodeTreeProps) {
   function renderTopicRow(data: TreeItem) {
     const topicTitle = data.title || data.label
 
-    return <TopicRow topicId={data.topicId!} title={topicTitle} replies={data.replies} />
+    return (
+      <TopicRow
+        topicId={data.topicId!}
+        title={topicTitle}
+        replies={data.replies}
+        openOnClick={false}
+      />
+    )
   }
 
   /**
@@ -362,11 +369,18 @@ export default function NodeTree(props: NodeTreeProps) {
    */
   function handleSelect(selectedKey: string, selected: boolean, selectedNode: TreeNodeData) {
     const data = getTreeItem(selectedNode)
-    if (!selected || data.type !== 'topic') {
+    if (data.type !== 'topic' || !data.topicId) {
       return
     }
 
-    setSelectedTopicKey(selectedKey)
+    if (selected) {
+      setSelectedTopicKey(selectedKey)
+    }
+
+    postVsCodeMessage('openTopic', {
+      topicId: data.topicId,
+      title: data.title || data.label
+    })
   }
 
   if (loading) {

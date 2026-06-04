@@ -29,6 +29,8 @@ interface TopicRowProps {
   as?: 'div' | 'button'
   /** 附加类名 */
   className?: string
+  /** 是否点击时打开主题 */
+  openOnClick?: boolean
 }
 
 /**
@@ -36,7 +38,7 @@ interface TopicRowProps {
  * @param props 组件参数
  */
 export default function TopicRow(props: TopicRowProps) {
-  const { topicId, title, replies, as = 'div', className } = props
+  const { topicId, title, replies, as = 'div', className, openOnClick = true } = props
 
   /**
    * 打开主题
@@ -75,11 +77,16 @@ export default function TopicRow(props: TopicRowProps) {
   const rowClassName = ['topic-row', className].filter(Boolean).join(' ')
   const row =
     as === 'button' ? (
-      <button type="button" className={rowClassName} title={title} onClick={openTopic}>
+      <button
+        type="button"
+        className={rowClassName}
+        title={title}
+        onClick={openOnClick ? openTopic : undefined}
+      >
         {content}
       </button>
     ) : (
-      <div className={rowClassName} title={title} onClick={openTopic}>
+      <div className={rowClassName} title={title} onClick={openOnClick ? openTopic : undefined}>
         {content}
       </div>
     )
