@@ -4,8 +4,8 @@
 
 上班累的时候用来放（mō）松（yú）的 VSCode 插件。
 
-[![Marketplace](https://img.shields.io/visual-studio-marketplace/v/chaselen.v2ex-playground.svg?label=Marketplace&style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/chaselen.v2ex-playground.svg?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
+[![Marketplace](https://vsmarketplacebadges.dev/version/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
+[![Installs](https://vsmarketplacebadges.dev/installs/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
 
 - 仓库地址：[github.com](https://github.com/chaselen/v2ex-playground)
 - 插件地址：[marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
@@ -18,10 +18,12 @@
 - [x] 浏览首页各标签下的话题
 - [x] 自定义节点话题查看
 - [x] 收藏节点话题查看
+- [x] 节点主题、主题回复分页浏览
+- [x] “我的”面板，查看账户概览、账户余额、收藏主题、特别关注和提醒消息
 - [x] 自定义话题浏览页面，页面样式跟随主题变化
 - [x] 话题回复
 - [x] 复制话题标题、链接、使用浏览器打开
-- [x] 自动签到领取奖励
+- [x] 自动签到领取奖励，支持查看签到状态和手动签到
 - [x] 话题收藏、话题感谢
 - [x] 话题搜索
 - [x] 感谢回复者
@@ -32,7 +34,7 @@
 ## 设置项
 
 - `v2ex.browse.openInNewTab`：始终在新标签页中打开帖子，默认 `true`
-- `v2ex.browse.autoSignIn`：登录后自动进行每日签到，默认 `true`
+- `v2ex.browse.autoSignIn`：自动进行每日签到，默认 `true`
 - `v2ex.browse.showImagesInTopic`：查看帖子时显示图片，默认 `true`
 
 ## 代理说明
@@ -57,4 +59,4 @@
 
 ## 预览
 
-![预览1.jpg](https://files.seeusercontent.com/2026/05/26/jY3c/pasted-image-1779785248512.webp)
+![预览1.jpg](https://files.seeusercontent.com/2026/06/04/4cWg/pasted-image-1780563531661.webp)
