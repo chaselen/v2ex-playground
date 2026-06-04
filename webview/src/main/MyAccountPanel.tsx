@@ -12,6 +12,7 @@ import type {
   MyNotificationListData,
   MyTopicListData,
   WebviewAccountOverview,
+  WebviewDailySignInData,
   WebviewNotification,
   WebviewTopic
 } from '../../../src/shared/webview'
@@ -116,6 +117,22 @@ function openExternal(path: string) {
 }
 
 /**
+ * 判断消息是否为每日签到状态变化
+ * @param msg 扩展侧消息
+ */
+function isDailySignInStatusChangedMessage(
+  msg: unknown
+): msg is WebviewDailySignInData & { command: 'dailySignInStatusChanged' } {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'command' in msg &&
+    msg.command === 'dailySignInStatusChanged' &&
+    'signedIn' in msg
+  )
+}
+
+/**
  * 账户概览面板
  * @param props 组件参数
  */
@@ -179,6 +196,24 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
       disposed = true
     }
   }, [loggedIn])
+
+  useEffect(() => {
+    /**
+     * 处理扩展侧每日签到状态变化
+     * @param event 消息事件
+     */
+    function onMessage(event: MessageEvent) {
+      const msg = event.data
+      if (isDailySignInStatusChangedMessage(msg)) {
+        setDailySignedIn(msg.signedIn)
+      }
+    }
+
+    window.addEventListener('message', onMessage)
+    return () => {
+      window.removeEventListener('message', onMessage)
+    }
+  }, [])
 
   /**
    * 加载我的主题列表

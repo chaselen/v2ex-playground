@@ -1,7 +1,6 @@
 import vscode from 'vscode'
 import MainViewProvider from '@/providers/MainViewProvider'
 import login, { LoginResult } from '@/commands/login'
-import autoDailySignIn from '@/features/dailySignIn'
 import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import search from '@/commands/search'
@@ -28,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
   // 检查登录是否有效
   G.V2ex.checkCookie()
   // 插件激活后尝试自动签到
-  autoDailySignIn()
+  mainViewProvider.autoDailySignIn()
 
   // 注册主视图 WebviewView
   context.subscriptions.push(
@@ -45,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
         mainViewProvider.reloadViewData()
       }
       if (loginResult === LoginResult.success) {
-        autoDailySignIn({ notifyOnSuccess: true })
+        mainViewProvider.autoDailySignIn({ notifyOnSuccess: true })
       }
     })
   )

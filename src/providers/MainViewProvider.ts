@@ -1,7 +1,11 @@
 import vscode from 'vscode'
 import path from 'path'
 import { EOL } from 'os'
-import autoDailySignIn, { dailySignIn, getDailySignInStatus } from '@/features/dailySignIn'
+import autoDailySignIn, {
+  dailySignIn,
+  getDailySignInStatus,
+  type AutoDailySignInOptions
+} from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import openTopic from '@/features/openTopic'
@@ -55,7 +59,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     )
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
-        autoDailySignIn()
+        this.autoDailySignIn()
       }
     })
     webviewView.onDidDispose(() => {
@@ -343,6 +347,16 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    */
   private _handleDailySignIn(): Promise<WebviewDailySignInData> {
     return dailySignIn()
+  }
+
+  /**
+   * 自动执行每日签到并同步状态
+   * @param options 自动签到选项
+   */
+  autoDailySignIn(options: AutoDailySignInOptions = {}) {
+    autoDailySignIn(options)
+      .then(data => this._rpc?.post('dailySignInStatusChanged', data))
+      .catch(err => console.error(err))
   }
 
   /**

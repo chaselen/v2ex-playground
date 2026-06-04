@@ -239,5 +239,6 @@ export interface MainViewWebviewEvents {
   initData: WebviewEventDefinition<InitData>
   refreshLoadedNodes: WebviewEventDefinition<object>
   accountOverviewChanged: WebviewEventDefinition<AccountOverviewChangedData>
+  dailySignInStatusChanged: WebviewEventDefinition<WebviewDailySignInData>
   selectMainTab: WebviewEventDefinition<SelectMainTabData>
 }
