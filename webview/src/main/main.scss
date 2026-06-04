@@ -476,23 +476,23 @@
 
 .my-profile {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px 10px;
+  gap: 9px;
+  padding: 10px 12px 8px;
 }
 
 .my-avatar-link {
   display: flex;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 6px;
 }
 
 .my-avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
   background: var(--v2ex-default-bg);
   color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
@@ -515,7 +515,7 @@
 .my-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 6px 14px 12px;
+  padding: 2px 12px 8px;
 }
 
 .my-stat {
@@ -524,7 +524,7 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  min-height: 52px;
+  min-height: 44px;
   padding: 0 6px;
   color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
   text-align: center;
@@ -551,7 +551,7 @@
   }
 
   span {
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 13px;
     font-weight: 600;
   }
@@ -567,8 +567,8 @@
 }
 
 .my-activity {
-  min-height: 46px;
-  padding: 0 14px;
+  min-height: 38px;
+  padding: 0 12px;
 }
 
 .my-activity-progress {
@@ -589,8 +589,8 @@
 }
 
 .my-wallet {
-  min-height: 50px;
-  padding: 0 14px;
+  min-height: 42px;
+  padding: 0 12px;
   gap: 8px;
 }
 
@@ -598,7 +598,7 @@
   display: flex;
   justify-content: center;
   min-width: 0;
-  padding: 0 14px 12px;
+  padding: 0 12px 10px;
 
   .semi-button {
     max-width: 100%;
