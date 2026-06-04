@@ -704,17 +704,14 @@
   }
 
   .semi-tabs-tab-button:hover {
-    background: var(--v2ex-hover-bg);
-    color: var(--v2ex-hover-fg);
+    background: color-mix(in srgb, var(--v2ex-primary-button-bg) 8%, var(--v2ex-webview-bg));
+    color: var(--v2ex-webview-fg);
   }
 
   .semi-tabs-tab-button.semi-tabs-tab-active,
   .semi-tabs-tab-button.semi-tabs-tab-active:hover {
-    border-color: var(--v2ex-focus-border);
-    background: var(
-      --vscode-list-inactiveSelectionBackground,
-      var(--vscode-button-secondaryBackground, var(--v2ex-active-bg))
-    );
+    border-color: var(--v2ex-primary-button-bg);
+    background: color-mix(in srgb, var(--v2ex-primary-button-bg) 24%, var(--v2ex-webview-bg));
     color: var(--v2ex-active-fg);
   }
 
