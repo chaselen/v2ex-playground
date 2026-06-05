@@ -2,6 +2,8 @@ import { describe, expect, test } from 'vitest'
 import { V2exClient } from './client'
 import type {
   AccountOverview,
+  MemberContent,
+  MemberInfo,
   Node,
   SoV2exSource,
   Topic,
@@ -125,6 +127,30 @@ function expectNotification(notification: V2exNotification) {
 }
 
 /**
+ * 校验用户基本信息
+ * @param member 用户基本信息
+ */
+function expectMemberInfo(member: MemberInfo) {
+  expect(member.username).toEqual(expect.any(String))
+  expect(member.username.length).toBeGreaterThan(0)
+  expect(member.avatar).toEqual(expect.any(String))
+  expect(member.memberNumber).toEqual(expect.any(Number))
+  expect(member.memberNumber).toBeGreaterThanOrEqual(0)
+  expect(member.joinedAt).toEqual(expect.any(String))
+}
+
+/**
+ * 校验用户活动内容
+ * @param content 用户活动内容
+ */
+function expectMemberContent(content: MemberContent) {
+  expect(content.page).toEqual(expect.any(Number))
+  expect(content.totalPage).toEqual(expect.any(Number))
+  expect(Array.isArray(content.topics)).toBe(true)
+  expect(Array.isArray(content.replies)).toBe(true)
+}
+
+/**
  * 校验 SoV2EX 搜索结果
  * @param source 搜索结果
  */
@@ -192,6 +218,57 @@ describe.concurrent('V2exClient real requests', () => {
       floor: '1'
     })
     expectTopicDetail(detail)
+  })
+
+  test('gets member info and default activity from public member page', async () => {
+    const member = await client.getMemberInfo('livid')
+    const content = await client.getMemberContent('livid')
+
+    expect(member.username.toLowerCase()).toBe('livid')
+    expect(member.memberNumber).toBe(1)
+    expect(member.joinedAt).toContain('2010-04-25')
+    expect(member.activityRank).toEqual(expect.any(Number))
+    expect(content.tab).toBe('topics')
+    expect(content.topics.length).toBeGreaterThan(0)
+    expectMemberInfo(member)
+    expectMemberContent(content)
+    expectTopic(content.topics[0])
+  })
+
+  test('handles hidden member topic list and keeps recent replies', async () => {
+    const hiddenTopics = await client.getMemberContent('suzhaharcan')
+    const replies = await client.getMemberContent('chaselen', { tab: 'replies' })
+
+    expect(hiddenTopics.hidden).toBe(true)
+    expect(hiddenTopics.message).toMatch(/hidden|隐藏/)
+    expect(replies.replies.length).toBeGreaterThan(0)
+    expectMemberContent(hiddenTopics)
+    expectMemberContent(replies)
+  })
+
+  test('gets member category topics', async () => {
+    const content = await client.getMemberContent('livid', { tab: 'qna' })
+
+    expect(content.tab).toBe('qna')
+    expect(content.topics.length).toBeGreaterThan(0)
+    expectTopic(content.topics[0])
+    expectMemberContent(content)
+  })
+
+  test('gets paged member topics and replies', async () => {
+    const topics = await client.getMemberContent('livid', { tab: 'topics', page: 2 })
+    const replies = await client.getMemberContent('livid', { tab: 'replies', page: 2 })
+
+    expect(topics.tab).toBe('topics')
+    expect(topics.page).toBe(2)
+    expect(topics.totalPage).toBeGreaterThanOrEqual(2)
+    expect(topics.topics.length).toBeGreaterThan(0)
+    expect(replies.tab).toBe('replies')
+    expect(replies.page).toBe(2)
+    expect(replies.totalPage).toBeGreaterThanOrEqual(2)
+    expect(replies.replies.length).toBeGreaterThan(0)
+    expectMemberContent(topics)
+    expectMemberContent(replies)
   })
 
   test('gets all nodes', async () => {

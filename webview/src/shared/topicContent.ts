@@ -24,6 +24,15 @@ function extractTopicId(anchor: HTMLAnchorElement): string {
 }
 
 /**
+ * 从链接中提取用户名
+ * @param anchor 链接元素
+ */
+function extractMemberUsername(anchor: HTMLAnchorElement): string {
+  const match = /\/member\/([A-Za-z0-9_-]+)/.exec(anchor.href)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
+/**
  * 判断链接是否指向支持预览的图片
  * @param urlText 链接地址
  */
@@ -207,6 +216,39 @@ function bindTopicLink(anchor: HTMLAnchorElement) {
 }
 
 /**
+ * 给站内用户链接绑定扩展内跳转行为
+ * @param anchor 链接元素
+ */
+function bindMemberLink(anchor: HTMLAnchorElement) {
+  const username = extractMemberUsername(anchor)
+  if (!username) {
+    return
+  }
+  anchor.dataset.memberUsername = username
+  anchor.href = 'javascript:;'
+  anchor.onclick = () => {
+    postVsCodeMessage('openMember', {
+      username
+    })
+    return false
+  }
+}
+
+/**
+ * 给用户内容 HTML 中的站内链接增加数据标记
+ * @param html 原始 HTML
+ */
+export function normalizeMemberContentLinks(html?: string | null): string {
+  return normalizeHtml(html)
+    .replace(/href="\/t\/(\d+)([^"]*)"/g, 'href="javascript:;" data-topic-id="$1"')
+    .replace(
+      /href="\/member\/([A-Za-z0-9_-]+)"/g,
+      (_, username: string) =>
+        `href="javascript:;" data-member-username="${decodeURIComponent(username)}"`
+    )
+}
+
+/**
  * 给内容区域挂载图片预览与站内跳转行为
  * @param root 根节点
  * @param showImages 是否显示图片
@@ -232,6 +274,13 @@ export function enhanceTopicContent(root: ParentNode, showImages: boolean) {
       return
     }
     bindTopicLink(anchor)
+  })
+
+  topicLinks.forEach(anchor => {
+    if (!anchor.matches('.topic-content a[href*="/member/"]')) {
+      return
+    }
+    bindMemberLink(anchor)
   })
 }
 

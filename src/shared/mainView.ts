@@ -36,6 +36,10 @@ export interface WebviewTopic {
   /** 节点标题 */
   nodeTitle?: string
   replies: number
+  /** 展示时间 */
+  displayTime?: string
+  /** 最后回复用户 */
+  lastReplyUser?: string
 }
 
 /**
@@ -224,6 +228,7 @@ export interface MainViewRpcCommands {
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
   removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>
+  openMember: WebviewRpcDefinition<{ username: string }, void>
   openExternal: WebviewRpcDefinition<{ path: string }, void>
   search: WebviewRpcDefinition<object, void>
   login: WebviewRpcDefinition<object, void>

@@ -1,5 +1,6 @@
 import type { TopicDetail } from '../v2ex/types'
 import type { MainViewRpcCommands } from './mainView'
+import type { MemberPanelRpcCommands } from './memberView'
 import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
 
 /**
@@ -47,6 +48,7 @@ export interface TopicPanelRpcCommands {
   browseImage: WebviewRpcDefinition<{ src: string }, void>
   openExternal: WebviewRpcDefinition<{ src: string }, void>
   openTopic: WebviewRpcDefinition<{ topicId: string | number }, void>
+  openMember: WebviewRpcDefinition<{ username: string }, void>
   login: WebviewRpcDefinition<object, void>
   refresh: WebviewRpcDefinition<object, void>
   collect: WebviewRpcDefinition<object, void>
@@ -85,4 +87,5 @@ export type WebviewRequestRpcCommands = Pick<
   Pick<
     TopicPanelRpcCommands,
     'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'thankReply' | 'loadReplyPage'
-  >
+  > &
+  Pick<MemberPanelRpcCommands, 'loadMemberTab' | 'loadMemberPage'>

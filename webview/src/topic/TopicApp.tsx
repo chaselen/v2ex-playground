@@ -64,6 +64,14 @@ export default function TopicApp() {
   }
 
   /**
+   * 打开用户页
+   * @param username 用户名
+   */
+  function openMember(username: string) {
+    postVsCodeMessage('openMember', { username })
+  }
+
+  /**
    * 滚动到帖子顶部
    */
   function scrollToTop() {
@@ -261,7 +269,7 @@ export default function TopicApp() {
             <a
               className="user text-bold"
               href="javascript:;"
-              onClick={() => openExternal('/member/' + topic.authorName)}
+              onClick={() => openMember(topic.authorName)}
             >
               {topic.authorName}
             </a>
@@ -382,7 +390,7 @@ export default function TopicApp() {
                   <a
                     className={`user ${topic.authorName === reply.userName ? 'user--author' : ''}`}
                     href="javascript:;"
-                    onClick={() => openExternal('/member/' + reply.userName)}
+                    onClick={() => openMember(reply.userName)}
                   >
                     {reply.userName}
                   </a>

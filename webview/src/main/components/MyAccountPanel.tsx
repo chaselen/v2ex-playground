@@ -118,6 +118,14 @@ function openExternal(path: string) {
 }
 
 /**
+ * 打开用户页
+ * @param username 用户名
+ */
+function openMember(username: string) {
+  postVsCodeMessage('openMember', { username })
+}
+
+/**
  * 判断消息是否为每日签到状态变化
  * @param msg 扩展侧消息
  */
@@ -395,6 +403,12 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
       return
     }
 
+    const memberMatch = href.match(/\/member\/([A-Za-z0-9_-]+)/)
+    if (memberMatch) {
+      openMember(decodeURIComponent(memberMatch[1]))
+      return
+    }
+
     if (href) {
       openExternal(href)
     }
@@ -411,9 +425,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
           type="button"
           className={`${styles['my-link']} ${styles['my-notification-avatar-link']}`}
           title={notification.username}
-          onClick={() =>
-            openExternal(notification.memberPath || `/member/${notification.username}`)
-          }
+          onClick={() => openMember(notification.username)}
         >
           <Avatar
             size="extra-extra-small"
@@ -618,7 +630,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
               type="button"
               className={`${styles['my-link']} ${styles['my-avatar-link']}`}
               title={overview.username}
-              onClick={() => openExternal(`/member/${overview.username}`)}
+              onClick={() => openMember(overview.username)}
             >
               <Avatar
                 size="large"
@@ -634,7 +646,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
               type="button"
               className={`${styles['my-link']} ${styles['my-identity']}`}
               title={overview.username}
-              onClick={() => openExternal(`/member/${overview.username}`)}
+              onClick={() => openMember(overview.username)}
             >
               {overview.username}
             </button>

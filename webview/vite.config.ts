@@ -33,7 +33,8 @@ export default defineConfig({
       },
       input: {
         main: resolve(__dirname, 'main.html'),
-        topic: resolve(__dirname, 'topic.html')
+        topic: resolve(__dirname, 'topic.html'),
+        member: resolve(__dirname, 'member.html')
       }
     }
   }

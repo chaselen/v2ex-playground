@@ -40,6 +40,12 @@ export interface Topic {
 
   /** 回复数 */
   replies: number
+
+  /** 展示时间 */
+  displayTime?: string
+
+  /** 最后回复用户 */
+  lastReplyUser?: string
 }
 
 /**
@@ -181,6 +187,92 @@ export interface V2exNotification {
   time: string
   /** 消息正文 HTML */
   payloadHtml: string
+}
+
+/** 用户页话题分类标签 */
+export type MemberTopicTabKey = 'qna' | 'tech' | 'play' | 'jobs' | 'deals' | 'city'
+
+/** 用户页内容标签 */
+export type MemberContentTabKey = 'topics' | 'replies' | MemberTopicTabKey
+
+/**
+ * 用户基本信息
+ */
+export interface MemberInfo {
+  /** 头像地址 */
+  avatar: string
+  /** 用户名 */
+  username: string
+  /** 会员编号 */
+  memberNumber: number
+  /** 加入时间 */
+  joinedAt: string
+  /** 今日活跃度排名 */
+  activityRank?: number
+}
+
+/**
+ * 用户回复
+ */
+export interface MemberReply {
+  /** 话题 id */
+  topicId?: number
+  /** 话题标题 */
+  topicTitle: string
+  /** 话题路径 */
+  topicPath: string
+  /** 节点 */
+  node: Node
+  /** 话题作者 */
+  topicAuthor: string
+  /** 展示时间 */
+  time: string
+  /** 摘要 HTML */
+  summaryHtml: string
+  /** 回复内容 HTML */
+  contentHtml: string
+}
+
+/**
+ * 用户页内容
+ */
+export interface MemberContent {
+  /** 标签 key */
+  tab: MemberContentTabKey
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
+  /** 总数 */
+  totalCount: number
+  /** 话题列表 */
+  topics: Topic[]
+  /** 回复列表 */
+  replies: MemberReply[]
+  /** 内容是否被隐藏 */
+  hidden: boolean
+  /** 空态或隐藏提示 */
+  message: string
+}
+
+/**
+ * 用户活动请求选项
+ */
+export interface MemberContentOptions {
+  /** 内容标签 */
+  tab?: MemberContentTabKey
+  /** 页码 */
+  page?: number
+}
+
+/**
+ * 用户页资料
+ */
+export interface MemberProfile {
+  /** 用户基本信息 */
+  member: MemberInfo
+  /** 当前内容 */
+  content: MemberContent
 }
 
 /**

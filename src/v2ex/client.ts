@@ -16,7 +16,13 @@ import {
   SoV2exSort,
   SoV2exSource,
   AccountOverview,
-  V2exNotification
+  V2exNotification,
+  MemberContent,
+  MemberContentOptions,
+  MemberContentTabKey,
+  MemberInfo,
+  MemberReply,
+  MemberTopicTabKey
 } from './types'
 
 /** Cheerio 选择结果 */
@@ -33,6 +39,18 @@ const v2exRequestHeaders = {
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
   'Accept-Language': 'zh-CN,zh;q=0.9'
 }
+
+/** 用户页内容标签 */
+const memberContentTabs = new Set<MemberContentTabKey>([
+  'topics',
+  'replies',
+  'qna',
+  'tech',
+  'play',
+  'jobs',
+  'deals',
+  'city'
+])
 
 export class V2exClient {
   /** 域名 */
@@ -225,6 +243,8 @@ export class V2exClient {
       const nodeHref = nodeElement.attr('href') || ''
       // 在/my/topics页面中，自己的帖子回复数元素名为.count_orange
       const countElement = $(cell).find('.count_livid, .count_orange')
+      const topicInfo = $(cell).find('.topic_info')
+      const hasLastReply = /Lastly replied by|最后回复/.test(topicInfo.text())
 
       list.push({
         id: topicId,
@@ -233,11 +253,45 @@ export class V2exClient {
           name: fallbackNode?.name || nodeHref.split('go/')[1] || '',
           title: fallbackNode?.title || nodeElement.text().trim()
         },
-        replies: Number(countElement.text().trim()) || 0
+        replies: Number(countElement.text().trim()) || 0,
+        displayTime: topicInfo.find('span[title]').last().text().trim(),
+        lastReplyUser: hasLastReply
+          ? topicInfo.find('strong a[href^="/member/"]').last().text().trim()
+          : ''
       })
     })
 
     return list
+  }
+
+  /**
+   * 归一化用户页标签
+   * @param tab 标签
+   */
+  private normalizeMemberContentTab(tab?: MemberContentTabKey): MemberContentTabKey {
+    if (tab && memberContentTabs.has(tab)) {
+      return tab
+    }
+
+    return 'topics'
+  }
+
+  /**
+   * 获取用户页请求路径
+   * @param username 用户名
+   * @param tab 标签
+   * @param page 页码
+   */
+  private getMemberContentPath(username: string, tab: MemberContentTabKey, page: number): string {
+    if (tab === 'topics') {
+      return `/member/${username}/topics?p=${page}`
+    }
+
+    if (tab === 'replies') {
+      return `/member/${username}/replies?p=${page}`
+    }
+
+    return `/member/${username}/${tab}?p=${page}`
   }
 
   /**
@@ -270,6 +324,44 @@ export class V2exClient {
   getTopicIdByLink(topicLink: string): number | undefined {
     const match = topicLink.match(/t\/(\d+)/)
     return match ? Number(match[1]) : undefined
+  }
+
+  /**
+   * 根据用户名获取用户主页链接
+   * @param username 用户名
+   */
+  getMemberLink(username: string) {
+    return `${this.baseUrl}/member/${username}`
+  }
+
+  /**
+   * 获取用户基本信息
+   * @param username 用户名
+   */
+  async getMemberInfo(username: string): Promise<MemberInfo> {
+    const homeRes = await this.http.get<string>(`/member/${username}`)
+
+    const home$ = cheerio.load(homeRes.data)
+
+    return this.parseMemberInfo(home$, username)
+  }
+
+  /**
+   * 获取用户活动内容
+   * @param username 用户名
+   * @param options 获取选项
+   */
+  async getMemberContent(
+    username: string,
+    options: MemberContentOptions = {}
+  ): Promise<MemberContent> {
+    const tab = this.normalizeMemberContentTab(options.tab)
+    const page = this.normalizePage(options.page)
+    const res = await this.http.get<string>(this.getMemberContentPath(username, tab, page))
+
+    const $ = cheerio.load(res.data)
+
+    return this.parseMemberContent($, username, tab, page)
   }
 
   /**
@@ -533,6 +625,217 @@ export class V2exClient {
     }
 
     return overview
+  }
+
+  /**
+   * 解析用户基本信息
+   * @param $ cheerio 实例
+   * @param fallbackUsername 兜底用户名
+   */
+  private parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string): MemberInfo {
+    const profileBox = this.findMemberProfileBox($)
+    const avatar = profileBox.find('img.avatar[data-uid]').first()
+    const grayText = profileBox
+      .find('span.gray')
+      .filter((_, element) => {
+        const text = $(element).text()
+        return text.includes('member #') || text.includes('号会员')
+      })
+      .first()
+      .text()
+      .replace(/\s+/g, ' ')
+      .trim()
+    const ldJson = this.parseMemberLdJson($)
+    const memberNumber =
+      Number(avatar.attr('data-uid')) ||
+      Number(grayText.match(/member #(\d+)/i)?.[1] || 0) ||
+      Number(ldJson?.identifier || 0)
+    const joinedAt =
+      grayText.match(/(?:joined on|加入于)\s*([\d-]+\s+[\d:]+\s+[+-][\d:]+)/i)?.[1]?.trim() ||
+      String(ldJson?.dateCreated || '')
+    const activityRank =
+      Number(grayText.match(/(?:activity rank|活跃度排名)\s*(\d+)/i)?.[1] || 0) || undefined
+
+    return {
+      avatar: avatar.attr('src') || String(ldJson?.image || ''),
+      username:
+        profileBox.find('h1').first().text().trim() ||
+        avatar.attr('alt') ||
+        String(ldJson?.name || '') ||
+        fallbackUsername,
+      memberNumber,
+      joinedAt,
+      activityRank
+    }
+  }
+
+  /**
+   * 查找用户基本信息容器
+   * @param $ cheerio 实例
+   */
+  private findMemberProfileBox($: cheerio.CheerioAPI): CheerioSelection {
+    const boxes = $('#Main > .box')
+    const profileBox = boxes
+      .filter((_, element) => $(element).find('img.avatar[data-uid]').length > 0)
+      .first()
+
+    return profileBox
+  }
+
+  /**
+   * 解析用户页结构化数据
+   * @param $ cheerio 实例
+   */
+  private parseMemberLdJson($: cheerio.CheerioAPI): Record<string, unknown> | undefined {
+    const rawJson = $('script[type="application/ld+json"]').first().text().trim()
+    if (!rawJson) {
+      return undefined
+    }
+
+    try {
+      const parsed = JSON.parse(rawJson) as { mainEntity?: Record<string, unknown> }
+      return parsed.mainEntity
+    } catch {
+      return undefined
+    }
+  }
+
+  /**
+   * 解析用户页内容
+   * @param $ cheerio 实例
+   * @param username 用户名
+   * @param tab 标签
+   * @param page 页码
+   */
+  private parseMemberContent(
+    $: cheerio.CheerioAPI,
+    username: string,
+    tab: MemberContentTabKey,
+    page: number
+  ): MemberContent {
+    const content: MemberContent = {
+      tab,
+      page,
+      totalPage: this.parsePagerTotalPage($),
+      totalCount: this.parseMemberContentTotalCount($),
+      topics: [],
+      replies: [],
+      hidden: false,
+      message: ''
+    }
+
+    if (tab === 'replies') {
+      content.replies = this.parseMemberReplies($)
+      return content
+    }
+
+    const topicBox = this.findMemberTopicBox($)
+    content.hidden =
+      topicBox.text().includes('topics list is hidden') ||
+      topicBox.text().includes('主题列表被隐藏') ||
+      $('#Main').text().includes('topics list is hidden') ||
+      $('#Main').text().includes('主题列表被隐藏')
+    content.message = this.parseMemberTopicMessage($, topicBox, username)
+
+    if (!content.hidden) {
+      content.topics = this.parseTopicListCells($, topicBox.children('.cell.item'))
+    }
+
+    return content
+  }
+
+  /**
+   * 查找用户页主题列表容器
+   * @param $ cheerio 实例
+   */
+  private findMemberTopicBox($: cheerio.CheerioAPI): CheerioSelection {
+    const boxes = $('#Main > .box')
+    const tabBox = boxes
+      .filter((_, element) => $(element).children('.cell_tabs').length > 0)
+      .first()
+    if (tabBox.length) {
+      return tabBox
+    }
+
+    return boxes.filter((_, element) => $(element).children('.cell.item').length > 0).first()
+  }
+
+  /**
+   * 解析用户主题列表提示
+   * @param topicBox 主题列表容器
+   * @param username 用户名
+   */
+  private parseMemberTopicMessage(
+    $: cheerio.CheerioAPI,
+    topicBox: CheerioSelection,
+    username: string
+  ): string {
+    const hiddenText =
+      topicBox.find('.topic_content .gray').first().text().trim() ||
+      $('#Main .topic_content .gray')
+        .filter(
+          (_, element) =>
+            $(element).text().includes('topics list is hidden') ||
+            $(element).text().includes('主题列表被隐藏')
+        )
+        .first()
+        .text()
+        .trim()
+    if (hiddenText) {
+      return hiddenText
+    }
+
+    if (
+      topicBox.text().includes('topics list is hidden') ||
+      topicBox.text().includes('主题列表被隐藏')
+    ) {
+      return `${username} 已隐藏主题列表`
+    }
+
+    return ''
+  }
+
+  /**
+   * 解析用户内容总数
+   * @param $ cheerio 实例
+   */
+  private parseMemberContentTotalCount($: cheerio.CheerioAPI): number {
+    const text = $('#Main > .box .header .fr strong.gray').first().text().trim()
+    return Number(text.replace(/,/g, '')) || 0
+  }
+
+  /**
+   * 解析用户回复列表
+   * @param $ cheerio 实例
+   */
+  private parseMemberReplies($: cheerio.CheerioAPI): MemberReply[] {
+    const replies: MemberReply[] = []
+
+    $('#Main > .box .dock_area').each((_, element) => {
+      const dock = $(element)
+      const body = dock.next('.inner, .cell')
+      const summary = dock.find('.gray').first()
+      const topic = summary.find('a[href*="/t/"]').last()
+      const topicPath = topic.attr('href') || ''
+      const node = summary.find('a[href^="/go/"]').last()
+      const topicAuthor = summary.find('a[href^="/member/"]').first()
+
+      replies.push({
+        topicId: topicPath ? this.getTopicIdByLink(topicPath) : undefined,
+        topicTitle: topic.text().trim(),
+        topicPath,
+        node: {
+          name: (node.attr('href') || '').split('/go/')[1] || '',
+          title: node.text().trim()
+        },
+        topicAuthor: topicAuthor.text().trim(),
+        time: dock.find('.fade').first().attr('title') || dock.find('.fade').first().text().trim(),
+        summaryHtml: summary.html()?.trim() || '',
+        contentHtml: body.find('.reply_content').first().html()?.trim() || ''
+      })
+    })
+
+    return replies.filter(reply => reply.topicTitle || reply.contentHtml)
   }
 
   /**
@@ -817,7 +1120,6 @@ export class V2exClient {
         title: $(element).text().trim()
       })
     })
-    console.log(`获取到${nodes.length}个节点`)
     this._cachedNodes = nodes
     return nodes
   }

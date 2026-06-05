@@ -9,6 +9,7 @@ import autoDailySignIn, {
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import openTopic from '@/features/openTopic'
+import openMember from '@/features/openMember'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
@@ -101,6 +102,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
     rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
+    rpc.handle('openMember', msg => openMember({ username: msg.username }))
     rpc.handle('openExternal', msg => this._openExternal(msg.path))
     rpc.handle('search', () => vscode.commands.executeCommand('v2ex-main.search'))
     rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
@@ -377,7 +379,9 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       title: topic.title,
       nodeName: topic.node?.name,
       nodeTitle: topic.node?.title,
-      replies: topic.replies
+      replies: topic.replies,
+      displayTime: topic.displayTime,
+      lastReplyUser: topic.lastReplyUser
     }
   }
 

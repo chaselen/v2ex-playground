@@ -3,6 +3,7 @@ import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
 import openTopic from '@/features/openTopic'
+import openMember from '@/features/openMember'
 import { openImagePreview } from '@/features/imagePreview'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
@@ -199,6 +200,11 @@ export class TopicPanelController {
     this.rpc.handle('openTopic', msg => {
       if (msg.topicId !== undefined) {
         this.openTopic(msg.topicId)
+      }
+    })
+    this.rpc.handle('openMember', msg => {
+      if (msg.username) {
+        openMember({ username: String(msg.username) })
       }
     })
     this.rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
