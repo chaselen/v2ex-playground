@@ -3,7 +3,7 @@ import { Avatar, Badge, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/se
 import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
-import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
+import { postVsCodeMessage, requestVsCodeMessage } from '../../shared/vscode'
 import LoginPrompt from './LoginPrompt'
 import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
@@ -15,8 +15,9 @@ import type {
   WebviewDailySignInData,
   WebviewNotification,
   WebviewTopic
-} from '../../../src/shared/webview'
-import { normalizeHtml } from '../shared/topicContent'
+} from '../../../../src/shared/webview'
+import { normalizeHtml } from '../../shared/topicContent'
+import styles from './MyAccountPanel.module.scss'
 
 interface MyAccountPanelProps {
   /** 是否加载中 */
@@ -360,7 +361,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
         key={topic.id}
         topicId={topic.id}
         as="button"
-        className="my-topic-item"
+        className={styles['my-topic-item']}
         title={topic.title}
         replies={topic.replies}
       />
@@ -405,10 +406,10 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
    */
   function renderNotificationItem(notification: WebviewNotification) {
     return (
-      <div className="my-notification-item" key={notification.id}>
+      <div className={styles['my-notification-item']} key={notification.id}>
         <button
           type="button"
-          className="my-link my-notification-avatar-link"
+          className={`${styles['my-link']} ${styles['my-notification-avatar-link']}`}
           title={notification.username}
           onClick={() =>
             openExternal(notification.memberPath || `/member/${notification.username}`)
@@ -419,22 +420,22 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             shape="square"
             src={notification.avatar}
             alt={notification.username}
-            className="my-notification-avatar"
+            className={styles['my-notification-avatar']}
           >
             <IconUser />
           </Avatar>
         </button>
         <div
-          className="my-notification-body"
+          className={styles['my-notification-body']}
           onClick={event => handleNotificationClick(event, notification)}
         >
-          <div className="my-notification-meta">
+          <div className={styles['my-notification-meta']}>
             <span dangerouslySetInnerHTML={{ __html: normalizeHtml(notification.summaryHtml) }} />
             {!!notification.time && <time>{notification.time}</time>}
           </div>
           {!!notification.payloadHtml && (
             <div
-              className="my-notification-payload"
+              className={styles['my-notification-payload']}
               dangerouslySetInnerHTML={{ __html: normalizeHtml(notification.payloadHtml) }}
             />
           )}
@@ -454,7 +455,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     if (state.loading && !state.loaded) {
       return (
-        <div className="my-content-state">
+        <div className={styles['my-content-state']}>
           <Spin size="middle" />
         </div>
       )
@@ -462,12 +463,12 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     if (state.error) {
       return (
-        <div className="my-content-state">
+        <div className={styles['my-content-state']}>
           <Empty
             title="加载失败"
             description={state.error}
-            image={<IllustrationNoContent className="empty-illustration" />}
-            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
           <Button size="small" onClick={() => loadMyTopics(tab, state.page)}>
             重试
@@ -478,11 +479,11 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     if (!state.topics.length) {
       return (
-        <div className="my-content-state">
+        <div className={styles['my-content-state']}>
           <Empty
             title={emptyTitle}
-            image={<IllustrationNoContent className="empty-illustration" />}
-            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
         </div>
       )
@@ -490,9 +491,9 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     return (
       <>
-        <div className="my-topic-list">{state.topics.map(renderTopicItem)}</div>
+        <div className={styles['my-topic-list']}>{state.topics.map(renderTopicItem)}</div>
         {state.totalPage > 1 && (
-          <div className="my-content-pagination">
+          <div className={styles['my-content-pagination']}>
             <MainPagination
               currentPage={state.page}
               totalPage={state.totalPage}
@@ -515,7 +516,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     if (state.loading && !state.loaded) {
       return (
-        <div className="my-content-state">
+        <div className={styles['my-content-state']}>
           <Spin size="middle" />
         </div>
       )
@@ -523,12 +524,12 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     if (state.error) {
       return (
-        <div className="my-content-state">
+        <div className={styles['my-content-state']}>
           <Empty
             title="加载失败"
             description={state.error}
-            image={<IllustrationNoContent className="empty-illustration" />}
-            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
           <Button size="small" onClick={() => loadMyNotifications(state.page)}>
             重试
@@ -539,11 +540,11 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     if (!state.notifications.length) {
       return (
-        <div className="my-content-state">
+        <div className={styles['my-content-state']}>
           <Empty
             title="暂无消息"
-            image={<IllustrationNoContent className="empty-illustration" />}
-            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
         </div>
       )
@@ -551,11 +552,11 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     return (
       <>
-        <div className="my-notification-list">
+        <div className={styles['my-notification-list']}>
           {state.notifications.map(renderNotificationItem)}
         </div>
         {state.totalPage > 1 && (
-          <div className="my-content-pagination">
+          <div className={styles['my-content-pagination']}>
             <MainPagination
               currentPage={state.page}
               totalPage={state.totalPage}
@@ -575,8 +576,8 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
   if (loading) {
     return (
-      <section className="my-panel">
-        <div className="loading-panel">
+      <section className={styles['my-panel']}>
+        <div className={styles['loading-panel']}>
           <Spin size="middle" />
         </div>
       </section>
@@ -585,7 +586,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
   if (!loggedIn) {
     return (
-      <section className="my-panel">
+      <section className={styles['my-panel']}>
         <LoginPrompt />
       </section>
     )
@@ -593,12 +594,12 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
   if (!overview) {
     return (
-      <section className="my-panel">
-        <div className="empty-panel">
+      <section className={styles['my-panel']}>
+        <div className={styles['empty-panel']}>
           <Empty
             title="暂无账户概览"
-            image={<IllustrationNoContent className="empty-illustration" />}
-            darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
         </div>
       </section>
@@ -609,13 +610,13 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
   const activityPercent = Math.min(Math.max(overview.activityPercent, 0), 100)
 
   return (
-    <section className="my-panel">
-      <SimpleBar className="my-scroll" autoHide={false}>
-        <article className="my-card">
-          <header className="my-profile">
+    <section className={styles['my-panel']}>
+      <SimpleBar className={styles['my-scroll']} autoHide={false}>
+        <article className={styles['my-card']}>
+          <header className={styles['my-profile']}>
             <button
               type="button"
-              className="my-link my-avatar-link"
+              className={`${styles['my-link']} ${styles['my-avatar-link']}`}
               title={overview.username}
               onClick={() => openExternal(`/member/${overview.username}`)}
             >
@@ -624,14 +625,14 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
                 shape="square"
                 src={overview.avatar}
                 alt={overview.username}
-                className="my-avatar"
+                className={styles['my-avatar']}
               >
                 <IconUser />
               </Avatar>
             </button>
             <button
               type="button"
-              className="my-link my-identity"
+              className={`${styles['my-link']} ${styles['my-identity']}`}
               title={overview.username}
               onClick={() => openExternal(`/member/${overview.username}`)}
             >
@@ -639,11 +640,11 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             </button>
           </header>
 
-          <div className="my-stats">
+          <div className={styles['my-stats']}>
             {statItems.map(item => (
               <button
                 type="button"
-                className="my-link my-stat"
+                className={`${styles['my-link']} ${styles['my-stat']}`}
                 key={item.key}
                 onClick={() => openStatTarget(item.target)}
               >
@@ -653,7 +654,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             ))}
           </div>
 
-          <div className="my-activity">
+          <div className={styles['my-activity']}>
             <Progress
               percent={activityPercent}
               showInfo
@@ -661,43 +662,43 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
               stroke="#f59e0b"
               orbitStroke="color-mix(in srgb, #f59e0b 18%, var(--v2ex-widget-bg))"
               style={{ height: 6 }}
-              className="my-activity-progress"
+              className={styles['my-activity-progress']}
               aria-label="活跃度"
             />
           </div>
 
-          <footer className="my-wallet">
+          <footer className={styles['my-wallet']}>
             <button
               type="button"
-              className="my-link my-notice"
+              className={`${styles['my-link']} ${styles['my-notice']}`}
               onClick={() => changeContentTab('messages')}
             >
               {overview.unreadNoticeCount} 未读提醒
             </button>
             <button
               type="button"
-              className="my-link my-balance"
+              className={`${styles['my-link']} ${styles['my-balance']}`}
               aria-label="账户余额"
               onClick={() => openExternal('/balance')}
             >
               <span>{overview.gold}</span>
-              <i className="my-coin my-coin--gold" />
+              <i className={`${styles['my-coin']} ${styles['my-coin--gold']}`} />
               <span>{overview.silver}</span>
-              <i className="my-coin my-coin--silver" />
+              <i className={`${styles['my-coin']} ${styles['my-coin--silver']}`} />
               <span>{overview.bronze}</span>
-              <i className="my-coin my-coin--bronze" />
+              <i className={`${styles['my-coin']} ${styles['my-coin--bronze']}`} />
             </button>
             <button
               type="button"
-              className="my-link my-help"
+              className={`${styles['my-link']} ${styles['my-help']}`}
               aria-label="余额说明"
               onClick={() => openExternal('/help/currency')}
             >
-              <IconHelpCircle className="my-help-icon" />
+              <IconHelpCircle className={styles['my-help-icon']} />
             </button>
           </footer>
 
-          <div className="my-daily-sign-in">
+          <div className={styles['my-daily-sign-in']}>
             <Button
               theme={dailySignedIn ? 'light' : 'solid'}
               type={dailySignedIn ? 'tertiary' : 'primary'}
@@ -712,12 +713,12 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
           </div>
         </article>
 
-        <section className="my-content">
+        <section className={styles['my-content']}>
           <Tabs
             activeKey={activeContentTab}
             type="button"
             size="small"
-            className="my-content-tabs"
+            className={styles['my-content-tabs']}
             tabPaneMotion={false}
             onChange={value => changeContentTab(value as MyContentTabKey)}
           >
@@ -730,13 +731,13 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             <Tabs.TabPane
               itemKey="messages"
               tab={
-                <span className="my-message-tab">
+                <span className={styles['my-message-tab']}>
                   <span>消息</span>
                   {!!overview.unreadNoticeCount && (
                     <Badge
                       count={overview.unreadNoticeCount}
                       overflowCount={99}
-                      countClassName="my-message-badge-count"
+                      countClassName={styles['my-message-badge-count']}
                     />
                   )}
                 </span>

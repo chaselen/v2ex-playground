@@ -5,11 +5,12 @@ import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
-import { postVsCodeMessage } from '../shared/vscode'
+import { postVsCodeMessage } from '../../shared/vscode'
 import LoginPrompt from './LoginPrompt'
 import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
-import type { MainTabKey, NodeItem, TreeItem } from './types'
+import type { MainTabKey, NodeItem, TreeItem } from '../types'
+import styles from './NodeTree.module.scss'
 
 interface NodeTreeProps {
   tab: MainTabKey
@@ -243,7 +244,7 @@ export default function NodeTree(props: NodeTreeProps) {
    */
   function renderNodeActions(data: TreeItem) {
     return (
-      <div className="node-actions" onClick={stopTreeClick}>
+      <div className={styles['node-actions']} onClick={stopTreeClick}>
         {tab === 'custom' && (
           <Button
             theme="borderless"
@@ -297,7 +298,11 @@ export default function NodeTree(props: NodeTreeProps) {
     }
 
     return (
-      <div className="node-pagination" onClick={stopTreeClick} onMouseDown={stopTreeClick}>
+      <div
+        className={styles['node-pagination']}
+        onClick={stopTreeClick}
+        onMouseDown={stopTreeClick}
+      >
         <MainPagination
           currentPage={data.page}
           totalPage={data.totalPage}
@@ -322,15 +327,15 @@ export default function NodeTree(props: NodeTreeProps) {
     const data = getTreeItem(treeNode)
 
     return (
-      <div className={`tree-row tree-row--${data.type}`}>
+      <div className={`${styles['tree-row']} ${styles[`tree-row--${data.type}`] || ''}`}>
         {data.type === 'topic' && renderTopicRow(data)}
-        {data.type === 'loading' && <span className="loading-text">{label}</span>}
-        {data.type === 'error' && <span className="error-text">{label}</span>}
-        {data.type === 'empty' && <span className="empty-text">{label}</span>}
+        {data.type === 'loading' && <span className={styles['loading-text']}>{label}</span>}
+        {data.type === 'error' && <span className={styles['error-text']}>{label}</span>}
+        {data.type === 'empty' && <span className={styles['empty-text']}>{label}</span>}
         {data.type === 'pagination' && renderPaginationRow(data)}
         {data.type === 'node' && (
           <>
-            <span className="node-label">{label}</span>
+            <span className={styles['node-label']}>{label}</span>
             {renderNodeActions(data)}
           </>
         )}
@@ -385,8 +390,8 @@ export default function NodeTree(props: NodeTreeProps) {
 
   if (loading) {
     return (
-      <section className="node-tree-panel">
-        <div className="loading-panel">
+      <section className={styles['node-tree-panel']}>
+        <div className={styles['loading-panel']}>
           <Spin size="middle" />
         </div>
       </section>
@@ -395,20 +400,20 @@ export default function NodeTree(props: NodeTreeProps) {
 
   if (!nodes.length) {
     return (
-      <section className="node-tree-panel">
+      <section className={styles['node-tree-panel']}>
         {showLoginPrompt ? (
           <LoginPrompt />
         ) : (
-          <div className="empty-panel">
+          <div className={styles['empty-panel']}>
             <Empty
               title={emptyTexts[tab]}
-              image={<IllustrationNoContent className="empty-illustration" />}
-              darkModeImage={<IllustrationNoContentDark className="empty-illustration" />}
+              image={<IllustrationNoContent className={styles['empty-illustration']} />}
+              darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
             />
           </div>
         )}
         {tab === 'custom' && (
-          <div className="tree-footer">
+          <div className={styles['tree-footer']}>
             <Button
               block
               type="primary"
@@ -426,8 +431,8 @@ export default function NodeTree(props: NodeTreeProps) {
   }
 
   return (
-    <section className="node-tree-panel">
-      <SimpleBar className="node-tree-scroll" autoHide={false}>
+    <section className={styles['node-tree-panel']}>
+      <SimpleBar className={styles['node-tree-scroll']} autoHide={false}>
         <Tree
           expandedKeys={expandedKeys}
           value={selectedTopicKey}
@@ -435,7 +440,7 @@ export default function NodeTree(props: NodeTreeProps) {
           blockNode
           motion={false}
           expandAction="click"
-          className="node-tree"
+          className={styles['node-tree']}
           renderLabel={renderLabel}
           onExpand={handleExpand}
           onSelect={handleSelect}
@@ -443,7 +448,7 @@ export default function NodeTree(props: NodeTreeProps) {
       </SimpleBar>
 
       {tab === 'custom' && (
-        <div className="tree-footer">
+        <div className={styles['tree-footer']}>
           <Button
             block
             type="primary"

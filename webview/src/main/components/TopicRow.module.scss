@@ -1,0 +1,34 @@
+@mixin ellipsis {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.topic-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  cursor: pointer;
+
+  :global(.semi-badge) {
+    flex: none;
+    margin-right: 4px;
+  }
+}
+
+.topic-title {
+  flex: 1;
+  color: var(--v2ex-main-content-fg);
+  @include ellipsis;
+}
+
+.topic-badge-count {
+  background-color: var(--vscode-badge-background, var(--semi-color-danger));
+  color: var(--vscode-badge-foreground, #fff);
+}

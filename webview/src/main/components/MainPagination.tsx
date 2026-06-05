@@ -1,4 +1,5 @@
 import { Pagination } from '@douyinfe/semi-ui'
+import styles from './MainPagination.module.scss'
 
 interface MainPaginationProps {
   /** 当前页码 */
@@ -34,7 +35,7 @@ export default function MainPagination(props: MainPaginationProps) {
         onPageChange={onPageChange}
       />
       {showTotalCount && (
-        <span className="main-pagination-summary">{`共 ${totalCountText} 条`}</span>
+        <span className={styles['main-pagination-summary']}>{`共 ${totalCountText} 条`}</span>
       )}
     </>
   )

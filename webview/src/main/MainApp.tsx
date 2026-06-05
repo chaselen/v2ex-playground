@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Tabs } from '@douyinfe/semi-ui'
-import MyAccountPanel from './MyAccountPanel'
-import NodeTree from './NodeTree'
+import MyAccountPanel from './components/MyAccountPanel'
+import NodeTree from './components/NodeTree'
 import { requestVsCodeMessage } from '../shared/vscode'
 import {
   type AccountOverviewChangedData,

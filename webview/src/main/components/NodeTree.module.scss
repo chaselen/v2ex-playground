@@ -1,0 +1,283 @@
+@mixin ellipsis {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.node-tree-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.node-tree-scroll {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+
+  :global(.simplebar-content) {
+    padding: 4px 8px 0 !important;
+  }
+
+  :global(.simplebar-track.simplebar-vertical) {
+    width: 8px;
+    background: transparent;
+  }
+
+  :global(.simplebar-scrollbar::before) {
+    inset: 2px;
+    border-radius: 999px;
+    background: var(--vscode-scrollbarSlider-background);
+    opacity: 1;
+  }
+
+  :global(.simplebar-scrollbar.simplebar-visible::before),
+  :global(.simplebar-track:hover .simplebar-scrollbar::before) {
+    opacity: 1;
+  }
+
+  :global(.simplebar-track:hover .simplebar-scrollbar::before) {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+  }
+
+  :global(.simplebar-track.simplebar-horizontal) {
+    display: none;
+  }
+
+  :global(.simplebar-placeholder) {
+    width: auto !important;
+  }
+}
+
+.node-tree {
+  color: var(--v2ex-webview-fg);
+
+  :global(.semi-tree) {
+    background: transparent;
+    color: inherit;
+  }
+
+  :global(.semi-tree-wrapper),
+  :global(.semi-tree-option-list) {
+    min-width: 0;
+    background: transparent;
+  }
+
+  :global(.semi-tree-option) {
+    min-height: 26px;
+    color: var(--v2ex-webview-fg);
+    background: transparent;
+    outline-color: var(--v2ex-focus-border);
+
+    &:hover {
+      background: var(--v2ex-hover-bg);
+      color: var(--v2ex-hover-fg);
+    }
+  }
+
+  :global(.semi-tree-option-selected),
+  :global(.semi-tree-option-selected:hover),
+  :global(.semi-tree-option-on) {
+    background: var(--v2ex-active-bg);
+    color: var(--v2ex-active-fg);
+  }
+
+  :global(.semi-tree-option-label) {
+    min-width: 0;
+    flex: 1;
+    margin-left: 2px;
+    padding: 2px 4px;
+  }
+
+  :global(.semi-tree-option-label-text) {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  :global(.semi-tree-option-expand-icon),
+  :global(.semi-tree-option-empty-icon) {
+    color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
+  }
+
+  :global(.semi-tree-option:hover) .node-actions {
+    opacity: 1;
+  }
+}
+
+.node-tree-scroll,
+.node-tree {
+  :global(.simplebar-content-wrapper),
+  :global(.simplebar-mask),
+  :global(.simplebar-offset) {
+    min-height: 0;
+  }
+
+  :global(.simplebar-content-wrapper) {
+    outline: none;
+  }
+
+  :global(.simplebar-mask) {
+    background: transparent;
+  }
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.tree-row--empty {
+  min-height: 18px;
+}
+
+.tree-row--pagination {
+  min-height: 30px;
+}
+
+.node-label {
+  color: var(--v2ex-main-content-fg);
+  @include ellipsis;
+}
+
+.empty-text,
+.loading-text,
+.error-text {
+  @include ellipsis;
+}
+
+.loading-text {
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+}
+
+.error-text {
+  color: var(--vscode-errorForeground, #f14c4c);
+}
+
+.node-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0 4px;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+
+  :global(.semi-page) {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: none;
+    color: inherit;
+  }
+
+  :global(.semi-page-item) {
+    flex: none;
+    border-color: transparent;
+    background: transparent;
+    color: var(--v2ex-main-content-fg);
+  }
+
+  :global(.semi-page-item:hover) {
+    background: var(
+      --vscode-toolbar-hoverBackground,
+      var(--vscode-button-secondaryHoverBackground, var(--semi-color-fill-1))
+    );
+    color: var(--v2ex-hover-fg);
+  }
+
+  :global(.semi-page-item-active),
+  :global(.semi-page-item-active:hover) {
+    background: var(--v2ex-active-bg);
+    color: var(--v2ex-active-fg);
+  }
+
+  :global(.semi-page-item-disabled),
+  :global(.semi-page-item-disabled:hover) {
+    color: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
+    background: transparent;
+  }
+}
+
+.node-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.empty-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+
+  :global(.semi-empty) {
+    text-align: center;
+  }
+
+  :global(.semi-empty-image) {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  :global(.semi-empty-title) {
+    margin: 0 0 6px;
+    color: var(--v2ex-main-content-fg);
+    line-height: 1.4;
+  }
+
+  :global(.semi-empty-description) {
+    color: inherit;
+  }
+
+  :global(.semi-empty-content) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+  }
+}
+
+.empty-illustration {
+  width: 136px;
+  height: 136px;
+}
+
+.loading-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--v2ex-main-content-fg);
+
+  :global(.semi-spin-wrapper) {
+    color: var(--v2ex-focus-border, var(--vscode-progressBar-background));
+  }
+}
+
+.tree-footer {
+  padding: 8px;
+  border-top: 1px solid var(--v2ex-border);
+  background: var(--v2ex-webview-bg);
+}

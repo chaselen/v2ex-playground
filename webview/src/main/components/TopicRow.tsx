@@ -1,5 +1,6 @@
 import { Badge, Dropdown } from '@douyinfe/semi-ui'
-import { postVsCodeMessage } from '../shared/vscode'
+import { postVsCodeMessage } from '../../shared/vscode'
+import styles from './TopicRow.module.scss'
 
 /** 主题右键菜单动作 */
 type TopicContextMenuAction = 'copyLink' | 'copyTitleLink' | 'viewInBrowser'
@@ -60,12 +61,12 @@ export default function TopicRow(props: TopicRowProps) {
 
   const content = (
     <>
-      <span className="topic-title">{title}</span>
+      <span className={styles['topic-title']}>{title}</span>
       {!!replies && replies > 0 && (
         <Badge
           count={replies}
           overflowCount={99}
-          countClassName="topic-badge-count"
+          countClassName={styles['topic-badge-count']}
           countStyle={{
             backgroundColor: 'var(--vscode-badge-background)',
             color: 'var(--vscode-badge-foreground)'
@@ -74,7 +75,7 @@ export default function TopicRow(props: TopicRowProps) {
       )}
     </>
   )
-  const rowClassName = ['topic-row', className].filter(Boolean).join(' ')
+  const rowClassName = [styles['topic-row'], className].filter(Boolean).join(' ')
   const row =
     as === 'button' ? (
       <button
