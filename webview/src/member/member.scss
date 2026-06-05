@@ -294,8 +294,20 @@ $panel-border: var(--v2ex-border);
 .member-pagination,
 .member-more {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
   margin-top: 14px;
+}
+
+.member-pagination-summary {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: $muted-color;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .member-content-state,

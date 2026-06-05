@@ -388,19 +388,7 @@ function renderTopics(
       <div className="member-topic-list">
         {content.topics.map(topic => renderTopicItem(topic, openTopic))}
       </div>
-      {content.totalPage > 1 && (
-        <Pagination
-          className="member-pagination"
-          currentPage={content.page}
-          disabled={loading}
-          hideOnSinglePage
-          pageSize={1}
-          showQuickJumper
-          showTotal
-          total={content.totalPage}
-          onPageChange={loadPage}
-        />
-      )}
+      {renderMemberPagination(content, loading, loadPage)}
     </>
   )
 }
@@ -441,20 +429,41 @@ function renderReplies(
           renderReplyItem(reply, index, openTopic, openMember)
         )}
       </div>
-      {content.totalPage > 1 && (
-        <Pagination
-          className="member-pagination"
-          currentPage={content.page}
-          disabled={loading}
-          hideOnSinglePage
-          pageSize={1}
-          showQuickJumper
-          showTotal
-          total={content.totalPage}
-          onPageChange={loadPage}
-        />
-      )}
+      {renderMemberPagination(content, loading, loadPage)}
     </>
+  )
+}
+
+/**
+ * 渲染用户内容分页
+ * @param content 用户页内容
+ * @param loading 是否加载中
+ * @param loadPage 加载页码
+ */
+function renderMemberPagination(
+  content: MemberProfile['content'],
+  loading: boolean,
+  loadPage: (page: number) => void
+) {
+  if (content.totalPage <= 1) {
+    return null
+  }
+
+  return (
+    <div className="member-pagination">
+      <span className="member-pagination-summary">
+        总条数：{content.totalCount.toLocaleString('en-US')}
+      </span>
+      <Pagination
+        currentPage={content.page}
+        disabled={loading}
+        hideOnSinglePage
+        pageSize={1}
+        showQuickJumper
+        total={content.totalPage}
+        onPageChange={loadPage}
+      />
+    </div>
   )
 }
 
