@@ -12,11 +12,8 @@ const config: esbuild.BuildOptions = {
   target: 'es2022',
   sourcemap: !isProd,
   minify: isProd,
-  external: ['vscode'],
+  external: ['vscode']
   // platform: 'node' 自动 external 所有 Node 内置模块（path, fs, os 等）
-  alias: {
-    '@': './src'
-  }
 }
 
 async function main() {
