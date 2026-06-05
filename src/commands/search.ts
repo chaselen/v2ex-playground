@@ -1,5 +1,5 @@
 import vscode from 'vscode'
-import openTopic from '@/features/openTopic'
+import { openTopic } from '@/features/panelNavigation'
 import dayjs from 'dayjs'
 import { SoV2exSource, SoV2exSort } from '@/v2ex'
 import G from '@/global'

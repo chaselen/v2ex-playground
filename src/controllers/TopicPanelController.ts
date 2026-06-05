@@ -2,12 +2,11 @@ import path from 'path'
 import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
-import openTopic from '@/features/openTopic'
-import openMember from '@/features/openMember'
 import { openImagePreview } from '@/features/imagePreview'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
   TopicPanelMessage,
   TopicPanelRpcCommands,
@@ -16,13 +15,13 @@ import {
 } from '@/shared/webview'
 
 /**
- * 打开话题面板所需的最小参数
+ * 话题面板外部依赖
  */
-export interface TopicPanelInput {
-  /** 话题标题 */
-  label: string
-  /** 话题 id */
-  topicId: number | string
+export interface TopicPanelDeps {
+  /** 打开用户面板 */
+  openMember: (member: MemberPanelInput) => void
+  /** 打开话题面板 */
+  openTopic: (topic: TopicPanelInput) => void
 }
 
 /**
@@ -40,6 +39,9 @@ export class TopicPanelController {
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>
+
+  /** 外部面板导航依赖 */
+  private readonly deps: TopicPanelDeps
 
   /** 当前话题详情，仅在扩展侧维护 */
   private detail: TopicDetail = {
@@ -75,11 +77,13 @@ export class TopicPanelController {
 
   /**
    * @param input 话题面板输入参数
+   * @param deps 外部面板导航依赖
    */
-  constructor(input: TopicPanelInput) {
+  constructor(input: TopicPanelInput, deps: TopicPanelDeps) {
     const topicId = normalizeTopicId(input.topicId)
     this.key = G.V2ex.getTopicLinkById(topicId)
     this.topicId = topicId
+    this.deps = deps
     this.panel = createPanel(this.key, input.label)
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'topic.html')
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
@@ -204,7 +208,7 @@ export class TopicPanelController {
     })
     this.rpc.handle('openMember', msg => {
       if (msg.username) {
-        openMember({ username: String(msg.username) })
+        this.deps.openMember({ username: msg.username })
       }
     })
     this.rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
@@ -265,7 +269,7 @@ export class TopicPanelController {
    * @param topicId 话题 id
    */
   private openTopic(topicId: string | number) {
-    openTopic({
+    this.deps.openTopic({
       label: `/t/${topicId}`,
       topicId
     } satisfies TopicPanelInput)

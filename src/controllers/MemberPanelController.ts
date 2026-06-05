@@ -1,10 +1,10 @@
 import path from 'path'
 import vscode from 'vscode'
 import G from '@/global'
-import openTopic from '@/features/openTopic'
 import { openImagePreview } from '@/features/imagePreview'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } from '@/v2ex'
 import type {
   MemberPanelRpcCommands,
@@ -13,13 +13,13 @@ import type {
 } from '@/shared/webview'
 
 /**
- * 打开用户面板所需的最小参数
+ * 用户面板外部依赖
  */
-export interface MemberPanelInput {
-  /** 面板标题 */
-  label?: string
-  /** 用户名 */
-  username: string
+export interface MemberPanelDeps {
+  /** 打开用户面板 */
+  openMember: (member: MemberPanelInput) => void
+  /** 打开话题面板 */
+  openTopic: (topic: TopicPanelInput) => void
 }
 
 /**
@@ -38,6 +38,9 @@ export class MemberPanelController {
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>
 
+  /** 外部面板导航依赖 */
+  private readonly deps: MemberPanelDeps
+
   /** 当前用户资料，仅在扩展侧维护 */
   private profile?: MemberProfile
 
@@ -46,10 +49,12 @@ export class MemberPanelController {
 
   /**
    * @param input 用户面板输入参数
+   * @param deps 外部面板导航依赖
    */
-  constructor(input: MemberPanelInput) {
+  constructor(input: MemberPanelInput, deps: MemberPanelDeps) {
     this.username = input.username
     this.key = G.V2ex.getMemberLink(this.username)
+    this.deps = deps
     this.panel = createPanel(this.key, input.label || this.username)
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'member.html')
     this.rpc = new WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>(
@@ -139,7 +144,7 @@ export class MemberPanelController {
     this.rpc.handle('openExternal', msg => this.openExternal(String(msg.src || '')))
     this.rpc.handle('openTopic', msg => {
       if (msg.topicId !== undefined) {
-        openTopic({
+        this.deps.openTopic({
           label: msg.title || `/t/${msg.topicId}`,
           topicId: msg.topicId
         })
@@ -147,9 +152,7 @@ export class MemberPanelController {
     })
     this.rpc.handle('openMember', msg => {
       if (msg.username) {
-        import('@/features/openMember').then(({ default: openMember }) =>
-          openMember({ username: String(msg.username) })
-        )
+        this.deps.openMember({ username: msg.username })
       }
     })
     this.rpc.handle('refresh', () => this.refreshMember())

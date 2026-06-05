@@ -8,8 +8,7 @@ import autoDailySignIn, {
 } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
-import openTopic from '@/features/openTopic'
-import openMember from '@/features/openMember'
+import { openMember, openTopic } from '@/features/panelNavigation'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
