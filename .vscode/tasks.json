@@ -5,7 +5,7 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "compile",
+      "script": "build",
       "problemMatcher": [],
       "detail": "Build Webview assets and extension runtime",
       "group": {
