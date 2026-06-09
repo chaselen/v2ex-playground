@@ -54,13 +54,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 设置
   context.subscriptions.push(vscode.commands.registerCommand('v2ex-main.settings', () => setting()))
-
-  // 刷新全部（view/title 按钮）
-  context.subscriptions.push(
-    vscode.commands.registerCommand('v2ex-main.refresh', () =>
-      mainViewProvider.refreshLoadedNodes()
-    )
-  )
 }
 
 export function deactivate() {

@@ -75,6 +75,8 @@ export interface TopicPanelWebviewEvents {
 export type WebviewRequestRpcCommands = Pick<
   MainViewRpcCommands,
   | 'ready'
+  | 'refreshCollectionNodes'
+  | 'refreshMyOverview'
   | 'expandNode'
   | 'refreshNode'
   | 'getMyTopics'

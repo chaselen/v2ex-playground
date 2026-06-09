@@ -182,11 +182,21 @@ export interface WebviewDailySignInData {
 }
 
 /**
- * 自定义节点更新数据
+ * 节点列表数据
  */
-export interface CustomNodesUpdatedData {
+export interface NodeListData {
   /** 节点列表 */
   nodes: WebviewNode[]
+}
+
+/**
+ * 我的账户概览刷新数据
+ */
+export interface MyOverviewRefreshData {
+  /** 是否已登录 */
+  loggedIn: boolean
+  /** 账户概览 */
+  accountOverview?: WebviewAccountOverview
 }
 
 /**
@@ -212,7 +222,8 @@ export interface SelectMainTabData {
  */
 export interface MainViewRpcCommands {
   ready: WebviewRpcDefinition<object, InitData>
-  refreshAll: WebviewRpcDefinition<object, InitData>
+  refreshCollectionNodes: WebviewRpcDefinition<object, NodeListData>
+  refreshMyOverview: WebviewRpcDefinition<object, MyOverviewRefreshData>
   expandNode: WebviewRpcDefinition<
     { tab: MainTabKey; itemKey: string; page?: number },
     NodeChildrenData
@@ -228,8 +239,8 @@ export interface MainViewRpcCommands {
   getMyNotifications: WebviewRpcDefinition<{ page?: number }, MyNotificationListData>
   getDailySignInStatus: WebviewRpcDefinition<object, WebviewDailySignInData>
   dailySignIn: WebviewRpcDefinition<object, WebviewDailySignInData>
-  addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
-  removeNode: WebviewRpcDefinition<{ nodeName: string }, CustomNodesUpdatedData>
+  addNode: WebviewRpcDefinition<object, NodeListData>
+  removeNode: WebviewRpcDefinition<{ nodeName: string }, NodeListData>
   cancelCollectNode: WebviewRpcDefinition<{ nodeName: string }, void>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>
   openMember: WebviewRpcDefinition<{ username: string }, void>
@@ -246,7 +257,6 @@ export interface MainViewRpcCommands {
  */
 export interface MainViewWebviewEvents {
   initData: WebviewEventDefinition<InitData>
-  refreshLoadedNodes: WebviewEventDefinition<object>
   accountOverviewChanged: WebviewEventDefinition<AccountOverviewChangedData>
   dailySignInStatusChanged: WebviewEventDefinition<WebviewDailySignInData>
   selectMainTab: WebviewEventDefinition<SelectMainTabData>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type Ref } from 'react'
 import { Avatar, Badge, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
@@ -20,6 +20,8 @@ import { normalizeHtml } from '../../shared/topicContent'
 import styles from './MyAccountPanel.module.scss'
 
 interface MyAccountPanelProps {
+  /** 面板实例引用 */
+  ref?: Ref<MyAccountPanelHandle>
   /** 是否加载中 */
   loading?: boolean
   /** 是否已登录 */
@@ -28,6 +30,14 @@ interface MyAccountPanelProps {
   overview?: WebviewAccountOverview
   /** 打开节点收藏 */
   onOpenNodeCollection: () => void
+}
+
+/**
+ * 我的账户面板实例
+ */
+export interface MyAccountPanelHandle {
+  /** 刷新已加载的内容标签 */
+  refreshLoadedTabs: () => Promise<void>
 }
 
 /** 收藏统计字段 */
@@ -146,7 +156,7 @@ function isDailySignInStatusChangedMessage(
  * @param props 组件参数
  */
 export default function MyAccountPanel(props: MyAccountPanelProps) {
-  const { loading, loggedIn, overview, onOpenNodeCollection } = props
+  const { ref, loading, loggedIn, overview, onOpenNodeCollection } = props
   const [activeContentTab, setActiveContentTab] = useState<MyContentTabKey>('topicCollection')
   const [topicLists, setTopicLists] = useState<MyTopicListsState>({
     topicCollection: createMyTopicListState(),
@@ -157,6 +167,11 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
   )
   const [dailySignedIn, setDailySignedIn] = useState(false)
   const [dailySignInLoading, setDailySignInLoading] = useState(false)
+  const topicRequestSeq = useRef<Record<MyContentTopicTabKey, number>>({
+    topicCollection: 0,
+    specialFollowing: 0
+  })
+  const notificationRequestSeq = useRef(0)
 
   useEffect(() => {
     if (!loggedIn) {
@@ -206,6 +221,26 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     }
   }, [loggedIn])
 
+  useImperativeHandle(ref, () => ({
+    async refreshLoadedTabs() {
+      if (!loggedIn) {
+        return
+      }
+
+      const requests: Promise<void>[] = []
+      if (topicLists.topicCollection.loaded) {
+        requests.push(loadMyTopics('topicCollection', 1))
+      }
+      if (topicLists.specialFollowing.loaded) {
+        requests.push(loadMyTopics('specialFollowing', 1))
+      }
+      if (notificationList.loaded) {
+        requests.push(loadMyNotifications(1))
+      }
+      await Promise.all(requests)
+    }
+  }))
+
   useEffect(() => {
     /**
      * 处理扩展侧每日签到状态变化
@@ -230,6 +265,9 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
    * @param page 页码
    */
   async function loadMyTopics(tab: MyContentTopicTabKey, page: number) {
+    const requestSeq = topicRequestSeq.current[tab] + 1
+    topicRequestSeq.current[tab] = requestSeq
+
     setTopicLists(current => ({
       ...current,
       [tab]: {
@@ -241,8 +279,13 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     try {
       const data = await requestVsCodeMessage('getMyTopics', { tab, page })
-      onMyTopicListLoaded(data)
+      if (topicRequestSeq.current[tab] === requestSeq) {
+        onMyTopicListLoaded(data)
+      }
     } catch (err) {
+      if (topicRequestSeq.current[tab] !== requestSeq) {
+        return
+      }
       setTopicLists(current => ({
         ...current,
         [tab]: {
@@ -278,6 +321,9 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
    * @param page 页码
    */
   async function loadMyNotifications(page: number) {
+    const requestSeq = notificationRequestSeq.current + 1
+    notificationRequestSeq.current = requestSeq
+
     setNotificationList(current => ({
       ...current,
       loading: true,
@@ -286,8 +332,13 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     try {
       const data = await requestVsCodeMessage('getMyNotifications', { page })
-      onMyNotificationsLoaded(data)
+      if (notificationRequestSeq.current === requestSeq) {
+        onMyNotificationsLoaded(data)
+      }
     } catch (err) {
+      if (notificationRequestSeq.current !== requestSeq) {
+        return
+      }
       setNotificationList(current => ({
         ...current,
         loading: false,

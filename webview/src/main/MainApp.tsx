@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
-import { Tabs, Toast } from '@douyinfe/semi-ui'
-import MyAccountPanel from './components/MyAccountPanel'
+import { useEffect, useRef, useState } from 'react'
+import { Button, Tabs, Toast } from '@douyinfe/semi-ui'
+import { IconRefresh } from '@douyinfe/semi-icons'
+import MyAccountPanel, { type MyAccountPanelHandle } from './components/MyAccountPanel'
 import NodeTree from './components/NodeTree'
 import { requestVsCodeMessage } from '../shared/vscode'
 import {
@@ -9,6 +10,7 @@ import {
   type InitData,
   type MainPanelTabKey,
   type NodeChildrenData,
+  type NodeListData,
   type SelectMainTabData,
   type WebviewAccountOverview,
   type WebviewNode,
@@ -16,8 +18,13 @@ import {
 } from '../../../src/shared/webview'
 import type { MainTabKey, MainTabs, NodeItem } from './types'
 
-/** 主面板标签 key */
-const tabKeys: MainTabKey[] = ['explore', 'custom', 'collection']
+/** 主面板标签文案 */
+const tabLabels: Record<MainPanelTabKey, string> = {
+  explore: '首页',
+  custom: '自定义',
+  collection: '收藏节点',
+  my: '我的'
+}
 
 /**
  * 创建带前端状态的节点项
@@ -110,6 +117,7 @@ function isSelectMainTabMessage(
  */
 export default function MainApp() {
   const [activeTab, setActiveTab] = useState<MainPanelTabKey>('explore')
+  const [refreshingTabs, setRefreshingTabs] = useState<MainPanelTabKey[]>([])
   const [loggedIn, setLoggedIn] = useState(false)
   const [accountOverview, setAccountOverview] = useState<WebviewAccountOverview>()
   const [initializing, setInitializing] = useState(true)
@@ -118,6 +126,8 @@ export default function MainApp() {
     custom: [],
     collection: []
   })
+  const myAccountPanelRef = useRef<MyAccountPanelHandle>(null)
+  const nodeRequestSeq = useRef(new Map<string, number>())
 
   /**
    * 更新单个节点
@@ -139,6 +149,21 @@ export default function MainApp() {
    */
   function setNodeLoading(tab: MainTabKey, itemKey: string) {
     updateNode(tab, itemKey, node => ({ ...node, loading: true }))
+  }
+
+  /**
+   * 批量标记节点加载中
+   * @param tab 标签 key
+   * @param itemKeys 列表项 key
+   */
+  function setNodesLoading(tab: MainTabKey, itemKeys: string[]) {
+    const itemKeySet = new Set(itemKeys)
+    setTabs(current => ({
+      ...current,
+      [tab]: current[tab].map(node =>
+        itemKeySet.has(node.name) ? { ...node, loading: true } : node
+      )
+    }))
   }
 
   /**
@@ -238,7 +263,11 @@ export default function MainApp() {
    * 处理节点话题列表
    * @param data 节点子项数据
    */
-  function onNodeChildren(data: NodeChildrenData) {
+  function onNodeChildren(data: NodeChildrenData, requestSeq: number) {
+    if (nodeRequestSeq.current.get(`${data.tab}:${data.itemKey}`) !== requestSeq) {
+      return
+    }
+
     updateNode(data.tab, data.itemKey, node => {
       if (data.error) {
         return {
@@ -277,19 +306,26 @@ export default function MainApp() {
     itemKey: string,
     page = 1
   ) {
+    const requestKey = `${tab}:${itemKey}`
+    const requestSeq = (nodeRequestSeq.current.get(requestKey) || 0) + 1
+    nodeRequestSeq.current.set(requestKey, requestSeq)
+
     try {
       const data = await requestVsCodeMessage(command, { tab, itemKey, page })
-      onNodeChildren(data)
+      onNodeChildren(data, requestSeq)
     } catch (err) {
-      onNodeChildren({
-        tab,
-        itemKey,
-        page,
-        totalPage: 1,
-        totalCount: 0,
-        children: [],
-        error: (err as Error).message
-      })
+      onNodeChildren(
+        {
+          tab,
+          itemKey,
+          page,
+          totalPage: 1,
+          totalCount: 0,
+          children: [],
+          error: (err as Error).message
+        },
+        requestSeq
+      )
     }
   }
 
@@ -297,7 +333,7 @@ export default function MainApp() {
    * 处理自定义节点更新
    * @param data 自定义节点数据
    */
-  function onCustomNodesUpdated(data: { nodes: WebviewNode[] }) {
+  function onCustomNodesUpdated(data: NodeListData) {
     setTabs(current => ({
       ...current,
       custom: mergeNodeItems(data.nodes, current.custom)
@@ -305,28 +341,68 @@ export default function MainApp() {
   }
 
   /**
-   * 刷新已加载过的节点
+   * 刷新当前标签
+   * @param tab 标签 key
    */
-  function refreshLoadedNodes() {
-    setTabs(current => {
-      const nextTabs: MainTabs = {
-        explore: current.explore.map(node => ({ ...node })),
-        custom: current.custom.map(node => ({ ...node })),
-        collection: current.collection.map(node => ({ ...node }))
+  async function refreshTab(tab: MainPanelTabKey) {
+    if (refreshingTabs.includes(tab)) {
+      return
+    }
+
+    setRefreshingTabs(current => [...current, tab])
+
+    try {
+      if (tab === 'my') {
+        const [overviewResult, tabsResult] = await Promise.allSettled([
+          requestVsCodeMessage('refreshMyOverview'),
+          myAccountPanelRef.current?.refreshLoadedTabs()
+        ])
+        if (overviewResult.status === 'rejected') {
+          throw overviewResult.reason
+        }
+        if (tabsResult.status === 'rejected') {
+          throw tabsResult.reason
+        }
+        const data = overviewResult.value
+        setLoggedIn(data.loggedIn)
+        setAccountOverview(data.accountOverview)
+        return
       }
 
-      tabKeys.forEach(tab => {
-        nextTabs[tab] = nextTabs[tab].map(node => {
-          if (node.children === null || node.loading) {
-            return node
-          }
-          requestNodeChildren('refreshNode', tab, node.name, node.page)
-          return { ...node, loading: true }
-        })
-      })
+      if (tab === 'collection') {
+        const data = await requestVsCodeMessage('refreshCollectionNodes')
+        const nodeNames = new Set(data.nodes.map(node => node.name))
+        const loadedNodes = tabs.collection.filter(
+          node => nodeNames.has(node.name) && node.children !== null
+        )
+        const loadedNodeNames = new Set(loadedNodes.map(node => node.name))
 
-      return nextTabs
-    })
+        setTabs(current => ({
+          ...current,
+          collection: mergeNodeItems(data.nodes, current.collection).map(node =>
+            loadedNodeNames.has(node.name) ? { ...node, loading: true } : node
+          )
+        }))
+
+        await Promise.all(
+          loadedNodes.map(node => requestNodeChildren('refreshNode', 'collection', node.name, 1))
+        )
+        return
+      }
+
+      const loadedNodes = tabs[tab].filter(node => node.children !== null)
+      setNodesLoading(
+        tab,
+        loadedNodes.map(node => node.name)
+      )
+      await Promise.all(
+        loadedNodes.map(node => requestNodeChildren('refreshNode', tab, node.name, 1))
+      )
+    } catch (err) {
+      Toast.error((err as Error).message || '刷新失败')
+    } finally {
+      setRefreshingTabs(current => current.filter(key => key !== tab))
+    }
   }
 
   useEffect(() => {
@@ -349,10 +425,6 @@ export default function MainApp() {
       if (isSelectMainTabMessage(msg)) {
         setActiveTab(msg.tab)
         return
-      }
-
-      if (msg.command === 'refreshLoadedNodes') {
-        refreshLoadedNodes()
       }
     }
 
@@ -379,10 +451,23 @@ export default function MainApp() {
         collapsible="auto"
         className="main-tabs"
         contentStyle={{ height: '100%', minHeight: 0, overflow: 'hidden' }}
+        tabBarExtraContent={
+          <Button
+            className="main-tab-refresh"
+            theme="borderless"
+            type="tertiary"
+            size="small"
+            icon={<IconRefresh />}
+            loading={refreshingTabs.includes(activeTab)}
+            title={`刷新${tabLabels[activeTab]}`}
+            aria-label={`刷新${tabLabels[activeTab]}`}
+            onClick={() => refreshTab(activeTab)}
+          />
+        }
         tabPaneMotion={false}
         onChange={value => setActiveTab(value as MainPanelTabKey)}
       >
-        <Tabs.TabPane itemKey="explore" tab="首页">
+        <Tabs.TabPane itemKey="explore" tab={tabLabels.explore}>
           <NodeTree
             tab="explore"
             nodes={tabs.explore}
@@ -393,7 +478,7 @@ export default function MainApp() {
             onRemoveNode={removeNode}
           />
         </Tabs.TabPane>
-        <Tabs.TabPane itemKey="custom" tab="自定义">
+        <Tabs.TabPane itemKey="custom" tab={tabLabels.custom}>
           <NodeTree
             tab="custom"
             nodes={tabs.custom}
@@ -405,7 +490,7 @@ export default function MainApp() {
             onRemoveNode={removeNode}
           />
         </Tabs.TabPane>
-        <Tabs.TabPane itemKey="collection" tab="收藏节点">
+        <Tabs.TabPane itemKey="collection" tab={tabLabels.collection}>
           <NodeTree
             tab="collection"
             nodes={tabs.collection}
@@ -418,8 +503,9 @@ export default function MainApp() {
             onCancelCollectNode={cancelCollectNode}
           />
         </Tabs.TabPane>
-        <Tabs.TabPane itemKey="my" tab="我的">
+        <Tabs.TabPane itemKey="my" tab={tabLabels.my}>
           <MyAccountPanel
+            ref={myAccountPanelRef}
             loading={initializing}
             loggedIn={loggedIn}
             overview={accountOverview}

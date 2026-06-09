@@ -81,6 +81,13 @@
     font-size: var(--v2ex-main-font-size);
   }
 
+  > .semi-tabs-bar-line .semi-tabs-bar-extra {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    line-height: normal;
+  }
+
   > .semi-tabs-bar .semi-tabs-tab-active {
     color: var(--vscode-sideBarTitle-foreground, var(--v2ex-webview-fg));
   }
@@ -115,6 +122,14 @@
     height: 100%;
     overflow: hidden;
   }
+}
+
+.main-tab-refresh.semi-button {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  padding: 0;
+  color: var(--v2ex-webview-fg);
 }
 
 .semi-dropdown-item {

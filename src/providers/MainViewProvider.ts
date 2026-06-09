@@ -12,7 +12,6 @@ import { openMember, openTopic } from '@/features/panelNavigation'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
-  CustomNodesUpdatedData,
   EXPLORE_NODES,
   InitData,
   MainTabKey,
@@ -21,7 +20,9 @@ import {
   MainViewWebviewEvents,
   MyContentTabKey,
   MyNotificationListData,
+  MyOverviewRefreshData,
   MyTopicListData,
+  NodeListData,
   WebviewAccountOverview,
   NodeChildrenData,
   WebviewDailySignInData,
@@ -91,7 +92,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       this._webviewReady = true
       return this._getInitData()
     })
-    rpc.handle('refreshAll', () => this._getInitData())
+    rpc.handle('refreshCollectionNodes', () => this._handleRefreshCollectionNodes())
+    rpc.handle('refreshMyOverview', () => this._handleRefreshMyOverview())
     rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.itemKey, msg.page))
     rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.itemKey, msg.page))
     rpc.handle('getMyTopics', msg => this._handleGetMyTopics(msg.tab, msg.page))
@@ -171,6 +173,38 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * 刷新收藏节点列表
+   */
+  private async _handleRefreshCollectionNodes(): Promise<NodeListData> {
+    if (!G.getCookie()) {
+      return { nodes: [] }
+    }
+
+    const nodes = await G.V2ex.getCollectionNodes()
+    return {
+      nodes: nodes.map(node => ({
+        name: node.name,
+        title: node.title
+      }))
+    }
+  }
+
+  /**
+   * 刷新我的账户概览
+   */
+  private async _handleRefreshMyOverview(): Promise<MyOverviewRefreshData> {
+    const loggedIn = !!G.getCookie()
+    if (!loggedIn) {
+      return { loggedIn }
+    }
+
+    return {
+      loggedIn,
+      accountOverview: await G.V2ex.getAccountOverview({ force: true })
+    }
+  }
+
+  /**
    * 展开节点时获取话题列表
    * @param tab 标签 key
    * @param itemKey 列表项 key，首页中为 tab 名，其他列表中为节点 name
@@ -225,7 +259,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   /**
    * 获取自定义节点视图数据
    */
-  private _getCustomNodesData(): CustomNodesUpdatedData {
+  private _getCustomNodesData(): NodeListData {
     const customNodes = G.getCustomNodes()
     return {
       nodes: customNodes.map(n => ({
@@ -238,7 +272,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   /**
    * 添加自定义节点
    */
-  private async _handleAddNode(): Promise<CustomNodesUpdatedData> {
+  private async _handleAddNode(): Promise<NodeListData> {
     const nodes = await vscode.window.withProgress(
       {
         title: '获取节点信息',
@@ -278,7 +312,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 删除自定义节点
    * @param nodeName 节点 name
    */
-  private async _handleRemoveNode(nodeName: string): Promise<CustomNodesUpdatedData> {
+  private async _handleRemoveNode(nodeName: string): Promise<NodeListData> {
     G.removeCustomNode(nodeName)
     return this._getCustomNodesData()
   }
@@ -439,13 +473,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     this._getInitData()
       .then(data => this._rpc?.post('initData', data))
       .catch(err => console.error(err))
-  }
-
-  /**
-   * 刷新 Webview 中已加载过的节点
-   */
-  refreshLoadedNodes() {
-    this._rpc?.post('refreshLoadedNodes')
   }
 
   /**

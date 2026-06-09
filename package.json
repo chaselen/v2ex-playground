@@ -37,11 +37,6 @@
         "command": "v2ex-main.settings",
         "title": "设置",
         "icon": "$(gear)"
-      },
-      {
-        "command": "v2ex-main.refresh",
-        "title": "刷新",
-        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {
@@ -76,32 +71,23 @@
         {
           "command": "v2ex-main.settings",
           "when": "false"
-        },
-        {
-          "command": "v2ex-main.refresh",
-          "when": "false"
         }
       ],
       "view/title": [
         {
-          "command": "v2ex-main.refresh",
+          "command": "v2ex-main.search",
           "when": "view == v2ex-main",
           "group": "navigation@0"
         },
         {
-          "command": "v2ex-main.search",
+          "command": "v2ex-main.settings",
           "when": "view == v2ex-main",
           "group": "navigation@1"
         },
         {
-          "command": "v2ex-main.settings",
-          "when": "view == v2ex-main",
-          "group": "navigation@2"
-        },
-        {
           "command": "v2ex.login",
           "when": "view == v2ex-main",
-          "group": "navigation@3"
+          "group": "navigation@2"
         }
       ]
     },
