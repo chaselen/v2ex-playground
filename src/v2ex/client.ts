@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio'
 import axios, { AxiosResponse } from 'axios'
 import { parse as parseCookieHeader } from 'cookie'
+import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
 import {
   AccountRestrictedError,
@@ -21,8 +22,7 @@ import {
   MemberContentOptions,
   MemberContentTabKey,
   MemberInfo,
-  MemberReply,
-  MemberTopicTabKey
+  MemberReply
 } from './types'
 
 /** Cheerio 选择结果 */
@@ -51,6 +51,23 @@ const memberContentTabs = new Set<MemberContentTabKey>([
   'deals',
   'city'
 ])
+
+/** 会返回账户概览的 V2EX 页面路径 */
+const accountOverviewPathPatterns = [
+  '/',
+  '/go/*',
+  '/my/following',
+  '/my/nodes',
+  '/my/topics',
+  '/notifications',
+  '/t/*',
+  '/planes',
+  '/mission/daily',
+  '/mission/daily/*'
+]
+
+/** 账户概览页面路径匹配器 */
+const isAccountOverviewPath = picomatch(accountOverviewPathPatterns)
 
 export class V2exClient {
   /** 域名 */
@@ -94,6 +111,7 @@ export class V2exClient {
     })
     this.http.interceptors.response.use(response => {
       this.updateCookieFromResponse(response)
+      this.updateAccountOverviewFromResponse(response)
       return response
     })
   }
@@ -163,6 +181,26 @@ export class V2exClient {
   }
 
   /**
+   * 从指定页面响应更新账户概览缓存
+   * @param response HTTP 响应
+   */
+  private updateAccountOverviewFromResponse(response: AxiosResponse): void {
+    if (typeof response.data !== 'string') {
+      return
+    }
+
+    const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
+    if (requestUrl.host !== 'v2ex.com' && !requestUrl.host.endsWith('.v2ex.com')) {
+      return
+    }
+    if (!isAccountOverviewPath(requestUrl.pathname)) {
+      return
+    }
+
+    this.updateAccountOverviewFromHtml(cheerio.load(response.data))
+  }
+
+  /**
    * 获取响应对应的最终链接
    * @param response HTTP 响应
    */
@@ -195,7 +233,6 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
-    this.updateAccountOverviewFromHtml($)
     const cells = $('#Main > .box').last().children('.cell.item')
 
     return {
@@ -371,7 +408,6 @@ export class V2exClient {
   async getTopicListByTab(tab: string): Promise<Topic[]> {
     const { data: html } = await this.http.get(`/?tab=${tab}`)
     const $ = cheerio.load(html)
-    this.updateAccountOverviewFromHtml($)
     const cells = $('#Main > .box').eq(0).children('.cell.item')
 
     return this.parseTopicListCells($, cells)
@@ -389,7 +425,6 @@ export class V2exClient {
   ): Promise<{ totalPage: number; totalCount: number; list: Topic[] }> {
     const { data: html } = await this.http.get(`/go/${nodeName}?p=${page}`)
     const $ = cheerio.load(html)
-    this.updateAccountOverviewFromHtml($)
     const nodeTitle = $('.node-breadcrumb').text().split('›')[1].trim()
     const cells = $('#TopicsNode .cell[class*="t_"]')
     return {
@@ -441,7 +476,6 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
-    this.updateAccountOverviewFromHtml($)
     const totalCount = Number($('.header .fr strong.gray').first().text().trim() || 0)
     const list: V2exNotification[] = []
 
@@ -491,7 +525,6 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
-    this.updateAccountOverviewFromHtml($)
     const topic = this.parseTopicMeta($, topicId)
     topic.replies = this.parseReplies($)
     topic.replyTotalPage = this.parsePagerTotalPage($)
@@ -511,9 +544,8 @@ export class V2exClient {
       return this.accountOverview
     }
 
-    const { data: html } = await this.http.get<string>('/')
-    const $ = cheerio.load(html)
-    return this.updateAccountOverviewFromHtml($) || this.createEmptyAccountOverview()
+    await this.http.get<string>('/')
+    return this.accountOverview || this.createEmptyAccountOverview()
   }
 
   /**
@@ -1112,7 +1144,6 @@ export class V2exClient {
     }
     const { data: html } = await this.http.get<string>('/planes')
     const $ = cheerio.load(html)
-    this.updateAccountOverviewFromHtml($)
     const nodes: Node[] = []
     $('a.item_node').each((_, element) => {
       nodes.push({
@@ -1132,7 +1163,6 @@ export class V2exClient {
     this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
-    this.updateAccountOverviewFromHtml($)
     const nodes: Node[] = []
     $('#my-nodes > a.fav-node').each((_, element) => {
       nodes.push({
@@ -1149,7 +1179,6 @@ export class V2exClient {
   async getDailySignInStatus(): Promise<boolean> {
     const { data: html } = await this.http.get<string>('/mission/daily')
     const $ = cheerio.load(html)
-    this.updateAccountOverviewFromHtml($)
     // 已领取过时会提示：每日登录奖励已领取
     return $('.fa-ok-sign').length > 0
   }
@@ -1166,7 +1195,6 @@ export class V2exClient {
     const once = await this.getOnce()
     const { data: html } = await this.http.get<string>(`/mission/daily/redeem?once=${once}`)
     const $2 = cheerio.load(html)
-    this.updateAccountOverviewFromHtml($2)
 
     return $2('.fa-ok-sign').length > 0 ? 'success' : 'failed'
   }
