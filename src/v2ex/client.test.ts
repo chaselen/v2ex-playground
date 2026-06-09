@@ -165,7 +165,7 @@ function expectSearchSource(source: SoV2exSource) {
   expect(source.created).toEqual(expect.any(String))
 }
 
-describe.concurrent('V2exClient real requests', () => {
+describe.concurrent('V2exClient topic links', () => {
   test('builds and parses topic links', () => {
     expect(client.getTopicLinkById(703733)).toBe('https://www.v2ex.com/t/703733')
     expect(client.getTopicLinkById('1136705')).toBe('https://www.v2ex.com/t/1136705')
@@ -173,7 +173,9 @@ describe.concurrent('V2exClient real requests', () => {
     expect(client.getTopicIdByLink('https://www.v2ex.com/t/703733#reply12')).toBe(703733)
     expect(client.getTopicIdByLink('/go/v2ex')).toBeUndefined()
   })
+})
 
+describe.concurrent('V2exClient topics', () => {
   test('gets once token', async () => {
     await expect(client.getOnce()).resolves.toMatch(/^\d+$/)
   })
@@ -219,7 +221,9 @@ describe.concurrent('V2exClient real requests', () => {
     })
     expectTopicDetail(detail)
   })
+})
 
+describe.concurrent('V2exClient members', () => {
   test('gets member info and default activity from public member page', async () => {
     const member = await client.getMemberInfo('livid')
     const content = await client.getMemberContent('livid')
@@ -272,14 +276,18 @@ describe.concurrent('V2exClient real requests', () => {
     expectMemberContent(topics)
     expectMemberContent(replies)
   })
+})
 
+describe.concurrent('V2exClient nodes', () => {
   test('gets all nodes', async () => {
     const nodes = await client.getAllNodes()
 
     expect(nodes.length).toBeGreaterThan(0)
     expectNode(nodes[0])
   })
+})
 
+describe.concurrent('V2exClient search', () => {
   test('searches SoV2EX', async () => {
     const results = await client.search('vscode')
 
@@ -288,7 +296,9 @@ describe.concurrent('V2exClient real requests', () => {
       expectSearchSource(results[0])
     }
   })
+})
 
+describe('V2exClient authenticated requests', () => {
   authTest('tries login from V2EX_COOKIE', async () => {
     await expect(client.tryLogin(v2exCookie!)).resolves.toBe(true)
   })
