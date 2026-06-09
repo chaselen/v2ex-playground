@@ -4,25 +4,26 @@ import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
  * Webview 节点项
  */
 export interface WebviewNode {
-  id: string
-  label: string
-  nodeName?: string
+  /** 节点 name；首页预置项中为 tab name */
+  name: string
+  /** 节点或首页分类的展示标题 */
+  title: string
 }
 
 /** 首页预置节点 */
 export const EXPLORE_NODES: WebviewNode[] = [
-  { id: 'tech', label: '技术', nodeName: 'tech' },
-  { id: 'creative', label: '创意', nodeName: 'creative' },
-  { id: 'play', label: '好玩', nodeName: 'play' },
-  { id: 'apple', label: 'Apple', nodeName: 'apple' },
-  { id: 'jobs', label: '酷工作', nodeName: 'jobs' },
-  { id: 'deals', label: '交易', nodeName: 'deals' },
-  { id: 'city', label: '城市', nodeName: 'city' },
-  { id: 'qna', label: '问与答', nodeName: 'qna' },
-  { id: 'hot', label: '最热', nodeName: 'hot' },
-  { id: 'all', label: '全部', nodeName: 'all' },
-  { id: 'r2', label: 'R2', nodeName: 'r2' },
-  { id: 'nodes', label: '节点', nodeName: 'nodes' }
+  { name: 'tech', title: '技术' },
+  { name: 'creative', title: '创意' },
+  { name: 'play', title: '好玩' },
+  { name: 'apple', title: 'Apple' },
+  { name: 'jobs', title: '酷工作' },
+  { name: 'deals', title: '交易' },
+  { name: 'city', title: '城市' },
+  { name: 'qna', title: '问与答' },
+  { name: 'hot', title: '最热' },
+  { name: 'all', title: '全部' },
+  { name: 'r2', title: 'R2' },
+  { name: 'nodes', title: '节点' }
 ]
 
 /**
@@ -31,9 +32,9 @@ export const EXPLORE_NODES: WebviewNode[] = [
 export interface WebviewTopic {
   id: number
   title: string
-  /** 节点名称 */
+  /** 节点 name，如 programmer */
   nodeName?: string
-  /** 节点标题 */
+  /** 节点展示标题，如“程序员” */
   nodeTitle?: string
   replies: number
   /** 展示时间 */
@@ -120,8 +121,8 @@ export interface InitData {
 export interface NodeChildrenData {
   /** 标签 key */
   tab: MainTabKey
-  /** 节点 id */
-  nodeId: string
+  /** 列表项 key */
+  itemKey: string
   /** 当前页码 */
   page: number
   /** 总页数 */
@@ -211,11 +212,11 @@ export interface MainViewRpcCommands {
   ready: WebviewRpcDefinition<object, InitData>
   refreshAll: WebviewRpcDefinition<object, InitData>
   expandNode: WebviewRpcDefinition<
-    { tab: MainTabKey; nodeId: string; page?: number },
+    { tab: MainTabKey; itemKey: string; page?: number },
     NodeChildrenData
   >
   refreshNode: WebviewRpcDefinition<
-    { tab: MainTabKey; nodeId: string; page?: number },
+    { tab: MainTabKey; itemKey: string; page?: number },
     NodeChildrenData
   >
   getMyTopics: WebviewRpcDefinition<
@@ -226,8 +227,8 @@ export interface MainViewRpcCommands {
   getDailySignInStatus: WebviewRpcDefinition<object, WebviewDailySignInData>
   dailySignIn: WebviewRpcDefinition<object, WebviewDailySignInData>
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
-  removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>
-  cancelCollectNode: WebviewRpcDefinition<{ nodeId: string }, void>
+  removeNode: WebviewRpcDefinition<{ nodeName: string }, CustomNodesUpdatedData>
+  cancelCollectNode: WebviewRpcDefinition<{ nodeName: string }, void>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>
   openMember: WebviewRpcDefinition<{ username: string }, void>
   openExternal: WebviewRpcDefinition<{ path: string }, void>

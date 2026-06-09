@@ -379,7 +379,7 @@ export class V2exClient {
 
   /**
    * 根据节点获取话题列表
-   * @param nodeName 节点名
+   * @param nodeName 节点 name
    * @param page 页码
    * @example https://www.v2ex.com/go/python?p=2
    */
@@ -1203,7 +1203,7 @@ export class V2exClient {
 
   /**
    * 取消收藏节点
-   * @param nodeName 节点名
+   * @param nodeName 节点 name
    */
   async cancelCollectNode(nodeName: string): Promise<void> {
     const nodeRes = await this.http.get<string>(`/go/${nodeName}`)
@@ -1212,7 +1212,7 @@ export class V2exClient {
     const $ = cheerio.load(nodeRes.data)
     const unfavoriteHref = $('a[href^="/unfavorite/node/"]').first().attr('href')
     const unfavoriteUrl = new URL(unfavoriteHref || '/', this.baseUrl)
-    const nodeId = unfavoriteUrl.pathname.match(/^\/unfavorite\/node\/(\d+)$/)?.[1]
+    const nodeId = Number(unfavoriteUrl.pathname.match(/^\/unfavorite\/node\/(\d+)$/)?.[1])
     const once = unfavoriteUrl.searchParams.get('once')
     if (!nodeId || !once) {
       throw new Error('未找到节点取消收藏参数')

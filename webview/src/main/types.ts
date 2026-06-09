@@ -37,7 +37,7 @@ export interface TreeItem {
   label: string
   type: TreeItemType
   tab?: MainTabKey
-  nodeId?: string
+  itemKey?: string
   topicId?: number
   title?: string
   replies?: number

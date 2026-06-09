@@ -92,15 +92,15 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       return this._getInitData()
     })
     rpc.handle('refreshAll', () => this._getInitData())
-    rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.nodeId, msg.page))
-    rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.nodeId, msg.page))
+    rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.itemKey, msg.page))
+    rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.itemKey, msg.page))
     rpc.handle('getMyTopics', msg => this._handleGetMyTopics(msg.tab, msg.page))
     rpc.handle('getMyNotifications', msg => this._handleGetMyNotifications(msg.page))
     rpc.handle('getDailySignInStatus', () => this._handleGetDailySignInStatus())
     rpc.handle('dailySignIn', () => this._handleDailySignIn())
     rpc.handle('addNode', () => this._handleAddNode())
-    rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
-    rpc.handle('cancelCollectNode', msg => this._handleCancelCollectNode(msg.nodeId))
+    rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeName))
+    rpc.handle('cancelCollectNode', msg => this._handleCancelCollectNode(msg.nodeName))
     rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
     rpc.handle('openMember', msg => openMember({ username: msg.username }))
     rpc.handle('openExternal', msg => this._openExternal(msg.path))
@@ -128,9 +128,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    */
   private async _getInitData(): Promise<InitData> {
     const customNodes = G.getCustomNodes().map(n => ({
-      id: n.name,
-      label: n.title,
-      nodeName: n.name
+      name: n.name,
+      title: n.title
     }))
 
     let collectionNodes: WebviewNode[] = []
@@ -141,9 +140,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       try {
         const rawNodes = await G.V2ex.getCollectionNodes()
         collectionNodes = rawNodes.map(n => ({
-          id: n.name,
-          label: n.title,
-          nodeName: n.name
+          name: n.name,
+          title: n.title
         }))
       } catch (err) {
         if (err instanceof LoginRequiredError) {
@@ -175,12 +173,12 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   /**
    * 展开节点时获取话题列表
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key，首页中为 tab 名，其他列表中为节点 name
    * @param page 页码
    */
   private async _handleExpandNode(
     tab: MainTabKey,
-    nodeId: string,
+    itemKey: string,
     page = 1
   ): Promise<NodeChildrenData> {
     try {
@@ -189,9 +187,9 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       let totalCount = 0
 
       if (tab === 'explore') {
-        topics = await G.V2ex.getTopicListByTab(nodeId)
+        topics = await G.V2ex.getTopicListByTab(itemKey)
       } else {
-        const res = await G.V2ex.getTopicListByNode(nodeId, page)
+        const res = await G.V2ex.getTopicListByNode(itemKey, page)
         topics = res.list
         totalPage = Math.max(res.totalPage || 1, 1)
         totalCount = Math.max(res.totalCount || 0, 0)
@@ -204,7 +202,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
       return {
         tab,
-        nodeId,
+        itemKey,
         page,
         totalPage,
         totalCount,
@@ -214,7 +212,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       console.error(err)
       return {
         tab,
-        nodeId,
+        itemKey,
         page,
         totalPage: 1,
         totalCount: 0,
@@ -231,9 +229,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     const customNodes = G.getCustomNodes()
     return {
       nodes: customNodes.map(n => ({
-        id: n.name,
-        label: n.title,
-        nodeName: n.name
+        name: n.name,
+        title: n.title
       }))
     }
   }
@@ -279,19 +276,19 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
   /**
    * 删除自定义节点
-   * @param nodeId 节点 id
+   * @param nodeName 节点 name
    */
-  private async _handleRemoveNode(nodeId: string): Promise<CustomNodesUpdatedData> {
-    G.removeCustomNode(nodeId)
+  private async _handleRemoveNode(nodeName: string): Promise<CustomNodesUpdatedData> {
+    G.removeCustomNode(nodeName)
     return this._getCustomNodesData()
   }
 
   /**
    * 取消收藏节点
-   * @param nodeId 节点 id
+   * @param nodeName 节点 name
    */
-  private async _handleCancelCollectNode(nodeId: string): Promise<void> {
-    await G.V2ex.cancelCollectNode(nodeId)
+  private async _handleCancelCollectNode(nodeName: string): Promise<void> {
+    await G.V2ex.cancelCollectNode(nodeName)
     try {
       await G.V2ex.getAccountOverview({ force: true })
     } catch (err) {
@@ -302,15 +299,15 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   /**
    * 刷新节点
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key，首页中为 tab 名，其他列表中为节点 name
    * @param page 页码
    */
   private async _handleRefreshNode(
     tab: MainTabKey,
-    nodeId: string,
+    itemKey: string,
     page = 1
   ): Promise<NodeChildrenData> {
-    return this._handleExpandNode(tab, nodeId, page)
+    return this._handleExpandNode(tab, itemKey, page)
   }
 
   /**

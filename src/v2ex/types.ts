@@ -128,9 +128,9 @@ export interface TopicReply {
  * 节点
  */
 export interface Node {
-  /** 节点名称 */
+  /** 节点 name，如 /go/programmer 中的 programmer */
   name: string
-  /** 节点标题（显示的名称） */
+  /** 节点展示标题，如“程序员” */
   title: string
 }
 

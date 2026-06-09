@@ -8,6 +8,7 @@ import {
   EXPLORE_NODES,
   type InitData,
   type MainPanelTabKey,
+  type NodeChildrenData,
   type SelectMainTabData,
   type WebviewAccountOverview,
   type WebviewNode,
@@ -41,7 +42,7 @@ function createNodeItem(node: WebviewNode): NodeItem {
  */
 function mergeNodeItems(nodes: WebviewNode[], existing: NodeItem[]): NodeItem[] {
   return nodes.map(node => {
-    const old = existing.find(item => item.id === node.id)
+    const old = existing.find(item => item.name === node.name)
     return old ? { ...old, ...node } : createNodeItem(node)
   })
 }
@@ -121,64 +122,64 @@ export default function MainApp() {
   /**
    * 更新单个节点
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key
    * @param updater 节点更新函数
    */
-  function updateNode(tab: MainTabKey, nodeId: string, updater: (node: NodeItem) => NodeItem) {
+  function updateNode(tab: MainTabKey, itemKey: string, updater: (node: NodeItem) => NodeItem) {
     setTabs(current => ({
       ...current,
-      [tab]: current[tab].map(node => (node.id === nodeId ? updater(node) : node))
+      [tab]: current[tab].map(node => (node.name === itemKey ? updater(node) : node))
     }))
   }
 
   /**
    * 标记节点加载中
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key
    */
-  function setNodeLoading(tab: MainTabKey, nodeId: string) {
-    updateNode(tab, nodeId, node => ({ ...node, loading: true }))
+  function setNodeLoading(tab: MainTabKey, itemKey: string) {
+    updateNode(tab, itemKey, node => ({ ...node, loading: true }))
   }
 
   /**
    * 展开节点
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key
    */
-  async function expandNode(tab: MainTabKey, nodeId: string) {
-    setNodeLoading(tab, nodeId)
-    await requestNodeChildren('expandNode', tab, nodeId, 1)
+  async function expandNode(tab: MainTabKey, itemKey: string) {
+    setNodeLoading(tab, itemKey)
+    await requestNodeChildren('expandNode', tab, itemKey, 1)
   }
 
   /**
    * 刷新节点
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key
    */
-  async function refreshNode(tab: MainTabKey, nodeId: string) {
-    const node = tabs[tab].find(item => item.id === nodeId)
-    setNodeLoading(tab, nodeId)
-    await requestNodeChildren('refreshNode', tab, nodeId, node?.page || 1)
+  async function refreshNode(tab: MainTabKey, itemKey: string) {
+    const node = tabs[tab].find(item => item.name === itemKey)
+    setNodeLoading(tab, itemKey)
+    await requestNodeChildren('refreshNode', tab, itemKey, node?.page || 1)
   }
 
   /**
    * 切换节点页码
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key
    * @param page 页码
    */
-  async function changeNodePage(tab: MainTabKey, nodeId: string, page: number) {
-    setNodeLoading(tab, nodeId)
-    await requestNodeChildren('expandNode', tab, nodeId, page)
+  async function changeNodePage(tab: MainTabKey, itemKey: string, page: number) {
+    setNodeLoading(tab, itemKey)
+    await requestNodeChildren('expandNode', tab, itemKey, page)
   }
 
   /**
    * 删除自定义节点
-   * @param nodeId 节点 id
+   * @param nodeName 节点 name
    */
-  async function removeNode(nodeId: string) {
+  async function removeNode(nodeName: string) {
     try {
-      const data = await requestVsCodeMessage('removeNode', { nodeId })
+      const data = await requestVsCodeMessage('removeNode', { nodeName })
       onCustomNodesUpdated(data)
     } catch (err) {
       console.error(err)
@@ -187,14 +188,14 @@ export default function MainApp() {
 
   /**
    * 取消收藏节点
-   * @param nodeId 节点 id
+   * @param nodeName 节点 name
    */
-  async function cancelCollectNode(nodeId: string) {
+  async function cancelCollectNode(nodeName: string) {
     try {
-      await requestVsCodeMessage('cancelCollectNode', { nodeId })
+      await requestVsCodeMessage('cancelCollectNode', { nodeName })
       setTabs(current => ({
         ...current,
-        collection: current.collection.filter(node => node.id !== nodeId)
+        collection: current.collection.filter(node => node.name !== nodeName)
       }))
       Toast.success('已取消收藏节点')
     } catch (err) {
@@ -237,16 +238,8 @@ export default function MainApp() {
    * 处理节点话题列表
    * @param data 节点子项数据
    */
-  function onNodeChildren(data: {
-    tab: MainTabKey
-    nodeId: string
-    page: number
-    totalPage: number
-    totalCount: number
-    children: WebviewTopic[]
-    error?: string
-  }) {
-    updateNode(data.tab, data.nodeId, node => {
+  function onNodeChildren(data: NodeChildrenData) {
+    updateNode(data.tab, data.itemKey, node => {
       if (data.error) {
         return {
           ...node,
@@ -275,22 +268,22 @@ export default function MainApp() {
    * 请求节点话题列表
    * @param command 命令名
    * @param tab 标签 key
-   * @param nodeId 节点 id
+   * @param itemKey 列表项 key
    * @param page 页码
    */
   async function requestNodeChildren(
     command: 'expandNode' | 'refreshNode',
     tab: MainTabKey,
-    nodeId: string,
+    itemKey: string,
     page = 1
   ) {
     try {
-      const data = await requestVsCodeMessage(command, { tab, nodeId, page })
+      const data = await requestVsCodeMessage(command, { tab, itemKey, page })
       onNodeChildren(data)
     } catch (err) {
       onNodeChildren({
         tab,
-        nodeId,
+        itemKey,
         page,
         totalPage: 1,
         totalCount: 0,
@@ -327,7 +320,7 @@ export default function MainApp() {
           if (node.children === null || node.loading) {
             return node
           }
-          requestNodeChildren('refreshNode', tab, node.id, node.page)
+          requestNodeChildren('refreshNode', tab, node.name, node.page)
           return { ...node, loading: true }
         })
       })

@@ -18,11 +18,11 @@ interface NodeTreeProps {
   loggedIn: boolean
   loading?: boolean
   onAddNode?: () => void
-  onExpandNode: (tab: MainTabKey, nodeId: string) => void
-  onRefreshNode: (tab: MainTabKey, nodeId: string) => void
-  onPageChange: (tab: MainTabKey, nodeId: string, page: number) => void
-  onRemoveNode: (nodeId: string) => void
-  onCancelCollectNode?: (nodeId: string) => Promise<void>
+  onExpandNode: (tab: MainTabKey, itemKey: string) => void
+  onRefreshNode: (tab: MainTabKey, itemKey: string) => void
+  onPageChange: (tab: MainTabKey, itemKey: string, page: number) => void
+  onRemoveNode: (nodeName: string) => void
+  onCancelCollectNode?: (nodeName: string) => Promise<void>
 }
 
 /** 主面板空状态文案 */
@@ -41,7 +41,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   if (node.loading && node.children === null) {
     return [
       {
-        key: `loading:${node.id}`,
+        key: `loading:${node.name}`,
         label: '加载中',
         type: 'loading',
         isLeaf: true
@@ -52,7 +52,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   if (node.children === null) {
     return [
       {
-        key: `placeholder:${node.id}`,
+        key: `placeholder:${node.name}`,
         label: '',
         type: 'empty',
         isLeaf: true
@@ -63,7 +63,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   if (node.error && !node.children.length) {
     return [
       {
-        key: `error:${node.id}`,
+        key: `error:${node.name}`,
         label: node.error,
         type: 'error',
         isLeaf: true
@@ -74,7 +74,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   if (!node.children.length) {
     return [
       {
-        key: `empty:${node.id}`,
+        key: `empty:${node.name}`,
         label: '暂无话题',
         type: 'empty',
         isLeaf: true
@@ -83,7 +83,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   }
 
   const topicItems: TreeItem[] = node.children.map(topic => ({
-    key: `topic:${tab}:${node.id}:${topic.id}`,
+    key: `topic:${tab}:${node.name}:${topic.id}`,
     label: topic.title,
     title: topic.title,
     type: 'topic',
@@ -99,11 +99,11 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   return [
     ...topicItems,
     {
-      key: `pagination:${tab}:${node.id}`,
+      key: `pagination:${tab}:${node.name}`,
       label: '分页',
       type: 'pagination',
       tab,
-      nodeId: node.id,
+      itemKey: node.name,
       page: node.page,
       totalPage: node.totalPage,
       totalCount: node.totalCount,
@@ -120,11 +120,11 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
  */
 function createNodeTreeItem(tab: MainTabKey, node: NodeItem): TreeItem {
   return {
-    key: getNodeKey(node.id),
-    label: node.label,
+    key: getNodeKey(node.name),
+    label: node.title,
     type: 'node',
     tab,
-    nodeId: node.id,
+    itemKey: node.name,
     loading: node.loading,
     page: node.page,
     totalPage: node.totalPage,
@@ -144,10 +144,10 @@ function getTreeItem(data?: TreeNodeData): TreeItem {
 
 /**
  * 获取节点树项 key
- * @param nodeId 节点 id
+ * @param itemKey 列表项 key
  */
-function getNodeKey(nodeId: string): string {
-  return `node:${nodeId}`
+function getNodeKey(itemKey: string): string {
+  return `node:${itemKey}`
 }
 
 /**
@@ -161,8 +161,8 @@ function getNodeKeyFromTopicKey(topicKey: string, tab: MainTabKey): string | und
     return undefined
   }
 
-  const nodeId = topicKey.slice(prefix.length).split(':')[0]
-  return nodeId ? getNodeKey(nodeId) : undefined
+  const itemKey = topicKey.slice(prefix.length).split(':')[0]
+  return itemKey ? getNodeKey(itemKey) : undefined
 }
 
 /**
@@ -193,7 +193,7 @@ export default function NodeTree(props: NodeTreeProps) {
 
   useEffect(() => {
     // 当前节点 key 集合
-    const nodeKeys = new Set(nodes.map(node => getNodeKey(node.id)))
+    const nodeKeys = new Set(nodes.map(node => getNodeKey(node.name)))
 
     setExpandedKeys(current => {
       const next = current.filter(key => nodeKeys.has(key))
@@ -215,10 +215,10 @@ export default function NodeTree(props: NodeTreeProps) {
    * @param data 树项
    */
   function refreshNode(data: TreeItem) {
-    if (!data.nodeId || data.loading) {
+    if (!data.itemKey || data.loading) {
       return
     }
-    onRefreshNode(tab, data.nodeId)
+    onRefreshNode(tab, data.itemKey)
   }
 
   /**
@@ -226,10 +226,10 @@ export default function NodeTree(props: NodeTreeProps) {
    * @param data 树项
    */
   function removeNode(data: TreeItem) {
-    if (!data.nodeId) {
+    if (!data.itemKey) {
       return
     }
-    onRemoveNode(data.nodeId)
+    onRemoveNode(data.itemKey)
   }
 
   /**
@@ -237,10 +237,10 @@ export default function NodeTree(props: NodeTreeProps) {
    * @param data 树项
    */
   function cancelCollectNode(data: TreeItem): Promise<void> | undefined {
-    if (!data.nodeId) {
+    if (!data.itemKey) {
       return
     }
-    return onCancelCollectNode?.(data.nodeId)
+    return onCancelCollectNode?.(data.itemKey)
   }
 
   /**
@@ -328,7 +328,7 @@ export default function NodeTree(props: NodeTreeProps) {
    * @param data 树项
    */
   function renderPaginationRow(data: TreeItem) {
-    if (!data.nodeId || !data.page || !data.totalPage) {
+    if (!data.itemKey || !data.page || !data.totalPage) {
       return null
     }
 
@@ -345,7 +345,7 @@ export default function NodeTree(props: NodeTreeProps) {
           disabled={data.loading}
           onPageChange={page => {
             if (page !== data.page) {
-              onPageChange(tab, data.nodeId!, page)
+              onPageChange(tab, data.itemKey!, page)
             }
           }}
         />
@@ -389,16 +389,16 @@ export default function NodeTree(props: NodeTreeProps) {
   ) {
     setExpandedKeys(nextExpandedKeys)
     const data = getTreeItem(context.node)
-    if (!context.expanded || data.type !== 'node' || !data.nodeId) {
+    if (!context.expanded || data.type !== 'node' || !data.itemKey) {
       return
     }
 
-    const node = nodes.find(item => item.id === data.nodeId)
+    const node = nodes.find(item => item.name === data.itemKey)
     if (!node || node.loading || node.children !== null) {
       return
     }
 
-    onExpandNode(tab, node.id)
+    onExpandNode(tab, node.name)
   }
 
   /**

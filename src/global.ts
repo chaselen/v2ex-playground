@@ -85,7 +85,7 @@ export default class G {
 
   /**
    * 删除自定义节点
-   * @param nodeName 要删除的节点名称
+   * @param nodeName 要删除的节点 name
    */
   static removeCustomNode(nodeName: string) {
     const nodes = this.getCustomNodes()
