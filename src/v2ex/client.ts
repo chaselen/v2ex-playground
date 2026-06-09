@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio'
 import axios, { AxiosResponse } from 'axios'
 import { parse as parseCookieHeader } from 'cookie'
+import dayjs from 'dayjs'
 import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
 import {
@@ -1193,6 +1194,33 @@ export class V2exClient {
     const $ = cheerio.load(html)
     // 已领取过时会提示：每日登录奖励已领取
     return $('.fa-ok-sign').length > 0
+  }
+
+  /**
+   * 查询当日签到奖励铜币数
+   */
+  async getDailySignInReward(): Promise<number> {
+    const { data: html } = await this.http.get<string>('/balance')
+    const $ = cheerio.load(html)
+    const today = dayjs().format('YYYY-MM-DD')
+    let reward = 0
+
+    $('table.data > tbody > tr').each((_, element) => {
+      if (reward) {
+        return
+      }
+
+      const cells = $(element).children('td')
+      const time = cells.eq(0).text().trim()
+      const type = cells.eq(1).text().trim()
+      if (!time.startsWith(today) || type !== '每日登录奖励') {
+        return
+      }
+
+      reward = Number(cells.eq(2).text().trim()) || 0
+    })
+
+    return reward
   }
 
   /**
