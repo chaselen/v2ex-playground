@@ -100,6 +100,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('dailySignIn', () => this._handleDailySignIn())
     rpc.handle('addNode', () => this._handleAddNode())
     rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeId))
+    rpc.handle('cancelCollectNode', msg => this._handleCancelCollectNode(msg.nodeId))
     rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
     rpc.handle('openMember', msg => openMember({ username: msg.username }))
     rpc.handle('openExternal', msg => this._openExternal(msg.path))
@@ -283,6 +284,19 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private async _handleRemoveNode(nodeId: string): Promise<CustomNodesUpdatedData> {
     G.removeCustomNode(nodeId)
     return this._getCustomNodesData()
+  }
+
+  /**
+   * 取消收藏节点
+   * @param nodeId 节点 id
+   */
+  private async _handleCancelCollectNode(nodeId: string): Promise<void> {
+    await G.V2ex.cancelCollectNode(nodeId)
+    try {
+      await G.V2ex.getAccountOverview({ force: true })
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   /**

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
-import { Button, Empty, Spin, Tree } from '@douyinfe/semi-ui'
+import { Button, Empty, Popconfirm, Spin, Tree } from '@douyinfe/semi-ui'
 import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
@@ -22,6 +22,7 @@ interface NodeTreeProps {
   onRefreshNode: (tab: MainTabKey, nodeId: string) => void
   onPageChange: (tab: MainTabKey, nodeId: string, page: number) => void
   onRemoveNode: (nodeId: string) => void
+  onCancelCollectNode?: (nodeId: string) => Promise<void>
 }
 
 /** 主面板空状态文案 */
@@ -178,7 +179,8 @@ export default function NodeTree(props: NodeTreeProps) {
     onExpandNode,
     onRefreshNode,
     onPageChange,
-    onRemoveNode
+    onRemoveNode,
+    onCancelCollectNode
   } = props
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
   const [selectedTopicKey, setSelectedTopicKey] = useState<string>()
@@ -231,6 +233,17 @@ export default function NodeTree(props: NodeTreeProps) {
   }
 
   /**
+   * 取消收藏节点
+   * @param data 树项
+   */
+  function cancelCollectNode(data: TreeItem): Promise<void> | undefined {
+    if (!data.nodeId) {
+      return
+    }
+    return onCancelCollectNode?.(data.nodeId)
+  }
+
+  /**
    * 阻止树节点默认点击
    * @param event 鼠标事件
    */
@@ -255,6 +268,28 @@ export default function NodeTree(props: NodeTreeProps) {
             aria-label="删除"
             onClick={() => removeNode(data)}
           />
+        )}
+        {tab === 'collection' && (
+          <Popconfirm
+            title={`确定取消收藏“${data.label}”节点？`}
+            content="取消后该节点将从收藏节点列表中移除"
+            okText="取消收藏"
+            okType="danger"
+            cancelText="保留"
+            cancelButtonProps={{ autoFocus: true }}
+            onConfirm={() => cancelCollectNode(data)}
+          >
+            <span>
+              <Button
+                theme="borderless"
+                type="tertiary"
+                size="small"
+                icon={<IconDelete />}
+                title="取消收藏"
+                aria-label="取消收藏"
+              />
+            </span>
+          </Popconfirm>
         )}
         <Button
           theme="borderless"

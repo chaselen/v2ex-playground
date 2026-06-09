@@ -227,6 +227,7 @@ export interface MainViewRpcCommands {
   dailySignIn: WebviewRpcDefinition<object, WebviewDailySignInData>
   addNode: WebviewRpcDefinition<object, CustomNodesUpdatedData>
   removeNode: WebviewRpcDefinition<{ nodeId: string }, CustomNodesUpdatedData>
+  cancelCollectNode: WebviewRpcDefinition<{ nodeId: string }, void>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>
   openMember: WebviewRpcDefinition<{ username: string }, void>
   openExternal: WebviewRpcDefinition<{ path: string }, void>

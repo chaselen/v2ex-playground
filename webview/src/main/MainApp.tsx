@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Tabs } from '@douyinfe/semi-ui'
+import { Tabs, Toast } from '@douyinfe/semi-ui'
 import MyAccountPanel from './components/MyAccountPanel'
 import NodeTree from './components/NodeTree'
 import { requestVsCodeMessage } from '../shared/vscode'
@@ -182,6 +182,24 @@ export default function MainApp() {
       onCustomNodesUpdated(data)
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  /**
+   * 取消收藏节点
+   * @param nodeId 节点 id
+   */
+  async function cancelCollectNode(nodeId: string) {
+    try {
+      await requestVsCodeMessage('cancelCollectNode', { nodeId })
+      setTabs(current => ({
+        ...current,
+        collection: current.collection.filter(node => node.id !== nodeId)
+      }))
+      Toast.success('已取消收藏节点')
+    } catch (err) {
+      Toast.error((err as Error).message || '取消收藏节点失败')
+      throw err
     }
   }
 
@@ -404,6 +422,7 @@ export default function MainApp() {
             onRefreshNode={refreshNode}
             onPageChange={changeNodePage}
             onRemoveNode={removeNode}
+            onCancelCollectNode={cancelCollectNode}
           />
         </Tabs.TabPane>
         <Tabs.TabPane itemKey="my" tab="我的">

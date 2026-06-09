@@ -83,6 +83,7 @@ export type WebviewRequestRpcCommands = Pick<
   | 'dailySignIn'
   | 'addNode'
   | 'removeNode'
+  | 'cancelCollectNode'
 > &
   Pick<
     TopicPanelRpcCommands,

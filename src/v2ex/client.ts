@@ -1202,6 +1202,32 @@ export class V2exClient {
   }
 
   /**
+   * 取消收藏节点
+   * @param nodeName 节点名
+   */
+  async cancelCollectNode(nodeName: string): Promise<void> {
+    const nodeRes = await this.http.get<string>(`/go/${nodeName}`)
+    this.checkRedirect(nodeRes)
+
+    const $ = cheerio.load(nodeRes.data)
+    const unfavoriteHref = $('a[href^="/unfavorite/node/"]').first().attr('href')
+    const unfavoriteUrl = new URL(unfavoriteHref || '/', this.baseUrl)
+    const nodeId = unfavoriteUrl.pathname.match(/^\/unfavorite\/node\/(\d+)$/)?.[1]
+    const once = unfavoriteUrl.searchParams.get('once')
+    if (!nodeId || !once) {
+      throw new Error('未找到节点取消收藏参数')
+    }
+
+    const resp = await this.http.get<string>(`/unfavorite/node/${nodeId}?once=${once}`, {
+      maxRedirects: 0,
+      validateStatus: status => status >= 200 && status < 400
+    })
+    if (resp.status !== 302) {
+      throw new Error('取消收藏节点失败')
+    }
+  }
+
+  /**
    * V2EX搜搜
    * @param q 查询关键词
    * @param sort 结果排序方式
