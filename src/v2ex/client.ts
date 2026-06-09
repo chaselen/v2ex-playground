@@ -69,6 +69,12 @@ const accountOverviewPathPatterns = [
 /** 账户概览页面路径匹配器 */
 const isAccountOverviewPath = picomatch(accountOverviewPathPatterns)
 
+/** 需要检查自动重定向的 V2EX 页面路径 */
+const redirectCheckPathPatterns = ['/go/*', '/t/*']
+
+/** 自动重定向检查页面路径匹配器 */
+const isRedirectCheckPath = picomatch(redirectCheckPathPatterns)
+
 export class V2exClient {
   /** 域名 */
   readonly baseUrl = 'https://www.v2ex.com'
@@ -111,6 +117,7 @@ export class V2exClient {
     })
     this.http.interceptors.response.use(response => {
       this.updateCookieFromResponse(response)
+      this.checkRedirectFromResponse(response)
       this.updateAccountOverviewFromResponse(response)
       return response
     })
@@ -181,6 +188,45 @@ export class V2exClient {
   }
 
   /**
+   * 检查指定页面响应是否被自动重定向
+   *
+   * 部分帖子需要登录查看
+   * 第1种：会重定向到登录页（https://www.v2ex.com/signin?next=/t/xxxxxx），并提示：你要查看的页面需要先登录。如交易区：https://www.v2ex.com/t/704753
+   * 第2种：会重定向到首页，无提示。如：https://www.v2ex.com/t/704716
+   * 第3种：账号访问受限（如新用户），会重定向到 https://www.v2ex.com/restricted
+   * @param response HTTP 响应
+   */
+  private checkRedirectFromResponse(response: AxiosResponse): void {
+    const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
+    if (requestUrl.host !== 'v2ex.com' && !requestUrl.host.endsWith('.v2ex.com')) {
+      return
+    }
+    if (!isRedirectCheckPath(requestUrl.pathname)) {
+      return
+    }
+    if (response.request._redirectable._redirectCount <= 0) {
+      return
+    }
+
+    if (response.request.path.indexOf('/signin') >= 0) {
+      this.notifyLoginExpired()
+      throw new LoginRequiredError('你要查看的页面需要先登录')
+    }
+    if (response.request.path === '/') {
+      if (this.getCookie()) {
+        throw new Error('您无权访问此页面')
+      }
+      throw new LoginRequiredError('你要查看的页面需要先登录')
+    }
+    if (response.request.path.indexOf('/restricted') === 0) {
+      throw new AccountRestrictedError(
+        '访问受限，详情请查看 <a href="https://www.v2ex.com/restricted">https://www.v2ex.com/restricted</a>'
+      )
+    }
+    throw new Error('未知错误')
+  }
+
+  /**
    * 从指定页面响应更新账户概览缓存
    * @param response HTTP 响应
    */
@@ -230,7 +276,6 @@ export class V2exClient {
     page: number
   ): Promise<{ totalPage: number; list: Topic[] }> {
     const res = await this.http.get<string>(`${path}?p=${page}`)
-    this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
     const cells = $('#Main > .box').last().children('.cell.item')
@@ -473,7 +518,6 @@ export class V2exClient {
     page = 1
   ): Promise<{ totalPage: number; totalCount: number; list: V2exNotification[] }> {
     const res = await this.http.get<string>(`/notifications?p=${page}`)
-    this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
     const totalCount = Number($('.header .fr strong.gray').first().text().trim() || 0)
@@ -522,7 +566,6 @@ export class V2exClient {
   async getTopicDetail(topicId: number, page = 1): Promise<TopicDetail> {
     const replyPage = this.normalizePage(page)
     const res = await this.http.get<string>(`/t/${topicId}?p=${replyPage}`)
-    this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
     const topic = this.parseTopicMeta($, topicId)
@@ -902,36 +945,6 @@ export class V2exClient {
   }
 
   /**
-   * 检查请求是否被重定向，处理登录受限等情况
-   *
-   * 部分帖子需要登录查看
-   * 第1种：会重定向到登录页（https://www.v2ex.com/signin?next=/t/xxxxxx），并提示：你要查看的页面需要先登录。如交易区：https://www.v2ex.com/t/704753
-   * 第2种：会重定向到首页，无提示。如：https://www.v2ex.com/t/704716
-   * 第3种：账号访问受限（如新用户），会重定向到 https://www.v2ex.com/restricted
-   */
-  private checkRedirect(res: AxiosResponse): void {
-    if (res.request._redirectable._redirectCount > 0) {
-      if (res.request.path.indexOf('/signin') >= 0) {
-        this.notifyLoginExpired()
-        throw new LoginRequiredError('你要查看的页面需要先登录')
-      }
-      if (res.request.path === '/') {
-        if (this.getCookie()) {
-          throw new Error('您无权访问此页面')
-        } else {
-          throw new LoginRequiredError('你要查看的页面需要先登录')
-        }
-      }
-      if (res.request.path.indexOf('/restricted') === 0) {
-        throw new AccountRestrictedError(
-          '访问受限，详情请查看 <a href="https://www.v2ex.com/restricted">https://www.v2ex.com/restricted</a>'
-        )
-      }
-      throw new Error('未知错误')
-    }
-  }
-
-  /**
    * 解析话题元信息
    * @param $ cheerio 实例
    * @param topicId 话题id
@@ -1160,7 +1173,6 @@ export class V2exClient {
    */
   async getCollectionNodes(): Promise<Node[]> {
     const res = await this.http.get<string>('/my/nodes')
-    this.checkRedirect(res)
 
     const $ = cheerio.load(res.data)
     const nodes: Node[] = []
@@ -1235,7 +1247,6 @@ export class V2exClient {
    */
   async cancelCollectNode(nodeName: string): Promise<void> {
     const nodeRes = await this.http.get<string>(`/go/${nodeName}`)
-    this.checkRedirect(nodeRes)
 
     const $ = cheerio.load(nodeRes.data)
     const unfavoriteHref = $('a[href^="/unfavorite/node/"]').first().attr('href')
