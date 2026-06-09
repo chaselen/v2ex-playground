@@ -16,6 +16,8 @@ export interface DailySignInData {
   signedIn: boolean
   /** 签到结果 */
   result?: DailyRes
+  /** 当日签到奖励铜币数 */
+  reward?: number
 }
 
 /** 上次自动签到完成日期存储 key */
@@ -119,19 +121,20 @@ export function dailySignIn(): Promise<DailySignInData> {
  */
 async function runDailySignIn(options: AutoDailySignInOptions): Promise<DailySignInData> {
   try {
-    const result = await G.V2ex.dailySignIn()
+    const { result, reward } = await G.V2ex.dailySignIn()
     if (result === 'success' || result === 'repetitive') {
       await updateDailySignedInDate()
     }
     if (result === 'success' && options.notifyOnSuccess) {
-      vscode.window.showInformationMessage('V2EX 每日签到成功')
+      vscode.window.showInformationMessage(`V2EX 每日签到成功，获得 ${reward} 铜币`)
     }
     if (result === 'failed') {
       console.warn('V2EX 每日签到失败')
     }
     return {
       signedIn: result === 'success' || result === 'repetitive',
-      result
+      result,
+      reward
     }
   } catch (err) {
     console.error('V2EX 每日签到失败', err)

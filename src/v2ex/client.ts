@@ -8,7 +8,7 @@ import {
   AccountRestrictedError,
   Topic,
   Node,
-  DailyRes,
+  DailySignInResult,
   LoginExpiredHandler,
   LoginRequiredError,
   AccountOverviewChangedHandler,
@@ -1190,10 +1190,8 @@ export class V2exClient {
    * 查询每日签到状态
    */
   async getDailySignInStatus(): Promise<boolean> {
-    const { data: html } = await this.http.get<string>('/mission/daily')
-    const $ = cheerio.load(html)
-    // 已领取过时会提示：每日登录奖励已领取
-    return $('.fa-ok-sign').length > 0
+    const reward = await this.getDailySignInReward()
+    return reward > 0
   }
 
   /**
@@ -1227,16 +1225,32 @@ export class V2exClient {
    * 每日签到
    * @returns 签到结果
    */
-  async dailySignIn(): Promise<DailyRes> {
-    if (await this.getDailySignInStatus()) {
-      return 'repetitive'
+  async dailySignIn(): Promise<DailySignInResult> {
+    const currentReward = await this.getDailySignInReward()
+    if (currentReward > 0) {
+      return {
+        result: 'repetitive',
+        reward: currentReward
+      }
     }
 
-    const once = await this.getOnce()
-    const { data: html } = await this.http.get<string>(`/mission/daily/redeem?once=${once}`)
-    const $2 = cheerio.load(html)
+    const { data: html } = await this.http.get<string>('/mission/daily')
+    const $ = cheerio.load(html)
+    const onclick = $('input[value^="领取"]').first().attr('onclick') || ''
+    const once = onclick.match(/\/mission\/daily\/redeem\?once=(\d+)/)?.[1]
+    if (!once) {
+      return {
+        result: 'failed',
+        reward: 0
+      }
+    }
 
-    return $2('.fa-ok-sign').length > 0 ? 'success' : 'failed'
+    await this.http.get<string>(`/mission/daily/redeem?once=${once}`)
+    const reward = await this.getDailySignInReward()
+    return {
+      result: reward > 0 ? 'success' : 'failed',
+      reward
+    }
   }
 
   /**

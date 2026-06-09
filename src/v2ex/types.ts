@@ -137,6 +137,14 @@ export interface Node {
 /** 签到结果 */
 export type DailyRes = 'success' | 'repetitive' | 'failed'
 
+/** 每日签到结果 */
+export interface DailySignInResult {
+  /** 签到结果 */
+  result: DailyRes
+  /** 当日签到奖励铜币数 */
+  reward: number
+}
+
 /**
  * 账户概览
  */

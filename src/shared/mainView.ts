@@ -177,6 +177,8 @@ export interface WebviewDailySignInData {
   signedIn: boolean
   /** 签到结果 */
   result?: WebviewDailySignInResult
+  /** 当日签到奖励铜币数 */
+  reward?: number
 }
 
 /**

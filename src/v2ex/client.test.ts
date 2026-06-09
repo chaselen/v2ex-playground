@@ -332,4 +332,14 @@ describe.concurrent('V2exClient real requests', () => {
       expectNotification(result.list[0])
     }
   })
+
+  authTest('signs in daily and returns the reward with V2EX_COOKIE', async () => {
+    const result = await client.dailySignIn()
+
+    expect(['success', 'repetitive']).toContain(result.result)
+    expect(result.reward).toEqual(expect.any(Number))
+    expect(result.reward).toBeGreaterThan(0)
+    await expect(client.getDailySignInStatus()).resolves.toBe(true)
+    await expect(client.getDailySignInReward()).resolves.toBe(result.reward)
+  })
 })
