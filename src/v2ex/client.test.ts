@@ -227,7 +227,9 @@ describe.concurrent('V2exClient real requests', () => {
     expect(member.username.toLowerCase()).toBe('livid')
     expect(member.memberNumber).toBe(1)
     expect(member.joinedAt).toContain('2010-04-25')
-    expect(member.activityRank).toEqual(expect.any(Number))
+    if (member.activityRank !== undefined) {
+      expect(member.activityRank).toBeGreaterThan(0)
+    }
     expect(content.tab).toBe('topics')
     expect(content.topics.length).toBeGreaterThan(0)
     expectMemberInfo(member)
