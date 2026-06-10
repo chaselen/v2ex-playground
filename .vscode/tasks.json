@@ -15,7 +15,7 @@
     },
     {
       "type": "npm",
-      "script": "typecheck",
+      "script": "check:extension",
       "problemMatcher": "$tsc",
       "detail": "Check extension TypeScript types",
       "group": "build"
@@ -29,9 +29,9 @@
     },
     {
       "type": "npm",
-      "script": "test:v2ex",
+      "script": "test",
       "problemMatcher": [],
-      "detail": "Run V2EX Vitest tests",
+      "detail": "Run Vitest tests",
       "group": "test"
     },
     {
