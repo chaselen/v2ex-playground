@@ -29,12 +29,12 @@
         "icon": "$(sign-in)"
       },
       {
-        "command": "v2ex-main.search",
+        "command": "v2ex.search",
         "title": "搜索",
         "icon": "$(search)"
       },
       {
-        "command": "v2ex-main.settings",
+        "command": "v2ex.settings",
         "title": "设置",
         "icon": "$(gear)"
       }
@@ -65,22 +65,22 @@
           "when": "false"
         },
         {
-          "command": "v2ex-main.search",
+          "command": "v2ex.search",
           "when": "false"
         },
         {
-          "command": "v2ex-main.settings",
+          "command": "v2ex.settings",
           "when": "false"
         }
       ],
       "view/title": [
         {
-          "command": "v2ex-main.search",
+          "command": "v2ex.search",
           "when": "view == v2ex-main",
           "group": "navigation@0"
         },
         {
-          "command": "v2ex-main.settings",
+          "command": "v2ex.settings",
           "when": "view == v2ex-main",
           "group": "navigation@1"
         },

@@ -54,10 +54,10 @@ export function activate(context: vscode.ExtensionContext) {
   )
 
   // 搜索
-  context.subscriptions.push(vscode.commands.registerCommand('v2ex-main.search', () => search()))
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => search()))
 
   // 设置
-  context.subscriptions.push(vscode.commands.registerCommand('v2ex-main.settings', () => setting()))
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex.settings', () => setting()))
 }
 
 export function deactivate() {

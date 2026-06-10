@@ -106,7 +106,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
     rpc.handle('openMember', msg => openMember({ username: msg.username }))
     rpc.handle('openExternal', msg => this._openExternal(msg.path))
-    rpc.handle('search', () => vscode.commands.executeCommand('v2ex-main.search'))
+    rpc.handle('search', () => vscode.commands.executeCommand('v2ex.search'))
     rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
     rpc.handle('ctxCopyLink', msg => this._copyLink(msg.topicId))
     rpc.handle('ctxCopyTitleLink', msg => this._copyTitleLink(msg.topicId, msg.label))
