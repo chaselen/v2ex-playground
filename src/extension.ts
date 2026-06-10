@@ -23,11 +23,15 @@ export function activate(context: vscode.ExtensionContext) {
   cleanupImagePreviewCache()
 
   // 插件激活后直接获取节点信息缓存下来
-  G.V2ex.getAllNodes()
-  // 检查登录是否有效
+  // G.V2ex.getAllNodes()
+  // 刷新登录会话后再尝试自动签到
   G.V2ex.checkCookie()
-  // 插件激活后尝试自动签到
-  mainViewProvider.autoDailySignIn()
+    .then(isCookieValid => {
+      if (isCookieValid) {
+        mainViewProvider.autoDailySignIn()
+      }
+    })
+    .catch(err => console.error('V2EX 登录会话刷新失败', err))
 
   // 注册主视图 WebviewView
   context.subscriptions.push(

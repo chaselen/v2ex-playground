@@ -45,10 +45,6 @@ export default class G {
    * 获取cookie
    */
   static getCookie(): string | undefined {
-    const cookie = normalizeLoginCookie(this.V2ex?.getCookie())
-    if (cookie) {
-      return cookie
-    }
     return this.context.globalState.get('cookie')
   }
 

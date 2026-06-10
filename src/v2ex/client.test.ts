@@ -303,6 +303,10 @@ describe('V2exClient authenticated requests', () => {
     await expect(client.tryLogin(v2exCookie!)).resolves.toBe(true)
   })
 
+  authTest('refreshes the authenticated session with V2EX_COOKIE', async () => {
+    await expect(client.checkCookie()).resolves.toBe(true)
+  })
+
   authTest('gets account overview with V2EX_COOKIE', async () => {
     const overview = await client.getAccountOverview()
 

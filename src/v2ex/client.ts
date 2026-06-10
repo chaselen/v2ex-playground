@@ -93,7 +93,22 @@ export class V2exClient {
   private readonly http = axios.create({
     baseURL: this.baseUrl,
     headers: v2exRequestHeaders,
-    timeout: v2exRequestTimeout
+    timeout: v2exRequestTimeout,
+    beforeRedirect: (options, responseDetails, requestDetails) => {
+      // 自动重定向的中间响应不会进入 Axios 响应拦截器，需要在下一跳前同步 Cookie
+      this.updateCookieFromHeaders(responseDetails.headers, requestDetails.url)
+
+      const redirectUrl = new URL(options.href)
+      const cookieHeaderName = Object.keys(options.headers).find(
+        name => name.toLowerCase() === 'cookie'
+      )
+      if (cookieHeaderName) {
+        delete options.headers[cookieHeaderName]
+      }
+      if (this.isV2exUrl(redirectUrl)) {
+        options.headers.Cookie = this.getCookie(redirectUrl.toString())
+      }
+    }
   })
 
   /**
@@ -109,7 +124,7 @@ export class V2exClient {
     this.http.interceptors.request.use(config => {
       const reqUrl = new URL(config.url || '', config.baseURL)
       // 添加 V2EX Cookie
-      if (reqUrl.host === 'v2ex.com' || reqUrl.host.endsWith('.v2ex.com')) {
+      if (this.isV2exUrl(reqUrl)) {
         if (config.headers['Cookie'] === undefined) {
           config.headers['Cookie'] = this.getCookie(reqUrl.toString())
         }
@@ -178,14 +193,39 @@ export class V2exClient {
    * @param response HTTP 响应
    */
   private updateCookieFromResponse(response: AxiosResponse): void {
-    const setCookie = response.headers['set-cookie']
+    const responseUrl = this.getResponseUrl(response)
+    this.updateCookieFromHeaders(response.headers, responseUrl)
+  }
+
+  /**
+   * 从响应头更新 Cookie
+   * @param headers 响应头
+   * @param responseUrl 响应链接
+   */
+  private updateCookieFromHeaders(headers: Record<string, unknown>, responseUrl: string): void {
+    if (!this.isV2exUrl(new URL(responseUrl))) {
+      return
+    }
+
+    const setCookie = headers['set-cookie']
     if (!setCookie) {
       return
     }
 
-    const responseUrl = this.getResponseUrl(response)
     const cookies = Array.isArray(setCookie) ? setCookie : [setCookie]
-    cookies.forEach(cookie => this.cookieJar.setCookieSync(cookie, responseUrl))
+    cookies.forEach(cookie => {
+      if (typeof cookie === 'string') {
+        this.cookieJar.setCookieSync(cookie, responseUrl)
+      }
+    })
+  }
+
+  /**
+   * 判断链接是否属于 V2EX
+   * @param url 待判断链接
+   */
+  private isV2exUrl(url: URL): boolean {
+    return url.protocol === 'https:' && (url.host === 'v2ex.com' || url.host.endsWith('.v2ex.com'))
   }
 
   /**
@@ -199,7 +239,7 @@ export class V2exClient {
    */
   private checkRedirectFromResponse(response: AxiosResponse): void {
     const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
-    if (requestUrl.host !== 'v2ex.com' && !requestUrl.host.endsWith('.v2ex.com')) {
+    if (!this.isV2exUrl(requestUrl)) {
       return
     }
     if (!isRedirectCheckPath(requestUrl.pathname)) {
@@ -237,7 +277,7 @@ export class V2exClient {
     }
 
     const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
-    if (requestUrl.host !== 'v2ex.com' && !requestUrl.host.endsWith('.v2ex.com')) {
+    if (!this.isV2exUrl(requestUrl)) {
       return
     }
     if (!isAccountOverviewPath(requestUrl.pathname)) {
@@ -1119,7 +1159,11 @@ export class V2exClient {
     if (!cookie) {
       return false
     }
-    const isCookieValid = await this.tryLogin(cookie)
+
+    // 使用内部请求客户端刷新服务端下发的会话 Cookie
+    const { data: html } = await this.http.get<string>('/')
+    const $ = cheerio.load(html)
+    const isCookieValid = $('#member-activity').length > 0
     if (!isCookieValid) {
       this.notifyLoginExpired()
     }
@@ -1226,6 +1270,15 @@ export class V2exClient {
    * @returns 签到结果
    */
   async dailySignIn(): Promise<DailySignInResult> {
+    // 签到可能由手动操作或刚登录后触发，也可能发生在扩展长时间运行后，需要先访问首页刷新服务端下发的会话 Cookie
+    const isCookieValid = await this.checkCookie()
+    if (!isCookieValid) {
+      return {
+        result: 'failed',
+        reward: 0
+      }
+    }
+
     const currentReward = await this.getDailySignInReward()
     if (currentReward > 0) {
       return {
