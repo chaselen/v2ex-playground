@@ -171,6 +171,47 @@ export interface AccountOverview {
   bronze: number
 }
 
+/** 账户流水收支方向 */
+export type BalanceTransactionDirection = 'positive' | 'negative' | 'neutral'
+
+/**
+ * 账户流水
+ */
+export interface BalanceTransaction {
+  /** 流水唯一标识 */
+  key: string
+  /** 时间 */
+  time: string
+  /** 类型 */
+  type: string
+  /** 数额原始文本 */
+  amount: string
+  /** 收支方向 */
+  direction: BalanceTransactionDirection
+  /** 流水后余额原始文本 */
+  balance: string
+  /** 描述 HTML */
+  descriptionHtml: string
+}
+
+/**
+ * 账户余额详情
+ */
+export interface BalanceDetail {
+  /** 金币数量 */
+  gold: number
+  /** 银币数量 */
+  silver: number
+  /** 铜币数量 */
+  bronze: number
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
+  /** 账户流水 */
+  transactions: BalanceTransaction[]
+}
+
 /**
  * 提醒消息
  */

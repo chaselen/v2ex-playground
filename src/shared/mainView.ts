@@ -244,6 +244,7 @@ export interface MainViewRpcCommands {
   cancelCollectNode: WebviewRpcDefinition<{ nodeName: string }, void>
   openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>
   openMember: WebviewRpcDefinition<{ username: string }, void>
+  openBalance: WebviewRpcDefinition<object, void>
   openExternal: WebviewRpcDefinition<{ path: string }, void>
   search: WebviewRpcDefinition<object, void>
   login: WebviewRpcDefinition<object, void>

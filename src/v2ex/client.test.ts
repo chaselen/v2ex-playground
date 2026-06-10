@@ -1,7 +1,9 @@
+import * as cheerio from 'cheerio'
 import { describe, expect, test } from 'vitest'
 import { V2exClient } from './client'
 import type {
   AccountOverview,
+  BalanceDetail,
   MemberContent,
   MemberInfo,
   Node,
@@ -112,6 +114,30 @@ function expectAccountOverview(overview: AccountOverview) {
 }
 
 /**
+ * 校验账户余额详情
+ * @param detail 账户余额详情
+ */
+function expectBalanceDetail(detail: BalanceDetail) {
+  expect(detail.gold).toEqual(expect.any(Number))
+  expect(detail.silver).toEqual(expect.any(Number))
+  expect(detail.bronze).toEqual(expect.any(Number))
+  expect(detail.page).toBeGreaterThanOrEqual(1)
+  expect(detail.totalPage).toBeGreaterThanOrEqual(detail.page)
+  expect(Array.isArray(detail.transactions)).toBe(true)
+  if (detail.transactions.length) {
+    expect(detail.transactions[0]).toMatchObject({
+      key: expect.any(String),
+      time: expect.any(String),
+      type: expect.any(String),
+      amount: expect.any(String),
+      direction: expect.stringMatching(/^(positive|negative|neutral)$/),
+      balance: expect.any(String),
+      descriptionHtml: expect.any(String)
+    })
+  }
+}
+
+/**
  * 校验提醒消息
  * @param notification 提醒消息
  */
@@ -172,6 +198,61 @@ describe.concurrent('V2exClient topic links', () => {
     expect(client.getTopicIdByLink('/t/1136705#reply50')).toBe(1136705)
     expect(client.getTopicIdByLink('https://www.v2ex.com/t/703733#reply12')).toBe(703733)
     expect(client.getTopicIdByLink('/go/v2ex')).toBeUndefined()
+  })
+})
+
+describe('V2exClient balance parsing', () => {
+  test('parses balance summary, pagination, amounts and description HTML', () => {
+    const html = `
+      <div id="Main">
+        <div class="balance_area">11 <img alt="G"> 21 <img alt="S"> 61 <img alt="B"></div>
+        <div class="ps_container">
+          <a class="page_current">2</a>
+          <input class="page_input" max="313">
+        </div>
+        <table class="data">
+          <tr><td class="h">时间</td></tr>
+          <tr>
+            <td class="d"><small>2026-06-10 10:43:11 +08:00</small></td>
+            <td class="d">创建回复</td>
+            <td class="d"><span class="negative"><strong>-5.0</strong></span></td>
+            <td class="d">112142.1</td>
+            <td class="d"><span>回复 › <a href="/t/1219202">话题</a></span></td>
+          </tr>
+          <tr>
+            <td class="d">2026-06-10 08:44:56 +08:00</td>
+            <td class="d">每日登录奖励</td>
+            <td class="d"><span class="positive"><strong>9.0</strong></span></td>
+            <td class="d">112147.1</td>
+            <td class="d">奖励</td>
+          </tr>
+        </table>
+      </div>
+    `
+    const detail = (
+      client as unknown as {
+        parseBalance: ($: cheerio.CheerioAPI, requestedPage: number) => BalanceDetail
+      }
+    ).parseBalance(cheerio.load(html), 2)
+
+    expect(detail).toMatchObject({
+      gold: 11,
+      silver: 21,
+      bronze: 61,
+      page: 2,
+      totalPage: 313
+    })
+    expect(detail.transactions).toHaveLength(2)
+    expect(detail.transactions[0]).toMatchObject({
+      amount: '-5.0',
+      direction: 'negative',
+      balance: '112142.1'
+    })
+    expect(detail.transactions[0].descriptionHtml).toContain('href="/t/1219202"')
+    expect(detail.transactions[1]).toMatchObject({
+      amount: '9.0',
+      direction: 'positive'
+    })
   })
 })
 
@@ -311,6 +392,11 @@ describe('V2exClient authenticated requests', () => {
     const overview = await client.getAccountOverview()
 
     expectAccountOverview(overview)
+  })
+
+  authTest('gets balance pages with V2EX_COOKIE', async () => {
+    expectBalanceDetail(await client.getBalance())
+    expectBalanceDetail(await client.getBalance(2))
   })
 
   authTest('gets collection nodes with V2EX_COOKIE', async () => {

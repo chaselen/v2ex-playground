@@ -1,6 +1,7 @@
 import type { TopicDetail } from '../v2ex/types'
 import type { MainViewRpcCommands } from './mainView'
 import type { MemberPanelRpcCommands } from './memberView'
+import type { BalancePanelRpcCommands } from './balanceView'
 import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
 
 /**
@@ -91,4 +92,5 @@ export type WebviewRequestRpcCommands = Pick<
     TopicPanelRpcCommands,
     'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'thankReply' | 'loadReplyPage'
   > &
-  Pick<MemberPanelRpcCommands, 'loadMemberTab' | 'loadMemberPage'>
+  Pick<MemberPanelRpcCommands, 'loadMemberTab' | 'loadMemberPage'> &
+  Pick<BalancePanelRpcCommands, 'loadPage'>

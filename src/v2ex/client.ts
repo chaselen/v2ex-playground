@@ -18,6 +18,8 @@ import {
   SoV2exSort,
   SoV2exSource,
   AccountOverview,
+  BalanceDetail,
+  BalanceTransaction,
   V2exNotification,
   MemberContent,
   MemberContentOptions,
@@ -60,6 +62,7 @@ const accountOverviewPathPatterns = [
   '/my/following',
   '/my/nodes',
   '/my/topics',
+  '/balance',
   '/notifications',
   '/t/*',
   '/planes',
@@ -71,7 +74,7 @@ const accountOverviewPathPatterns = [
 const isAccountOverviewPath = picomatch(accountOverviewPathPatterns)
 
 /** 需要检查自动重定向的 V2EX 页面路径 */
-const redirectCheckPathPatterns = ['/go/*', '/t/*']
+const redirectCheckPathPatterns = ['/balance', '/go/*', '/t/*']
 
 /** 自动重定向检查页面路径匹配器 */
 const isRedirectCheckPath = picomatch(redirectCheckPathPatterns)
@@ -630,6 +633,66 @@ export class V2exClient {
 
     await this.http.get<string>('/')
     return this.accountOverview || this.createEmptyAccountOverview()
+  }
+
+  /**
+   * 获取账户余额详情
+   * @param page 页码
+   */
+  async getBalance(page = 1): Promise<BalanceDetail> {
+    const balancePage = this.normalizePage(page)
+    const { data: html } = await this.http.get<string>(`/balance?p=${balancePage}`)
+
+    return this.parseBalance(cheerio.load(html), balancePage)
+  }
+
+  /**
+   * 解析账户余额详情
+   * @param $ cheerio 实例
+   * @param requestedPage 请求页码
+   */
+  private parseBalance($: cheerio.CheerioAPI, requestedPage: number): BalanceDetail {
+    const balanceText = $('#Main .balance_area').first().text()
+    const balances = (balanceText.match(/\d+/g) || []).map(Number)
+    const transactions: BalanceTransaction[] = []
+
+    $('#Main table.data > tbody > tr, #Main table.data > tr').each((index, element) => {
+      const cells = $(element).children('td.d')
+      if (cells.length < 5) {
+        return
+      }
+
+      const amountCell = cells.eq(2)
+      const amount = amountCell.text().trim()
+      const direction = amountCell.find('.positive').length
+        ? 'positive'
+        : amountCell.find('.negative').length
+          ? 'negative'
+          : 'neutral'
+      const time = cells.eq(0).text().trim()
+
+      transactions.push({
+        key: `${requestedPage}-${index}-${time}`,
+        time,
+        type: cells.eq(1).text().trim(),
+        amount,
+        direction,
+        balance: cells.eq(3).text().trim(),
+        descriptionHtml: cells.eq(4).html() || ''
+      })
+    })
+
+    const currentPage =
+      Number($('#Main .ps_container a.page_current').first().text().trim()) || requestedPage
+
+    return {
+      gold: balances[0] || 0,
+      silver: balances[1] || 0,
+      bronze: balances[2] || 0,
+      page: currentPage,
+      totalPage: this.parsePagerTotalPage($),
+      transactions
+    }
   }
 
   /**

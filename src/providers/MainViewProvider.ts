@@ -8,7 +8,7 @@ import autoDailySignIn, {
 } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
-import { openMember, openTopic } from '@/features/panelNavigation'
+import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
@@ -105,6 +105,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     rpc.handle('cancelCollectNode', msg => this._handleCancelCollectNode(msg.nodeName))
     rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
     rpc.handle('openMember', msg => openMember({ username: msg.username }))
+    rpc.handle('openBalance', () => openBalance())
     rpc.handle('openExternal', msg => this._openExternal(msg.path))
     rpc.handle('search', () => vscode.commands.executeCommand('v2ex.search'))
     rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))

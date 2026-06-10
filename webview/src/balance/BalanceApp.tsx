@@ -1,0 +1,274 @@
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { Banner, Button, Empty, Pagination, Spin, Table } from '@douyinfe/semi-ui'
+import { IconHelpCircle, IconRefresh } from '@douyinfe/semi-icons'
+import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import SimpleBar from 'simplebar-react'
+import type SimpleBarCore from 'simplebar-core'
+import { normalizeHtml } from '../shared/topicContent'
+import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
+import type {
+  BalanceDetail,
+  BalancePanelViewState,
+  BalanceTransaction
+} from '../../../src/shared/webview'
+
+/** V2EX 余额页固定流水条数 */
+const balancePageSize = 20
+
+/**
+ * 账户余额页面应用
+ */
+export default function BalanceApp() {
+  const [state, setState] = useState<BalancePanelViewState>({ status: 'loading' })
+  const [loadingPage, setLoadingPage] = useState(false)
+  const scrollRef = useRef<SimpleBarCore | null>(null)
+  const requestIdRef = useRef(0)
+  const detail = state.detail
+
+  const columns = useMemo(
+    () => [
+      {
+        title: '时间',
+        dataIndex: 'time',
+        width: 190,
+        render: (time: string) => <span className="balance-time">{time}</span>
+      },
+      {
+        title: '类型',
+        dataIndex: 'type',
+        width: 130
+      },
+      {
+        title: '数额',
+        dataIndex: 'amount',
+        width: 90,
+        align: 'right' as const,
+        render: (amount: string, transaction: BalanceTransaction) => (
+          <strong className={`balance-amount balance-amount--${transaction.direction}`}>
+            {amount}
+          </strong>
+        )
+      },
+      {
+        title: '余额',
+        dataIndex: 'balance',
+        width: 110,
+        align: 'right' as const
+      },
+      {
+        title: '描述',
+        dataIndex: 'descriptionHtml',
+        render: (html: string) => (
+          <div
+            className="topic-content balance-description"
+            onClick={handleDescriptionClick}
+            dangerouslySetInnerHTML={{ __html: normalizeHtml(html) }}
+          />
+        )
+      }
+    ],
+    []
+  )
+
+  /**
+   * 刷新当前页
+   */
+  function refresh() {
+    postVsCodeMessage('refresh')
+  }
+
+  /**
+   * 处理流水描述链接点击
+   * @param event 鼠标事件
+   */
+  function handleDescriptionClick(event: MouseEvent<HTMLDivElement>) {
+    const target = event.target instanceof Element ? event.target : null
+    const anchor = target?.closest('a')
+    if (!anchor) {
+      return
+    }
+
+    event.preventDefault()
+
+    const href = anchor.getAttribute('href') || ''
+    const topicId = anchor.getAttribute('data-topic-id') || href.match(/\/t\/(\d+)/)?.[1]
+    if (topicId) {
+      postVsCodeMessage('openTopic', { topicId })
+      return
+    }
+
+    const username =
+      anchor.getAttribute('data-member-username') || href.match(/\/member\/([A-Za-z0-9_-]+)/)?.[1]
+    if (username) {
+      postVsCodeMessage('openMember', { username: decodeURIComponent(username) })
+      return
+    }
+
+    if (href && href !== 'javascript:;') {
+      postVsCodeMessage('openExternal', { path: href })
+    }
+  }
+
+  /**
+   * 加载指定流水页
+   * @param page 页码
+   */
+  async function loadPage(page: number) {
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+    setLoadingPage(true)
+    try {
+      const nextDetail = await requestVsCodeMessage('loadPage', { page })
+      if (requestId !== requestIdRef.current) {
+        return
+      }
+      setState({ status: 'balance', detail: nextDetail, showRefresh: true })
+      scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoadingPage(false)
+      }
+    }
+  }
+
+  /**
+   * 渲染流水分页器
+   * @param position 分页器位置
+   */
+  function renderPagination(position: 'top' | 'bottom') {
+    if (!detail) {
+      return null
+    }
+
+    return (
+      <Pagination
+        className={`balance-pagination balance-pagination--${position}`}
+        currentPage={detail.page}
+        pageSize={balancePageSize}
+        total={detail.totalPage * balancePageSize}
+        showQuickJumper
+        showTotal
+        onPageChange={loadPage}
+      />
+    )
+  }
+
+  useEffect(() => {
+    /**
+     * 处理扩展侧发送的视图状态
+     * @param event 消息事件
+     */
+    function onMessage(event: MessageEvent<{ command?: string; state?: BalancePanelViewState }>) {
+      if (event.data.command === 'renderState' && event.data.state) {
+        setState(event.data.state)
+      }
+    }
+
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  useEffect(() => {
+    if (detail) {
+      scrollRef.current?.recalculate()
+    }
+  }, [detail])
+
+  return (
+    <main className="balance-shell">
+      <SimpleBar ref={scrollRef} className="balance-scroll" autoHide={false}>
+        <div className="balance-scroll-content">
+          {state.status === 'loading' && (
+            <div className="balance-state balance-state--loading">
+              <Spin size="middle" />
+              <span>加载中</span>
+            </div>
+          )}
+
+          {state.status === 'error' && (
+            <div className="balance-state">
+              <Banner type="danger" title="加载失败" description={state.message || '未知错误'} />
+              <div className="balance-state-actions">
+                {state.showLogin && (
+                  <Button size="small" theme="solid" onClick={() => postVsCodeMessage('login')}>
+                    登录
+                  </Button>
+                )}
+                {state.showRefresh && (
+                  <Button size="small" theme="light" icon={<IconRefresh />} onClick={refresh}>
+                    刷新页面
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {state.status === 'balance' && detail && (
+            <article className="balance-container">
+              <header className="balance-header">
+                <div>
+                  <div className="balance-eyebrow">当前账户余额</div>
+                  <h1 className="balance-wallet" aria-label="当前账户余额">
+                    <span>{detail.gold}</span>
+                    <i className="balance-coin balance-coin--gold" />
+                    <span>{detail.silver}</span>
+                    <i className="balance-coin balance-coin--silver" />
+                    <span>{detail.bronze}</span>
+                    <i className="balance-coin balance-coin--bronze" />
+                  </h1>
+                </div>
+                <div className="balance-actions">
+                  <Button
+                    size="small"
+                    theme="light"
+                    onClick={() => postVsCodeMessage('openExternal', { path: '/balance/add' })}
+                  >
+                    充值
+                  </Button>
+                  <Button
+                    size="small"
+                    theme="borderless"
+                    icon={<IconHelpCircle />}
+                    onClick={() => postVsCodeMessage('openExternal', { path: '/help/currency' })}
+                  >
+                    余额说明
+                  </Button>
+                  <Button
+                    size="small"
+                    theme="borderless"
+                    icon={<IconRefresh />}
+                    loading={loadingPage}
+                    aria-label="刷新页面"
+                    onClick={refresh}
+                  />
+                </div>
+              </header>
+
+              <section className="balance-ledger">
+                {renderPagination('top')}
+                <Table
+                  className="balance-table"
+                  rowKey="key"
+                  columns={columns}
+                  dataSource={detail.transactions}
+                  pagination={false}
+                  loading={loadingPage}
+                  empty={
+                    <Empty
+                      image={<IllustrationNoContent />}
+                      darkModeImage={<IllustrationNoContentDark />}
+                      title="暂无账户流水"
+                    />
+                  }
+                />
+                {renderPagination('bottom')}
+              </section>
+            </article>
+          )}
+        </div>
+      </SimpleBar>
+    </main>
+  )
+}

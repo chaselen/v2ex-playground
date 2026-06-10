@@ -742,7 +742,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
               type="button"
               className={`${styles['my-link']} ${styles['my-balance']}`}
               aria-label="账户余额"
-              onClick={() => openExternal('/balance')}
+              onClick={() => postVsCodeMessage('openBalance')}
             >
               <span>{overview.gold}</span>
               <i className={`${styles['my-coin']} ${styles['my-coin--gold']}`} />

@@ -1,6 +1,7 @@
 import Config from '@/config'
 import { MemberPanelController } from '@/controllers/MemberPanelController'
 import { TopicPanelController } from '@/controllers/TopicPanelController'
+import { BalancePanelController } from '@/controllers/BalancePanelController'
 import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
 import G from '@/global'
 
@@ -17,6 +18,9 @@ const memberPanels: Record<string, MemberPanelController> = {}
  * value：控制器
  */
 const topicPanels: Record<string, TopicPanelController> = {}
+
+/** 账户余额页面控制器 */
+let balancePanel: BalancePanelController | undefined
 
 /**
  * 控制器面板导航依赖
@@ -87,4 +91,20 @@ export function openTopic(topic: TopicPanelInput) {
     delete topicPanels[topicKey]
   })
   controller.load()
+}
+
+/**
+ * 打开账户余额页面
+ */
+export function openBalance() {
+  if (balancePanel) {
+    balancePanel.reveal()
+    return
+  }
+
+  balancePanel = new BalancePanelController(panelDeps)
+  balancePanel.onDidDispose(() => {
+    balancePanel = undefined
+  })
+  balancePanel.load()
 }
