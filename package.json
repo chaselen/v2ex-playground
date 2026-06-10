@@ -124,10 +124,10 @@
     "check:webview:watch": "tsc -p webview/tsconfig.json --noEmit --watch",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "package": "npx @vscode/vsce@3.9.1 package",
-    "publish": "npx @vscode/vsce@3.9.1 publish",
     "test": "vitest run --config vitest.config.ts",
+    "vscode:package": "npx @vscode/vsce@3.9.1 package",
     "vscode:prepublish": "npm run check && npm run build",
+    "vscode:publish": "npx @vscode/vsce@3.9.1 publish",
     "watch": "npm run watch:webview & npm run watch:extension & npm run check:webview:watch & npm run check:extension:watch",
     "watch:extension": "node esbuild.config.ts --watch",
     "watch:webview": "vite build --watch --config webview/vite.config.ts"
