@@ -15,6 +15,18 @@ export interface NodeItem extends WebviewNode {
 }
 
 /**
+ * 动态节点标签状态
+ */
+export interface NodeTopicTab extends WebviewNode {
+  loading: boolean
+  page: number
+  totalPage: number
+  totalCount: number
+  topics: WebviewTopic[]
+  error: string | null
+}
+
+/**
  * 主面板标签数据
  */
 export type MainTabs = Record<MainTabKey, NodeItem[]>

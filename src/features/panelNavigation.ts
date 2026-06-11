@@ -2,7 +2,7 @@ import Config from '@/config'
 import { MemberPanelController } from '@/controllers/MemberPanelController'
 import { TopicPanelController } from '@/controllers/TopicPanelController'
 import { BalancePanelController } from '@/controllers/BalancePanelController'
-import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
+import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import G from '@/global'
 
 /**
@@ -22,12 +22,24 @@ const topicPanels: Record<string, TopicPanelController> = {}
 /** 账户余额页面控制器 */
 let balancePanel: BalancePanelController | undefined
 
+/** 打开主面板节点标签回调 */
+let openNodeTab: (node: NodeTabInput) => void = () => undefined
+
 /**
  * 控制器面板导航依赖
  */
 const panelDeps = {
   openMember,
-  openTopic
+  openTopic,
+  openNode: (node: NodeTabInput) => openNodeTab(node)
+}
+
+/**
+ * 设置打开主面板节点标签回调
+ * @param handler 打开节点标签回调
+ */
+export function setOpenNodeTabHandler(handler: (node: NodeTabInput) => void) {
+  openNodeTab = handler
 }
 
 /**

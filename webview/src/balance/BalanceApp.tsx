@@ -109,6 +109,15 @@ export default function BalanceApp() {
       return
     }
 
+    const nodeName = href.match(/\/go\/([A-Za-z0-9_-]+)/)?.[1]
+    if (nodeName) {
+      vscode.openNode({
+        name: decodeURIComponent(nodeName),
+        title: anchor.textContent?.trim() || decodeURIComponent(nodeName)
+      })
+      return
+    }
+
     if (href && href !== 'javascript:;') {
       vscode.openExternal({ path: resolveWebviewUrl(href) })
     }

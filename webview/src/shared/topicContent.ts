@@ -37,6 +37,15 @@ function extractMemberUsername(anchor: HTMLAnchorElement): string {
 }
 
 /**
+ * 从链接中提取节点 name
+ * @param anchor 链接元素
+ */
+function extractNodeName(anchor: HTMLAnchorElement): string {
+  const match = /\/go\/([A-Za-z0-9_-]+)/.exec(anchor.href)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
+/**
  * 判断链接是否指向支持预览的图片
  * @param urlText 链接地址
  */
@@ -239,6 +248,26 @@ function bindMemberLink(anchor: HTMLAnchorElement) {
 }
 
 /**
+ * 给站内节点链接绑定主面板跳转行为
+ * @param anchor 链接元素
+ */
+function bindNodeLink(anchor: HTMLAnchorElement) {
+  const name = extractNodeName(anchor)
+  if (!name) {
+    return
+  }
+  anchor.dataset.nodeName = name
+  anchor.href = 'javascript:;'
+  anchor.onclick = () => {
+    vscode.openNode({
+      name,
+      title: anchor.textContent?.trim() || name
+    })
+    return false
+  }
+}
+
+/**
  * 给用户内容 HTML 中的站内链接增加数据标记
  * @param html 原始 HTML
  */
@@ -249,6 +278,11 @@ export function normalizeMemberContentLinks(html?: string | null): string {
       /href="\/member\/([A-Za-z0-9_-]+)"/g,
       (_, username: string) =>
         `href="javascript:;" data-member-username="${decodeURIComponent(username)}"`
+    )
+    .replace(
+      /href="\/go\/([A-Za-z0-9_-]+)"/g,
+      (_, nodeName: string) =>
+        `href="javascript:;" data-node-name="${decodeURIComponent(nodeName)}"`
     )
 }
 
@@ -285,6 +319,13 @@ export function enhanceTopicContent(root: ParentNode, showImages: boolean) {
       return
     }
     bindMemberLink(anchor)
+  })
+
+  topicLinks.forEach(anchor => {
+    if (!anchor.matches('.topic-content a[href*="/go/"]')) {
+      return
+    }
+    bindNodeLink(anchor)
   })
 }
 

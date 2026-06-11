@@ -8,6 +8,10 @@ export interface WebviewNode {
   name: string
   /** 节点或首页分类的展示标题 */
   title: string
+  /** 节点图标地址 */
+  avatar?: string
+  /** 节点简介 */
+  description?: string
 }
 
 /** 首页预置节点 */
@@ -113,6 +117,7 @@ export interface InitData {
   loggedIn: boolean
   accountOverview?: WebviewAccountOverview
   selectedTab?: MainPanelTabKey
+  selectedNode?: WebviewNode
 }
 
 /**
@@ -133,6 +138,22 @@ export interface NodeChildrenData {
   children: WebviewTopic[]
   /** 错误文案 */
   error?: string
+}
+
+/**
+ * 节点主题列表数据
+ */
+export interface NodeTopicListData {
+  /** 节点 */
+  node: WebviewNode
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  totalPage: number
+  /** 主题总数 */
+  totalCount: number
+  /** 主题列表 */
+  topics: WebviewTopic[]
 }
 
 /** 我的内容标签 key */
@@ -226,6 +247,7 @@ export interface MainViewRpcCommands extends WebviewNavigationRpcCommands {
   refreshMyOverview(): MyOverviewRefreshData
   expandNode(payload: { tab: MainTabKey; itemKey: string; page?: number }): NodeChildrenData
   refreshNode(payload: { tab: MainTabKey; itemKey: string; page?: number }): NodeChildrenData
+  getNodeTopics(payload: { nodeName: string; page?: number }): NodeTopicListData
   getMyTopics(payload: {
     tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
     page?: number
@@ -252,4 +274,5 @@ export interface MainViewWebviewEvents {
   accountOverviewChanged: AccountOverviewChangedData
   dailySignInStatusChanged: WebviewDailySignInData
   selectMainTab: SelectMainTabData
+  openNode: WebviewNode
 }

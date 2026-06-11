@@ -5,7 +5,7 @@ import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
-import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
+import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } from '@/v2ex'
 import type {
   MemberPanelRpcCommands,
@@ -22,6 +22,8 @@ export interface MemberPanelDeps {
   openMember: (member: MemberPanelInput) => void
   /** 打开话题面板 */
   openTopic: (topic: TopicPanelInput) => void
+  /** 打开节点主题标签 */
+  openNode: (node: NodeTabInput) => void
 }
 
 /**
@@ -154,6 +156,7 @@ export class MemberPanelController {
           topicId: msg.topicId
         }),
       openMember: msg => this.deps.openMember({ username: msg.username }),
+      openNode: msg => this.deps.openNode(msg),
       refresh: () => this.refreshMember(),
       loadMemberTab: msg => this.loadMemberContent(msg.tab, msg.page),
       loadMemberPage: msg => this.loadMemberContent(msg.tab, msg.page)

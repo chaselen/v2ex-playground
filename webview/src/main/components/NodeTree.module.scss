@@ -22,10 +22,6 @@
   min-height: 0;
   height: 100%;
 
-  :global(.simplebar-content) {
-    padding: 4px 8px 0 !important;
-  }
-
   :global(.simplebar-track.simplebar-vertical) {
     width: 8px;
     background: transparent;
@@ -214,6 +210,7 @@
   align-items: center;
   gap: 2px;
   margin-left: auto;
+  margin-right: 8px;
   opacity: 0;
   transition: opacity 0.12s ease;
 

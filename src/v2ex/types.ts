@@ -132,6 +132,24 @@ export interface Node {
   name: string
   /** 节点展示标题，如“程序员” */
   title: string
+  /** 节点图标地址 */
+  avatar?: string
+  /** 节点简介 */
+  description?: string
+}
+
+/**
+ * 节点主题列表
+ */
+export interface NodeTopicList {
+  /** 节点 */
+  node: Node
+  /** 总页数 */
+  totalPage: number
+  /** 主题总数 */
+  totalCount: number
+  /** 主题列表 */
+  list: Topic[]
 }
 
 /** 签到结果 */

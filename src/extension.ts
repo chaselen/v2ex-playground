@@ -6,11 +6,13 @@ import { V2exClient } from '@/v2ex'
 import search from '@/commands/search'
 import setting from '@/commands/setting'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
+import { setOpenNodeTabHandler } from '@/features/panelNavigation'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
   G.V2ex = new V2exClient(G.getCookie(), () => G.setCookie(''))
   const mainViewProvider = new MainViewProvider()
+  setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
   context.subscriptions.push(
     G.V2ex.onAccountOverviewChanged((overview, oldOverview) => {

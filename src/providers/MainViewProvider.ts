@@ -24,6 +24,7 @@ import {
   MyOverviewRefreshData,
   MyTopicListData,
   NodeListData,
+  NodeTopicListData,
   WebviewAccountOverview,
   NodeChildrenData,
   WebviewDailySignInData,
@@ -33,12 +34,14 @@ import {
   WebviewRpcHandlers
 } from '@/shared/webview'
 import type { AccountOverview } from '@/v2ex'
+import type { NodeTabInput } from '@/controllers/panelTypes'
 
 export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView
   private _rpc?: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>
   private _webviewReady = false
   private _pendingSelectedTab?: MainPanelTabKey
+  private _pendingNode?: WebviewNode
   private _accountOverviewChangedDisposable?: { dispose: () => void }
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -97,6 +100,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       refreshMyOverview: () => this._handleRefreshMyOverview(),
       expandNode: msg => this._handleExpandNode(msg.tab, msg.itemKey, msg.page),
       refreshNode: msg => this._handleRefreshNode(msg.tab, msg.itemKey, msg.page),
+      getNodeTopics: msg => this._handleGetNodeTopics(msg.nodeName, msg.page),
       getMyTopics: msg => this._handleGetMyTopics(msg.tab, msg.page),
       getMyNotifications: msg => this._handleGetMyNotifications(msg.page),
       getDailySignInStatus: () => this._handleGetDailySignInStatus(),
@@ -107,6 +111,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       openTopic: msg =>
         openTopic({ topicId: msg.topicId, label: msg.title || `/t/${msg.topicId}` }),
       openMember: msg => openMember({ username: msg.username }),
+      openNode: msg => this.openNode(msg),
       openBalance: () => openBalance(),
       openExternal: msg => {
         openExternal(msg.path)
@@ -178,7 +183,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       },
       loggedIn,
       accountOverview,
-      selectedTab: this.consumePendingSelectedTab()
+      selectedTab: this.consumePendingSelectedTab(),
+      selectedNode: this.consumePendingNode()
     }
   }
 
@@ -263,6 +269,26 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         children: [],
         error: (err as Error).message
       }
+    }
+  }
+
+  /**
+   * 获取节点主题列表
+   * @param nodeName 节点 name
+   * @param page 页码
+   */
+  private async _handleGetNodeTopics(nodeName: string, page = 1): Promise<NodeTopicListData> {
+    const result = await G.V2ex.getTopicListByNode(nodeName, page)
+
+    // 检查登录是否有效
+    G.V2ex.checkCookie()
+
+    return {
+      node: result.node,
+      page,
+      totalPage: Math.max(result.totalPage || 1, 1),
+      totalCount: Math.max(result.totalCount || 0, 0),
+      topics: result.list.map(topic => this._toWebviewTopic(topic))
     }
   }
 
@@ -486,6 +512,19 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * 打开节点主题标签
+   * @param node 节点
+   */
+  async openNode(node: NodeTabInput) {
+    this._pendingNode = {
+      name: node.name,
+      title: node.title || node.name
+    }
+    await vscode.commands.executeCommand('v2ex-main.focus')
+    this.postPendingNode()
+  }
+
+  /**
    * 发送待切换标签
    */
   private postPendingSelectedTab() {
@@ -507,5 +546,27 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     const selectedTab = this._pendingSelectedTab
     this._pendingSelectedTab = undefined
     return selectedTab
+  }
+
+  /**
+   * 发送待打开节点
+   */
+  private postPendingNode() {
+    if (!this._pendingNode || !this._rpc || !this._webviewReady) {
+      return
+    }
+
+    const node = this._pendingNode
+    this._pendingNode = undefined
+    this._rpc.post('openNode', node)
+  }
+
+  /**
+   * 取出待打开节点
+   */
+  private consumePendingNode() {
+    const node = this._pendingNode
+    this._pendingNode = undefined
+    return node
   }
 }

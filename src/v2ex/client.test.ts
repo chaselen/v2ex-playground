@@ -59,6 +59,12 @@ function expectNode(node: Node) {
   expect(node.name.length).toBeGreaterThan(0)
   expect(node.title).toEqual(expect.any(String))
   expect(node.title.length).toBeGreaterThan(0)
+  if (node.avatar) {
+    expect(node.avatar).toMatch(/^https?:\/\//)
+  }
+  if (node.description) {
+    expect(node.description.length).toBeGreaterThan(0)
+  }
 }
 
 /**
@@ -275,9 +281,22 @@ describe.concurrent('V2exClient topics', () => {
     expect(result.totalPage).toBeGreaterThanOrEqual(0)
     expect(result.totalCount).toEqual(expect.any(Number))
     expect(result.totalCount).toBeGreaterThan(0)
+    expectNode(result.node)
+    expect(result.node.name).toBe('v2ex')
     expect(result.list.length).toBeGreaterThan(0)
     expectTopic(result.list[0])
-    expect(result.list[0].node.name).toBe('v2ex')
+    expect(result.list[0].node).toEqual(result.node)
+  })
+
+  test('gets node page metadata', async () => {
+    const result = await client.getTopicListByNode('python')
+
+    expect(result.node).toMatchObject({
+      name: 'python',
+      title: 'Python',
+      avatar: expect.stringMatching(/^https:\/\/cdn\.v2ex\.com\/navatar\//),
+      description: expect.stringContaining('Python')
+    })
   })
 
   test('gets topic detail from a known public topic', async () => {

@@ -7,7 +7,7 @@ import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
-import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
+import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
   TopicPanelRpcCommands,
   TopicPanelViewState,
@@ -23,6 +23,8 @@ export interface TopicPanelDeps {
   openMember: (member: MemberPanelInput) => void
   /** 打开话题面板 */
   openTopic: (topic: TopicPanelInput) => void
+  /** 打开节点主题标签 */
+  openNode: (node: NodeTabInput) => void
 }
 
 /**
@@ -208,6 +210,7 @@ export class TopicPanelController {
       },
       openTopic: msg => this.openTopic(msg.topicId),
       openMember: msg => this.deps.openMember({ username: msg.username }),
+      openNode: msg => this.deps.openNode(msg),
       login: async () => {
         await vscode.commands.executeCommand('v2ex.login')
       },

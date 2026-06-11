@@ -5,7 +5,7 @@ import G from '@/global'
 import { openExternal } from '@/features/openExternal'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
-import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
+import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type {
   BalancePanelRpcCommands,
   BalancePanelViewState,
@@ -21,6 +21,8 @@ export interface BalancePanelDeps {
   openMember: (member: MemberPanelInput) => void
   /** 打开话题面板 */
   openTopic: (topic: TopicPanelInput) => void
+  /** 打开节点主题标签 */
+  openNode: (node: NodeTabInput) => void
 }
 
 /**
@@ -90,6 +92,7 @@ export class BalancePanelController {
       },
       openTopic: msg => this.deps.openTopic({ label: `/t/${msg.topicId}`, topicId: msg.topicId }),
       openMember: msg => this.deps.openMember({ username: msg.username }),
+      openNode: msg => this.deps.openNode(msg),
       login: async () => {
         await vscode.commands.executeCommand('v2ex.login')
         if (G.getCookie()) {

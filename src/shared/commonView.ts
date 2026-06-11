@@ -5,6 +5,7 @@ export interface WebviewNavigationRpcCommands {
   openExternal(payload: { path: string }): void
   openTopic(payload: { topicId: string | number; title?: string }): void
   openMember(payload: { username: string }): void
+  openNode(payload: { name: string; title?: string }): void
 }
 
 /**

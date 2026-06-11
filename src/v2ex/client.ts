@@ -25,7 +25,8 @@ import {
   MemberContentOptions,
   MemberContentTabKey,
   MemberInfo,
-  MemberReply
+  MemberReply,
+  NodeTopicList
 } from './types'
 
 /** Cheerio 选择结果 */
@@ -375,10 +376,12 @@ export class V2exClient {
       list.push({
         id: topicId,
         title: topicElement.text().trim(),
-        node: {
-          name: fallbackNode?.name || nodeHref.split('go/')[1] || '',
-          title: fallbackNode?.title || nodeElement.text().trim()
-        },
+        node: fallbackNode
+          ? { ...fallbackNode }
+          : {
+              name: nodeHref.split('go/')[1] || '',
+              title: nodeElement.text().trim()
+            },
         replies: Number(countElement.text().trim()) || 0,
         displayTime: topicInfo.find('span[title]').last().text().trim(),
         lastReplyUser: hasLastReply
@@ -508,21 +511,35 @@ export class V2exClient {
    * @param page 页码
    * @example https://www.v2ex.com/go/python?p=2
    */
-  async getTopicListByNode(
-    nodeName: string,
-    page = 1
-  ): Promise<{ totalPage: number; totalCount: number; list: Topic[] }> {
+  async getTopicListByNode(nodeName: string, page = 1): Promise<NodeTopicList> {
     const { data: html } = await this.http.get(`/go/${nodeName}?p=${page}`)
     const $ = cheerio.load(html)
-    const nodeTitle = $('.node-breadcrumb').text().split('›')[1].trim()
+    const node = this.parseNodePageInfo($, nodeName)
     const cells = $('#TopicsNode .cell[class*="t_"]')
+
     return {
+      node,
       totalPage: this.parsePagerTotalPage($),
       totalCount: this.parseNodeTopicTotalCount($),
-      list: this.parseTopicListCells($, cells, {
-        name: nodeName,
-        title: nodeTitle
-      })
+      list: this.parseTopicListCells($, cells, node)
+    }
+  }
+
+  /**
+   * 解析节点页面信息
+   * @param $ cheerio 实例
+   * @param nodeName 节点 name
+   */
+  private parseNodePageInfo($: cheerio.CheerioAPI, nodeName: string): Node {
+    const header = $('.node-header').first()
+    const avatar = header.find('.page-content-header > img').first().attr('src')
+    const description = header.find('.intro').first().text().trim()
+
+    return {
+      name: nodeName,
+      title: header.find('.node-breadcrumb').first().text().split('›').pop()?.trim() || nodeName,
+      avatar: avatar ? new URL(avatar, this.baseUrl).toString() : undefined,
+      description: description || undefined
     }
   }
 

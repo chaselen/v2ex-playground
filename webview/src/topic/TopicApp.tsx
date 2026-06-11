@@ -252,7 +252,7 @@ export default function TopicApp() {
               className="topic-node-tag"
               size="small"
               type="tertiary"
-              onClick={() => openExternal('/go/' + topic.node.name)}
+              onClick={() => vscode.openNode(topic.node)}
             >
               {topic.node.title}
             </Button>

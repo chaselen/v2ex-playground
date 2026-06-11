@@ -467,7 +467,16 @@ function renderTopicItem(topic: MemberTopic, openTopic: (topicId: number, title:
         )}
       </span>
       <span className="member-topic-meta">
-        {!!topic.node.title && <VscodeTag size="small">{topic.node.title}</VscodeTag>}
+        {!!topic.node.title && (
+          <span
+            onClick={event => {
+              event.stopPropagation()
+              vscode.openNode(topic.node)
+            }}
+          >
+            <VscodeTag size="small">{topic.node.title}</VscodeTag>
+          </span>
+        )}
         {!!topic.displayTime && <span>{topic.displayTime}</span>}
         {!!topic.lastReplyUser && <span>最后回复 {topic.lastReplyUser}</span>}
       </span>
@@ -531,6 +540,7 @@ function handleContentClick(
 
   const topicId = anchor.getAttribute('data-topic-id')
   const username = anchor.getAttribute('data-member-username')
+  const nodeName = anchor.getAttribute('data-node-name')
 
   if (topicId) {
     event.preventDefault()
@@ -544,7 +554,23 @@ function handleContentClick(
     return
   }
 
+  if (nodeName) {
+    event.preventDefault()
+    vscode.openNode({ name: nodeName, title: anchor.textContent?.trim() || nodeName })
+    return
+  }
+
   const href = anchor.getAttribute('href') || ''
+  const hrefNodeName = href.match(/\/go\/([A-Za-z0-9_-]+)/)?.[1]
+  if (hrefNodeName) {
+    event.preventDefault()
+    vscode.openNode({
+      name: decodeURIComponent(hrefNodeName),
+      title: anchor.textContent?.trim() || decodeURIComponent(hrefNodeName)
+    })
+    return
+  }
+
   if (href && href !== 'javascript:;') {
     event.preventDefault()
     vscode.openExternal({ path: resolveWebviewUrl(href) })

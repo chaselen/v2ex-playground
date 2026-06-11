@@ -70,7 +70,7 @@
   }
 
   > .semi-tabs-bar-line.semi-tabs-bar-top .semi-tabs-tab:not(:last-of-type) {
-    margin-right: 12px;
+    margin-right: 10px;
   }
 
   > .semi-tabs-bar .semi-tabs-tab-button {
@@ -130,6 +130,67 @@
   min-width: 20px;
   padding: 0;
   color: var(--v2ex-webview-fg);
+}
+
+.node-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  max-width: 160px;
+  line-height: 1;
+}
+
+.node-tab-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-tab-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: var(--semi-border-radius-small);
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease,
+    background-color 0.12s ease;
+  pointer-events: none;
+
+  &:hover {
+    background: var(--vscode-toolbar-hoverBackground, var(--v2ex-hover-bg));
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+  }
+}
+
+.main-tabs > .semi-tabs-bar .semi-tabs-tab .node-tab-close .semi-icon {
+  display: block;
+  position: static;
+  margin: 0;
+  font-size: 12px;
+}
+
+.main-tabs > .semi-tabs-bar .semi-tabs-tab:hover .node-tab-close,
+.main-tabs > .semi-tabs-bar .semi-tabs-tab:focus-within .node-tab-close,
+.main-tabs > .semi-tabs-bar .semi-tabs-tab-active .node-tab-close {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .semi-dropdown-item {
