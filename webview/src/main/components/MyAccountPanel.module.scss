@@ -478,17 +478,9 @@
 }
 
 .my-content-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
   min-width: 0;
   padding: 8px 0 4px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
-
-  :global(.semi-page) {
-    flex: none;
-  }
+  --v2ex-main-pagination-gap: 8px;
 }
 
 .empty-panel {

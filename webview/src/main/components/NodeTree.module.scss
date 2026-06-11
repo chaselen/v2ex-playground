@@ -131,49 +131,13 @@
 }
 
 .node-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
   width: 100%;
   min-width: 0;
   padding: 2px 0 4px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
-
-  :global(.semi-page) {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    flex: none;
-    color: inherit;
-  }
-
-  :global(.semi-page-item) {
-    flex: none;
-    border-color: transparent;
-    background: transparent;
-    color: var(--v2ex-main-content-fg);
-  }
-
-  :global(.semi-page-item:hover) {
-    background: var(
-      --vscode-toolbar-hoverBackground,
-      var(--vscode-button-secondaryHoverBackground, var(--semi-color-fill-1))
-    );
-    color: var(--v2ex-hover-fg);
-  }
-
-  :global(.semi-page-item-active),
-  :global(.semi-page-item-active:hover) {
-    background: var(--v2ex-active-bg);
-    color: var(--v2ex-active-fg);
-  }
-
-  :global(.semi-page-item-disabled),
-  :global(.semi-page-item-disabled:hover) {
-    color: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
-    background: transparent;
-  }
+  --v2ex-main-pagination-hover-bg: var(
+    --vscode-toolbar-hoverBackground,
+    var(--vscode-button-secondaryHoverBackground, var(--semi-color-fill-1))
+  );
 }
 
 .node-actions {

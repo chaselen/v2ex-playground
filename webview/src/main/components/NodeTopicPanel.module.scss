@@ -60,28 +60,7 @@
 }
 
 .pagination {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   flex: none;
   min-height: 34px;
   padding: 4px 0;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
-
-  :global(.semi-page-item) {
-    border-color: transparent;
-    background: transparent;
-    color: var(--v2ex-main-content-fg);
-  }
-
-  :global(.semi-page-item:hover) {
-    background: var(--v2ex-hover-bg);
-    color: var(--v2ex-hover-fg);
-  }
-
-  :global(.semi-page-item-active),
-  :global(.semi-page-item-active:hover) {
-    background: var(--v2ex-active-bg);
-    color: var(--v2ex-active-fg);
-  }
 }

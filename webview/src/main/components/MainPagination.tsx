@@ -24,7 +24,7 @@ export default function MainPagination(props: MainPaginationProps) {
   const totalCountText = showTotalCount ? totalCount.toLocaleString('en-US') : ''
 
   return (
-    <>
+    <div className={styles['main-pagination']}>
       <Pagination
         size="small"
         pageSize={1}
@@ -37,6 +37,6 @@ export default function MainPagination(props: MainPaginationProps) {
       {showTotalCount && (
         <span className={styles['main-pagination-summary']}>{`共 ${totalCountText} 条`}</span>
       )}
-    </>
+    </div>
   )
 }
