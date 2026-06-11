@@ -1,0 +1,88 @@
+/*
+ * Semi 兼容覆盖
+ * 这里只保留无法通过全局 Design Token 表达的 VS Code 主题适配
+ */
+
+.semi-spin {
+  color: var(--vscode-progressBar-background, var(--vscode-textLink-foreground));
+}
+
+/* Semi Tag 的色彩 token 带有颜色变体，按需使用 VS Code 中性标签配色 */
+.vscode-tag,
+.vscode-tag[class*='semi-tag-'] {
+  border-color: var(--v2ex-tag-bg);
+  background: var(--v2ex-tag-bg);
+  background-color: var(--v2ex-tag-bg);
+  color: var(--v2ex-tag-fg);
+
+  &:hover {
+    border-color: var(--v2ex-primary-button-hover-bg);
+    background: var(--v2ex-tag-hover-bg);
+    background-color: var(--v2ex-tag-hover-bg);
+    color: var(--v2ex-tag-hover-fg);
+  }
+
+  .semi-tag-content {
+    color: inherit;
+  }
+}
+
+.vscode-badge-count {
+  background-color: var(--vscode-badge-background, var(--semi-color-danger));
+  color: var(--vscode-badge-foreground, #fff);
+}
+
+/* Semi solid primary 不提供独立的前景色 token */
+.semi-button-primary:not(.semi-button-borderless):not(.semi-button-light):not(
+    .semi-button-outline
+  ):not(.semi-button-disabled) {
+  color: var(--v2ex-primary-button-fg);
+}
+
+/*
+ * Semi light button 始终读取通用 fill token
+ * 单独覆盖，避免影响输入框等其他使用 fill token 的组件
+ */
+.semi-button-light:not(.semi-button-disabled) {
+  background-color: var(--v2ex-light-button-bg);
+
+  &:hover {
+    background-color: var(--v2ex-light-button-hover-bg);
+  }
+
+  &:active {
+    background-color: var(--v2ex-light-button-active-bg);
+  }
+}
+
+/* Tooltip 和 Dropdown 使用各自的 VS Code 浮层主题色 */
+.semi-tooltip-wrapper {
+  border: 0;
+  background-color: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+  color: var(--vscode-editorHoverWidget-foreground, var(--v2ex-webview-fg));
+}
+
+.semi-tooltip-wrapper .semi-tooltip-icon-arrow {
+  color: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+}
+
+.semi-dropdown-wrapper,
+.semi-portal {
+  .semi-dropdown {
+    border-color: var(--vscode-menu-border, var(--v2ex-border));
+    background: var(--vscode-menu-background, var(--v2ex-overlay-bg));
+    color: var(--vscode-menu-foreground, var(--v2ex-webview-fg));
+    box-shadow: var(--semi-shadow-elevated);
+  }
+
+  .semi-dropdown-item {
+    color: var(--vscode-menu-foreground, var(--v2ex-webview-fg));
+
+    &:hover,
+    &-active,
+    &:active {
+      background: var(--vscode-menu-selectionBackground, var(--v2ex-hover-bg));
+      color: var(--vscode-menu-selectionForeground, var(--v2ex-webview-fg));
+    }
+  }
+}

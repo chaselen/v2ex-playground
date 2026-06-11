@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import semiTheming from '@douyinfe/semi-vite-plugin'
 
 /** 构建日志 */
 type BuildLog = {
@@ -18,7 +19,7 @@ const isLottieDirectEvalWarning = (log: BuildLog) => {
 export default defineConfig({
   root: __dirname,
   base: './',
-  plugins: [react()],
+  plugins: [semiTheming({ cssLayer: true }), react()],
   build: {
     outDir: '../html',
     emptyOutDir: true,
@@ -35,7 +36,8 @@ export default defineConfig({
         main: resolve(__dirname, 'main.html'),
         topic: resolve(__dirname, 'topic.html'),
         member: resolve(__dirname, 'member.html'),
-        balance: resolve(__dirname, 'balance.html')
+        balance: resolve(__dirname, 'balance.html'),
+        theme: resolve(__dirname, 'theme.html')
       }
     }
   }

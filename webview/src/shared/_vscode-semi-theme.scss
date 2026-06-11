@@ -1,0 +1,267 @@
+$text-color: var(--vscode-foreground, var(--vscode-editor-foreground));
+$background-color: var(--vscode-editor-background);
+$link-color: var(--vscode-textLink-foreground, var(--vscode-foreground));
+$link-active-color: var(
+  --vscode-textLink-activeForeground,
+  var(--vscode-textLink-foreground, var(--vscode-foreground))
+);
+
+/*
+ * VS Code Theme Color 是 Webview 的唯一主题来源
+ * 不设置 Semi 的 theme-mode，避免未映射 token 混入 Semi 默认暗色色盘
+ */
+body {
+  color: $text-color;
+  background: $background-color;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+
+  /* 基础色：优先跟随 VS Code Theme Color */
+  --v2ex-webview-bg: #{$background-color};
+  --v2ex-webview-fg: #{$text-color};
+  --v2ex-widget-bg: var(
+    --vscode-editorWidget-background,
+    var(--vscode-input-background, var(--v2ex-webview-bg))
+  );
+  --v2ex-overlay-bg: var(
+    --vscode-menu-background,
+    var(--vscode-editorHoverWidget-background, var(--v2ex-widget-bg))
+  );
+  --v2ex-mask-bg: color-mix(in srgb, var(--v2ex-webview-bg) 60%, transparent);
+  --v2ex-input-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --v2ex-input-fg: var(--vscode-input-foreground, var(--v2ex-webview-fg));
+  --v2ex-placeholder-fg: var(
+    --vscode-input-placeholderForeground,
+    var(--vscode-descriptionForeground, var(--v2ex-webview-fg))
+  );
+
+  /* 边框与焦点：高对比主题会在下方覆盖 */
+  --v2ex-border-base: var(
+    --vscode-panel-border,
+    var(--vscode-widget-border, var(--vscode-editorWidget-border, transparent))
+  );
+  --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-focus-border: var(
+    --vscode-contrastActiveBorder,
+    var(--vscode-focusBorder, #{$link-color})
+  );
+
+  /* 中性交互色：hover、active 和 selection 共用 */
+  --v2ex-hover-bg: var(
+    --vscode-list-hoverBackground,
+    var(--vscode-toolbar-hoverBackground, rgba(127, 127, 127, 0.14))
+  );
+  --v2ex-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+  --v2ex-active-bg: var(
+    --vscode-list-activeSelectionBackground,
+    var(--vscode-list-inactiveSelectionBackground, var(--v2ex-hover-bg))
+  );
+  --v2ex-active-fg: var(--vscode-list-activeSelectionForeground, var(--v2ex-webview-fg));
+  --v2ex-selection-bg: var(
+    --vscode-selection-background,
+    var(--vscode-editor-selectionBackground, var(--v2ex-active-bg))
+  );
+
+  /* 默认低强调控件背景 */
+  --v2ex-default-bg: var(
+    --vscode-button-secondaryBackground,
+    var(
+      --vscode-list-inactiveSelectionBackground,
+      var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.18))
+    )
+  );
+  --v2ex-default-hover-bg: var(
+    --vscode-button-secondaryHoverBackground,
+    var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.26))
+  );
+  --v2ex-default-active-bg: var(--vscode-toolbar-activeBackground, var(--v2ex-active-bg));
+
+  /*
+   * Light Button 背景
+   * Semi 的 .semi-button-light 实际读取 --semi-color-fill-0
+   * 所以这组变量只配合下方类覆盖使用
+   */
+  --v2ex-light-button-bg: color-mix(in srgb, var(--v2ex-webview-fg) 8%, var(--v2ex-webview-bg));
+  --v2ex-light-button-hover-bg: color-mix(
+    in srgb,
+    var(--v2ex-webview-fg) 12%,
+    var(--v2ex-webview-bg)
+  );
+  --v2ex-light-button-active-bg: color-mix(
+    in srgb,
+    var(--v2ex-webview-fg) 16%,
+    var(--v2ex-webview-bg)
+  );
+
+  /* 主按钮与链接色 */
+  --v2ex-primary-button-bg: var(--vscode-button-background, #{$link-color});
+  --v2ex-primary-button-fg: var(--vscode-button-foreground, #{$background-color});
+  --v2ex-primary-button-hover-bg: var(--vscode-button-hoverBackground, #{$link-active-color});
+  --v2ex-primary-button-disabled-bg: var(
+    --vscode-button-secondaryBackground,
+    var(--v2ex-default-bg)
+  );
+  --v2ex-primary-light-bg: var(--vscode-button-secondaryBackground, var(--v2ex-selection-bg));
+  --v2ex-primary-light-hover-bg: var(
+    --vscode-button-secondaryHoverBackground,
+    var(--v2ex-hover-bg)
+  );
+  --v2ex-primary-light-active-bg: var(--vscode-toolbar-activeBackground, var(--v2ex-active-bg));
+  --v2ex-link-fg: #{$link-color};
+  --v2ex-link-hover-fg: #{$link-active-color};
+
+  /* 禁用态 */
+  --v2ex-disabled-fg: var(
+    --vscode-disabledForeground,
+    var(--vscode-descriptionForeground, var(--v2ex-webview-fg))
+  );
+  --v2ex-disabled-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --v2ex-disabled-border: var(--vscode-input-border, var(--v2ex-border));
+
+  /* 语义色：用于 Banner、校验、提示和状态组件 */
+  --v2ex-info-fg: var(
+    --vscode-inputValidation-infoForeground,
+    var(--vscode-textLink-foreground, #3794ff)
+  );
+  --v2ex-info-bg: var(--vscode-inputValidation-infoBackground, var(--v2ex-default-bg));
+  --v2ex-info-border: var(--vscode-inputValidation-infoBorder, var(--v2ex-info-fg));
+  --v2ex-success-fg: var(--vscode-charts-green, #89d185);
+  --v2ex-success-bg: var(--v2ex-default-bg);
+  --v2ex-success-border: var(--vscode-charts-green, var(--v2ex-success-fg));
+  --v2ex-warning-fg: var(
+    --vscode-inputValidation-warningForeground,
+    var(--vscode-editorWarning-foreground, #cca700)
+  );
+  --v2ex-warning-bg: var(--vscode-inputValidation-warningBackground, var(--v2ex-default-bg));
+  --v2ex-warning-border: var(--vscode-inputValidation-warningBorder, var(--v2ex-warning-fg));
+  --v2ex-danger-fg: var(
+    --vscode-inputValidation-errorForeground,
+    var(--vscode-errorForeground, #f14c4c)
+  );
+  --v2ex-danger-bg: var(--vscode-inputValidation-errorBackground, var(--v2ex-default-bg));
+  --v2ex-danger-border: var(--vscode-inputValidation-errorBorder, var(--v2ex-danger-fg));
+  --v2ex-highlight-bg: var(
+    --vscode-editor-findMatchHighlightBackground,
+    var(--vscode-list-filterMatchBackground, var(--v2ex-warning-bg))
+  );
+  --v2ex-highlight-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
+
+  /* 标签色：Semi Tag 会在下方做类级别兜底覆盖 */
+  --v2ex-tag-bg: var(
+    --vscode-list-inactiveSelectionBackground,
+    var(
+      --vscode-editor-inactiveSelectionBackground,
+      var(--vscode-sideBarSectionHeader-background, rgba(127, 127, 127, 0.16))
+    )
+  );
+  --v2ex-tag-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
+  --v2ex-tag-hover-bg: var(--vscode-list-hoverBackground, var(--v2ex-hover-bg));
+  --v2ex-tag-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-tag-fg));
+
+  /* Semi 品牌色 token */
+  --semi-color-primary: var(--v2ex-primary-button-bg);
+  --semi-color-primary-hover: var(--v2ex-primary-button-hover-bg);
+  --semi-color-primary-active: var(--v2ex-primary-button-hover-bg);
+  --semi-color-primary-disabled: var(--v2ex-primary-button-disabled-bg);
+  --semi-color-primary-light-default: var(--v2ex-primary-light-bg);
+  --semi-color-primary-light-hover: var(--v2ex-primary-light-hover-bg);
+  --semi-color-primary-light-active: var(--v2ex-primary-light-active-bg);
+  --semi-color-secondary: var(--v2ex-link-fg);
+  --semi-color-secondary-hover: var(--v2ex-link-hover-fg);
+  --semi-color-secondary-active: var(--v2ex-link-hover-fg);
+  --semi-color-secondary-disabled: var(--v2ex-disabled-bg);
+  --semi-color-secondary-light-default: var(--v2ex-default-bg);
+  --semi-color-secondary-light-hover: var(--v2ex-default-hover-bg);
+  --semi-color-secondary-light-active: var(--v2ex-default-active-bg);
+  --semi-color-tertiary: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
+  --semi-color-tertiary-hover: var(--v2ex-hover-fg);
+  --semi-color-tertiary-active: var(--v2ex-active-fg);
+  --semi-color-tertiary-light-default: transparent;
+  --semi-color-tertiary-light-hover: var(--v2ex-hover-bg);
+  --semi-color-tertiary-light-active: var(--v2ex-active-bg);
+  --semi-color-default: var(--v2ex-default-bg);
+  --semi-color-default-hover: var(--v2ex-default-hover-bg);
+  --semi-color-default-active: var(--v2ex-default-active-bg);
+
+  /* Semi 语义色 token */
+  --semi-color-info: var(--v2ex-info-fg);
+  --semi-color-info-hover: var(--v2ex-info-fg);
+  --semi-color-info-active: var(--v2ex-info-fg);
+  --semi-color-info-disabled: var(--v2ex-disabled-bg);
+  --semi-color-info-light-default: var(--v2ex-info-bg);
+  --semi-color-info-light-hover: var(--v2ex-info-bg);
+  --semi-color-info-light-active: var(--v2ex-info-bg);
+  --semi-color-success: var(--v2ex-success-fg);
+  --semi-color-success-hover: var(--v2ex-success-fg);
+  --semi-color-success-active: var(--v2ex-success-fg);
+  --semi-color-success-disabled: var(--v2ex-disabled-bg);
+  --semi-color-success-light-default: var(--v2ex-success-bg);
+  --semi-color-success-light-hover: var(--v2ex-success-bg);
+  --semi-color-success-light-active: var(--v2ex-success-bg);
+  --semi-color-danger: var(--v2ex-danger-fg);
+  --semi-color-danger-hover: var(--v2ex-danger-fg);
+  --semi-color-danger-active: var(--v2ex-danger-fg);
+  --semi-color-danger-light-default: var(--v2ex-danger-bg);
+  --semi-color-danger-light-hover: var(--v2ex-danger-bg);
+  --semi-color-danger-light-active: var(--v2ex-danger-bg);
+  --semi-color-warning: var(--v2ex-warning-fg);
+  --semi-color-warning-hover: var(--v2ex-warning-fg);
+  --semi-color-warning-active: var(--v2ex-warning-fg);
+  --semi-color-warning-light-default: var(--v2ex-warning-bg);
+  --semi-color-warning-light-hover: var(--v2ex-warning-bg);
+  --semi-color-warning-light-active: var(--v2ex-warning-bg);
+
+  /* Semi 基础 token */
+  --semi-color-focus-border: var(--v2ex-focus-border);
+  --semi-color-link: var(--v2ex-link-fg);
+  --semi-color-link-hover: var(--v2ex-link-hover-fg);
+  --semi-color-link-active: var(--v2ex-link-hover-fg);
+  --semi-color-link-visited: var(--v2ex-link-fg);
+  --semi-color-bg-0: var(--v2ex-webview-bg);
+  --semi-color-bg-1: var(--v2ex-widget-bg);
+  --semi-color-bg-2: var(--v2ex-overlay-bg);
+  --semi-color-bg-3: var(--v2ex-overlay-bg);
+  --semi-color-bg-4: var(--v2ex-overlay-bg);
+  --semi-color-fill-0: var(--v2ex-input-bg);
+  --semi-color-fill-1: var(--v2ex-hover-bg);
+  --semi-color-fill-2: var(--v2ex-active-bg);
+  --semi-color-text-0: var(--v2ex-webview-fg);
+  --semi-color-text-1: var(
+    --vscode-icon-foreground,
+    var(--vscode-descriptionForeground, var(--v2ex-webview-fg))
+  );
+  --semi-color-text-2: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  --semi-color-text-3: var(--v2ex-placeholder-fg);
+  --semi-color-disabled-text: var(--v2ex-disabled-fg);
+  --semi-color-disabled-bg: var(--v2ex-disabled-bg);
+  --semi-color-disabled-fill: var(--v2ex-disabled-bg);
+  --semi-color-disabled-border: var(--v2ex-disabled-border);
+  --semi-color-border: var(--v2ex-border);
+  --semi-color-nav-bg: var(--v2ex-webview-bg);
+  --semi-color-overlay-bg: var(--v2ex-mask-bg);
+  --semi-color-shadow: var(--vscode-widget-shadow, transparent);
+  --semi-shadow-elevated: 0 2px 8px var(--semi-color-shadow);
+  --semi-color-highlight-bg: var(--v2ex-highlight-bg);
+  --semi-color-highlight: var(--v2ex-highlight-fg);
+  --semi-border-radius-small: 4px;
+  --semi-border-radius-medium: 4px;
+}
+
+body.vscode-light {
+  color-scheme: light;
+}
+
+body.vscode-dark,
+body.vscode-high-contrast {
+  color-scheme: dark;
+}
+
+body.vscode-high-contrast {
+  /* 高对比主题优先使用 VS Code contrast 色 */
+  --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-focus-border: var(
+    --vscode-contrastActiveBorder,
+    var(--vscode-focusBorder, #{$link-color})
+  );
+  --v2ex-disabled-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+}

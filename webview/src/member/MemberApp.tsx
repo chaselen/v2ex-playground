@@ -1,15 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import {
-  Avatar,
-  Badge,
-  Banner,
-  Button,
-  Empty,
-  Pagination,
-  Spin,
-  Tabs,
-  Tag
-} from '@douyinfe/semi-ui'
+import { Avatar, Banner, Button, Empty, Pagination, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconRefresh, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
@@ -19,6 +9,7 @@ import {
   normalizeHtml,
   normalizeMemberContentLinks
 } from '../shared/topicContent'
+import { VscodeBadge, VscodeTag } from '../shared/SemiVscode'
 import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
 import type {
   MemberContentTabKey,
@@ -248,7 +239,7 @@ export default function MemberApp() {
                   <h1>{profile.member.username}</h1>
                   <div className="member-meta">
                     {!!profile.member.memberNumber && (
-                      <Tag>第 {profile.member.memberNumber} 号会员</Tag>
+                      <VscodeTag>第 {profile.member.memberNumber} 号会员</VscodeTag>
                     )}
                     {!!profile.member.joinedAt && <span>加入于 {profile.member.joinedAt}</span>}
                   </div>
@@ -468,19 +459,15 @@ function renderTopicItem(topic: MemberTopic, openTopic: (topicId: number, title:
       <span className="member-topic-main">
         <span className="member-topic-title">{topic.title}</span>
         {!!topic.replies && (
-          <Badge
+          <VscodeBadge
             count={topic.replies}
             overflowCount={99}
             countClassName="member-topic-count"
-            countStyle={{
-              backgroundColor: 'var(--vscode-badge-background)',
-              color: 'var(--vscode-badge-foreground)'
-            }}
           />
         )}
       </span>
       <span className="member-topic-meta">
-        {!!topic.node.title && <Tag size="small">{topic.node.title}</Tag>}
+        {!!topic.node.title && <VscodeTag size="small">{topic.node.title}</VscodeTag>}
         {!!topic.displayTime && <span>{topic.displayTime}</span>}
         {!!topic.lastReplyUser && <span>最后回复 {topic.lastReplyUser}</span>}
       </span>

@@ -1,7 +1,8 @@
 import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type Ref } from 'react'
-import { Avatar, Badge, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
+import { Avatar, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { VscodeBadge } from '../../shared/SemiVscode'
 import SimpleBar from 'simplebar-react'
 import { createVsCodeClient, resolveWebviewUrl } from '../../shared/vscode'
 import LoginPrompt from './LoginPrompt'
@@ -773,7 +774,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
                 <span className={styles['my-message-tab']}>
                   <span>消息</span>
                   {!!overview.unreadNoticeCount && (
-                    <Badge
+                    <VscodeBadge
                       count={overview.unreadNoticeCount}
                       overflowCount={99}
                       countClassName={styles['my-message-badge-count']}

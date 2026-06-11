@@ -1,0 +1,109 @@
+.theme-preview-light {
+  --vscode-editor-background: #ffffff;
+  --vscode-editor-foreground: #1f2328;
+  --vscode-foreground: #1f2328;
+  --vscode-descriptionForeground: #656d76;
+  --vscode-editorWidget-background: #f6f8fa;
+  --vscode-input-background: #ffffff;
+  --vscode-input-foreground: #1f2328;
+  --vscode-input-border: #d0d7de;
+  --vscode-focusBorder: #0969da;
+  --vscode-textLink-foreground: #0969da;
+  --vscode-textLink-activeForeground: #0550ae;
+  --vscode-button-background: #1f883d;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-hoverBackground: #1a7f37;
+  --vscode-button-secondaryBackground: #afb8c1;
+  --vscode-button-secondaryHoverBackground: #8c959f;
+  --vscode-list-hoverBackground: #d8dee4;
+  --vscode-list-activeSelectionBackground: #0969da;
+  --vscode-list-activeSelectionForeground: #ffffff;
+  --vscode-menu-background: #ffffff;
+  --vscode-menu-foreground: #1f2328;
+  --vscode-menu-selectionBackground: #0969da;
+  --vscode-menu-selectionForeground: #ffffff;
+}
+
+.theme-preview-dark {
+  --vscode-editor-background: #1f1f1f;
+  --vscode-editor-foreground: #cccccc;
+  --vscode-foreground: #cccccc;
+  --vscode-descriptionForeground: #9d9d9d;
+  --vscode-editorWidget-background: #252526;
+  --vscode-input-background: #313131;
+  --vscode-input-foreground: #cccccc;
+  --vscode-input-border: #3c3c3c;
+  --vscode-focusBorder: #007fd4;
+  --vscode-textLink-foreground: #4daafc;
+  --vscode-textLink-activeForeground: #75beff;
+  --vscode-button-background: #0e639c;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-hoverBackground: #1177bb;
+  --vscode-button-secondaryBackground: #3a3d41;
+  --vscode-button-secondaryHoverBackground: #45494e;
+  --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-list-activeSelectionBackground: #04395e;
+  --vscode-list-activeSelectionForeground: #ffffff;
+  --vscode-menu-background: #252526;
+  --vscode-menu-foreground: #cccccc;
+  --vscode-menu-selectionBackground: #04395e;
+  --vscode-menu-selectionForeground: #ffffff;
+}
+
+.theme-preview-high-contrast {
+  @extend .theme-preview-dark;
+  --vscode-contrastBorder: #6fc3df;
+  --vscode-contrastActiveBorder: #f38518;
+  --vscode-focusBorder: #f38518;
+}
+
+.theme-preview {
+  height: 100%;
+  padding: 24px;
+  overflow: auto;
+  background: var(--v2ex-webview-bg);
+  color: var(--v2ex-webview-fg);
+}
+
+.theme-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  h1,
+  p {
+    margin: 0;
+  }
+
+  p {
+    margin-top: 8px;
+    color: var(--semi-color-text-2);
+  }
+}
+
+.theme-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.theme-preview-section {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: var(--semi-border-radius-medium);
+  background: var(--semi-color-bg-1);
+
+  h2 {
+    margin: 0 0 16px;
+    font-size: 16px;
+  }
+}
+
+.theme-preview-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

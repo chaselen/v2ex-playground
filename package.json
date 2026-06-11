@@ -136,6 +136,7 @@
     "@douyinfe/semi-icons": "^2.99.2",
     "@douyinfe/semi-illustrations": "^2.99.2",
     "@douyinfe/semi-ui": "^2.99.2",
+    "@douyinfe/semi-vite-plugin": "^2.100.0",
     "@types/node": "^22.18.0",
     "@types/picomatch": "^4.0.3",
     "@types/react": "^19.2.15",

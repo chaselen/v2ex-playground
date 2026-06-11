@@ -1,5 +1,6 @@
-import { Badge, Dropdown } from '@douyinfe/semi-ui'
+import { Dropdown } from '@douyinfe/semi-ui'
 import type { MainViewRpcCommands } from '../../../../src/shared/webview'
+import { VscodeBadge } from '../../shared/SemiVscode'
 import { createVsCodeClient } from '../../shared/vscode'
 import styles from './TopicRow.module.scss'
 
@@ -69,17 +70,7 @@ export default function TopicRow(props: TopicRowProps) {
   const content = (
     <>
       <span className={styles['topic-title']}>{title}</span>
-      {!!replies && replies > 0 && (
-        <Badge
-          count={replies}
-          overflowCount={99}
-          countClassName={styles['topic-badge-count']}
-          countStyle={{
-            backgroundColor: 'var(--vscode-badge-background)',
-            color: 'var(--vscode-badge-foreground)'
-          }}
-        />
-      )}
+      {!!replies && replies > 0 && <VscodeBadge count={replies} overflowCount={99} />}
     </>
   )
   const rowClassName = [styles['topic-row'], className].filter(Boolean).join(' ')
