@@ -1,17 +1,13 @@
 .node-topic-panel {
   box-sizing: border-box;
   flex: 1;
-  display: flex;
-  flex-direction: column;
   min-height: 0;
   height: 100%;
   padding: 8px 12px 0;
-  overflow: hidden;
-}
 
-.node-topic-scroll {
-  flex: 1;
-  min-height: 0;
+  :global(.simplebar-content) {
+    min-height: 100%;
+  }
 
   :global(.simplebar-track.simplebar-vertical) {
     width: 8px;
@@ -32,6 +28,16 @@
   :global(.simplebar-track.simplebar-horizontal) {
     display: none;
   }
+}
+
+.node-topic-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.node-topic-body {
+  flex: 1;
 }
 
 .topic-list {

@@ -10,17 +10,20 @@
 
 .node-tree-panel {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
-}
 
-.node-tree-scroll {
-  flex: 1;
-  min-height: 0;
-  height: 100%;
+  :global(.simplebar-content-wrapper),
+  :global(.simplebar-content) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  :global(.simplebar-content) {
+    flex: 1 0 auto;
+    min-height: 100%;
+  }
 
   :global(.simplebar-track.simplebar-vertical) {
     width: 8px;
@@ -53,6 +56,7 @@
 }
 
 .node-tree {
+  flex: 1;
   color: var(--v2ex-webview-fg);
 
   :global(.semi-tree) {
@@ -108,7 +112,7 @@
   }
 }
 
-.node-tree-scroll,
+.node-tree-panel,
 .node-tree {
   :global(.simplebar-content-wrapper),
   :global(.simplebar-mask),
@@ -274,6 +278,8 @@
 }
 
 .tree-footer {
+  position: sticky;
+  bottom: 0;
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);
   background: var(--v2ex-webview-bg);

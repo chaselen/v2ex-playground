@@ -21,53 +21,57 @@ export default function NodeTopicPanel(props: NodeTopicPanelProps) {
   const { node, onPageChange } = props
 
   return (
-    <section className={styles['node-topic-panel']}>
-      <SimpleBar className={styles['node-topic-scroll']} autoHide={false}>
-        {node.loading && !node.topics.length ? (
-          <div className={styles['panel-state']}>
-            <Spin size="middle" />
-          </div>
-        ) : node.error && !node.topics.length ? (
-          <div className={`${styles['panel-state']} ${styles['error-text']}`}>{node.error}</div>
-        ) : !node.topics.length ? (
-          <div className={styles['panel-state']}>
-            <Empty
-              title="暂无话题"
-              image={<IllustrationNoContent className={styles['empty-illustration']} />}
-              darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-            />
-          </div>
-        ) : (
-          <div className={styles['topic-list']}>
-            {node.error && <div className={styles['error-banner']}>{node.error}</div>}
-            {node.topics.map(topic => (
-              <TopicRow
-                key={topic.id}
-                topicId={topic.id}
-                title={topic.title}
-                replies={topic.replies}
-                className={styles['topic-row']}
+    <SimpleBar className={styles['node-topic-panel']} autoHide={false}>
+      <section className={styles['node-topic-content']}>
+        <div className={styles['node-topic-body']}>
+          {node.loading && !node.topics.length ? (
+            <div className={styles['panel-state']}>
+              <Spin size="middle" />
+            </div>
+          ) : node.error && !node.topics.length ? (
+            <div className={`${styles['panel-state']} ${styles['error-text']}`}>{node.error}</div>
+          ) : !node.topics.length ? (
+            <div className={styles['panel-state']}>
+              <Empty
+                title="暂无话题"
+                image={<IllustrationNoContent className={styles['empty-illustration']} />}
+                darkModeImage={
+                  <IllustrationNoContentDark className={styles['empty-illustration']} />
+                }
               />
-            ))}
-          </div>
-        )}
-      </SimpleBar>
+            </div>
+          ) : (
+            <div className={styles['topic-list']}>
+              {node.error && <div className={styles['error-banner']}>{node.error}</div>}
+              {node.topics.map(topic => (
+                <TopicRow
+                  key={topic.id}
+                  topicId={topic.id}
+                  title={topic.title}
+                  replies={topic.replies}
+                  className={styles['topic-row']}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-      {node.totalPage > 1 && (
-        <footer className={styles['pagination']}>
-          <MainPagination
-            currentPage={node.page}
-            totalPage={node.totalPage}
-            totalCount={node.totalCount}
-            disabled={node.loading}
-            onPageChange={page => {
-              if (page !== node.page) {
-                onPageChange(page)
-              }
-            }}
-          />
-        </footer>
-      )}
-    </section>
+        {node.totalPage > 1 && (
+          <footer className={styles['pagination']}>
+            <MainPagination
+              currentPage={node.page}
+              totalPage={node.totalPage}
+              totalCount={node.totalCount}
+              disabled={node.loading}
+              onPageChange={page => {
+                if (page !== node.page) {
+                  onPageChange(page)
+                }
+              }}
+            />
+          </footer>
+        )}
+      </section>
+    </SimpleBar>
   )
 }

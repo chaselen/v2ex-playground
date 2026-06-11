@@ -427,51 +427,18 @@ export default function NodeTree(props: NodeTreeProps) {
     })
   }
 
-  if (loading) {
-    return (
-      <section className={styles['node-tree-panel']}>
+  /** 渲染节点树主体内容 */
+  function renderContent() {
+    if (loading) {
+      return (
         <div className={styles['loading-panel']}>
           <Spin size="middle" />
         </div>
-      </section>
-    )
-  }
+      )
+    }
 
-  if (!nodes.length) {
-    return (
-      <section className={styles['node-tree-panel']}>
-        {showLoginPrompt ? (
-          <LoginPrompt />
-        ) : (
-          <div className={styles['empty-panel']}>
-            <Empty
-              title={emptyTexts[tab]}
-              image={<IllustrationNoContent className={styles['empty-illustration']} />}
-              darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-            />
-          </div>
-        )}
-        {tab === 'custom' && (
-          <div className={styles['tree-footer']}>
-            <Button
-              block
-              type="primary"
-              theme="solid"
-              size="small"
-              icon={<IconPlus />}
-              onClick={onAddNode}
-            >
-              添加节点
-            </Button>
-          </div>
-        )}
-      </section>
-    )
-  }
-
-  return (
-    <section className={styles['node-tree-panel']}>
-      <SimpleBar className={styles['node-tree-scroll']} autoHide={false}>
+    if (nodes.length) {
+      return (
         <Tree
           expandedKeys={expandedKeys}
           value={selectedTopicKey}
@@ -484,9 +451,29 @@ export default function NodeTree(props: NodeTreeProps) {
           onExpand={handleExpand}
           onSelect={handleSelect}
         />
-      </SimpleBar>
+      )
+    }
 
-      {tab === 'custom' && (
+    if (showLoginPrompt) {
+      return <LoginPrompt />
+    }
+
+    return (
+      <div className={styles['empty-panel']}>
+        <Empty
+          title={emptyTexts[tab]}
+          image={<IllustrationNoContent className={styles['empty-illustration']} />}
+          darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <SimpleBar className={styles['node-tree-panel']} autoHide={false}>
+      {renderContent()}
+
+      {!loading && tab === 'custom' && (
         <div className={styles['tree-footer']}>
           <Button
             block
@@ -500,6 +487,6 @@ export default function NodeTree(props: NodeTreeProps) {
           </Button>
         </div>
       )}
-    </section>
+    </SimpleBar>
   )
 }

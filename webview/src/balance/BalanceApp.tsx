@@ -181,106 +181,102 @@ export default function BalanceApp() {
   }, [detail])
 
   return (
-    <main className="balance-shell">
-      <SimpleBar ref={scrollRef} className="balance-scroll" autoHide={false}>
-        <div className="balance-scroll-content">
-          {state.status === 'loading' && (
-            <div className="balance-state balance-state--loading">
-              <Spin size="middle" />
-              <span>加载中</span>
-            </div>
-          )}
-
-          {state.status === 'error' && (
-            <div className="balance-state">
-              <Banner type="danger" title="加载失败" description={state.message || '未知错误'} />
-              <div className="balance-state-actions">
-                {state.showLogin && (
-                  <Button size="small" theme="solid" onClick={() => vscode.login()}>
-                    登录
-                  </Button>
-                )}
-                {state.showRefresh && (
-                  <Button size="small" theme="light" icon={<IconRefresh />} onClick={refresh}>
-                    刷新页面
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {state.status === 'balance' && detail && (
-            <article className="balance-container">
-              <header className="balance-header">
-                <div>
-                  <div className="balance-eyebrow">当前账户余额</div>
-                  <h1 className="balance-wallet" aria-label="当前账户余额">
-                    <span>{detail.gold}</span>
-                    <i className="balance-coin balance-coin--gold" />
-                    <span>{detail.silver}</span>
-                    <i className="balance-coin balance-coin--silver" />
-                    <span>{detail.bronze}</span>
-                    <i className="balance-coin balance-coin--bronze" />
-                  </h1>
-                </div>
-                <div className="balance-actions">
-                  <Button
-                    size="small"
-                    theme="light"
-                    onClick={() =>
-                      vscode.openExternal({
-                        path: resolveWebviewUrl('/balance/add')
-                      })
-                    }
-                  >
-                    充值
-                  </Button>
-                  <Button
-                    size="small"
-                    theme="borderless"
-                    icon={<IconHelpCircle />}
-                    onClick={() =>
-                      vscode.openExternal({
-                        path: resolveWebviewUrl('/help/currency')
-                      })
-                    }
-                  >
-                    余额说明
-                  </Button>
-                  <Button
-                    size="small"
-                    theme="borderless"
-                    icon={<IconRefresh />}
-                    loading={loadingPage}
-                    aria-label="刷新页面"
-                    onClick={refresh}
-                  />
-                </div>
-              </header>
-
-              <section className="balance-ledger">
-                {renderPagination('top')}
-                <Table
-                  className="balance-table"
-                  rowKey="key"
-                  columns={columns}
-                  dataSource={detail.transactions}
-                  pagination={false}
-                  loading={loadingPage}
-                  empty={
-                    <Empty
-                      image={<IllustrationNoContent />}
-                      darkModeImage={<IllustrationNoContentDark />}
-                      title="暂无账户流水"
-                    />
-                  }
-                />
-                {renderPagination('bottom')}
-              </section>
-            </article>
-          )}
+    <SimpleBar ref={scrollRef} className="balance-scroll" role="main" autoHide={false}>
+      {state.status === 'loading' && (
+        <div className="balance-state balance-state--loading">
+          <Spin size="middle" />
+          <span>加载中</span>
         </div>
-      </SimpleBar>
-    </main>
+      )}
+
+      {state.status === 'error' && (
+        <div className="balance-state">
+          <Banner type="danger" title="加载失败" description={state.message || '未知错误'} />
+          <div className="balance-state-actions">
+            {state.showLogin && (
+              <Button size="small" theme="solid" onClick={() => vscode.login()}>
+                登录
+              </Button>
+            )}
+            {state.showRefresh && (
+              <Button size="small" theme="light" icon={<IconRefresh />} onClick={refresh}>
+                刷新页面
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {state.status === 'balance' && detail && (
+        <article className="balance-container">
+          <header className="balance-header">
+            <div>
+              <div className="balance-eyebrow">当前账户余额</div>
+              <h1 className="balance-wallet" aria-label="当前账户余额">
+                <span>{detail.gold}</span>
+                <i className="balance-coin balance-coin--gold" />
+                <span>{detail.silver}</span>
+                <i className="balance-coin balance-coin--silver" />
+                <span>{detail.bronze}</span>
+                <i className="balance-coin balance-coin--bronze" />
+              </h1>
+            </div>
+            <div className="balance-actions">
+              <Button
+                size="small"
+                theme="light"
+                onClick={() =>
+                  vscode.openExternal({
+                    path: resolveWebviewUrl('/balance/add')
+                  })
+                }
+              >
+                充值
+              </Button>
+              <Button
+                size="small"
+                theme="borderless"
+                icon={<IconHelpCircle />}
+                onClick={() =>
+                  vscode.openExternal({
+                    path: resolveWebviewUrl('/help/currency')
+                  })
+                }
+              >
+                余额说明
+              </Button>
+              <Button
+                size="small"
+                theme="borderless"
+                icon={<IconRefresh />}
+                loading={loadingPage}
+                aria-label="刷新页面"
+                onClick={refresh}
+              />
+            </div>
+          </header>
+
+          <section className="balance-ledger">
+            {renderPagination('top')}
+            <Table
+              className="balance-table"
+              rowKey="key"
+              columns={columns}
+              dataSource={detail.transactions}
+              pagination={false}
+              loading={loadingPage}
+              empty={
+                <Empty
+                  image={<IllustrationNoContent />}
+                  darkModeImage={<IllustrationNoContentDark />}
+                  title="暂无账户流水"
+                />
+              }
+            />
+            {renderPagination('bottom')}
+          </section>
+        </article>
+      )}
+    </SimpleBar>
   )
 }

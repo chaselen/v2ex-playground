@@ -195,96 +195,90 @@ export default function MemberApp() {
   }, [profile])
 
   return (
-    <main className="member-shell">
-      <SimpleBar ref={scrollRef} className="member-scroll" autoHide={false}>
-        <div className="member-scroll-content">
-          {state.status === 'loading' && (
-            <div className="member-state member-state--loading">
-              <Spin size="middle" />
-              <span>加载中</span>
+    <SimpleBar ref={scrollRef} className="member-scroll" role="main" autoHide={false}>
+      {state.status === 'loading' && (
+        <div className="member-state member-state--loading">
+          <Spin size="middle" />
+          <span>加载中</span>
+        </div>
+      )}
+
+      {state.status === 'error' && (
+        <div className="member-state">
+          <Banner
+            type="danger"
+            title="加载失败"
+            description={<div dangerouslySetInnerHTML={{ __html: normalizeHtml(state.message) }} />}
+          />
+          {state.showRefresh && (
+            <div className="member-state-actions">
+              <Button size="small" theme="light" icon={<IconRefresh />} onClick={refreshMember}>
+                刷新页面
+              </Button>
             </div>
-          )}
-
-          {state.status === 'error' && (
-            <div className="member-state">
-              <Banner
-                type="danger"
-                title="加载失败"
-                description={
-                  <div dangerouslySetInnerHTML={{ __html: normalizeHtml(state.message) }} />
-                }
-              />
-              {state.showRefresh && (
-                <div className="member-state-actions">
-                  <Button size="small" theme="light" icon={<IconRefresh />} onClick={refreshMember}>
-                    刷新页面
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {state.status === 'member' && profile && (
-            <article className="member-container">
-              <header className="member-profile">
-                <Avatar
-                  size="large"
-                  shape="square"
-                  src={profile.member.avatar}
-                  alt={profile.member.username}
-                >
-                  <IconUser />
-                </Avatar>
-                <div className="member-profile-main">
-                  <h1>{profile.member.username}</h1>
-                  <div className="member-meta">
-                    {!!profile.member.memberNumber && (
-                      <VscodeTag>第 {profile.member.memberNumber} 号会员</VscodeTag>
-                    )}
-                    {!!profile.member.joinedAt && <span>加入于 {profile.member.joinedAt}</span>}
-                  </div>
-                  {!!profile.member.activityRank && (
-                    <div className="member-rank">活跃度排名 {profile.member.activityRank}</div>
-                  )}
-                </div>
-                <Button
-                  size="small"
-                  theme="borderless"
-                  icon={<IconRefresh />}
-                  onClick={refreshMember}
-                />
-              </header>
-
-              <section className="member-content">
-                <Tabs
-                  activeKey={activeTab}
-                  className="member-tabs"
-                  tabPaneMotion={false}
-                  onChange={value =>
-                    changeTab(value as MemberContentTabKey).catch(err => console.error(err))
-                  }
-                >
-                  {memberTabs.map(tab => (
-                    <Tabs.TabPane itemKey={tab.key} tab={tab.label} key={tab.key}>
-                      {tab.key === activeTab
-                        ? renderContent(
-                            profile,
-                            activeTab,
-                            loadingContent,
-                            loadPage,
-                            openTopic,
-                            openMember
-                          )
-                        : null}
-                    </Tabs.TabPane>
-                  ))}
-                </Tabs>
-              </section>
-            </article>
           )}
         </div>
-      </SimpleBar>
-    </main>
+      )}
+
+      {state.status === 'member' && profile && (
+        <article className="member-container">
+          <header className="member-profile">
+            <Avatar
+              size="large"
+              shape="square"
+              src={profile.member.avatar}
+              alt={profile.member.username}
+            >
+              <IconUser />
+            </Avatar>
+            <div className="member-profile-main">
+              <h1>{profile.member.username}</h1>
+              <div className="member-meta">
+                {!!profile.member.memberNumber && (
+                  <VscodeTag>第 {profile.member.memberNumber} 号会员</VscodeTag>
+                )}
+                {!!profile.member.joinedAt && <span>加入于 {profile.member.joinedAt}</span>}
+              </div>
+              {!!profile.member.activityRank && (
+                <div className="member-rank">活跃度排名 {profile.member.activityRank}</div>
+              )}
+            </div>
+            <Button
+              size="small"
+              theme="borderless"
+              icon={<IconRefresh />}
+              onClick={refreshMember}
+            />
+          </header>
+
+          <section className="member-content">
+            <Tabs
+              activeKey={activeTab}
+              className="member-tabs"
+              tabPaneMotion={false}
+              onChange={value =>
+                changeTab(value as MemberContentTabKey).catch(err => console.error(err))
+              }
+            >
+              {memberTabs.map(tab => (
+                <Tabs.TabPane itemKey={tab.key} tab={tab.label} key={tab.key}>
+                  {tab.key === activeTab
+                    ? renderContent(
+                        profile,
+                        activeTab,
+                        loadingContent,
+                        loadPage,
+                        openTopic,
+                        openMember
+                      )
+                    : null}
+                </Tabs.TabPane>
+              ))}
+            </Tabs>
+          </section>
+        </article>
+      )}
+    </SimpleBar>
   )
 }
 

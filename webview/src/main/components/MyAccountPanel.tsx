@@ -646,33 +646,35 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
   if (loading) {
     return (
-      <section className={styles['my-panel']}>
-        <div className={styles['loading-panel']}>
+      <SimpleBar className={styles['my-panel']} autoHide={false}>
+        <div className={`${styles['my-panel-content']} ${styles['loading-panel']}`}>
           <Spin size="middle" />
         </div>
-      </section>
+      </SimpleBar>
     )
   }
 
   if (!loggedIn) {
     return (
-      <section className={styles['my-panel']}>
-        <LoginPrompt />
-      </section>
+      <SimpleBar className={styles['my-panel']} autoHide={false}>
+        <div className={styles['my-panel-content']}>
+          <LoginPrompt />
+        </div>
+      </SimpleBar>
     )
   }
 
   if (!overview) {
     return (
-      <section className={styles['my-panel']}>
-        <div className={styles['empty-panel']}>
+      <SimpleBar className={styles['my-panel']} autoHide={false}>
+        <div className={`${styles['my-panel-content']} ${styles['empty-panel']}`}>
           <Empty
             title="暂无账户概览"
             image={<IllustrationNoContent className={styles['empty-illustration']} />}
             darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
         </div>
-      </section>
+      </SimpleBar>
     )
   }
 
@@ -680,8 +682,8 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
   const activityPercent = Math.min(Math.max(overview.activityPercent, 0), 100)
 
   return (
-    <section className={styles['my-panel']}>
-      <SimpleBar className={styles['my-scroll']} autoHide={false}>
+    <SimpleBar className={styles['my-panel']} autoHide={false}>
+      <div className={styles['my-panel-content']}>
         <article className={styles['my-card']}>
           <header className={styles['my-profile']}>
             <button
@@ -817,7 +819,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             </Tabs.TabPane>
           </Tabs>
         </section>
-      </SimpleBar>
-    </section>
+      </div>
+    </SimpleBar>
   )
 }
