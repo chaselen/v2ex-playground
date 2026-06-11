@@ -1,6 +1,5 @@
 import type { MemberContentTabKey, MemberProfile } from '../v2ex/types'
-import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
-
+import type { WebviewContentRpcCommands } from './commonView'
 export type { MemberContentTabKey, MemberProfile, MemberReply } from '../v2ex/types'
 
 /**
@@ -20,22 +19,18 @@ export interface MemberPanelViewState {
 /**
  * 用户面板 Webview RPC 命令
  */
-export interface MemberPanelRpcCommands {
-  browseImage: WebviewRpcDefinition<{ src: string }, void>
-  openExternal: WebviewRpcDefinition<{ src: string }, void>
-  openTopic: WebviewRpcDefinition<{ topicId: string | number; title?: string }, void>
-  openMember: WebviewRpcDefinition<{ username: string }, void>
-  refresh: WebviewRpcDefinition<object, void>
-  loadMemberTab: WebviewRpcDefinition<{ tab: MemberContentTabKey; page?: number }, MemberProfile>
-  loadMemberPage: WebviewRpcDefinition<{ tab: MemberContentTabKey; page?: number }, MemberProfile>
+export interface MemberPanelRpcCommands extends WebviewContentRpcCommands {
+  refresh(): void
+  loadMemberTab(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile
+  loadMemberPage(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile
 }
 
 /**
  * 用户面板发往 Webview 的事件
  */
 export interface MemberPanelWebviewEvents {
-  renderState: WebviewEventDefinition<{
+  memberStateChanged: {
     /** 页面状态 */
     state: MemberPanelViewState
-  }>
+  }
 }

@@ -3,20 +3,23 @@ import { Button, Tabs, Toast } from '@douyinfe/semi-ui'
 import { IconRefresh } from '@douyinfe/semi-icons'
 import MyAccountPanel, { type MyAccountPanelHandle } from './components/MyAccountPanel'
 import NodeTree from './components/NodeTree'
-import { requestVsCodeMessage } from '../shared/vscode'
+import { createVsCodeClient } from '../shared/vscode'
 import {
-  type AccountOverviewChangedData,
   EXPLORE_NODES,
   type InitData,
   type MainPanelTabKey,
+  type MainViewRpcCommands,
+  type MainViewWebviewEvents,
   type NodeChildrenData,
   type NodeListData,
-  type SelectMainTabData,
   type WebviewAccountOverview,
   type WebviewNode,
   type WebviewTopic
 } from '../../../src/shared/webview'
 import type { MainTabKey, MainTabs, NodeItem } from './types'
+
+/** 主面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<MainViewRpcCommands, MainViewWebviewEvents>()
 
 /** 主面板标签文案 */
 const tabLabels: Record<MainPanelTabKey, string> = {
@@ -63,53 +66,6 @@ function normalizeTopics(topics: WebviewTopic[]): WebviewTopic[] {
     ...topic,
     replies: topic.replies || 0
   }))
-}
-
-/**
- * 判断消息是否为初始化数据
- * @param msg 扩展侧消息
- */
-function isInitDataMessage(msg: unknown): msg is InitData & { command: 'initData' } {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'command' in msg &&
-    msg.command === 'initData' &&
-    'tabs' in msg &&
-    'loggedIn' in msg
-  )
-}
-
-/**
- * 判断消息是否为账户概览变化
- * @param msg 扩展侧消息
- */
-function isAccountOverviewChangedMessage(
-  msg: unknown
-): msg is AccountOverviewChangedData & { command: 'accountOverviewChanged' } {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'command' in msg &&
-    msg.command === 'accountOverviewChanged' &&
-    'overview' in msg
-  )
-}
-
-/**
- * 判断消息是否为主面板标签切换
- * @param msg 扩展侧消息
- */
-function isSelectMainTabMessage(
-  msg: unknown
-): msg is SelectMainTabData & { command: 'selectMainTab' } {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'command' in msg &&
-    msg.command === 'selectMainTab' &&
-    'tab' in msg
-  )
 }
 
 /**
@@ -204,7 +160,7 @@ export default function MainApp() {
    */
   async function removeNode(nodeName: string) {
     try {
-      const data = await requestVsCodeMessage('removeNode', { nodeName })
+      const data = await vscode.removeNode({ nodeName })
       onCustomNodesUpdated(data)
     } catch (err) {
       console.error(err)
@@ -217,7 +173,7 @@ export default function MainApp() {
    */
   async function cancelCollectNode(nodeName: string) {
     try {
-      await requestVsCodeMessage('cancelCollectNode', { nodeName })
+      await vscode.cancelCollectNode({ nodeName })
       setTabs(current => ({
         ...current,
         collection: current.collection.filter(node => node.name !== nodeName)
@@ -234,7 +190,7 @@ export default function MainApp() {
    */
   async function addNode() {
     try {
-      const data = await requestVsCodeMessage('addNode')
+      const data = await vscode.addNode()
       onCustomNodesUpdated(data)
     } catch (err) {
       console.error(err)
@@ -311,7 +267,7 @@ export default function MainApp() {
     nodeRequestSeq.current.set(requestKey, requestSeq)
 
     try {
-      const data = await requestVsCodeMessage(command, { tab, itemKey, page })
+      const data = await vscode[command]({ tab, itemKey, page })
       onNodeChildren(data, requestSeq)
     } catch (err) {
       onNodeChildren(
@@ -354,7 +310,7 @@ export default function MainApp() {
     try {
       if (tab === 'my') {
         const [overviewResult, tabsResult] = await Promise.allSettled([
-          requestVsCodeMessage('refreshMyOverview'),
+          vscode.refreshMyOverview(),
           myAccountPanelRef.current?.refreshLoadedTabs()
         ])
         if (overviewResult.status === 'rejected') {
@@ -370,7 +326,7 @@ export default function MainApp() {
       }
 
       if (tab === 'collection') {
-        const data = await requestVsCodeMessage('refreshCollectionNodes')
+        const data = await vscode.refreshCollectionNodes()
         const nodeNames = new Set(data.nodes.map(node => node.name))
         const loadedNodes = tabs.collection.filter(
           node => nodeNames.has(node.name) && node.children !== null
@@ -406,30 +362,13 @@ export default function MainApp() {
   }
 
   useEffect(() => {
-    /**
-     * 处理扩展侧消息
-     * @param event 消息事件
-     */
-    function onMessage(event: MessageEvent) {
-      const msg = event.data
-      if (isInitDataMessage(msg)) {
-        onInitData(msg)
-        return
-      }
-
-      if (isAccountOverviewChangedMessage(msg)) {
-        setAccountOverview(msg.overview)
-        return
-      }
-
-      if (isSelectMainTabMessage(msg)) {
-        setActiveTab(msg.tab)
-        return
-      }
-    }
-
-    window.addEventListener('message', onMessage)
-    requestVsCodeMessage('ready')
+    const disposables = [
+      vscode.on('initData', onInitData),
+      vscode.on('accountOverviewChanged', data => setAccountOverview(data.overview)),
+      vscode.on('selectMainTab', data => setActiveTab(data.tab))
+    ]
+    vscode
+      .ready()
       .then(onInitData)
       .catch(err => {
         setInitializing(false)
@@ -437,7 +376,7 @@ export default function MainApp() {
       })
 
     return () => {
-      window.removeEventListener('message', onMessage)
+      disposables.forEach(dispose => dispose())
     }
   }, [])
 

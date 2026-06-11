@@ -1,6 +1,5 @@
 import type { BalanceDetail } from '../v2ex/types'
-import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
-
+import type { WebviewNavigationRpcCommands } from './commonView'
 export type { BalanceDetail, BalanceTransaction } from '../v2ex/types'
 
 /**
@@ -22,21 +21,18 @@ export interface BalancePanelViewState {
 /**
  * 账户余额面板 Webview RPC 命令
  */
-export interface BalancePanelRpcCommands {
-  openExternal: WebviewRpcDefinition<{ path: string }, void>
-  openTopic: WebviewRpcDefinition<{ topicId: string | number }, void>
-  openMember: WebviewRpcDefinition<{ username: string }, void>
-  login: WebviewRpcDefinition<object, void>
-  refresh: WebviewRpcDefinition<object, void>
-  loadPage: WebviewRpcDefinition<{ page: number }, BalanceDetail>
+export interface BalancePanelRpcCommands extends WebviewNavigationRpcCommands {
+  login(): void
+  refresh(): void
+  loadPage(payload: { page: number }): BalanceDetail
 }
 
 /**
  * 账户余额面板发往 Webview 的事件
  */
 export interface BalancePanelWebviewEvents {
-  renderState: WebviewEventDefinition<{
+  balanceStateChanged: {
     /** 页面状态 */
     state: BalancePanelViewState
-  }>
+  }
 }

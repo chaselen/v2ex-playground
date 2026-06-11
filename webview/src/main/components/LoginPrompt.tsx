@@ -1,13 +1,17 @@
 import { Button, Empty } from '@douyinfe/semi-ui'
 import { IllustrationNoAccess, IllustrationNoAccessDark } from '@douyinfe/semi-illustrations'
-import { postVsCodeMessage } from '../../shared/vscode'
+import type { MainViewRpcCommands } from '../../../../src/shared/webview'
+import { createVsCodeClient } from '../../shared/vscode'
 import styles from './LoginPrompt.module.scss'
+
+/** 主面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<MainViewRpcCommands>()
 
 /**
  * 登录
  */
 function login() {
-  postVsCodeMessage('login')
+  vscode.login()
 }
 
 /**

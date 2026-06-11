@@ -8,9 +8,9 @@ export interface WebviewRequestMessage {
   /** 命令名 */
   command: string
   /** 请求 id */
-  requestId?: string
-  /** 附加参数 */
-  [key: string]: unknown
+  requestId: string
+  /** 请求参数 */
+  args: unknown[]
 }
 
 /**
@@ -29,53 +29,53 @@ export interface WebviewResponseMessage<T = unknown> {
   error?: string
 }
 
-/**
- * Webview RPC 命令定义
- */
-export interface WebviewRpcDefinition<Payload extends object = object, Response = unknown> {
-  /** 请求参数 */
-  payload: Payload
-  /** 响应数据 */
-  response: Response
-}
-
-/**
- * 发往 Webview 的事件定义
- */
-export interface WebviewEventDefinition<Payload extends object = object> {
-  /** 事件参数 */
-  payload: Payload
-}
-
 /** Webview RPC 命令名 */
-export type WebviewRpcCommandKey<Commands> = Extract<keyof Commands, string>
+export type WebviewRpcCommandKey<Commands> = {
+  [Command in keyof Commands]: Commands[Command] extends (...args: never[]) => unknown
+    ? Command
+    : never
+}[keyof Commands] &
+  string
 
 /** Webview 事件名 */
 export type WebviewEventKey<Events> = Extract<keyof Events, string>
 
-/** Webview RPC 请求参数 */
-export type WebviewRpcPayload<Commands, Command extends WebviewRpcCommandKey<Commands>> =
-  Commands[Command] extends WebviewRpcDefinition<infer Payload, unknown> ? Payload : object
-
-/** Webview RPC 响应数据 */
-export type WebviewRpcResponse<Commands, Command extends WebviewRpcCommandKey<Commands>> =
-  Commands[Command] extends WebviewRpcDefinition<object, infer Response> ? Response : unknown
-
-/** Webview 事件参数 */
-export type WebviewEventPayload<Events, Event extends WebviewEventKey<Events>> =
-  Events[Event] extends WebviewEventDefinition<infer Payload> ? Payload : object
-
-/** Webview RPC 请求消息 */
-export type WebviewRpcRequestMessage<
+/** Webview RPC 请求参数列表 */
+export type WebviewRpcArgs<
   Commands,
   Command extends WebviewRpcCommandKey<Commands>
-> = WebviewRequestMessage &
-  WebviewRpcPayload<Commands, Command> & {
-    /** 命令名 */
-    command: Command
-  }
+> = Commands[Command] extends (...args: infer Args) => unknown ? Args : never
+
+/** Webview RPC 响应数据 */
+export type WebviewRpcResponse<
+  Commands,
+  Command extends WebviewRpcCommandKey<Commands>
+> = Commands[Command] extends (...args: never[]) => infer Response ? Awaited<Response> : never
+
+/** Webview 事件参数 */
+export type WebviewEventPayload<
+  Events,
+  Event extends WebviewEventKey<Events>
+> = Events[Event] extends object ? Events[Event] : never
 
 /** Webview RPC 消息处理器 */
 export type WebviewRpcHandler<Commands, Command extends WebviewRpcCommandKey<Commands>> = (
-  message: WebviewRpcRequestMessage<Commands, Command>
-) => Promise<unknown> | unknown
+  ...args: WebviewRpcArgs<Commands, Command>
+) => Promise<WebviewRpcResponse<Commands, Command>> | WebviewRpcResponse<Commands, Command>
+
+/** Webview RPC 消息处理器映射 */
+export type WebviewRpcHandlers<Commands> = {
+  [Command in WebviewRpcCommandKey<Commands>]: WebviewRpcHandler<Commands, Command>
+}
+
+/** Webview RPC 客户端 */
+export type WebviewRpcClient<Commands> = {
+  [Command in WebviewRpcCommandKey<Commands>]: (
+    ...args: WebviewRpcArgs<Commands, Command>
+  ) => Promise<WebviewRpcResponse<Commands, Command>>
+}
+
+/** Webview 事件处理器 */
+export type WebviewEventHandler<Events, Event extends WebviewEventKey<Events>> = (
+  payload: WebviewEventPayload<Events, Event>
+) => void

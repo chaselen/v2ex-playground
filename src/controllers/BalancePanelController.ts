@@ -2,13 +2,15 @@ import path from 'path'
 import vscode from 'vscode'
 import { LoginRequiredError, type BalanceDetail } from '@/v2ex'
 import G from '@/global'
+import { openExternal } from '@/features/openExternal'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type {
   BalancePanelRpcCommands,
   BalancePanelViewState,
-  BalancePanelWebviewEvents
+  BalancePanelWebviewEvents,
+  WebviewRpcHandlers
 } from '@/shared/webview'
 
 /**
@@ -45,10 +47,9 @@ export class BalancePanelController {
     this.panel = createPanel()
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'balance.html')
     this.rpc = new WebviewRpcBridge<BalancePanelRpcCommands, BalancePanelWebviewEvents>(
-      this.panel.webview
+      this.panel.webview,
+      this.createRpcHandlers()
     )
-    this.registerRpcHandlers()
-    this.rpc.listen()
     this.panel.onDidDispose(() => this.rpc.dispose())
   }
 
@@ -82,26 +83,22 @@ export class BalancePanelController {
   /**
    * 注册 Webview RPC 处理器
    */
-  private registerRpcHandlers() {
-    this.rpc.handle('openExternal', msg => this.openExternal(msg.path))
-    this.rpc.handle('openTopic', msg => {
-      if (msg.topicId !== undefined) {
-        this.deps.openTopic({ label: `/t/${msg.topicId}`, topicId: msg.topicId })
-      }
-    })
-    this.rpc.handle('openMember', msg => {
-      if (msg.username) {
-        this.deps.openMember({ username: msg.username })
-      }
-    })
-    this.rpc.handle('login', async () => {
-      await vscode.commands.executeCommand('v2ex.login')
-      if (G.getCookie()) {
-        await this.reload(true)
-      }
-    })
-    this.rpc.handle('refresh', () => this.refresh())
-    this.rpc.handle('loadPage', msg => this.loadPage(msg.page))
+  private createRpcHandlers(): WebviewRpcHandlers<BalancePanelRpcCommands> {
+    return {
+      openExternal: msg => {
+        openExternal(msg.path)
+      },
+      openTopic: msg => this.deps.openTopic({ label: `/t/${msg.topicId}`, topicId: msg.topicId }),
+      openMember: msg => this.deps.openMember({ username: msg.username }),
+      login: async () => {
+        await vscode.commands.executeCommand('v2ex.login')
+        if (G.getCookie()) {
+          await this.reload(true)
+        }
+      },
+      refresh: () => this.refresh(),
+      loadPage: msg => this.loadPage(msg.page)
+    }
   }
 
   /**
@@ -169,21 +166,7 @@ export class BalancePanelController {
    * @param state 页面状态
    */
   private postViewState(state: BalancePanelViewState) {
-    this.rpc.post('renderState', { state })
-  }
-
-  /**
-   * 在浏览器中打开 V2EX 链接
-   * @param targetPath 目标路径
-   */
-  private openExternal(targetPath: string) {
-    const url = new URL(targetPath, G.V2ex.baseUrl)
-    if (url.origin !== G.V2ex.baseUrl) {
-      vscode.window.showWarningMessage('仅支持打开 V2EX 链接')
-      return
-    }
-
-    return vscode.env.openExternal(vscode.Uri.parse(url.toString()))
+    this.rpc.post('balanceStateChanged', { state })
   }
 }
 

@@ -2,6 +2,7 @@ import path from 'path'
 import vscode from 'vscode'
 import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
+import { openExternal } from '@/features/openExternal'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
@@ -9,7 +10,8 @@ import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } fr
 import type {
   MemberPanelRpcCommands,
   MemberPanelViewState,
-  MemberPanelWebviewEvents
+  MemberPanelWebviewEvents,
+  WebviewRpcHandlers
 } from '@/shared/webview'
 
 /**
@@ -58,10 +60,9 @@ export class MemberPanelController {
     this.panel = createPanel(this.key, input.label || this.username)
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'member.html')
     this.rpc = new WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>(
-      this.panel.webview
+      this.panel.webview,
+      this.createRpcHandlers()
     )
-    this.registerRpcHandlers()
-    this.rpc.listen()
     this.panel.onDidDispose(() => {
       this.rpc.dispose()
     })
@@ -108,7 +109,7 @@ export class MemberPanelController {
    */
   private postViewState(state: MemberPanelViewState) {
     this.viewState = state
-    this.rpc.post('renderState', {
+    this.rpc.post('memberStateChanged', {
       state
     })
   }
@@ -139,25 +140,24 @@ export class MemberPanelController {
   /**
    * 注册 Webview RPC 处理器
    */
-  private registerRpcHandlers() {
-    this.rpc.handle('browseImage', msg => openImagePreview(String(msg.src || '')))
-    this.rpc.handle('openExternal', msg => this.openExternal(String(msg.src || '')))
-    this.rpc.handle('openTopic', msg => {
-      if (msg.topicId !== undefined) {
+  private createRpcHandlers(): WebviewRpcHandlers<MemberPanelRpcCommands> {
+    return {
+      browseImage: msg => {
+        openImagePreview(msg.src)
+      },
+      openExternal: msg => {
+        openExternal(msg.path)
+      },
+      openTopic: msg =>
         this.deps.openTopic({
           label: msg.title || `/t/${msg.topicId}`,
           topicId: msg.topicId
-        })
-      }
-    })
-    this.rpc.handle('openMember', msg => {
-      if (msg.username) {
-        this.deps.openMember({ username: msg.username })
-      }
-    })
-    this.rpc.handle('refresh', () => this.refreshMember())
-    this.rpc.handle('loadMemberTab', msg => this.loadMemberContent(msg.tab, msg.page))
-    this.rpc.handle('loadMemberPage', msg => this.loadMemberContent(msg.tab, msg.page))
+        }),
+      openMember: msg => this.deps.openMember({ username: msg.username }),
+      refresh: () => this.refreshMember(),
+      loadMemberTab: msg => this.loadMemberContent(msg.tab, msg.page),
+      loadMemberPage: msg => this.loadMemberContent(msg.tab, msg.page)
+    }
   }
 
   /**
@@ -216,25 +216,6 @@ export class MemberPanelController {
       member,
       content
     }
-  }
-
-  /**
-   * 在浏览器中打开链接
-   * @param link 链接地址
-   */
-  private openExternal(link?: string) {
-    if (!link) {
-      vscode.window.showWarningMessage('链接地址为空')
-      return
-    }
-
-    const uri = vscode.Uri.parse(link)
-    if (uri.scheme !== 'http' && uri.scheme !== 'https') {
-      vscode.window.showWarningMessage('仅支持打开 http 或 https 链接')
-      return
-    }
-
-    return vscode.env.openExternal(uri)
   }
 }
 

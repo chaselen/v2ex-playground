@@ -1,6 +1,10 @@
 import { Badge, Dropdown } from '@douyinfe/semi-ui'
-import { postVsCodeMessage } from '../../shared/vscode'
+import type { MainViewRpcCommands } from '../../../../src/shared/webview'
+import { createVsCodeClient } from '../../shared/vscode'
 import styles from './TopicRow.module.scss'
+
+/** 主面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<MainViewRpcCommands>()
 
 /** 主题右键菜单动作 */
 type TopicContextMenuAction = 'copyLink' | 'copyTitleLink' | 'viewInBrowser'
@@ -13,7 +17,10 @@ const contextMenuItems: Array<{ action: TopicContextMenuAction; label: string }>
 ]
 
 /** 右键菜单命令映射 */
-const contextMenuCommands: Record<TopicContextMenuAction, string> = {
+const contextMenuCommands: Record<
+  TopicContextMenuAction,
+  'ctxCopyLink' | 'ctxCopyTitleLink' | 'ctxViewInBrowser'
+> = {
   copyLink: 'ctxCopyLink',
   copyTitleLink: 'ctxCopyTitleLink',
   viewInBrowser: 'ctxViewInBrowser'
@@ -45,7 +52,7 @@ export default function TopicRow(props: TopicRowProps) {
    * 打开主题
    */
   function openTopic() {
-    postVsCodeMessage('openTopic', { topicId, title })
+    vscode.openTopic({ topicId, title })
   }
 
   /**
@@ -53,7 +60,7 @@ export default function TopicRow(props: TopicRowProps) {
    * @param action 菜单动作
    */
   function postContextMenuCommand(action: TopicContextMenuAction) {
-    postVsCodeMessage(contextMenuCommands[action], {
+    vscode[contextMenuCommands[action]]({
       topicId,
       label: title
     })

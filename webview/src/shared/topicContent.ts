@@ -1,4 +1,8 @@
-import { postVsCodeMessage } from './vscode'
+import type { WebviewContentRpcCommands } from '../../../src/shared/webview'
+import { createVsCodeClient, resolveWebviewUrl } from './vscode'
+
+/** 内容增强功能使用的 VS Code 通信客户端 */
+const vscode = createVsCodeClient<WebviewContentRpcCommands>()
 
 /** 支持直接预览的图片后缀 */
 const SUPPORT_IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])
@@ -78,11 +82,11 @@ function getImagePreviewSrc(img: HTMLImageElement): string {
  */
 function openImage(src: string, event: MouseEvent) {
   if (isOpenExternalClick(event)) {
-    postVsCodeMessage('openExternal', { src })
+    vscode.openExternal({ path: resolveWebviewUrl(src) })
     return
   }
 
-  postVsCodeMessage('browseImage', { src })
+  vscode.browseImage({ src })
 }
 
 /**
@@ -208,7 +212,7 @@ function bindTopicLink(anchor: HTMLAnchorElement) {
   anchor.dataset.topicId = topicId
   anchor.href = 'javascript:;'
   anchor.onclick = () => {
-    postVsCodeMessage('openTopic', {
+    vscode.openTopic({
       topicId
     })
     return false
@@ -227,7 +231,7 @@ function bindMemberLink(anchor: HTMLAnchorElement) {
   anchor.dataset.memberUsername = username
   anchor.href = 'javascript:;'
   anchor.onclick = () => {
-    postVsCodeMessage('openMember', {
+    vscode.openMember({
       username
     })
     return false

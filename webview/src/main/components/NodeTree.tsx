@@ -5,12 +5,16 @@ import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
-import { postVsCodeMessage } from '../../shared/vscode'
+import type { MainViewRpcCommands } from '../../../../src/shared/webview'
+import { createVsCodeClient } from '../../shared/vscode'
 import LoginPrompt from './LoginPrompt'
 import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
 import type { MainTabKey, NodeItem, TreeItem } from '../types'
 import styles from './NodeTree.module.scss'
+
+/** 主面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<MainViewRpcCommands>()
 
 interface NodeTreeProps {
   tab: MainTabKey
@@ -417,7 +421,7 @@ export default function NodeTree(props: NodeTreeProps) {
       setSelectedTopicKey(selectedKey)
     }
 
-    postVsCodeMessage('openTopic', {
+    vscode.openTopic({
       topicId: data.topicId,
       title: data.title || data.label
     })

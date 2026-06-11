@@ -9,6 +9,7 @@ import autoDailySignIn, {
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
+import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
@@ -28,7 +29,8 @@ import {
   WebviewDailySignInData,
   WebviewNotification,
   WebviewNode,
-  WebviewTopic
+  WebviewTopic,
+  WebviewRpcHandlers
 } from '@/shared/webview'
 import type { AccountOverview } from '@/v2ex'
 
@@ -50,10 +52,9 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = this._getHtml(webviewView.webview)
 
     this._rpc = new WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>(
-      webviewView.webview
+      webviewView.webview,
+      this._createRpcHandlers()
     )
-    this._registerRpcHandlers(this._rpc)
-    this._rpc.listen()
     this._accountOverviewChangedDisposable?.dispose()
     this._accountOverviewChangedDisposable = G.V2ex.onAccountOverviewChanged(
       (overview, oldOverview) => this._handleAccountOverviewChanged(overview, oldOverview)
@@ -84,34 +85,42 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 注册 Webview RPC 处理器
-   * @param rpc Webview RPC 桥接器
+   * 创建 Webview RPC 处理器
    */
-  private _registerRpcHandlers(rpc: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>) {
-    rpc.handle('ready', () => {
-      this._webviewReady = true
-      return this._getInitData()
-    })
-    rpc.handle('refreshCollectionNodes', () => this._handleRefreshCollectionNodes())
-    rpc.handle('refreshMyOverview', () => this._handleRefreshMyOverview())
-    rpc.handle('expandNode', msg => this._handleExpandNode(msg.tab, msg.itemKey, msg.page))
-    rpc.handle('refreshNode', msg => this._handleRefreshNode(msg.tab, msg.itemKey, msg.page))
-    rpc.handle('getMyTopics', msg => this._handleGetMyTopics(msg.tab, msg.page))
-    rpc.handle('getMyNotifications', msg => this._handleGetMyNotifications(msg.page))
-    rpc.handle('getDailySignInStatus', () => this._handleGetDailySignInStatus())
-    rpc.handle('dailySignIn', () => this._handleDailySignIn())
-    rpc.handle('addNode', () => this._handleAddNode())
-    rpc.handle('removeNode', msg => this._handleRemoveNode(msg.nodeName))
-    rpc.handle('cancelCollectNode', msg => this._handleCancelCollectNode(msg.nodeName))
-    rpc.handle('openTopic', msg => openTopic({ topicId: msg.topicId, label: msg.title }))
-    rpc.handle('openMember', msg => openMember({ username: msg.username }))
-    rpc.handle('openBalance', () => openBalance())
-    rpc.handle('openExternal', msg => this._openExternal(msg.path))
-    rpc.handle('search', () => vscode.commands.executeCommand('v2ex.search'))
-    rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
-    rpc.handle('ctxCopyLink', msg => this._copyLink(msg.topicId))
-    rpc.handle('ctxCopyTitleLink', msg => this._copyTitleLink(msg.topicId, msg.label))
-    rpc.handle('ctxViewInBrowser', msg => this._viewInBrowser(msg.topicId))
+  private _createRpcHandlers(): WebviewRpcHandlers<MainViewRpcCommands> {
+    return {
+      ready: () => {
+        this._webviewReady = true
+        return this._getInitData()
+      },
+      refreshCollectionNodes: () => this._handleRefreshCollectionNodes(),
+      refreshMyOverview: () => this._handleRefreshMyOverview(),
+      expandNode: msg => this._handleExpandNode(msg.tab, msg.itemKey, msg.page),
+      refreshNode: msg => this._handleRefreshNode(msg.tab, msg.itemKey, msg.page),
+      getMyTopics: msg => this._handleGetMyTopics(msg.tab, msg.page),
+      getMyNotifications: msg => this._handleGetMyNotifications(msg.page),
+      getDailySignInStatus: () => this._handleGetDailySignInStatus(),
+      dailySignIn: () => this._handleDailySignIn(),
+      addNode: () => this._handleAddNode(),
+      removeNode: msg => this._handleRemoveNode(msg.nodeName),
+      cancelCollectNode: msg => this._handleCancelCollectNode(msg.nodeName),
+      openTopic: msg =>
+        openTopic({ topicId: msg.topicId, label: msg.title || `/t/${msg.topicId}` }),
+      openMember: msg => openMember({ username: msg.username }),
+      openBalance: () => openBalance(),
+      openExternal: msg => {
+        openExternal(msg.path)
+      },
+      search: async () => {
+        await vscode.commands.executeCommand('v2ex.search')
+      },
+      login: async () => {
+        await vscode.commands.executeCommand('v2ex.login')
+      },
+      ctxCopyLink: msg => this._copyLink(msg.topicId),
+      ctxCopyTitleLink: msg => this._copyTitleLink(msg.topicId, msg.label),
+      ctxViewInBrowser: msg => this._viewInBrowser(msg.topicId)
+    }
   }
 
   /**
@@ -431,15 +440,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 在浏览器中打开 V2EX 链接
-   * @param targetPath 目标路径
-   */
-  private _openExternal(targetPath: string) {
-    const url = new URL(targetPath, G.V2ex.baseUrl)
-    vscode.env.openExternal(vscode.Uri.parse(url.toString()))
-  }
-
-  /**
    * 复制话题链接
    * @param topicId 话题 id
    */
@@ -463,8 +463,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param topicId 话题 id
    */
   private _viewInBrowser(topicId: number) {
-    const link = G.V2ex.getTopicLinkById(topicId)
-    vscode.env.openExternal(vscode.Uri.parse(link))
+    openExternal(G.V2ex.getTopicLinkById(topicId))
   }
 
   /**

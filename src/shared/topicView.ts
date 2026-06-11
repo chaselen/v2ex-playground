@@ -1,27 +1,5 @@
 import type { TopicDetail } from '../v2ex/types'
-import type { MainViewRpcCommands } from './mainView'
-import type { MemberPanelRpcCommands } from './memberView'
-import type { BalancePanelRpcCommands } from './balanceView'
-import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
-
-/**
- * Webview 发给扩展侧的话题命令消息
- */
-export interface TopicPanelMessage {
-  /** 命令名 */
-  command: string
-  /** 图片地址 */
-  src?: string
-  /** 话题 id */
-  topicId?: string | number
-  /** 回复内容 */
-  content?: string
-  /** 回复 id */
-  replyId?: string
-  /** 回复页码 */
-  replyPage?: number
-}
-
+import type { WebviewContentRpcCommands } from './commonView'
 /**
  * 发往 webview 的话题页面状态
  */
@@ -45,52 +23,23 @@ export interface TopicPanelViewState {
 /**
  * 话题面板 Webview RPC 命令
  */
-export interface TopicPanelRpcCommands {
-  browseImage: WebviewRpcDefinition<{ src: string }, void>
-  openExternal: WebviewRpcDefinition<{ src: string }, void>
-  openTopic: WebviewRpcDefinition<{ topicId: string | number }, void>
-  openMember: WebviewRpcDefinition<{ username: string }, void>
-  login: WebviewRpcDefinition<object, void>
-  refresh: WebviewRpcDefinition<object, void>
-  collect: WebviewRpcDefinition<object, void>
-  cancelCollect: WebviewRpcDefinition<object, void>
-  thank: WebviewRpcDefinition<object, void>
-  postReply: WebviewRpcDefinition<{ content: string }, void>
-  thankReply: WebviewRpcDefinition<{ replyId: string }, void>
-  loadReplyPage: WebviewRpcDefinition<{ replyPage: number }, void>
+export interface TopicPanelRpcCommands extends WebviewContentRpcCommands {
+  login(): void
+  refresh(): void
+  collect(): void
+  cancelCollect(): void
+  thank(): void
+  postReply(payload: { content: string }): void
+  thankReply(payload: { replyId: string }): void
+  loadReplyPage(payload: { replyPage: number }): void
 }
 
 /**
  * 话题面板发往 Webview 的事件
  */
 export interface TopicPanelWebviewEvents {
-  renderState: WebviewEventDefinition<{
+  topicStateChanged: {
     /** 页面状态 */
     state: TopicPanelViewState
-  }>
+  }
 }
-
-/**
- * Webview 侧会等待响应的 RPC 命令
- */
-export type WebviewRequestRpcCommands = Pick<
-  MainViewRpcCommands,
-  | 'ready'
-  | 'refreshCollectionNodes'
-  | 'refreshMyOverview'
-  | 'expandNode'
-  | 'refreshNode'
-  | 'getMyTopics'
-  | 'getMyNotifications'
-  | 'getDailySignInStatus'
-  | 'dailySignIn'
-  | 'addNode'
-  | 'removeNode'
-  | 'cancelCollectNode'
-> &
-  Pick<
-    TopicPanelRpcCommands,
-    'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'thankReply' | 'loadReplyPage'
-  > &
-  Pick<MemberPanelRpcCommands, 'loadMemberTab' | 'loadMemberPage'> &
-  Pick<BalancePanelRpcCommands, 'loadPage'>

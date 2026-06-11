@@ -19,13 +19,18 @@ import {
   normalizeHtml,
   normalizeMemberContentLinks
 } from '../shared/topicContent'
-import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
+import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
 import type {
   MemberContentTabKey,
+  MemberPanelRpcCommands,
   MemberPanelViewState,
+  MemberPanelWebviewEvents,
   MemberProfile,
   MemberReply
 } from '../../../src/shared/webview'
+
+/** 用户面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<MemberPanelRpcCommands, MemberPanelWebviewEvents>()
 
 /** 用户页请求命令 */
 type MemberRequestCommand = 'loadMemberTab' | 'loadMemberPage'
@@ -63,14 +68,6 @@ export default function MemberApp() {
   const profile = state.profile
 
   /**
-   * 向扩展侧发送简单命令
-   * @param command 命令名
-   */
-  function postCommand(command: string) {
-    postVsCodeMessage(command)
-  }
-
-  /**
    * 缓存用户内容
    * @param profile 用户资料
    */
@@ -86,7 +83,7 @@ export default function MemberApp() {
    */
   function refreshMember() {
     profileCacheRef.current.clear()
-    postCommand('refresh')
+    vscode.refresh()
   }
 
   /**
@@ -124,7 +121,7 @@ export default function MemberApp() {
 
     setLoadingContent(true)
     try {
-      const nextProfile = await requestVsCodeMessage(command, { tab, page })
+      const nextProfile = await vscode[command]({ tab, page })
       if (requestId !== requestIdRef.current) {
         return undefined
       }
@@ -168,7 +165,7 @@ export default function MemberApp() {
    * @param title 话题标题
    */
   function openTopic(topicId: number, title: string) {
-    postVsCodeMessage('openTopic', { topicId, title })
+    vscode.openTopic({ topicId, title })
   }
 
   /**
@@ -176,20 +173,11 @@ export default function MemberApp() {
    * @param username 用户名
    */
   function openMember(username: string) {
-    postVsCodeMessage('openMember', { username })
+    vscode.openMember({ username })
   }
 
   useEffect(() => {
-    /**
-     * 处理扩展侧发送的视图状态
-     * @param event 消息事件
-     */
-    function onMessage(event: MessageEvent<{ command?: string; state?: MemberPanelViewState }>) {
-      if (event.data.command !== 'renderState' || !event.data.state) {
-        return
-      }
-
-      const nextState = event.data.state
+    const dispose = vscode.on('memberStateChanged', ({ state: nextState }) => {
       setState({
         profile: nextState.profile,
         message: nextState.message || '',
@@ -200,14 +188,11 @@ export default function MemberApp() {
         cacheProfile(nextState.profile)
         setActiveTab(nextState.profile.content.tab)
       }
-    }
+    })
 
-    window.addEventListener('message', onMessage)
     enhanceTopicContentAfterRender(true)
 
-    return () => {
-      window.removeEventListener('message', onMessage)
-    }
+    return dispose
   }, [])
 
   useEffect(() => {
@@ -575,18 +560,6 @@ function handleContentClick(
   const href = anchor.getAttribute('href') || ''
   if (href && href !== 'javascript:;') {
     event.preventDefault()
-    postVsCodeMessage('openExternal', { src: normalizeExternalLink(href) })
+    vscode.openExternal({ path: resolveWebviewUrl(href) })
   }
-}
-
-/**
- * 归一化外部链接
- * @param href 链接
- */
-function normalizeExternalLink(href: string): string {
-  if (href.startsWith('/')) {
-    return new URL(href, 'https://www.v2ex.com').toString()
-  }
-
-  return new URL(href, document.baseURI).toString()
 }

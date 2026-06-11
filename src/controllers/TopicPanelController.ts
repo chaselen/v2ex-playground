@@ -3,15 +3,16 @@ import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
+import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import type { MemberPanelInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
-  TopicPanelMessage,
   TopicPanelRpcCommands,
   TopicPanelViewState,
-  TopicPanelWebviewEvents
+  TopicPanelWebviewEvents,
+  WebviewRpcHandlers
 } from '@/shared/webview'
 
 /**
@@ -87,10 +88,9 @@ export class TopicPanelController {
     this.panel = createPanel(this.key, input.label)
     this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'topic.html')
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
-      this.panel.webview
+      this.panel.webview,
+      this.createRpcHandlers()
     )
-    this.registerRpcHandlers()
-    this.rpc.listen()
     this.configListener = vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('v2ex.browse.showImagesInTopic')) {
         this.postViewState(this.viewState)
@@ -187,7 +187,7 @@ export class TopicPanelController {
    */
   private postViewState(state: TopicPanelViewState) {
     this.viewState = state
-    this.rpc.post('renderState', {
+    this.rpc.post('topicStateChanged', {
       state: {
         ...state,
         showImages: Config.showImagesInTopic()
@@ -198,31 +198,27 @@ export class TopicPanelController {
   /**
    * 注册 Webview RPC 处理器
    */
-  private registerRpcHandlers() {
-    this.rpc.handle('browseImage', msg => openImagePreview(String(msg.src || '')))
-    this.rpc.handle('openExternal', msg => this.openExternal(String(msg.src || '')))
-    this.rpc.handle('openTopic', msg => {
-      if (msg.topicId !== undefined) {
-        this.openTopic(msg.topicId)
-      }
-    })
-    this.rpc.handle('openMember', msg => {
-      if (msg.username) {
-        this.deps.openMember({ username: msg.username })
-      }
-    })
-    this.rpc.handle('login', () => vscode.commands.executeCommand('v2ex.login'))
-    this.rpc.handle('refresh', () => this.refreshTopic())
-    this.rpc.handle('collect', () =>
-      this.runTopicMutation(() => G.V2ex.collectTopic(this.detail.id))
-    )
-    this.rpc.handle('cancelCollect', () =>
-      this.runTopicMutation(() => G.V2ex.cancelCollectTopic(this.detail.id))
-    )
-    this.rpc.handle('thank', () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)))
-    this.rpc.handle('postReply', msg => this.handlePostReply(msg))
-    this.rpc.handle('thankReply', msg => this.handleThankReply(msg))
-    this.rpc.handle('loadReplyPage', msg => this.handleLoadReplyPage(msg))
+  private createRpcHandlers(): WebviewRpcHandlers<TopicPanelRpcCommands> {
+    return {
+      browseImage: msg => {
+        openImagePreview(msg.src)
+      },
+      openExternal: msg => {
+        openExternal(msg.path)
+      },
+      openTopic: msg => this.openTopic(msg.topicId),
+      openMember: msg => this.deps.openMember({ username: msg.username }),
+      login: async () => {
+        await vscode.commands.executeCommand('v2ex.login')
+      },
+      refresh: () => this.refreshTopic(),
+      collect: () => this.runTopicMutation(() => G.V2ex.collectTopic(this.detail.id)),
+      cancelCollect: () => this.runTopicMutation(() => G.V2ex.cancelCollectTopic(this.detail.id)),
+      thank: () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)),
+      postReply: msg => this.handlePostReply(msg),
+      thankReply: msg => this.handleThankReply(msg),
+      loadReplyPage: msg => this.handleLoadReplyPage(msg)
+    }
   }
 
   /**
@@ -276,29 +272,10 @@ export class TopicPanelController {
   }
 
   /**
-   * 在浏览器中打开链接
-   * @param link 链接地址
-   */
-  private openExternal(link?: string) {
-    if (!link) {
-      vscode.window.showWarningMessage('链接地址为空')
-      return
-    }
-
-    const uri = vscode.Uri.parse(link)
-    if (uri.scheme !== 'http' && uri.scheme !== 'https') {
-      vscode.window.showWarningMessage('仅支持打开 http 或 https 链接')
-      return
-    }
-
-    return vscode.env.openExternal(uri)
-  }
-
-  /**
    * 处理提交回复
    * @param message 页面消息
    */
-  private handlePostReply(message: TopicPanelMessage) {
+  private handlePostReply(message: { content: string }) {
     const { content } = message
     if (!content) {
       throw new Error('请输入回复内容')
@@ -311,7 +288,7 @@ export class TopicPanelController {
    * 处理感谢回复者
    * @param message 页面消息
    */
-  private async handleThankReply(message: TopicPanelMessage) {
+  private async handleThankReply(message: { replyId: string }) {
     const { replyId } = message
     if (!replyId) {
       return
@@ -332,7 +309,7 @@ export class TopicPanelController {
    * 处理回复翻页
    * @param message 页面消息
    */
-  private async handleLoadReplyPage(message: TopicPanelMessage) {
+  private async handleLoadReplyPage(message: { replyPage: number }) {
     const replyPage = Number(message.replyPage)
     if (!Number.isFinite(replyPage)) {
       return

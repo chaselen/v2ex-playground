@@ -1,4 +1,4 @@
-import type { WebviewEventDefinition, WebviewRpcDefinition } from './webviewRpc'
+import type { WebviewNavigationRpcCommands } from './commonView'
 
 /**
  * Webview 节点项
@@ -220,45 +220,36 @@ export interface SelectMainTabData {
 /**
  * 主面板 Webview RPC 命令
  */
-export interface MainViewRpcCommands {
-  ready: WebviewRpcDefinition<object, InitData>
-  refreshCollectionNodes: WebviewRpcDefinition<object, NodeListData>
-  refreshMyOverview: WebviewRpcDefinition<object, MyOverviewRefreshData>
-  expandNode: WebviewRpcDefinition<
-    { tab: MainTabKey; itemKey: string; page?: number },
-    NodeChildrenData
-  >
-  refreshNode: WebviewRpcDefinition<
-    { tab: MainTabKey; itemKey: string; page?: number },
-    NodeChildrenData
-  >
-  getMyTopics: WebviewRpcDefinition<
-    { tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>; page?: number },
-    MyTopicListData
-  >
-  getMyNotifications: WebviewRpcDefinition<{ page?: number }, MyNotificationListData>
-  getDailySignInStatus: WebviewRpcDefinition<object, WebviewDailySignInData>
-  dailySignIn: WebviewRpcDefinition<object, WebviewDailySignInData>
-  addNode: WebviewRpcDefinition<object, NodeListData>
-  removeNode: WebviewRpcDefinition<{ nodeName: string }, NodeListData>
-  cancelCollectNode: WebviewRpcDefinition<{ nodeName: string }, void>
-  openTopic: WebviewRpcDefinition<{ topicId: string | number; title: string }, void>
-  openMember: WebviewRpcDefinition<{ username: string }, void>
-  openBalance: WebviewRpcDefinition<object, void>
-  openExternal: WebviewRpcDefinition<{ path: string }, void>
-  search: WebviewRpcDefinition<object, void>
-  login: WebviewRpcDefinition<object, void>
-  ctxCopyLink: WebviewRpcDefinition<{ topicId: number; label: string }, void>
-  ctxCopyTitleLink: WebviewRpcDefinition<{ topicId: number; label: string }, void>
-  ctxViewInBrowser: WebviewRpcDefinition<{ topicId: number; label: string }, void>
+export interface MainViewRpcCommands extends WebviewNavigationRpcCommands {
+  ready(): InitData
+  refreshCollectionNodes(): NodeListData
+  refreshMyOverview(): MyOverviewRefreshData
+  expandNode(payload: { tab: MainTabKey; itemKey: string; page?: number }): NodeChildrenData
+  refreshNode(payload: { tab: MainTabKey; itemKey: string; page?: number }): NodeChildrenData
+  getMyTopics(payload: {
+    tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
+    page?: number
+  }): MyTopicListData
+  getMyNotifications(payload: { page?: number }): MyNotificationListData
+  getDailySignInStatus(): WebviewDailySignInData
+  dailySignIn(): WebviewDailySignInData
+  addNode(): NodeListData
+  removeNode(payload: { nodeName: string }): NodeListData
+  cancelCollectNode(payload: { nodeName: string }): void
+  openBalance(): void
+  search(): void
+  login(): void
+  ctxCopyLink(payload: { topicId: number; label: string }): void
+  ctxCopyTitleLink(payload: { topicId: number; label: string }): void
+  ctxViewInBrowser(payload: { topicId: number; label: string }): void
 }
 
 /**
  * 主面板发往 Webview 的事件
  */
 export interface MainViewWebviewEvents {
-  initData: WebviewEventDefinition<InitData>
-  accountOverviewChanged: WebviewEventDefinition<AccountOverviewChangedData>
-  dailySignInStatusChanged: WebviewEventDefinition<WebviewDailySignInData>
-  selectMainTab: WebviewEventDefinition<SelectMainTabData>
+  initData: InitData
+  accountOverviewChanged: AccountOverviewChangedData
+  dailySignInStatusChanged: WebviewDailySignInData
+  selectMainTab: SelectMainTabData
 }

@@ -5,12 +5,17 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '../shared/topicContent'
-import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
+import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
 import type {
   BalanceDetail,
+  BalancePanelRpcCommands,
   BalancePanelViewState,
+  BalancePanelWebviewEvents,
   BalanceTransaction
 } from '../../../src/shared/webview'
+
+/** 账户余额面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<BalancePanelRpcCommands, BalancePanelWebviewEvents>()
 
 /** V2EX 余额页固定流水条数 */
 const balancePageSize = 20
@@ -74,7 +79,7 @@ export default function BalanceApp() {
    * 刷新当前页
    */
   function refresh() {
-    postVsCodeMessage('refresh')
+    vscode.refresh()
   }
 
   /**
@@ -93,19 +98,19 @@ export default function BalanceApp() {
     const href = anchor.getAttribute('href') || ''
     const topicId = anchor.getAttribute('data-topic-id') || href.match(/\/t\/(\d+)/)?.[1]
     if (topicId) {
-      postVsCodeMessage('openTopic', { topicId })
+      vscode.openTopic({ topicId })
       return
     }
 
     const username =
       anchor.getAttribute('data-member-username') || href.match(/\/member\/([A-Za-z0-9_-]+)/)?.[1]
     if (username) {
-      postVsCodeMessage('openMember', { username: decodeURIComponent(username) })
+      vscode.openMember({ username: decodeURIComponent(username) })
       return
     }
 
     if (href && href !== 'javascript:;') {
-      postVsCodeMessage('openExternal', { path: href })
+      vscode.openExternal({ path: resolveWebviewUrl(href) })
     }
   }
 
@@ -118,7 +123,7 @@ export default function BalanceApp() {
     requestIdRef.current = requestId
     setLoadingPage(true)
     try {
-      const nextDetail = await requestVsCodeMessage('loadPage', { page })
+      const nextDetail = await vscode.loadPage({ page })
       if (requestId !== requestIdRef.current) {
         return
       }
@@ -156,18 +161,7 @@ export default function BalanceApp() {
   }
 
   useEffect(() => {
-    /**
-     * 处理扩展侧发送的视图状态
-     * @param event 消息事件
-     */
-    function onMessage(event: MessageEvent<{ command?: string; state?: BalancePanelViewState }>) {
-      if (event.data.command === 'renderState' && event.data.state) {
-        setState(event.data.state)
-      }
-    }
-
-    window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
+    return vscode.on('balanceStateChanged', data => setState(data.state))
   }, [])
 
   useEffect(() => {
@@ -192,7 +186,7 @@ export default function BalanceApp() {
               <Banner type="danger" title="加载失败" description={state.message || '未知错误'} />
               <div className="balance-state-actions">
                 {state.showLogin && (
-                  <Button size="small" theme="solid" onClick={() => postVsCodeMessage('login')}>
+                  <Button size="small" theme="solid" onClick={() => vscode.login()}>
                     登录
                   </Button>
                 )}
@@ -223,7 +217,11 @@ export default function BalanceApp() {
                   <Button
                     size="small"
                     theme="light"
-                    onClick={() => postVsCodeMessage('openExternal', { path: '/balance/add' })}
+                    onClick={() =>
+                      vscode.openExternal({
+                        path: resolveWebviewUrl('/balance/add')
+                      })
+                    }
                   >
                     充值
                   </Button>
@@ -231,7 +229,11 @@ export default function BalanceApp() {
                     size="small"
                     theme="borderless"
                     icon={<IconHelpCircle />}
-                    onClick={() => postVsCodeMessage('openExternal', { path: '/help/currency' })}
+                    onClick={() =>
+                      vscode.openExternal({
+                        path: resolveWebviewUrl('/help/currency')
+                      })
+                    }
                   >
                     余额说明
                   </Button>

@@ -14,11 +14,15 @@ import {
 import { IconArrowDown, IconArrowUp, IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { enhanceTopicContentAfterRender, normalizeHtml } from '../shared/topicContent'
-import { postVsCodeMessage, requestVsCodeMessage } from '../shared/vscode'
-import type { TopicPanelViewState } from '../../../src/shared/webview'
+import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
+import type {
+  TopicPanelRpcCommands,
+  TopicPanelViewState,
+  TopicPanelWebviewEvents
+} from '../../../src/shared/webview'
 
-/** 话题请求命令 */
-type TopicRequestCommand = 'collect' | 'cancelCollect' | 'thank' | 'postReply' | 'loadReplyPage'
+/** 话题面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<TopicPanelRpcCommands, TopicPanelWebviewEvents>()
 
 /**
  * 话题页面应用
@@ -48,19 +52,11 @@ export default function TopicApp() {
   const topicContentHtml = useMemo(() => normalizeHtml(topic?.content), [topic?.content])
 
   /**
-   * 向扩展侧发送简单命令
-   * @param command 命令名
-   */
-  function postCommand(command: string) {
-    postVsCodeMessage(command)
-  }
-
-  /**
    * 在浏览器中打开链接
    * @param src 链接地址
    */
   function openExternal(src: string) {
-    postVsCodeMessage('openExternal', { src: new URL(src, document.baseURI).toString() })
+    vscode.openExternal({ path: resolveWebviewUrl(src) })
   }
 
   /**
@@ -68,7 +64,7 @@ export default function TopicApp() {
    * @param username 用户名
    */
   function openMember(username: string) {
-    postVsCodeMessage('openMember', { username })
+    vscode.openMember({ username })
   }
 
   /**
@@ -89,20 +85,18 @@ export default function TopicApp() {
 
   /**
    * 执行话题请求
-   * @param command 命令名
+   * @param task 请求任务
    * @param setLoading 加载状态更新函数
-   * @param payload 附加参数
    * @param onSuccess 成功回调
    */
   async function requestTopicAction(
-    command: TopicRequestCommand,
+    task: () => Promise<void>,
     setLoading: (loading: boolean) => void,
-    payload: object = {},
     onSuccess?: () => void
   ) {
     setLoading(true)
     try {
-      await requestVsCodeMessage(command, payload)
+      await task()
       onSuccess?.()
     } catch (err) {
       Toast.error((err as Error).message || '操作失败')
@@ -126,7 +120,11 @@ export default function TopicApp() {
       return
     }
 
-    await requestTopicAction('postReply', setPostingReply, { content }, () => setReplyContent(''))
+    await requestTopicAction(
+      () => vscode.postReply({ content }),
+      setPostingReply,
+      () => setReplyContent('')
+    )
   }
 
   /**
@@ -136,7 +134,7 @@ export default function TopicApp() {
   async function thankReply(replyId: string) {
     setPendingThankReplyIds(current => [...current, replyId])
     try {
-      await requestVsCodeMessage('thankReply', { replyId })
+      await vscode.thankReply({ replyId })
     } catch (err) {
       Toast.error((err as Error).message || '操作失败')
     } finally {
@@ -148,7 +146,7 @@ export default function TopicApp() {
    * 感谢主题创建者
    */
   function thankTopic() {
-    requestTopicAction('thank', setThankingTopic)
+    requestTopicAction(() => vscode.thank(), setThankingTopic)
   }
 
   /**
@@ -173,22 +171,17 @@ export default function TopicApp() {
       return
     }
 
-    await requestTopicAction('loadReplyPage', setLoadingReplyPage, { replyPage }, () => {
-      document.querySelector('.reply')?.scrollIntoView({ block: 'start' })
-    })
+    await requestTopicAction(
+      () => vscode.loadReplyPage({ replyPage }),
+      setLoadingReplyPage,
+      () => {
+        document.querySelector('.reply')?.scrollIntoView({ block: 'start' })
+      }
+    )
   }
 
   useEffect(() => {
-    /**
-     * 处理扩展侧发送的视图状态
-     * @param event 消息事件
-     */
-    function onMessage(event: MessageEvent<{ command?: string; state?: TopicPanelViewState }>) {
-      if (event.data.command !== 'renderState' || !event.data.state) {
-        return
-      }
-
-      const nextState = event.data.state
+    const dispose = vscode.on('topicStateChanged', ({ state: nextState }) => {
       setState({
         topic: nextState.topic,
         message: nextState.message || '',
@@ -198,14 +191,11 @@ export default function TopicApp() {
         canOperate: Boolean(nextState.canOperate),
         status: nextState.status
       })
-    }
+    })
 
-    window.addEventListener('message', onMessage)
     enhanceTopicContentAfterRender(showImages)
 
-    return () => {
-      window.removeEventListener('message', onMessage)
-    }
+    return dispose
   }, [])
 
   useEffect(() => {
@@ -238,12 +228,12 @@ export default function TopicApp() {
           />
           <div className="state-actions">
             {state.showLogin && (
-              <Button size="small" type="primary" onClick={() => postCommand('login')}>
+              <Button size="small" type="primary" onClick={() => vscode.login()}>
                 登录
               </Button>
             )}
             {state.showRefresh && (
-              <Button size="small" theme="light" onClick={() => postCommand('refresh')}>
+              <Button size="small" theme="light" onClick={() => vscode.refresh()}>
                 刷新页面
               </Button>
             )}
@@ -298,7 +288,7 @@ export default function TopicApp() {
 
           {state.canOperate && (
             <div className="topic-toolbar">
-              <Button size="small" type="secondary" onClick={() => postCommand('refresh')}>
+              <Button size="small" type="secondary" onClick={() => vscode.refresh()}>
                 刷新页面
               </Button>
               {!topic.isCollected ? (
@@ -306,7 +296,7 @@ export default function TopicApp() {
                   size="small"
                   type="secondary"
                   loading={collecting}
-                  onClick={() => requestTopicAction('collect', setCollecting)}
+                  onClick={() => requestTopicAction(() => vscode.collect(), setCollecting)}
                 >
                   加入收藏
                 </Button>
@@ -315,7 +305,9 @@ export default function TopicApp() {
                   size="small"
                   type="secondary"
                   loading={cancelingCollect}
-                  onClick={() => requestTopicAction('cancelCollect', setCancelingCollect)}
+                  onClick={() =>
+                    requestTopicAction(() => vscode.cancelCollect(), setCancelingCollect)
+                  }
                 >
                   取消收藏
                 </Button>

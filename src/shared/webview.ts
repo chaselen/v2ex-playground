@@ -1,4 +1,5 @@
 export * from './webviewRpc'
+export * from './commonView'
 export * from './mainView'
 export * from './topicView'
 export * from './memberView'

@@ -3,12 +3,14 @@ import { Avatar, Badge, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/se
 import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
-import { postVsCodeMessage, requestVsCodeMessage } from '../../shared/vscode'
+import { createVsCodeClient, resolveWebviewUrl } from '../../shared/vscode'
 import LoginPrompt from './LoginPrompt'
 import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
 import type {
   MyContentTabKey,
+  MainViewRpcCommands,
+  MainViewWebviewEvents,
   MyNotificationListData,
   MyTopicListData,
   WebviewAccountOverview,
@@ -18,6 +20,9 @@ import type {
 } from '../../../../src/shared/webview'
 import { normalizeHtml } from '../../shared/topicContent'
 import styles from './MyAccountPanel.module.scss'
+
+/** 主面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<MainViewRpcCommands, MainViewWebviewEvents>()
 
 interface MyAccountPanelProps {
   /** 面板实例引用 */
@@ -124,7 +129,7 @@ function createMyNotificationListState(): MyNotificationListState {
  * @param path 目标路径
  */
 function openExternal(path: string) {
-  postVsCodeMessage('openExternal', { path })
+  vscode.openExternal({ path: resolveWebviewUrl(path) })
 }
 
 /**
@@ -132,23 +137,7 @@ function openExternal(path: string) {
  * @param username 用户名
  */
 function openMember(username: string) {
-  postVsCodeMessage('openMember', { username })
-}
-
-/**
- * 判断消息是否为每日签到状态变化
- * @param msg 扩展侧消息
- */
-function isDailySignInStatusChangedMessage(
-  msg: unknown
-): msg is WebviewDailySignInData & { command: 'dailySignInStatusChanged' } {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'command' in msg &&
-    msg.command === 'dailySignInStatusChanged' &&
-    'signedIn' in msg
-  )
+  vscode.openMember({ username })
 }
 
 /**
@@ -203,7 +192,8 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     }
 
     setDailySignInLoading(true)
-    requestVsCodeMessage('getDailySignInStatus')
+    vscode
+      .getDailySignInStatus()
       .then(data => {
         if (!disposed) {
           setDailySignedIn(data.signedIn)
@@ -242,21 +232,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
   }))
 
   useEffect(() => {
-    /**
-     * 处理扩展侧每日签到状态变化
-     * @param event 消息事件
-     */
-    function onMessage(event: MessageEvent) {
-      const msg = event.data
-      if (isDailySignInStatusChangedMessage(msg)) {
-        setDailySignedIn(msg.signedIn)
-      }
-    }
-
-    window.addEventListener('message', onMessage)
-    return () => {
-      window.removeEventListener('message', onMessage)
-    }
+    return vscode.on('dailySignInStatusChanged', data => setDailySignedIn(data.signedIn))
   }, [])
 
   /**
@@ -278,7 +254,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     }))
 
     try {
-      const data = await requestVsCodeMessage('getMyTopics', { tab, page })
+      const data = await vscode.getMyTopics({ tab, page })
       if (topicRequestSeq.current[tab] === requestSeq) {
         onMyTopicListLoaded(data)
       }
@@ -331,7 +307,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     }))
 
     try {
-      const data = await requestVsCodeMessage('getMyNotifications', { page })
+      const data = await vscode.getMyNotifications({ page })
       if (notificationRequestSeq.current === requestSeq) {
         onMyNotificationsLoaded(data)
       }
@@ -401,7 +377,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     setDailySignInLoading(true)
 
     try {
-      const data = await requestVsCodeMessage('dailySignIn')
+      const data = await vscode.dailySignIn()
       setDailySignedIn(data.signedIn)
     } catch (err) {
       console.error(err)
@@ -447,7 +423,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     const href = anchor.getAttribute('href') || ''
 
     if (anchor.classList.contains('topic-link') && notification.topicId) {
-      postVsCodeMessage('openTopic', {
+      vscode.openTopic({
         topicId: notification.topicId,
         title: notification.topicTitle || anchor.textContent || ''
       })
@@ -742,7 +718,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
               type="button"
               className={`${styles['my-link']} ${styles['my-balance']}`}
               aria-label="账户余额"
-              onClick={() => postVsCodeMessage('openBalance')}
+              onClick={() => vscode.openBalance()}
             >
               <span>{overview.gold}</span>
               <i className={`${styles['my-coin']} ${styles['my-coin--gold']}`} />
