@@ -1,12 +1,4 @@
-@mixin ellipsis {
-  display: inline-block;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  vertical-align: middle;
-}
+@use './mixins';
 
 .node-tree-panel {
   flex: 1;
@@ -22,7 +14,6 @@
 
   :global(.simplebar-content) {
     flex: 1 0 auto;
-    min-height: 100%;
   }
 
   :global(.simplebar-placeholder) {
@@ -113,13 +104,13 @@
 
 .node-label {
   color: var(--v2ex-main-content-fg);
-  @include ellipsis;
+  @include mixins.ellipsis;
 }
 
 .empty-text,
 .loading-text,
 .error-text {
-  @include ellipsis;
+  @include mixins.ellipsis;
 }
 
 .loading-text {
@@ -155,57 +146,15 @@
 }
 
 .empty-panel {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
-
-  :global(.semi-empty) {
-    text-align: center;
-  }
-
-  :global(.semi-empty-image) {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 8px;
-  }
-
-  :global(.semi-empty-title) {
-    margin: 0 0 6px;
-    color: var(--v2ex-main-content-fg);
-    line-height: 1.4;
-  }
-
-  :global(.semi-empty-description) {
-    color: inherit;
-  }
-
-  :global(.semi-empty-content) {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-top: 12px;
-  }
+  @include mixins.empty-panel;
 }
 
 .empty-illustration {
-  width: 136px;
-  height: 136px;
+  @include mixins.empty-illustration;
 }
 
 .loading-panel {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--v2ex-main-content-fg);
-
-  :global(.semi-spin-wrapper) {
-    color: var(--v2ex-focus-border, var(--vscode-progressBar-background));
-  }
+  @include mixins.loading-panel;
 }
 
 .tree-footer {

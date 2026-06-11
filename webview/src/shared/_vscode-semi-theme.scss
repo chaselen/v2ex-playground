@@ -11,11 +11,6 @@ $link-active-color: var(
  * 不设置 Semi 的 theme-mode，避免未映射 token 混入 Semi 默认暗色色盘
  */
 body {
-  color: $text-color;
-  background: $background-color;
-  font-family: var(--vscode-font-family);
-  font-size: var(--vscode-font-size);
-
   /* 基础色：优先跟随 VS Code Theme Color */
   --v2ex-webview-bg: #{$background-color};
   --v2ex-webview-fg: #{$text-color};

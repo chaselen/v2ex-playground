@@ -1,12 +1,4 @@
-@mixin ellipsis {
-  display: inline-block;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  vertical-align: middle;
-}
+@use './mixins';
 
 .topic-row {
   display: flex;
@@ -25,5 +17,5 @@
 .topic-title {
   flex: 1;
   color: var(--v2ex-main-content-fg);
-  @include ellipsis;
+  @include mixins.ellipsis;
 }

@@ -11,13 +11,11 @@
 .vscode-tag,
 .vscode-tag[class*='semi-tag-'] {
   border-color: var(--v2ex-tag-bg);
-  background: var(--v2ex-tag-bg);
   background-color: var(--v2ex-tag-bg);
   color: var(--v2ex-tag-fg);
 
   &:hover {
     border-color: var(--v2ex-primary-button-hover-bg);
-    background: var(--v2ex-tag-hover-bg);
     background-color: var(--v2ex-tag-hover-bg);
     color: var(--v2ex-tag-hover-fg);
   }

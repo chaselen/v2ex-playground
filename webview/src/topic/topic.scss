@@ -1,3 +1,5 @@
+@use '../shared/topic-content' as topic-content-shared;
+
 $muted-color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
 $panel-border: var(--v2ex-border);
 
@@ -107,53 +109,9 @@ $panel-border: var(--v2ex-border);
 }
 
 .topic-content {
-  line-height: 1.55;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-
-  a {
-    word-break: break-all;
-
-    &:has(img) {
-      display: inline-block;
-      line-height: 0;
-      vertical-align: top;
-    }
-  }
-
-  img {
-    max-width: 100% !important;
-  }
-
-  .image-preview-target {
-    cursor: pointer;
-
-    &:hover {
-      outline: 1px solid var(--v2ex-focus-border);
-      outline-offset: 2px;
-    }
-  }
+  @include topic-content-shared.base($panel-border);
 
   .hidden-image-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    max-width: 100%;
-    min-height: 28px;
-    padding: 4px 9px;
-    border: 1px solid var(--vscode-button-border, #{$panel-border});
-    border-radius: 4px;
-    background: var(--v2ex-default-bg);
-    color: var(--vscode-button-secondaryForeground, var(--v2ex-webview-fg));
-    cursor: pointer;
-    font: inherit;
-    line-height: 1.4;
-    vertical-align: middle;
-
-    &:hover {
-      background: var(--v2ex-default-hover-bg);
-    }
-
     &:focus-visible {
       outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 2px;
@@ -161,20 +119,10 @@ $panel-border: var(--v2ex-border);
   }
 
   pre {
-    overflow-x: auto;
-    font-family: var(--vscode-editor-font-family, inherit);
-    white-space: pre;
-
     > code {
       display: block;
       padding: 8px 12px;
     }
-  }
-
-  code {
-    font-family: var(--vscode-editor-font-family, inherit);
-    white-space: pre-wrap;
-    word-break: break-word;
   }
 
   blockquote {
@@ -248,10 +196,7 @@ $panel-border: var(--v2ex-border);
   margin: 10px 0 26px;
 }
 
-.topic-divider--reply-start {
-  margin: 26px 0 8px;
-}
-
+.topic-divider--reply-start,
 .topic-divider--append-start {
   margin: 26px 0 8px;
 }
