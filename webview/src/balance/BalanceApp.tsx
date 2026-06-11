@@ -4,7 +4,7 @@ import { IconHelpCircle, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
-import { normalizeHtml } from '../shared/topicContent'
+import { normalizeMemberContentLinks } from '../shared/topicContent'
 import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
 import type {
   BalanceDetail,
@@ -67,7 +67,7 @@ export default function BalanceApp() {
           <div
             className="topic-content balance-description"
             onClick={handleDescriptionClick}
-            dangerouslySetInnerHTML={{ __html: normalizeHtml(html) }}
+            dangerouslySetInnerHTML={{ __html: normalizeMemberContentLinks(html) }}
           />
         )
       }
@@ -109,7 +109,8 @@ export default function BalanceApp() {
       return
     }
 
-    const nodeName = href.match(/\/go\/([A-Za-z0-9_-]+)/)?.[1]
+    const nodeName =
+      anchor.getAttribute('data-node-name') || href.match(/\/go\/([A-Za-z0-9_-]+)/)?.[1]
     if (nodeName) {
       vscode.openNode({
         name: decodeURIComponent(nodeName),

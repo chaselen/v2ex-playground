@@ -19,7 +19,7 @@ import type {
   WebviewNotification,
   WebviewTopic
 } from '../../../../src/shared/webview'
-import { normalizeHtml } from '../../shared/topicContent'
+import { normalizeMemberContentLinks } from '../../shared/topicContent'
 import styles from './MyAccountPanel.module.scss'
 
 /** 主面板 VS Code 通信客户端 */
@@ -422,6 +422,30 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
 
     event.preventDefault()
     const href = anchor.getAttribute('href') || ''
+    const topicId = anchor.getAttribute('data-topic-id')
+    const username = anchor.getAttribute('data-member-username')
+    const nodeName = anchor.getAttribute('data-node-name')
+
+    if (topicId) {
+      vscode.openTopic({
+        topicId: Number(topicId),
+        title: anchor.textContent || notification.topicTitle || ''
+      })
+      return
+    }
+
+    if (username) {
+      openMember(username)
+      return
+    }
+
+    if (nodeName) {
+      vscode.openNode({
+        name: nodeName,
+        title: anchor.textContent?.trim() || nodeName
+      })
+      return
+    }
 
     if (anchor.classList.contains('topic-link') && notification.topicId) {
       vscode.openTopic({
@@ -470,13 +494,19 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
           onClick={event => handleNotificationClick(event, notification)}
         >
           <div className={styles['my-notification-meta']}>
-            <span dangerouslySetInnerHTML={{ __html: normalizeHtml(notification.summaryHtml) }} />
+            <span
+              dangerouslySetInnerHTML={{
+                __html: normalizeMemberContentLinks(notification.summaryHtml)
+              }}
+            />
             {!!notification.time && <time>{notification.time}</time>}
           </div>
           {!!notification.payloadHtml && (
             <div
               className={styles['my-notification-payload']}
-              dangerouslySetInnerHTML={{ __html: normalizeHtml(notification.payloadHtml) }}
+              dangerouslySetInnerHTML={{
+                __html: normalizeMemberContentLinks(notification.payloadHtml)
+              }}
             />
           )}
         </div>
