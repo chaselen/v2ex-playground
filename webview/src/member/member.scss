@@ -94,20 +94,10 @@ $panel-border: var(--v2ex-border);
   border-bottom: 1px solid $panel-border;
   background: transparent;
   color: inherit;
-  cursor: pointer;
   text-align: left;
 
   &:last-child {
     border-bottom: 0;
-  }
-
-  &:hover {
-    background: var(--v2ex-hover-bg);
-  }
-
-  &:focus-visible {
-    outline: 1px solid var(--v2ex-focus-border);
-    outline-offset: -1px;
   }
 }
 
@@ -130,7 +120,17 @@ $panel-border: var(--v2ex-border);
   font-weight: 600;
   line-height: 1.45;
   text-overflow: ellipsis;
+  text-decoration: none;
   white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 1px;
+  }
 }
 
 .member-topic-meta {
@@ -142,11 +142,25 @@ $panel-border: var(--v2ex-border);
   color: $muted-color;
   font-size: 12px;
   line-height: 1.4;
+
+  a {
+    color: var(--v2ex-link-fg);
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .member-topic-count {
   flex: none;
   min-width: 22px;
+}
+
+.member-topic-node {
+  cursor: pointer;
 }
 
 .member-reply-item {

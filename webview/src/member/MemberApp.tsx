@@ -322,7 +322,7 @@ function renderContent(
     return renderReplies(profile, loading, loadPage, openTopic, openMember)
   }
 
-  return renderTopics(profile, loading, loadPage, openTopic)
+  return renderTopics(profile, loading, loadPage, openTopic, openMember)
 }
 
 /**
@@ -331,12 +331,14 @@ function renderContent(
  * @param loading 是否加载中
  * @param loadPage 加载页码
  * @param openTopic 打开话题
+ * @param openMember 打开用户
  */
 function renderTopics(
   profile: MemberProfile,
   loading: boolean,
   loadPage: (page: number) => void,
-  openTopic: (topicId: number, title: string) => void
+  openTopic: (topicId: number, title: string) => void,
+  openMember: (username: string) => void
 ) {
   const content = profile.content
 
@@ -356,7 +358,7 @@ function renderTopics(
   return (
     <>
       <div className="member-topic-list">
-        {content.topics.map(topic => renderTopicItem(topic, openTopic))}
+        {content.topics.map(topic => renderTopicItem(topic, openTopic, openMember))}
       </div>
       {renderMemberPagination(content, loading, loadPage)}
     </>
@@ -441,17 +443,25 @@ function renderMemberPagination(
  * 渲染主题项
  * @param topic 主题
  * @param openTopic 打开话题
+ * @param openMember 打开用户
  */
-function renderTopicItem(topic: MemberTopic, openTopic: (topicId: number, title: string) => void) {
+function renderTopicItem(
+  topic: MemberTopic,
+  openTopic: (topicId: number, title: string) => void,
+  openMember: (username: string) => void
+) {
+  const lastReplyUser = topic.lastReplyUser
+
   return (
-    <button
-      type="button"
-      className="member-topic-item"
-      key={topic.id}
-      onClick={() => openTopic(topic.id, topic.title)}
-    >
+    <article className="member-topic-item" key={topic.id}>
       <span className="member-topic-main">
-        <span className="member-topic-title">{topic.title}</span>
+        <a
+          className="member-topic-title"
+          href="javascript:;"
+          onClick={() => openTopic(topic.id, topic.title)}
+        >
+          {topic.title}
+        </a>
         {!!topic.replies && (
           <VscodeBadge
             count={topic.replies}
@@ -462,19 +472,21 @@ function renderTopicItem(topic: MemberTopic, openTopic: (topicId: number, title:
       </span>
       <span className="member-topic-meta">
         {!!topic.node.title && (
-          <span
-            onClick={event => {
-              event.stopPropagation()
-              vscode.openNode(topic.node)
-            }}
-          >
+          <span className="member-topic-node" onClick={() => vscode.openNode(topic.node)}>
             <VscodeTag size="small">{topic.node.title}</VscodeTag>
           </span>
         )}
         {!!topic.displayTime && <span>{topic.displayTime}</span>}
-        {!!topic.lastReplyUser && <span>最后回复 {topic.lastReplyUser}</span>}
+        {!!lastReplyUser && (
+          <span>
+            最后回复{' '}
+            <a href="javascript:;" onClick={() => openMember(lastReplyUser)}>
+              {lastReplyUser}
+            </a>
+          </span>
+        )}
       </span>
-    </button>
+    </article>
   )
 }
 
