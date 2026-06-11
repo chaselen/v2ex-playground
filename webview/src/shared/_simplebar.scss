@@ -1,0 +1,20 @@
+/*
+ * SimpleBar 的 VS Code 滚动条主题适配
+ * 页面布局相关规则仍由各页面样式负责
+ */
+
+[data-simplebar] .simplebar-track.simplebar-vertical {
+  width: 8px;
+}
+
+[data-simplebar] .simplebar-scrollbar::before,
+[data-simplebar] .simplebar-scrollbar.simplebar-visible::before {
+  inset: 2px;
+  border-radius: 999px;
+  background: var(--vscode-scrollbarSlider-background);
+  opacity: 1;
+}
+
+[data-simplebar] .simplebar-track.simplebar-hover .simplebar-scrollbar::before {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+}

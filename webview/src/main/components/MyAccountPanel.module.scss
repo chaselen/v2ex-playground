@@ -18,22 +18,6 @@
   :global(.simplebar-content) {
     min-height: 100%;
   }
-
-  :global(.simplebar-track.simplebar-vertical) {
-    width: 8px;
-    background: transparent;
-  }
-
-  :global(.simplebar-scrollbar::before) {
-    inset: 2px;
-    border-radius: 999px;
-    background: var(--vscode-scrollbarSlider-background);
-    opacity: 1;
-  }
-
-  :global(.simplebar-track.simplebar-horizontal) {
-    display: none;
-  }
 }
 
 .my-panel-content {

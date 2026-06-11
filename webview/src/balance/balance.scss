@@ -13,16 +13,6 @@ $panel-border: var(--v2ex-border);
     background: var(--v2ex-webview-bg);
     color: var(--v2ex-webview-fg);
   }
-
-  .simplebar-track.simplebar-vertical {
-    width: 8px;
-  }
-
-  .simplebar-scrollbar::before {
-    inset: 2px;
-    background: var(--vscode-scrollbarSlider-background);
-    opacity: 1;
-  }
 }
 
 .balance-container {

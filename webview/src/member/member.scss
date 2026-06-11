@@ -11,38 +11,12 @@ $panel-border: var(--v2ex-border);
 
   .simplebar-content-wrapper {
     min-height: 0;
-    outline: none;
   }
 
   .simplebar-content {
     min-height: 100%;
     background: var(--v2ex-webview-bg);
     color: var(--v2ex-webview-fg);
-  }
-
-  .simplebar-track.simplebar-vertical {
-    width: 8px;
-    background: transparent;
-  }
-
-  .simplebar-scrollbar::before {
-    inset: 2px;
-    border-radius: 999px;
-    background: var(--vscode-scrollbarSlider-background);
-    opacity: 1;
-  }
-
-  .simplebar-scrollbar.simplebar-visible::before,
-  .simplebar-track:hover .simplebar-scrollbar::before {
-    opacity: 1;
-  }
-
-  .simplebar-track:hover .simplebar-scrollbar::before {
-    background: var(--vscode-scrollbarSlider-hoverBackground);
-  }
-
-  .simplebar-track.simplebar-horizontal {
-    display: none;
   }
 }
 
