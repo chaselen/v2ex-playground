@@ -18,7 +18,7 @@ import {
   Tooltip,
   Tree
 } from '@douyinfe/semi-ui'
-import { VscodeBadge, VscodeTag } from '../shared/SemiVscode'
+import { VscodeBadge, VscodeTag } from '@/shared/SemiVscode'
 
 /** 可在浏览器中模拟的 VS Code 主题 */
 const previewThemes = [

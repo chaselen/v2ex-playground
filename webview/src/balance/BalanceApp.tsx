@@ -4,16 +4,16 @@ import { IconHelpCircle, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
-import { normalizeHtml } from '../shared/contentEnhancement'
-import { handleWebviewLinkClick } from '../shared/linkNavigation'
-import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
+import { normalizeHtml } from '@/shared/contentEnhancement'
+import { handleWebviewLinkClick } from '@/shared/linkNavigation'
+import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
 import type {
   BalanceDetail,
   BalancePanelRpcCommands,
   BalancePanelViewState,
   BalancePanelWebviewEvents,
   BalanceTransaction
-} from '../../../src/shared/webview'
+} from '@extension/shared/webview'
 
 /** 账户余额面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<BalancePanelRpcCommands, BalancePanelWebviewEvents>()

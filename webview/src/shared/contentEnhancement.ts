@@ -1,4 +1,4 @@
-import type { WebviewContentRpcCommands } from '../../../src/shared/webview'
+import type { WebviewContentRpcCommands } from '@extension/shared/webview'
 import { handleWebviewLinkClick } from './linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
 

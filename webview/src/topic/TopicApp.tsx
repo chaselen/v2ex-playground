@@ -13,13 +13,13 @@ import {
 } from '@douyinfe/semi-ui'
 import { IconArrowDown, IconArrowUp, IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
-import { enhanceHtmlContentAfterRender, normalizeHtml } from '../shared/contentEnhancement'
-import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
+import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
+import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
 import type {
   TopicPanelRpcCommands,
   TopicPanelViewState,
   TopicPanelWebviewEvents
-} from '../../../src/shared/webview'
+} from '@extension/shared/webview'
 
 /** 话题面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<TopicPanelRpcCommands, TopicPanelWebviewEvents>()

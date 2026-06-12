@@ -1,7 +1,7 @@
 import { Dropdown } from '@douyinfe/semi-ui'
-import type { MainViewRpcCommands } from '../../../../src/shared/webview'
-import { VscodeBadge } from '../../shared/SemiVscode'
-import { createVsCodeClient } from '../../shared/vscode'
+import type { MainViewRpcCommands } from '@extension/shared/webview'
+import { VscodeBadge } from '@/shared/SemiVscode'
+import { createVsCodeClient } from '@/shared/vscode'
 import styles from './TopicRow.module.scss'
 
 /** 主面板 VS Code 通信客户端 */

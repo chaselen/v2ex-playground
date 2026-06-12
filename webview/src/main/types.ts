@@ -1,4 +1,4 @@
-import type { MainTabKey, WebviewNode, WebviewTopic } from '../../../src/shared/webview'
+import type { MainTabKey, WebviewNode, WebviewTopic } from '@extension/shared/webview'
 
 export type { MainTabKey }
 

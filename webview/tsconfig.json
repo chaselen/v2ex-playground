@@ -10,6 +10,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@extension/*": ["../src/*"]
+    },
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "vscode-webview"]
   },

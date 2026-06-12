@@ -1,11 +1,11 @@
 import type { WebviewApi } from 'vscode-webview'
-import { WEBVIEW_RESPONSE_COMMAND } from '../../../src/shared/webview'
+import { WEBVIEW_RESPONSE_COMMAND } from '@extension/shared/webview'
 import type {
   WebviewEventHandler,
   WebviewEventKey,
   WebviewResponseMessage,
   WebviewRpcClient
-} from '../../../src/shared/webview'
+} from '@extension/shared/webview'
 
 /** Webview 持久化状态 */
 export type VsCodeState = Record<string, unknown>

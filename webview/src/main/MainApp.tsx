@@ -4,7 +4,7 @@ import { IconClose, IconRefresh } from '@douyinfe/semi-icons'
 import MyAccountPanel, { type MyAccountPanelHandle } from './components/MyAccountPanel'
 import NodeTree from './components/NodeTree'
 import NodeTopicPanel from './components/NodeTopicPanel'
-import { createVsCodeClient } from '../shared/vscode'
+import { createVsCodeClient } from '@/shared/vscode'
 import {
   EXPLORE_NODES,
   type InitData,
@@ -17,7 +17,7 @@ import {
   type WebviewAccountOverview,
   type WebviewNode,
   type WebviewTopic
-} from '../../../src/shared/webview'
+} from '@extension/shared/webview'
 import type { MainTabKey, MainTabs, NodeItem, NodeTopicTab } from './types'
 
 /** 主面板 VS Code 通信客户端 */

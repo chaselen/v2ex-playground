@@ -1,7 +1,7 @@
 import { Empty, Spin } from '@douyinfe/semi-ui'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
-import type { NodeTopicTab } from '../types'
+import type { NodeTopicTab } from '@/main/types'
 import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
 import styles from './NodeTopicPanel.module.scss'

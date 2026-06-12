@@ -1,4 +1,4 @@
-import type { WebviewNavigationRpcCommands } from '../../../src/shared/webview'
+import type { WebviewNavigationRpcCommands } from '@extension/shared/webview'
 import { createVsCodeClient } from './vscode'
 
 /** 站内链接导航使用的 VS Code 通信客户端 */

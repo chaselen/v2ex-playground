@@ -16,7 +16,7 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
-import { createVsCodeClient } from '../shared/vscode'
+import { createVsCodeClient } from '@/shared/vscode'
 import type {
   SearchPanelRpcCommands,
   SearchPanelWebviewEvents,
@@ -26,7 +26,7 @@ import type {
   SoV2exSearchParams,
   SoV2exSearchResult,
   SoV2exSort
-} from '../../../src/shared/webview'
+} from '@extension/shared/webview'
 
 /** 搜索面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<SearchPanelRpcCommands, SearchPanelWebviewEvents>()

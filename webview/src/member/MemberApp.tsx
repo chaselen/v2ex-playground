@@ -4,10 +4,10 @@ import { IconRefresh, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
-import { enhanceHtmlContentAfterRender, normalizeHtml } from '../shared/contentEnhancement'
-import { handleWebviewLinkClick } from '../shared/linkNavigation'
-import { VscodeBadge, VscodeTag } from '../shared/SemiVscode'
-import { createVsCodeClient } from '../shared/vscode'
+import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
+import { handleWebviewLinkClick } from '@/shared/linkNavigation'
+import { VscodeBadge, VscodeTag } from '@/shared/SemiVscode'
+import { createVsCodeClient } from '@/shared/vscode'
 import type {
   MemberContentTabKey,
   MemberPanelRpcCommands,
@@ -15,7 +15,7 @@ import type {
   MemberPanelWebviewEvents,
   MemberProfile,
   MemberReply
-} from '../../../src/shared/webview'
+} from '@extension/shared/webview'
 
 /** 用户面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<MemberPanelRpcCommands, MemberPanelWebviewEvents>()

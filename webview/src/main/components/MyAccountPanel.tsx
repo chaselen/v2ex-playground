@@ -2,11 +2,11 @@ import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type
 import { Avatar, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
-import { normalizeHtml } from '../../shared/contentEnhancement'
-import { VscodeBadge } from '../../shared/SemiVscode'
+import { normalizeHtml } from '@/shared/contentEnhancement'
+import { VscodeBadge } from '@/shared/SemiVscode'
 import SimpleBar from 'simplebar-react'
-import { handleWebviewLinkClick } from '../../shared/linkNavigation'
-import { createVsCodeClient, resolveWebviewUrl } from '../../shared/vscode'
+import { handleWebviewLinkClick } from '@/shared/linkNavigation'
+import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
 import LoginPrompt from './LoginPrompt'
 import MainPagination from './MainPagination'
 import TopicRow from './TopicRow'
@@ -20,7 +20,7 @@ import type {
   WebviewDailySignInData,
   WebviewNotification,
   WebviewTopic
-} from '../../../../src/shared/webview'
+} from '@extension/shared/webview'
 import styles from './MyAccountPanel.module.scss'
 
 /** 主面板 VS Code 通信客户端 */

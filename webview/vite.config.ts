@@ -20,6 +20,12 @@ export default defineConfig({
   root: __dirname,
   base: './',
   plugins: [semiTheming({ cssLayer: true }), react()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      '@extension': resolve(__dirname, '../src')
+    }
+  },
   build: {
     outDir: '../html',
     emptyOutDir: true,
