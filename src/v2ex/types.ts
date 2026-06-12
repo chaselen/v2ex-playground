@@ -342,25 +342,79 @@ export interface MemberProfile {
   content: MemberContent
 }
 
-/**
- * sov2ex搜索结果的source字段
- */
+/** SoV2EX 搜索结果主题信息 */
 export interface SoV2exSource {
-  /**帖子id */
+  /** 节点 id */
+  node: number
+  /** 帖子 id */
   id: number
-  /**发帖人 */
+  /** 发帖人 */
   member: string
-  /**帖子标题 */
+  /** 帖子标题 */
   title: string
-  /**帖子内容 */
+  /** 帖子内容 */
   content: string
-  /**回复数量 */
+  /** 回复数量 */
   replies: number
-  /**发帖时间 */
+  /** 发帖时间 */
   created: string
 }
 
-/**
- * sov2ex的排序字段
- */
+/** SoV2EX 排序字段 */
 export type SoV2exSort = 'sumup' | 'created'
+
+/** SoV2EX 排序顺序，0 为降序，1 为升序 */
+export type SoV2exOrder = 0 | 1
+
+/** SoV2EX 关键词关系 */
+export type SoV2exOperator = 'or' | 'and'
+
+/** SoV2EX 搜索参数 */
+export interface SoV2exSearchParams {
+  /** 查询关键词 */
+  q: string
+  /** 与第一个结果的偏移量 */
+  from?: number
+  /** 结果数量，最大 50 */
+  size?: number
+  /** 结果排序方式 */
+  sort?: SoV2exSort
+  /** 升降序，仅非权重排序时有效 */
+  order?: SoV2exOrder
+  /** 最早发帖时间 */
+  gte?: number
+  /** 最晚发帖时间 */
+  lte?: number
+  /** 指定或排除节点名称 */
+  node?: string
+  /** 关键词关系 */
+  operator?: SoV2exOperator
+  /** 主题作者 */
+  username?: string
+}
+
+/** SoV2EX 搜索命中高亮 */
+export interface SoV2exHighlight {
+  title?: string[]
+  content?: string[]
+  'postscript_list.content'?: string[]
+  'reply_list.content'?: string[]
+}
+
+/** SoV2EX 搜索命中项 */
+export interface SoV2exHit {
+  source: SoV2exSource
+  highlight?: SoV2exHighlight
+}
+
+/** SoV2EX 搜索结果 */
+export interface SoV2exSearchResult {
+  /** 搜索耗时，单位毫秒 */
+  took: number
+  /** 搜索是否超时 */
+  timedOut: boolean
+  /** 命中主题总数 */
+  total: number
+  /** 当前页命中项 */
+  hits: SoV2exHit[]
+}

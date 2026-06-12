@@ -2,6 +2,7 @@ import Config from '@/config'
 import { MemberPanelController } from '@/controllers/MemberPanelController'
 import { TopicPanelController } from '@/controllers/TopicPanelController'
 import { BalancePanelController } from '@/controllers/BalancePanelController'
+import { SearchPanelController } from '@/controllers/SearchPanelController'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import G from '@/global'
 
@@ -21,6 +22,9 @@ const topicPanels: Record<string, TopicPanelController> = {}
 
 /** 账户余额页面控制器 */
 let balancePanel: BalancePanelController | undefined
+
+/** 搜索页面控制器 */
+let searchPanel: SearchPanelController | undefined
 
 /** 打开主面板节点标签回调 */
 let openNodeTab: (node: NodeTabInput) => void = () => undefined
@@ -119,4 +123,17 @@ export function openBalance() {
     balancePanel = undefined
   })
   balancePanel.load()
+}
+
+/** 打开搜索页面 */
+export function openSearch() {
+  if (searchPanel) {
+    searchPanel.reveal()
+    return
+  }
+
+  searchPanel = new SearchPanelController(panelDeps)
+  searchPanel.onDidDispose(() => {
+    searchPanel = undefined
+  })
 }

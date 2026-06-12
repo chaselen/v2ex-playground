@@ -7,6 +7,7 @@ import type {
   MemberContent,
   MemberInfo,
   Node,
+  SoV2exSearchResult,
   SoV2exSource,
   Topic,
   TopicDetail,
@@ -187,6 +188,7 @@ function expectMemberContent(content: MemberContent) {
  * @param source 搜索结果
  */
 function expectSearchSource(source: SoV2exSource) {
+  expect(source.node).toEqual(expect.any(Number))
   expect(source.id).toEqual(expect.any(Number))
   expect(source.id).toBeGreaterThan(0)
   expect(source.member).toEqual(expect.any(String))
@@ -195,6 +197,18 @@ function expectSearchSource(source: SoV2exSource) {
   expect(source.content).toEqual(expect.any(String))
   expect(source.replies).toEqual(expect.any(Number))
   expect(source.created).toEqual(expect.any(String))
+}
+
+/**
+ * 校验 SoV2EX 搜索结果
+ * @param result 搜索结果
+ */
+function expectSearchResult(result: SoV2exSearchResult) {
+  expect(result.took).toEqual(expect.any(Number))
+  expect(result.timedOut).toEqual(expect.any(Boolean))
+  expect(result.total).toEqual(expect.any(Number))
+  expect(result.total).toBeGreaterThanOrEqual(0)
+  expect(Array.isArray(result.hits)).toBe(true)
 }
 
 describe.concurrent('V2exClient topic links', () => {
@@ -389,11 +403,18 @@ describe.concurrent('V2exClient nodes', () => {
 
 describe.concurrent('V2exClient search', () => {
   test('searches SoV2EX', async () => {
-    const results = await client.search('vscode')
+    const result = await client.search({
+      q: 'vscode',
+      from: 0,
+      size: 20,
+      sort: 'created',
+      order: 0,
+      operator: 'and'
+    })
 
-    expect(Array.isArray(results)).toBe(true)
-    if (results.length) {
-      expectSearchSource(results[0])
+    expectSearchResult(result)
+    if (result.hits.length) {
+      expectSearchSource(result.hits[0].source)
     }
   })
 })

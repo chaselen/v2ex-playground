@@ -3,10 +3,9 @@ import MainViewProvider from '@/providers/MainViewProvider'
 import login, { LoginResult } from '@/commands/login'
 import G from '@/global'
 import { V2exClient } from '@/v2ex'
-import search from '@/commands/search'
 import setting from '@/commands/setting'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
-import { setOpenNodeTabHandler } from '@/features/panelNavigation'
+import { openSearch, setOpenNodeTabHandler } from '@/features/panelNavigation'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
@@ -56,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
   )
 
   // 搜索
-  context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => search()))
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => openSearch()))
 
   // 设置
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.settings', () => setting()))

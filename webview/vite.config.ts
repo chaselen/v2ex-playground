@@ -37,6 +37,7 @@ export default defineConfig({
         topic: resolve(__dirname, 'topic.html'),
         member: resolve(__dirname, 'member.html'),
         balance: resolve(__dirname, 'balance.html'),
+        search: resolve(__dirname, 'search.html'),
         theme: resolve(__dirname, 'theme.html')
       }
     }

@@ -15,8 +15,8 @@ import {
   ThankResponse,
   TopicDetail,
   TopicReply,
-  SoV2exSort,
-  SoV2exSource,
+  SoV2exSearchParams,
+  SoV2exSearchResult,
   AccountOverview,
   BalanceDetail,
   BalanceTransaction,
@@ -1450,26 +1450,25 @@ export class V2exClient {
 
   /**
    * V2EX搜搜
-   * @param q 查询关键词
-   * @param sort 结果排序方式
-   * @param from 与第一个结果的偏移量（默认 0），比如 0, 10, 20
-   * @param size 结果数量（默认 10）
+   * @param params 搜索参数
    */
-  async search(
-    q: string,
-    sort: SoV2exSort = 'sumup',
-    from = 0,
-    size = 10
-  ): Promise<SoV2exSource[]> {
+  async search(params: SoV2exSearchParams): Promise<SoV2exSearchResult> {
     const { data: res } = await this.http.get('https://www.sov2ex.com/api/search', {
-      params: {
-        q,
-        sort,
-        from,
-        size
-      }
+      params
     })
-    const hits: any[] = res.hits || []
-    return hits.map(h => h._source)
+    const hits: Array<{
+      _source: SoV2exSearchResult['hits'][number]['source']
+      highlight?: object
+    }> = res.hits || []
+
+    return {
+      took: Number(res.took) || 0,
+      timedOut: Boolean(res.timed_out),
+      total: Number(res.total) || 0,
+      hits: hits.map(hit => ({
+        source: hit._source,
+        highlight: hit.highlight
+      }))
+    }
   }
 }
