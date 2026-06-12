@@ -8,9 +8,9 @@ import { VscodeBadge } from '@/shared/SemiVscode'
 import SimpleBar from 'simplebar-react'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
-import LoginPrompt from './LoginPrompt'
-import MainPagination from './MainPagination'
-import TopicRow from './TopicRow'
+import LoginPrompt from '../components/LoginPrompt'
+import MainPagination from '../components/MainPagination'
+import TopicRow from '../components/TopicRow'
 import type {
   MyContentTabKey,
   MainViewRpcCommands,
@@ -22,14 +22,14 @@ import type {
   WebviewNotification,
   WebviewTopic
 } from '@extension/shared/webview'
-import styles from './MyAccountPanel.module.scss'
+import styles from './MyTab.module.scss'
 
 /** 主面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<MainViewRpcCommands, MainViewWebviewEvents>()
 
-interface MyAccountPanelProps {
+interface MyTabProps {
   /** 面板实例引用 */
-  ref?: Ref<MyAccountPanelHandle>
+  ref?: Ref<MyTabHandle>
   /** 是否加载中 */
   loading?: boolean
   /** 是否已登录 */
@@ -43,7 +43,7 @@ interface MyAccountPanelProps {
 /**
  * 我的账户面板实例
  */
-export interface MyAccountPanelHandle {
+export interface MyTabHandle {
   /** 刷新已加载的内容标签 */
   refreshLoadedTabs: () => Promise<void>
 }
@@ -147,7 +147,7 @@ function openMember(username: string) {
  * 账户概览面板
  * @param props 组件参数
  */
-export default function MyAccountPanel(props: MyAccountPanelProps) {
+export default function MyTab(props: MyTabProps) {
   const { ref, loading, loggedIn, overview, onOpenNodeCollection } = props
   const [activeContentTab, setActiveContentTab] = useState<MyContentTabKey>('topicCollection')
   const [topicLists, setTopicLists] = useState<MyTopicListsState>({

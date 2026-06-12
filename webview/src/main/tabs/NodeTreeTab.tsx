@@ -7,25 +7,35 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import SimpleBar from 'simplebar-react'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
 import { createVsCodeClient } from '@/shared/vscode'
-import LoginPrompt from './LoginPrompt'
-import MainPagination from './MainPagination'
-import TopicRow from './TopicRow'
+import LoginPrompt from '../components/LoginPrompt'
+import MainPagination from '../components/MainPagination'
+import TopicRow from '../components/TopicRow'
 import type { MainTabKey, NodeItem, TreeItem } from '@/main/types'
-import styles from './NodeTree.module.scss'
+import styles from './NodeTreeTab.module.scss'
 
 /** 主面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<MainViewRpcCommands>()
 
-interface NodeTreeProps {
+interface NodeTreeTabProps {
+  /** 标签 key */
   tab: MainTabKey
+  /** 节点列表 */
   nodes: NodeItem[]
+  /** 是否已登录 */
   loggedIn: boolean
+  /** 是否加载中 */
   loading?: boolean
+  /** 添加自定义节点 */
   onAddNode?: () => void
+  /** 展开节点 */
   onExpandNode: (tab: MainTabKey, itemKey: string) => void
+  /** 刷新节点 */
   onRefreshNode: (tab: MainTabKey, itemKey: string) => void
+  /** 切换节点页码 */
   onPageChange: (tab: MainTabKey, itemKey: string, page: number) => void
+  /** 删除自定义节点 */
   onRemoveNode: (nodeName: string) => void
+  /** 取消收藏节点 */
   onCancelCollectNode?: (nodeName: string) => Promise<void>
 }
 
@@ -170,10 +180,10 @@ function getNodeKeyFromTopicKey(topicKey: string, tab: MainTabKey): string | und
 }
 
 /**
- * 节点树
+ * 固定节点标签页
  * @param props 组件参数
  */
-export default function NodeTree(props: NodeTreeProps) {
+export default function NodeTreeTab(props: NodeTreeTabProps) {
   const {
     tab,
     nodes,

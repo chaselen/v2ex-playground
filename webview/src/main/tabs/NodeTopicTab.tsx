@@ -1,14 +1,14 @@
 import { Empty, Spin } from '@douyinfe/semi-ui'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
-import type { NodeTopicTab } from '@/main/types'
-import MainPagination from './MainPagination'
-import TopicRow from './TopicRow'
-import styles from './NodeTopicPanel.module.scss'
+import type { NodeTopicTabState } from '@/main/types'
+import MainPagination from '../components/MainPagination'
+import TopicRow from '../components/TopicRow'
+import styles from './NodeTopicTab.module.scss'
 
-interface NodeTopicPanelProps {
+interface NodeTopicTabProps {
   /** 节点主题标签状态 */
-  node: NodeTopicTab
+  node: NodeTopicTabState
   /** 页码变化回调 */
   onPageChange: (page: number) => void
 }
@@ -17,7 +17,7 @@ interface NodeTopicPanelProps {
  * 节点主题列表
  * @param props 组件参数
  */
-export default function NodeTopicPanel(props: NodeTopicPanelProps) {
+export default function NodeTopicTab(props: NodeTopicTabProps) {
   const { node, onPageChange } = props
 
   return (

@@ -17,7 +17,7 @@ export interface NodeItem extends WebviewNode {
 /**
  * 动态节点标签状态
  */
-export interface NodeTopicTab extends WebviewNode {
+export interface NodeTopicTabState extends WebviewNode {
   loading: boolean
   page: number
   totalPage: number
