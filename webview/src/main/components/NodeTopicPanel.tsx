@@ -22,56 +22,50 @@ export default function NodeTopicPanel(props: NodeTopicPanelProps) {
 
   return (
     <SimpleBar className={styles['node-topic-panel']} autoHide={false}>
-      <section className={styles['node-topic-content']}>
-        <div className={styles['node-topic-body']}>
-          {node.loading && !node.topics.length ? (
-            <div className={styles['panel-state']}>
-              <Spin size="middle" />
-            </div>
-          ) : node.error && !node.topics.length ? (
-            <div className={`${styles['panel-state']} ${styles['error-text']}`}>{node.error}</div>
-          ) : !node.topics.length ? (
-            <div className={styles['panel-state']}>
-              <Empty
-                title="暂无话题"
-                image={<IllustrationNoContent className={styles['empty-illustration']} />}
-                darkModeImage={
-                  <IllustrationNoContentDark className={styles['empty-illustration']} />
-                }
-              />
-            </div>
-          ) : (
-            <div className={styles['topic-list']}>
-              {node.error && <div className={styles['error-banner']}>{node.error}</div>}
-              {node.topics.map(topic => (
-                <TopicRow
-                  key={topic.id}
-                  topicId={topic.id}
-                  title={topic.title}
-                  replies={topic.replies}
-                  className={styles['topic-row']}
-                />
-              ))}
-            </div>
-          )}
+      {node.loading && !node.topics.length ? (
+        <div className={styles['panel-state']}>
+          <Spin size="middle" />
         </div>
-
-        {node.totalPage > 1 && (
-          <footer className={styles['pagination']}>
-            <MainPagination
-              currentPage={node.page}
-              totalPage={node.totalPage}
-              totalCount={node.totalCount}
-              disabled={node.loading}
-              onPageChange={page => {
-                if (page !== node.page) {
-                  onPageChange(page)
-                }
-              }}
+      ) : node.error && !node.topics.length ? (
+        <div className={`${styles['panel-state']} ${styles['error-text']}`}>{node.error}</div>
+      ) : !node.topics.length ? (
+        <div className={styles['panel-state']}>
+          <Empty
+            title="暂无话题"
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
+          />
+        </div>
+      ) : (
+        <div className={styles['topic-list']}>
+          {node.error && <div className={styles['error-banner']}>{node.error}</div>}
+          {node.topics.map(topic => (
+            <TopicRow
+              key={topic.id}
+              topicId={topic.id}
+              title={topic.title}
+              replies={topic.replies}
+              className={styles['topic-row']}
             />
-          </footer>
-        )}
-      </section>
+          ))}
+        </div>
+      )}
+
+      {node.totalPage > 1 && (
+        <footer className={styles['pagination']}>
+          <MainPagination
+            currentPage={node.page}
+            totalPage={node.totalPage}
+            totalCount={node.totalCount}
+            disabled={node.loading}
+            onPageChange={page => {
+              if (page !== node.page) {
+                onPageChange(page)
+              }
+            }}
+          />
+        </footer>
+      )}
     </SimpleBar>
   )
 }
