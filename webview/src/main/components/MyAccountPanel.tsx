@@ -3,6 +3,7 @@ import { Avatar, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { normalizeHtml } from '@/shared/contentEnhancement'
+import CurrencyBalance from '@/shared/CurrencyBalance'
 import { VscodeBadge } from '@/shared/SemiVscode'
 import SimpleBar from 'simplebar-react'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
@@ -712,12 +713,12 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
               aria-label="账户余额"
               onClick={() => vscode.openBalance()}
             >
-              <span>{overview.gold}</span>
-              <i className={`${styles['my-coin']} ${styles['my-coin--gold']}`} />
-              <span>{overview.silver}</span>
-              <i className={`${styles['my-coin']} ${styles['my-coin--silver']}`} />
-              <span>{overview.bronze}</span>
-              <i className={`${styles['my-coin']} ${styles['my-coin--bronze']}`} />
+              <CurrencyBalance
+                gold={overview.gold}
+                silver={overview.silver}
+                bronze={overview.bronze}
+                coinClassName={styles['my-coin']}
+              />
             </button>
             <button
               type="button"

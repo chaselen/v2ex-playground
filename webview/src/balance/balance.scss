@@ -50,21 +50,6 @@ $panel-border: var(--v2ex-border);
 .balance-coin {
   width: 16px;
   height: 16px;
-  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px color-mix(in srgb, #fff 30%, transparent);
-}
-
-.balance-coin--gold {
-  background: #f6c344;
-}
-
-.balance-coin--silver {
-  background: #b8c0cc;
-}
-
-.balance-coin--bronze {
-  background: #c7864f;
 }
 
 .balance-actions {

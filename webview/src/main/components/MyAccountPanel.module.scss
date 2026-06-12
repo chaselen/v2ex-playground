@@ -212,22 +212,6 @@
   flex: none;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.35),
-    inset 0 0 0 4px rgba(0, 0, 0, 0.08);
-}
-
-.my-coin--gold {
-  background: linear-gradient(135deg, #f5dd65, #b68f18);
-}
-
-.my-coin--silver {
-  background: linear-gradient(135deg, #e4e7eb, #8d949d);
-}
-
-.my-coin--bronze {
-  background: linear-gradient(135deg, #f4a171, #b95f39);
 }
 
 .my-help {

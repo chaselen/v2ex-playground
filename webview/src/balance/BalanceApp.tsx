@@ -5,6 +5,7 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/shared/contentEnhancement'
+import CurrencyBalance from '@/shared/CurrencyBalance'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
 import type {
@@ -172,12 +173,12 @@ export default function BalanceApp() {
             <div>
               <div className="balance-eyebrow">当前账户余额</div>
               <h1 className="balance-wallet" aria-label="当前账户余额">
-                <span>{detail.gold}</span>
-                <i className="balance-coin balance-coin--gold" />
-                <span>{detail.silver}</span>
-                <i className="balance-coin balance-coin--silver" />
-                <span>{detail.bronze}</span>
-                <i className="balance-coin balance-coin--bronze" />
+                <CurrencyBalance
+                  gold={detail.gold}
+                  silver={detail.silver}
+                  bronze={detail.bronze}
+                  coinClassName="balance-coin"
+                />
               </h1>
             </div>
             <div className="balance-actions">
