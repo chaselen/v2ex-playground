@@ -13,7 +13,7 @@ import {
 } from '@douyinfe/semi-ui'
 import { IconArrowDown, IconArrowUp, IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
-import { enhanceTopicContentAfterRender, normalizeHtml } from '../shared/topicContent'
+import { enhanceHtmlContentAfterRender, normalizeHtml } from '../shared/contentEnhancement'
 import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
 import type {
   TopicPanelRpcCommands,
@@ -193,7 +193,7 @@ export default function TopicApp() {
       })
     })
 
-    enhanceTopicContentAfterRender(showImages)
+    enhanceHtmlContentAfterRender(showImages)
 
     return dispose
   }, [])
@@ -202,7 +202,7 @@ export default function TopicApp() {
     if (!topic) {
       return
     }
-    enhanceTopicContentAfterRender(showImages)
+    enhanceHtmlContentAfterRender(showImages)
   }, [topic, showImages])
 
   return (

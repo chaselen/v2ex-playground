@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Banner, Button, Empty, Pagination, Spin, Table } from '@douyinfe/semi-ui'
 import { IconHelpCircle, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
-import { normalizeMemberContentLinks } from '../shared/topicContent'
+import { normalizeHtml } from '../shared/contentEnhancement'
+import { handleWebviewLinkClick } from '../shared/linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
 import type {
   BalanceDetail,
@@ -66,8 +67,8 @@ export default function BalanceApp() {
         render: (html: string) => (
           <div
             className="topic-content balance-description"
-            onClick={handleDescriptionClick}
-            dangerouslySetInnerHTML={{ __html: normalizeMemberContentLinks(html) }}
+            onClick={handleWebviewLinkClick}
+            dangerouslySetInnerHTML={{ __html: normalizeHtml(html) }}
           />
         )
       }
@@ -80,48 +81,6 @@ export default function BalanceApp() {
    */
   function refresh() {
     vscode.refresh()
-  }
-
-  /**
-   * 处理流水描述链接点击
-   * @param event 鼠标事件
-   */
-  function handleDescriptionClick(event: MouseEvent<HTMLDivElement>) {
-    const target = event.target instanceof Element ? event.target : null
-    const anchor = target?.closest('a')
-    if (!anchor) {
-      return
-    }
-
-    event.preventDefault()
-
-    const href = anchor.getAttribute('href') || ''
-    const topicId = anchor.getAttribute('data-topic-id') || href.match(/\/t\/(\d+)/)?.[1]
-    if (topicId) {
-      vscode.openTopic({ topicId })
-      return
-    }
-
-    const username =
-      anchor.getAttribute('data-member-username') || href.match(/\/member\/([A-Za-z0-9_-]+)/)?.[1]
-    if (username) {
-      vscode.openMember({ username: decodeURIComponent(username) })
-      return
-    }
-
-    const nodeName =
-      anchor.getAttribute('data-node-name') || href.match(/\/go\/([A-Za-z0-9_-]+)/)?.[1]
-    if (nodeName) {
-      vscode.openNode({
-        name: decodeURIComponent(nodeName),
-        title: anchor.textContent?.trim() || decodeURIComponent(nodeName)
-      })
-      return
-    }
-
-    if (href && href !== 'javascript:;') {
-      vscode.openExternal({ path: resolveWebviewUrl(href) })
-    }
   }
 
   /**

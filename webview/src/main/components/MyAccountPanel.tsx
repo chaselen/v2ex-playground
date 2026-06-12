@@ -2,8 +2,10 @@ import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type
 import { Avatar, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
 import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { normalizeHtml } from '../../shared/contentEnhancement'
 import { VscodeBadge } from '../../shared/SemiVscode'
 import SimpleBar from 'simplebar-react'
+import { handleWebviewLinkClick } from '../../shared/linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from '../../shared/vscode'
 import LoginPrompt from './LoginPrompt'
 import MainPagination from './MainPagination'
@@ -19,7 +21,6 @@ import type {
   WebviewNotification,
   WebviewTopic
 } from '../../../../src/shared/webview'
-import { normalizeMemberContentLinks } from '../../shared/topicContent'
 import styles from './MyAccountPanel.module.scss'
 
 /** 主面板 VS Code 通信客户端 */
@@ -413,57 +414,15 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
     event: MouseEvent<HTMLDivElement>,
     notification: WebviewNotification
   ) {
-    const target = event.target instanceof Element ? event.target : null
-    const anchor = target?.closest('a')
-
-    if (!anchor) {
-      return
-    }
-
-    event.preventDefault()
-    const href = anchor.getAttribute('href') || ''
-    const topicId = anchor.getAttribute('data-topic-id')
-    const username = anchor.getAttribute('data-member-username')
-    const nodeName = anchor.getAttribute('data-node-name')
-
-    if (topicId) {
-      vscode.openTopic({
-        topicId: Number(topicId),
-        title: anchor.textContent || notification.topicTitle || ''
-      })
-      return
-    }
-
-    if (username) {
-      openMember(username)
-      return
-    }
-
-    if (nodeName) {
-      vscode.openNode({
-        name: nodeName,
-        title: anchor.textContent?.trim() || nodeName
-      })
-      return
-    }
-
-    if (anchor.classList.contains('topic-link') && notification.topicId) {
-      vscode.openTopic({
-        topicId: notification.topicId,
-        title: notification.topicTitle || anchor.textContent || ''
-      })
-      return
-    }
-
-    const memberMatch = href.match(/\/member\/([A-Za-z0-9_-]+)/)
-    if (memberMatch) {
-      openMember(decodeURIComponent(memberMatch[1]))
-      return
-    }
-
-    if (href) {
-      openExternal(href)
-    }
+    handleWebviewLinkClick(event, {
+      topicTitle: notification.topicTitle,
+      fallbackTopic: notification.topicId
+        ? {
+            topicId: notification.topicId,
+            title: notification.topicTitle
+          }
+        : undefined
+    })
   }
 
   /**
@@ -496,7 +455,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
           <div className={styles['my-notification-meta']}>
             <span
               dangerouslySetInnerHTML={{
-                __html: normalizeMemberContentLinks(notification.summaryHtml)
+                __html: normalizeHtml(notification.summaryHtml)
               }}
             />
             {!!notification.time && <time>{notification.time}</time>}
@@ -505,7 +464,7 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             <div
               className={styles['my-notification-payload']}
               dangerouslySetInnerHTML={{
-                __html: normalizeMemberContentLinks(notification.payloadHtml)
+                __html: normalizeHtml(notification.payloadHtml)
               }}
             />
           )}

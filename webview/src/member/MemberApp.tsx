@@ -4,13 +4,10 @@ import { IconRefresh, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
-import {
-  enhanceTopicContentAfterRender,
-  normalizeHtml,
-  normalizeMemberContentLinks
-} from '../shared/topicContent'
+import { enhanceHtmlContentAfterRender, normalizeHtml } from '../shared/contentEnhancement'
+import { handleWebviewLinkClick } from '../shared/linkNavigation'
 import { VscodeBadge, VscodeTag } from '../shared/SemiVscode'
-import { createVsCodeClient, resolveWebviewUrl } from '../shared/vscode'
+import { createVsCodeClient } from '../shared/vscode'
 import type {
   MemberContentTabKey,
   MemberPanelRpcCommands,
@@ -181,7 +178,7 @@ export default function MemberApp() {
       }
     })
 
-    enhanceTopicContentAfterRender(true)
+    enhanceHtmlContentAfterRender(true)
 
     return dispose
   }, [])
@@ -190,7 +187,7 @@ export default function MemberApp() {
     if (!profile) {
       return
     }
-    enhanceTopicContentAfterRender(true)
+    enhanceHtmlContentAfterRender(true)
     scrollRef.current?.recalculate()
   }, [profile])
 
@@ -319,7 +316,7 @@ function renderContent(
   }
 
   if (content.tab === 'replies') {
-    return renderReplies(profile, loading, loadPage, openTopic, openMember)
+    return renderReplies(profile, loading, loadPage)
   }
 
   return renderTopics(profile, loading, loadPage, openTopic, openMember)
@@ -370,16 +367,8 @@ function renderTopics(
  * @param profile 用户资料
  * @param loading 是否加载中
  * @param loadPage 加载页码
- * @param openTopic 打开话题
- * @param openMember 打开用户
  */
-function renderReplies(
-  profile: MemberProfile,
-  loading: boolean,
-  loadPage: (page: number) => void,
-  openTopic: (topicId: number, title: string) => void,
-  openMember: (username: string) => void
-) {
+function renderReplies(profile: MemberProfile, loading: boolean, loadPage: (page: number) => void) {
   const content = profile.content
 
   if (!content.replies.length) {
@@ -397,9 +386,7 @@ function renderReplies(
   return (
     <>
       <div className="member-reply-list">
-        {content.replies.map((reply, index) =>
-          renderReplyItem(reply, index, openTopic, openMember)
-        )}
+        {content.replies.map((reply, index) => renderReplyItem(reply, index))}
       </div>
       {renderMemberPagination(content, loading, loadPage)}
     </>
@@ -494,31 +481,24 @@ function renderTopicItem(
  * 渲染回复项
  * @param reply 回复
  * @param index 序号
- * @param openTopic 打开话题
- * @param openMember 打开用户
  */
-function renderReplyItem(
-  reply: MemberReply,
-  index: number,
-  openTopic: (topicId: number, title: string) => void,
-  openMember: (username: string) => void
-) {
-  const summaryHtml = normalizeMemberContentLinks(reply.summaryHtml)
+function renderReplyItem(reply: MemberReply, index: number) {
+  const summaryHtml = normalizeHtml(reply.summaryHtml)
 
   return (
     <article className="member-reply-item" key={`${reply.topicPath}-${index}`}>
       <header className="member-reply-meta">
         <div
           className="member-reply-summary"
-          onClick={event => handleContentClick(event, reply, openTopic, openMember)}
+          onClick={event => handleContentClick(event, reply)}
           dangerouslySetInnerHTML={{ __html: summaryHtml }}
         />
         {!!reply.time && <time>{reply.time}</time>}
       </header>
       <div
         className="topic-content member-reply-content"
-        onClick={event => handleContentClick(event, reply, openTopic, openMember)}
-        dangerouslySetInnerHTML={{ __html: normalizeMemberContentLinks(reply.contentHtml) }}
+        onClick={event => handleContentClick(event, reply)}
+        dangerouslySetInnerHTML={{ __html: normalizeHtml(reply.contentHtml) }}
       />
     </article>
   )
@@ -528,57 +508,7 @@ function renderReplyItem(
  * 处理内容链接点击
  * @param event 鼠标事件
  * @param reply 回复
- * @param openTopic 打开话题
- * @param openMember 打开用户
  */
-function handleContentClick(
-  event: MouseEvent<HTMLElement>,
-  reply: MemberReply,
-  openTopic: (topicId: number, title: string) => void,
-  openMember: (username: string) => void
-) {
-  const target = event.target instanceof Element ? event.target : null
-  const anchor = target?.closest('a')
-
-  if (!anchor) {
-    return
-  }
-
-  const topicId = anchor.getAttribute('data-topic-id')
-  const username = anchor.getAttribute('data-member-username')
-  const nodeName = anchor.getAttribute('data-node-name')
-
-  if (topicId) {
-    event.preventDefault()
-    openTopic(Number(topicId), anchor.textContent || reply.topicTitle)
-    return
-  }
-
-  if (username) {
-    event.preventDefault()
-    openMember(username)
-    return
-  }
-
-  if (nodeName) {
-    event.preventDefault()
-    vscode.openNode({ name: nodeName, title: anchor.textContent?.trim() || nodeName })
-    return
-  }
-
-  const href = anchor.getAttribute('href') || ''
-  const hrefNodeName = href.match(/\/go\/([A-Za-z0-9_-]+)/)?.[1]
-  if (hrefNodeName) {
-    event.preventDefault()
-    vscode.openNode({
-      name: decodeURIComponent(hrefNodeName),
-      title: anchor.textContent?.trim() || decodeURIComponent(hrefNodeName)
-    })
-    return
-  }
-
-  if (href && href !== 'javascript:;') {
-    event.preventDefault()
-    vscode.openExternal({ path: resolveWebviewUrl(href) })
-  }
+function handleContentClick(event: MouseEvent<HTMLElement>, reply: MemberReply) {
+  handleWebviewLinkClick(event, { topicTitle: reply.topicTitle })
 }

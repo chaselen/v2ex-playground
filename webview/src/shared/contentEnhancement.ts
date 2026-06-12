@@ -1,4 +1,5 @@
 import type { WebviewContentRpcCommands } from '../../../src/shared/webview'
+import { handleWebviewLinkClick } from './linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
@@ -16,33 +17,6 @@ let hiddenImagePlaceholderCount = 0
  */
 export function normalizeHtml(html?: string | null): string {
   return html || ''
-}
-
-/**
- * 判断链接是否是可在扩展内打开的帖子地址
- * @param anchor 链接元素
- */
-function extractTopicId(anchor: HTMLAnchorElement): string {
-  const match = /\/t\/(\d+)/.exec(anchor.href)
-  return match ? match[1] : ''
-}
-
-/**
- * 从链接中提取用户名
- * @param anchor 链接元素
- */
-function extractMemberUsername(anchor: HTMLAnchorElement): string {
-  const match = /\/member\/([A-Za-z0-9_-]+)/.exec(anchor.href)
-  return match ? decodeURIComponent(match[1]) : ''
-}
-
-/**
- * 从链接中提取节点 name
- * @param anchor 链接元素
- */
-function extractNodeName(anchor: HTMLAnchorElement): string {
-  const match = /\/go\/([A-Za-z0-9_-]+)/.exec(anchor.href)
-  return match ? decodeURIComponent(match[1]) : ''
 }
 
 /**
@@ -205,85 +179,22 @@ function bindImageLinkPreview(anchor: HTMLAnchorElement) {
   anchor.title = '点击查看大图，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
   anchor.addEventListener('click', event => {
     event.preventDefault()
+    event.stopPropagation()
     openImage(imageSrc, event)
   })
 }
 
 /**
- * 给站内帖子链接绑定扩展内跳转行为
+ * 给站内链接绑定扩展内跳转行为
  * @param anchor 链接元素
  */
-function bindTopicLink(anchor: HTMLAnchorElement) {
-  const topicId = extractTopicId(anchor)
-  if (!topicId) {
+function bindNavigationLink(anchor: HTMLAnchorElement) {
+  if (anchor.dataset.navigationBound === 'true') {
     return
   }
-  anchor.dataset.topicId = topicId
-  anchor.href = 'javascript:;'
-  anchor.onclick = () => {
-    vscode.openTopic({
-      topicId
-    })
-    return false
-  }
-}
 
-/**
- * 给站内用户链接绑定扩展内跳转行为
- * @param anchor 链接元素
- */
-function bindMemberLink(anchor: HTMLAnchorElement) {
-  const username = extractMemberUsername(anchor)
-  if (!username) {
-    return
-  }
-  anchor.dataset.memberUsername = username
-  anchor.href = 'javascript:;'
-  anchor.onclick = () => {
-    vscode.openMember({
-      username
-    })
-    return false
-  }
-}
-
-/**
- * 给站内节点链接绑定主面板跳转行为
- * @param anchor 链接元素
- */
-function bindNodeLink(anchor: HTMLAnchorElement) {
-  const name = extractNodeName(anchor)
-  if (!name) {
-    return
-  }
-  anchor.dataset.nodeName = name
-  anchor.href = 'javascript:;'
-  anchor.onclick = () => {
-    vscode.openNode({
-      name,
-      title: anchor.textContent?.trim() || name
-    })
-    return false
-  }
-}
-
-/**
- * 给用户内容 HTML 中的站内链接增加数据标记
- * @param html 原始 HTML
- */
-export function normalizeMemberContentLinks(html?: string | null): string {
-  return normalizeHtml(html)
-    .replace(/href="\/t\/(\d+)([^"]*)"/g, 'href="javascript:;" data-topic-id="$1"')
-    .replace(
-      /href="\/member\/([A-Za-z0-9_-]+)"/g,
-      (_, username: string) =>
-        `href="javascript:;" data-member-username="${decodeURIComponent(username)}"`
-    )
-    .replace(
-      /href="\/go\/([A-Za-z0-9_-]+)"/g,
-      (_, nodeName: string) =>
-        `href="javascript:;" data-node-name="${decodeURIComponent(nodeName)}"`
-    )
+  anchor.dataset.navigationBound = 'true'
+  anchor.addEventListener('click', event => handleWebviewLinkClick(event))
 }
 
 /**
@@ -291,7 +202,7 @@ export function normalizeMemberContentLinks(html?: string | null): string {
  * @param root 根节点
  * @param showImages 是否显示图片
  */
-export function enhanceTopicContent(root: ParentNode, showImages: boolean) {
+export function enhanceHtmlContent(root: ParentNode, showImages: boolean) {
   const topicImages = root.querySelectorAll<HTMLImageElement>('.topic-content img')
   const topicLinks = root.querySelectorAll<HTMLAnchorElement>('.topic-content a')
 
@@ -307,34 +218,15 @@ export function enhanceTopicContent(root: ParentNode, showImages: boolean) {
     }
   })
 
-  topicLinks.forEach(anchor => {
-    if (!anchor.matches('.topic-content a[href*="/t/"]')) {
-      return
-    }
-    bindTopicLink(anchor)
-  })
-
-  topicLinks.forEach(anchor => {
-    if (!anchor.matches('.topic-content a[href*="/member/"]')) {
-      return
-    }
-    bindMemberLink(anchor)
-  })
-
-  topicLinks.forEach(anchor => {
-    if (!anchor.matches('.topic-content a[href*="/go/"]')) {
-      return
-    }
-    bindNodeLink(anchor)
-  })
+  topicLinks.forEach(bindNavigationLink)
 }
 
 /**
  * 等待 DOM 更新后增强帖子内容
  * @param showImages 是否显示图片
  */
-export function enhanceTopicContentAfterRender(showImages: boolean) {
+export function enhanceHtmlContentAfterRender(showImages: boolean) {
   requestAnimationFrame(() => {
-    enhanceTopicContent(document, showImages)
+    enhanceHtmlContent(document, showImages)
   })
 }
