@@ -253,6 +253,13 @@ export class V2exClient {
       return
     }
 
+    const responseUrl = new URL(this.getResponseUrl(response))
+    // 服务端可能仅为原页面补充分页等查询参数，此类重定向仍视为正常响应。
+    // 例：https://www.v2ex.com/go/in -> https://www.v2ex.com/go/in?p=1
+    if (this.isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) {
+      return
+    }
+
     if (response.request.path.indexOf('/signin') >= 0) {
       this.notifyLoginExpired()
       throw new LoginRequiredError('你要查看的页面需要先登录')
