@@ -750,7 +750,6 @@ export default function MyAccountPanel(props: MyAccountPanelProps) {
             type="button"
             size="small"
             className={styles['my-content-tabs']}
-            tabPaneMotion={false}
             onChange={value => changeContentTab(value as MyContentTabKey)}
           >
             <Tabs.TabPane itemKey="topicCollection" tab="主题收藏">

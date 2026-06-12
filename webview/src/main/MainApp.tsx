@@ -508,6 +508,7 @@ export default function MainApp() {
         type="line"
         size="medium"
         collapsible="auto"
+        lazyRender
         className="main-tabs"
         contentStyle={{ height: '100%', minHeight: 0, overflow: 'hidden' }}
         tabBarExtraContent={
@@ -523,7 +524,6 @@ export default function MainApp() {
             onClick={() => refreshTab(activeTab)}
           />
         }
-        tabPaneMotion={false}
         onChange={value => {
           const tab = value as WebviewMainTabKey
           setActiveTab(tab)

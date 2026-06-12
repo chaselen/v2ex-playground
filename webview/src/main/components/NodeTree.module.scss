@@ -1,8 +1,15 @@
 @use './mixins';
 
+.node-tree-layout {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
 .node-tree-panel {
   flex: 1;
-  height: 100%;
   min-height: 0;
 
   :global(.simplebar-content-wrapper),
@@ -155,8 +162,7 @@
 }
 
 .tree-footer {
-  position: sticky;
-  bottom: 0;
+  flex: none;
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);
   background: var(--v2ex-webview-bg);

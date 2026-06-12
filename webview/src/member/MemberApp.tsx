@@ -252,7 +252,6 @@ export default function MemberApp() {
             <Tabs
               activeKey={activeTab}
               className="member-tabs"
-              tabPaneMotion={false}
               onChange={value =>
                 changeTab(value as MemberContentTabKey).catch(err => console.error(err))
               }

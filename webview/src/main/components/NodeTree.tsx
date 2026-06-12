@@ -470,9 +470,10 @@ export default function NodeTree(props: NodeTreeProps) {
   }
 
   return (
-    <SimpleBar className={styles['node-tree-panel']} autoHide={false}>
-      {renderContent()}
-
+    <div className={styles['node-tree-layout']}>
+      <SimpleBar className={styles['node-tree-panel']} autoHide={false}>
+        {renderContent()}
+      </SimpleBar>
       {!loading && tab === 'custom' && (
         <div className={styles['tree-footer']}>
           <Button
@@ -487,6 +488,6 @@ export default function NodeTree(props: NodeTreeProps) {
           </Button>
         </div>
       )}
-    </SimpleBar>
+    </div>
   )
 }
