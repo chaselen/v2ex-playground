@@ -416,7 +416,7 @@ export default function MainApp() {
     try {
       if (tab === 'node') {
         if (nodeTab) {
-          await requestNodeTopics(nodeTab, nodeTab.page)
+          await requestNodeTopics(nodeTab, 1)
         }
         return
       }
