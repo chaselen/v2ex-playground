@@ -56,6 +56,8 @@
   }
 
   > .semi-tabs-bar {
+    display: flex;
+    align-items: center;
     flex: none;
     margin: 0;
     padding: 0 12px;
@@ -64,6 +66,7 @@
   }
 
   > .semi-tabs-bar .semi-tabs-tab {
+    flex: none;
     margin: 0;
     font-size: var(--v2ex-main-font-size);
     color: var(--v2ex-webview-fg);
@@ -83,9 +86,14 @@
 
   > .semi-tabs-bar-line .semi-tabs-bar-extra {
     display: flex;
+    flex: none;
     align-items: center;
     height: 44px;
-    line-height: normal;
+    margin-left: auto;
+  }
+
+  > .semi-tabs-bar-collapse .semi-tabs-bar-overflow-list {
+    min-width: 0;
   }
 
   > .semi-tabs-bar .semi-tabs-tab-active {
