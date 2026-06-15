@@ -31,6 +31,7 @@
 .node-tree {
   flex: 1;
   color: var(--v2ex-webview-fg);
+  user-select: none;
 
   :global(.semi-tree) {
     background: transparent;
