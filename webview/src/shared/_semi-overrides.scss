@@ -53,6 +53,15 @@
   }
 }
 
+/*
+ * Semi DatePicker 月面板和导航依赖 content-box 预留内边距
+ * cssLayer 下全局 border-box 会覆盖组件样式并导致星期标题换行、导航间距变窄
+ */
+.semi-datepicker-month,
+.semi-datepicker-navigation {
+  box-sizing: content-box;
+}
+
 /* Tooltip 和 Dropdown 使用各自的 VS Code 浮层主题色 */
 .semi-tooltip-wrapper {
   border: 0;
