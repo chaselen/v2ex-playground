@@ -164,6 +164,18 @@ export default function MyTab(props: MyTabProps) {
     specialFollowing: 0
   })
   const notificationRequestSeq = useRef(0)
+  const accountKeyRef = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    const accountKey = loggedIn ? overview?.username : undefined
+
+    if (accountKeyRef.current === accountKey) {
+      return
+    }
+
+    accountKeyRef.current = accountKey
+    resetMyContentState()
+  }, [loggedIn, overview?.username])
 
   useEffect(() => {
     if (!loggedIn) {
@@ -183,7 +195,7 @@ export default function MyTab(props: MyTabProps) {
     }
 
     loadMyTopics(activeContentTab, 1)
-  }, [activeContentTab, loggedIn, notificationList.loaded, notificationList.loading])
+  }, [activeContentTab, loggedIn, notificationList, topicLists])
 
   useEffect(() => {
     let disposed = false
@@ -237,6 +249,23 @@ export default function MyTab(props: MyTabProps) {
   useEffect(() => {
     return vscode.on('dailySignInStatusChanged', data => setDailySignedIn(data.signedIn))
   }, [])
+
+  /**
+   * 重置我的内容缓存
+   */
+  function resetMyContentState() {
+    topicRequestSeq.current.topicCollection += 1
+    topicRequestSeq.current.specialFollowing += 1
+    notificationRequestSeq.current += 1
+    setActiveContentTab('topicCollection')
+    setTopicLists({
+      topicCollection: createMyTopicListState(),
+      specialFollowing: createMyTopicListState()
+    })
+    setNotificationList(createMyNotificationListState())
+    setDailySignedIn(false)
+    setDailySignInLoading(false)
+  }
 
   /**
    * 加载我的主题列表

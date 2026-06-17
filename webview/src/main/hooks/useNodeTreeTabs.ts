@@ -227,7 +227,7 @@ export function useNodeTreeTabs() {
     setTabs(current => ({
       explore: mergeNodeItems(data.explore, current.explore),
       custom: mergeNodeItems(data.custom, current.custom),
-      collection: mergeNodeItems(data.collection, current.collection)
+      collection: data.collection.map(createNodeItem)
     }))
   }, [])
 
