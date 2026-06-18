@@ -720,6 +720,56 @@ export class V2exClient {
   }
 
   /**
+   * 解析金币、银币和铜币余额
+   *
+   * V2EX 账户概览会省略数量为 0 的高位币种，所以不能只按文本数字顺序解析。
+   * 这里按 DOM 顺序读取文本金额，并在遇到币种图片时通过 alt 确认金额归属。
+   *
+   * @param balanceArea 余额区域
+   * @example
+   * 11 <img alt="G"> 25 <img alt="S"> 21 <img alt="B"> -> 11 金 25 银 21 铜
+   * @example
+   * 25 <img alt="S"> 21 <img alt="B"> -> 0 金 25 银 21 铜
+   */
+  private parseCoinBalance(
+    balanceArea: CheerioSelection
+  ): Pick<AccountOverview, 'gold' | 'silver' | 'bronze'> {
+    const balance = {
+      gold: 0,
+      silver: 0,
+      bronze: 0
+    }
+    const coinMap = {
+      G: 'gold',
+      S: 'silver',
+      B: 'bronze'
+    } as const
+    let pendingAmount = 0
+
+    balanceArea.contents().each((_, element) => {
+      if (element.type === 'text') {
+        // 金额总是在对应币种图片前的文本节点中
+        const matchedAmount = element.data.match(/[\d,]+/g)?.pop()
+        pendingAmount = matchedAmount ? Number(matchedAmount.replace(/,/g, '')) || 0 : 0
+        return
+      }
+
+      if (element.type !== 'tag' || element.name !== 'img') {
+        return
+      }
+
+      // 图片 alt 表示币种，缺失的币种保持默认 0
+      const coinType = coinMap[element.attribs?.alt as keyof typeof coinMap]
+      if (coinType) {
+        balance[coinType] = pendingAmount
+      }
+      pendingAmount = 0
+    })
+
+    return balance
+  }
+
+  /**
    * 创建空账户概览
    */
   private createEmptyAccountOverview(): AccountOverview {
@@ -818,10 +868,10 @@ export class V2exClient {
     const unreadText = $('#Rightbar a[href="/notifications"]').first().text().trim()
     overview.unreadNoticeCount = Number(unreadText.match(/(\d+)\s*未读提醒/)?.[1] || 0)
 
-    const balances = ($('#Rightbar .balance_area').first().text().match(/\d+/g) || []).map(Number)
-    overview.gold = balances[0] || 0
-    overview.silver = balances[1] || 0
-    overview.bronze = balances[2] || 0
+    const balance = this.parseCoinBalance($('#Rightbar .balance_area').first())
+    overview.gold = balance.gold
+    overview.silver = balance.silver
+    overview.bronze = balance.bronze
 
     if (!overview.username && !overview.avatar) {
       return undefined
