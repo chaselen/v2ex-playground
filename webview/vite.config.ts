@@ -44,6 +44,7 @@ export default defineConfig({
         member: resolve(__dirname, 'member.html'),
         balance: resolve(__dirname, 'balance.html'),
         search: resolve(__dirname, 'search.html'),
+        twoFactor: resolve(__dirname, 'two-factor.html'),
         theme: resolve(__dirname, 'theme.html')
       }
     }

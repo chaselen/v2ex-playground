@@ -11,6 +11,8 @@ import {
   DailySignInResult,
   LoginExpiredHandler,
   LoginRequiredError,
+  TwoFactorRequiredHandler,
+  TwoFactorRequiredError,
   AccountOverviewChangedHandler,
   ThankResponse,
   TopicDetail,
@@ -93,6 +95,9 @@ export class V2exClient {
   /** 账户概览变化监听器 */
   private readonly accountOverviewChangedHandlers = new Set<AccountOverviewChangedHandler>()
 
+  /** 已重试过两步验证的请求 */
+  private readonly twoFactorRetriedConfigs = new WeakSet<object>()
+
   /** v2ex 请求客户端 */
   private readonly http = axios.create({
     baseURL: this.baseUrl,
@@ -118,10 +123,12 @@ export class V2exClient {
   /**
    * @param initialCookie 初始 V2EX Cookie
    * @param onLoginExpired 登录失效回调
+   * @param onTwoFactorRequired 两步验证回调
    */
   constructor(
     initialCookie?: string,
-    private readonly onLoginExpired?: LoginExpiredHandler
+    private readonly onLoginExpired?: LoginExpiredHandler,
+    private readonly onTwoFactorRequired?: TwoFactorRequiredHandler
   ) {
     this.setCookie(initialCookie || '')
 
@@ -135,8 +142,12 @@ export class V2exClient {
       }
       return config
     })
-    this.http.interceptors.response.use(response => {
+    this.http.interceptors.response.use(async response => {
       this.updateCookieFromResponse(response)
+      const twoFactorResponse = await this.handleTwoFactorResponse(response)
+      if (twoFactorResponse !== response) {
+        return twoFactorResponse
+      }
       this.checkRedirectFromResponse(response)
       this.updateAccountOverviewFromResponse(response)
       return response
@@ -233,6 +244,86 @@ export class V2exClient {
   }
 
   /**
+   * 处理两步验证响应
+   * @param response HTTP 响应
+   */
+  private async handleTwoFactorResponse(response: AxiosResponse): Promise<AxiosResponse> {
+    if (!this.isTwoFactorResponse(response)) {
+      return response
+    }
+
+    const config = response.config
+    if (this.twoFactorRetriedConfigs.has(config)) {
+      throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
+    }
+
+    this.twoFactorRetriedConfigs.add(config)
+    const verified = await this.onTwoFactorRequired?.()
+    if (!verified) {
+      throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
+    }
+
+    this.refreshConfigCookie(config)
+    return this.http.request(config)
+  }
+
+  /**
+   * 刷新请求配置中的 Cookie
+   * @param config 请求配置
+   */
+  private refreshConfigCookie(config: AxiosResponse['config']): void {
+    const reqUrl = new URL(config.url || '', config.baseURL || this.baseUrl)
+    if (!this.isV2exUrl(reqUrl)) {
+      return
+    }
+
+    config.headers = config.headers || {}
+    const cookieHeaderName =
+      Object.keys(config.headers).find(name => name.toLowerCase() === 'cookie') || 'Cookie'
+    config.headers[cookieHeaderName] = this.getCookie(reqUrl.toString())
+  }
+
+  /**
+   * 判断响应是否要求两步验证
+   * @param response HTTP 响应
+   */
+  private isTwoFactorResponse(response: AxiosResponse): boolean {
+    const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
+    if (!this.isV2exUrl(requestUrl)) {
+      return false
+    }
+
+    const location = this.getHeader(response.headers, 'location')
+    if (location && response.status >= 300 && response.status < 400) {
+      const redirectUrl = new URL(location, requestUrl)
+      return this.isV2exUrl(redirectUrl) && redirectUrl.pathname === '/2fa'
+    }
+
+    if ((response.request?._redirectable?._redirectCount || 0) <= 0) {
+      return false
+    }
+
+    const responseUrl = new URL(this.getResponseUrl(response))
+    return this.isV2exUrl(responseUrl) && responseUrl.pathname === '/2fa'
+  }
+
+  /**
+   * 获取响应头文本
+   * @param headers 响应头
+   * @param name 响应头名称
+   */
+  private getHeader(headers: Record<string, unknown>, name: string): string | undefined {
+    const value = headers[name]
+    if (typeof value === 'string') {
+      return value
+    }
+    if (Array.isArray(value) && typeof value[0] === 'string') {
+      return value[0]
+    }
+    return undefined
+  }
+
+  /**
    * 检查指定页面响应是否被自动重定向
    *
    * 部分帖子需要登录查看
@@ -246,14 +337,19 @@ export class V2exClient {
     if (!this.isV2exUrl(requestUrl)) {
       return
     }
-    if (!isRedirectCheckPath(requestUrl.pathname)) {
-      return
-    }
-    if (response.request._redirectable._redirectCount <= 0) {
+    if ((response.request?._redirectable?._redirectCount || 0) <= 0) {
       return
     }
 
     const responseUrl = new URL(this.getResponseUrl(response))
+    if (this.isV2exUrl(responseUrl) && responseUrl.pathname === '/2fa') {
+      throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
+    }
+
+    if (!isRedirectCheckPath(requestUrl.pathname)) {
+      return
+    }
+
     // 服务端可能仅为原页面补充分页等查询参数，此类重定向仍视为正常响应。
     // 例：https://www.v2ex.com/go/in -> https://www.v2ex.com/go/in?p=1
     if (this.isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) {
@@ -1310,12 +1406,13 @@ export class V2exClient {
   /**
    * 尝试使用 Cookie 登录
    * @param cookie 待检查的 Cookie
+   * @throws {TwoFactorRequiredError} 需要两步验证的错误
    */
   async tryLogin(cookie: string): Promise<boolean> {
     if (!cookie) {
       return false
     }
-    const { data: html } = await axios.get<string>(this.baseUrl, {
+    const response = await axios.get<string>(this.baseUrl, {
       headers: {
         ...v2exRequestHeaders,
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -1323,9 +1420,46 @@ export class V2exClient {
       },
       timeout: v2exRequestTimeout
     })
+    const responseUrl = response.request?.res?.responseUrl
+    if (responseUrl) {
+      const url = new URL(responseUrl)
+      if (this.isV2exUrl(url) && url.pathname === '/2fa') {
+        throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
+      }
+    }
+    const html = response.data
     const $ = cheerio.load(html)
     // 如果显示了用户活跃度，表示cookie有效
     return $('#member-activity').length > 0
+  }
+
+  /**
+   * 提交两步验证码
+   * @param code 6 位验证码
+   */
+  async submitTwoFactorCode(code: string): Promise<void> {
+    if (!/^\d{6}$/.test(code)) {
+      throw new Error('请输入 6 位验证码')
+    }
+
+    const once = await this.getOnce()
+    const params = new URLSearchParams({ code, once })
+    const response = await this.http.post<string>('/2fa', params, {
+      maxRedirects: 0,
+      headers: {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      validateStatus: status => status >= 200 && status < 400
+    })
+
+    if (response.status === 302) {
+      return
+    }
+
+    const $ = cheerio.load(response.data)
+    const problem = $('.problem').first().text().replace(/\s+/g, ' ').trim()
+    throw new Error(problem || '两步验证码验证失败，请重新输入验证码')
   }
 
   /** 缓存的节点信息 */

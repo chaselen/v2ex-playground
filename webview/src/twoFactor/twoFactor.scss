@@ -1,0 +1,78 @@
+.two-factor-page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+
+.two-factor-panel {
+  display: flex;
+  width: min(100%, 420px);
+  flex-direction: column;
+  gap: 16px;
+}
+
+.two-factor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h1 {
+    margin: 2px 0 0;
+    color: var(--vscode-foreground);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+}
+
+.two-factor-eyebrow {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.two-factor-intro {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.two-factor-input {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.two-factor-input--error {
+  outline: 1px solid var(--vscode-inputValidation-errorBorder);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.two-factor-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 420px) {
+  .two-factor-page {
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .two-factor-actions {
+    justify-content: stretch;
+
+    .semi-button {
+      flex: 1;
+    }
+  }
+}

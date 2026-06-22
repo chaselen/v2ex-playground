@@ -3,6 +3,9 @@ import { parse as parseCookieHeader, serialize as serializeCookie } from 'cookie
 /** 登录态 Cookie 名称 */
 export const loginCookieName = 'A2'
 
+/** 两步验证 Cookie 名称 */
+export const twoFactorCookieName = 'A2O'
+
 /** 裸 A2 值格式 */
 const rawLoginCookieValuePattern = /^"[^"]+";?$/
 
@@ -17,21 +20,24 @@ export function normalizeLoginCookie(input: string | undefined): string {
     return ''
   }
 
-  const parsedCookieValue = parseCookieHeader(cookie)[loginCookieName]
+  const parsedCookie = parseCookieHeader(cookie)
+  const parsedCookieValue = parsedCookie[loginCookieName]
   if (parsedCookieValue) {
-    return serializeLoginCookie(parsedCookieValue)
+    const loginCookie = serializeCookie(loginCookieName, parsedCookieValue, {
+      encode: value => value
+    })
+    const twoFactorCookieValue = parsedCookie[twoFactorCookieName]
+    if (!twoFactorCookieValue) {
+      return loginCookie
+    }
+    const twoFactorCookie = serializeCookie(twoFactorCookieName, twoFactorCookieValue, {
+      encode: value => value
+    })
+    return `${loginCookie}; ${twoFactorCookie}`
   }
 
   if (rawLoginCookieValuePattern.test(cookie)) {
-    return serializeLoginCookie(cookie.replace(/;$/, ''))
+    return serializeCookie(loginCookieName, cookie.replace(/;$/, ''), { encode: value => value })
   }
   return ''
-}
-
-/**
- * 序列化登录态 Cookie
- * @param value A2 Cookie 值
- */
-function serializeLoginCookie(value: string): string {
-  return serializeCookie(loginCookieName, value, { encode: value => value })
 }

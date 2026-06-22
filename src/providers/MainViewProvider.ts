@@ -248,7 +248,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       const children = topics.map(t => this._toWebviewTopic(t))
 
       // 检查登录是否有效
-      G.V2ex.checkCookie()
+      G.V2ex.checkCookie().catch(err => console.error(err))
 
       return {
         tab,
@@ -281,7 +281,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     const result = await G.V2ex.getTopicListByNode(nodeName, page)
 
     // 检查登录是否有效
-    G.V2ex.checkCookie()
+    G.V2ex.checkCookie().catch(err => console.error(err))
 
     return {
       node: result.node,

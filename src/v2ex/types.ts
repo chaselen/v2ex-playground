@@ -9,11 +9,17 @@ export interface ThankResponse {
 /** 需要登录后访问 */
 export class LoginRequiredError extends Error {}
 
+/** 需要两步验证码 */
+export class TwoFactorRequiredError extends Error {}
+
 /** 账号访问受限 */
 export class AccountRestrictedError extends Error {}
 
 /** 登录失效回调 */
 export type LoginExpiredHandler = () => void | Promise<void>
+
+/** 两步验证回调 */
+export type TwoFactorRequiredHandler = () => boolean | Promise<boolean>
 
 /**
  * 账户概览变化回调

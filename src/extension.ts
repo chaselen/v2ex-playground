@@ -6,10 +6,11 @@ import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
 import { openSearch, setOpenNodeTabHandler } from '@/features/panelNavigation'
+import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
-  G.V2ex = new V2exClient(G.getCookie(), () => G.setCookie(''))
+  G.V2ex = new V2exClient(G.getCookie(), () => G.setCookie(''), requestTwoFactorVerification)
   const mainViewProvider = new MainViewProvider()
   setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
@@ -32,7 +33,9 @@ export function activate(context: vscode.ExtensionContext) {
         mainViewProvider.autoDailySignIn()
       }
     })
-    .catch(err => console.error('V2EX 登录会话刷新失败', err))
+    .catch(err => {
+      console.error('V2EX 登录会话刷新失败', err)
+    })
 
   // 注册主视图 WebviewView
   context.subscriptions.push(
