@@ -516,7 +516,7 @@ export default function MyTab(props: MyTabProps) {
     const state = topicLists[tab]
     const totalCount = tab === 'topicCollection' ? overview?.topicCollectionCount : undefined
 
-    if (state.loading && !state.loaded) {
+    if (state.loading && !state.topics.length) {
       return (
         <div className={styles['my-content-state']}>
           <Spin size="middle" />
@@ -533,7 +533,11 @@ export default function MyTab(props: MyTabProps) {
             image={<IllustrationNoContent className={styles['empty-illustration']} />}
             darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
-          <Button size="small" onClick={() => loadMyTopics(tab, state.page)}>
+          <Button
+            size="small"
+            loading={state.loading}
+            onClick={() => loadMyTopics(tab, state.page)}
+          >
             重试
           </Button>
         </div>
@@ -577,7 +581,7 @@ export default function MyTab(props: MyTabProps) {
   function renderMessages() {
     const state = notificationList
 
-    if (state.loading && !state.loaded) {
+    if (state.loading && !state.notifications.length) {
       return (
         <div className={styles['my-content-state']}>
           <Spin size="middle" />
@@ -594,7 +598,11 @@ export default function MyTab(props: MyTabProps) {
             image={<IllustrationNoContent className={styles['empty-illustration']} />}
             darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
           />
-          <Button size="small" onClick={() => loadMyNotifications(state.page)}>
+          <Button
+            size="small"
+            loading={state.loading}
+            onClick={() => loadMyNotifications(state.page)}
+          >
             重试
           </Button>
         </div>
