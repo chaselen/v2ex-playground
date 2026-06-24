@@ -5,6 +5,16 @@ import dayjs from 'dayjs'
 import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
 import {
+  findCookieHeaderName,
+  getConfigUrl,
+  getHeader,
+  getResponseUrl,
+  hasFollowedRedirect,
+  isV2exPath,
+  isV2exUrl,
+  removeCookieHeader
+} from './clientUtils'
+import {
   AccountRestrictedError,
   Topic,
   Node,
@@ -103,21 +113,13 @@ export class V2exClient {
     baseURL: this.baseUrl,
     headers: v2exRequestHeaders,
     timeout: v2exRequestTimeout,
-    beforeRedirect: (options, responseDetails, requestDetails) => {
-      // 自动重定向的中间响应不会进入 Axios 响应拦截器，需要在下一跳前同步 Cookie
-      this.updateCookieFromHeaders(responseDetails.headers, requestDetails.url)
-
-      const redirectUrl = new URL(options.href)
-      const cookieHeaderName = Object.keys(options.headers).find(
-        name => name.toLowerCase() === 'cookie'
+    beforeRedirect: (options, responseDetails, requestDetails) =>
+      this.handleBeforeRedirect(
+        options.href,
+        options.headers,
+        responseDetails.headers,
+        requestDetails.url
       )
-      if (cookieHeaderName) {
-        delete options.headers[cookieHeaderName]
-      }
-      if (this.isV2exUrl(redirectUrl)) {
-        options.headers.Cookie = this.getCookie(redirectUrl.toString())
-      }
-    }
   })
 
   /**
@@ -131,27 +133,73 @@ export class V2exClient {
     private readonly onTwoFactorRequired?: TwoFactorRequiredHandler
   ) {
     this.setCookie(initialCookie || '')
+    this.setupInterceptors()
+  }
 
-    this.http.interceptors.request.use(config => {
-      const reqUrl = new URL(config.url || '', config.baseURL)
-      // 添加 V2EX Cookie
-      if (this.isV2exUrl(reqUrl)) {
-        if (config.headers['Cookie'] === undefined) {
-          config.headers['Cookie'] = this.getCookie(reqUrl.toString())
-        }
-      }
+  /**
+   * 注册请求与响应拦截器
+   */
+  private setupInterceptors(): void {
+    this.http.interceptors.request.use(config => this.attachCookieToRequest(config))
+    this.http.interceptors.response.use(response => this.handleResponse(response))
+  }
+
+  /**
+   * 处理 HTTP 自动重定向
+   * @param redirectHref 下一跳链接
+   * @param redirectHeaders 下一跳请求头
+   * @param headers 中间响应头
+   * @param responseUrl 中间响应链接
+   */
+  private handleBeforeRedirect(
+    redirectHref: string,
+    redirectHeaders: Record<string, unknown>,
+    headers: Record<string, unknown>,
+    responseUrl: string
+  ): void {
+    // 自动重定向的中间响应不会进入 Axios 响应拦截器，需要在下一跳前同步 Cookie
+    this.updateCookieFromHeaders(headers, responseUrl)
+
+    const redirectUrl = new URL(redirectHref)
+    removeCookieHeader(redirectHeaders)
+    if (isV2exUrl(redirectUrl)) {
+      redirectHeaders.Cookie = this.getCookie(redirectUrl.toString())
+    }
+  }
+
+  /**
+   * 为 V2EX 请求附加 Cookie
+   * @param config 请求配置
+   */
+  private attachCookieToRequest(config: AxiosResponse['config']): AxiosResponse['config'] {
+    const reqUrl = getConfigUrl(config, this.baseUrl)
+    if (!isV2exUrl(reqUrl)) {
       return config
-    })
-    this.http.interceptors.response.use(async response => {
-      this.updateCookieFromResponse(response)
-      const twoFactorResponse = await this.handleTwoFactorResponse(response)
-      if (twoFactorResponse !== response) {
-        return twoFactorResponse
-      }
-      this.checkRedirectFromResponse(response)
-      this.updateAccountOverviewFromResponse(response)
-      return response
-    })
+    }
+
+    config.headers = config.headers || {}
+    if (findCookieHeaderName(config.headers)) {
+      return config
+    }
+
+    config.headers.Cookie = this.getCookie(reqUrl.toString())
+    return config
+  }
+
+  /**
+   * 处理 V2EX 响应
+   * @param response HTTP 响应
+   */
+  private async handleResponse(response: AxiosResponse): Promise<AxiosResponse> {
+    this.updateCookieFromResponse(response)
+    const twoFactorResponse = await this.handleTwoFactorResponse(response)
+    if (twoFactorResponse !== response) {
+      return twoFactorResponse
+    }
+
+    this.checkRedirectFromResponse(response)
+    this.updateAccountOverviewFromResponse(response)
+    return response
   }
 
   /**
@@ -208,7 +256,7 @@ export class V2exClient {
    * @param response HTTP 响应
    */
   private updateCookieFromResponse(response: AxiosResponse): void {
-    const responseUrl = this.getResponseUrl(response)
+    const responseUrl = getResponseUrl(response, this.baseUrl)
     this.updateCookieFromHeaders(response.headers, responseUrl)
   }
 
@@ -218,7 +266,7 @@ export class V2exClient {
    * @param responseUrl 响应链接
    */
   private updateCookieFromHeaders(headers: Record<string, unknown>, responseUrl: string): void {
-    if (!this.isV2exUrl(new URL(responseUrl))) {
+    if (!isV2exUrl(new URL(responseUrl))) {
       return
     }
 
@@ -233,14 +281,6 @@ export class V2exClient {
         this.cookieJar.setCookieSync(cookie, responseUrl)
       }
     })
-  }
-
-  /**
-   * 判断链接是否属于 V2EX
-   * @param url 待判断链接
-   */
-  private isV2exUrl(url: URL): boolean {
-    return url.protocol === 'https:' && (url.host === 'v2ex.com' || url.host.endsWith('.v2ex.com'))
   }
 
   /**
@@ -272,14 +312,13 @@ export class V2exClient {
    * @param config 请求配置
    */
   private refreshConfigCookie(config: AxiosResponse['config']): void {
-    const reqUrl = new URL(config.url || '', config.baseURL || this.baseUrl)
-    if (!this.isV2exUrl(reqUrl)) {
+    const reqUrl = getConfigUrl(config, this.baseUrl)
+    if (!isV2exUrl(reqUrl)) {
       return
     }
 
     config.headers = config.headers || {}
-    const cookieHeaderName =
-      Object.keys(config.headers).find(name => name.toLowerCase() === 'cookie') || 'Cookie'
+    const cookieHeaderName = findCookieHeaderName(config.headers) || 'Cookie'
     config.headers[cookieHeaderName] = this.getCookie(reqUrl.toString())
   }
 
@@ -288,39 +327,23 @@ export class V2exClient {
    * @param response HTTP 响应
    */
   private isTwoFactorResponse(response: AxiosResponse): boolean {
-    const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
-    if (!this.isV2exUrl(requestUrl)) {
+    const requestUrl = getConfigUrl(response.config, this.baseUrl)
+    if (!isV2exUrl(requestUrl)) {
       return false
     }
 
-    const location = this.getHeader(response.headers, 'location')
+    const location = getHeader(response.headers, 'location')
     if (location && response.status >= 300 && response.status < 400) {
       const redirectUrl = new URL(location, requestUrl)
-      return this.isV2exUrl(redirectUrl) && redirectUrl.pathname === '/2fa'
+      return isV2exPath(redirectUrl, '/2fa')
     }
 
-    if ((response.request?._redirectable?._redirectCount || 0) <= 0) {
+    if (!hasFollowedRedirect(response)) {
       return false
     }
 
-    const responseUrl = new URL(this.getResponseUrl(response))
-    return this.isV2exUrl(responseUrl) && responseUrl.pathname === '/2fa'
-  }
-
-  /**
-   * 获取响应头文本
-   * @param headers 响应头
-   * @param name 响应头名称
-   */
-  private getHeader(headers: Record<string, unknown>, name: string): string | undefined {
-    const value = headers[name]
-    if (typeof value === 'string') {
-      return value
-    }
-    if (Array.isArray(value) && typeof value[0] === 'string') {
-      return value[0]
-    }
-    return undefined
+    const responseUrl = new URL(getResponseUrl(response, this.baseUrl))
+    return isV2exPath(responseUrl, '/2fa')
   }
 
   /**
@@ -333,16 +356,16 @@ export class V2exClient {
    * @param response HTTP 响应
    */
   private checkRedirectFromResponse(response: AxiosResponse): void {
-    const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
-    if (!this.isV2exUrl(requestUrl)) {
+    const requestUrl = getConfigUrl(response.config, this.baseUrl)
+    if (!isV2exUrl(requestUrl)) {
       return
     }
-    if ((response.request?._redirectable?._redirectCount || 0) <= 0) {
+    if (!hasFollowedRedirect(response)) {
       return
     }
 
-    const responseUrl = new URL(this.getResponseUrl(response))
-    if (this.isV2exUrl(responseUrl) && responseUrl.pathname === '/2fa') {
+    const responseUrl = new URL(getResponseUrl(response, this.baseUrl))
+    if (isV2exPath(responseUrl, '/2fa')) {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
 
@@ -352,7 +375,7 @@ export class V2exClient {
 
     // 服务端可能仅为原页面补充分页等查询参数，此类重定向仍视为正常响应。
     // 例：https://www.v2ex.com/go/in -> https://www.v2ex.com/go/in?p=1
-    if (this.isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) {
+    if (isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) {
       return
     }
 
@@ -383,8 +406,8 @@ export class V2exClient {
       return
     }
 
-    const requestUrl = new URL(response.config.url || '', response.config.baseURL || this.baseUrl)
-    if (!this.isV2exUrl(requestUrl)) {
+    const requestUrl = getConfigUrl(response.config, this.baseUrl)
+    if (!isV2exUrl(requestUrl)) {
       return
     }
     if (!isAccountOverviewPath(requestUrl.pathname)) {
@@ -392,18 +415,6 @@ export class V2exClient {
     }
 
     this.updateAccountOverviewFromHtml(cheerio.load(response.data))
-  }
-
-  /**
-   * 获取响应对应的最终链接
-   * @param response HTTP 响应
-   */
-  private getResponseUrl(response: AxiosResponse): string {
-    return (
-      response.request?.res?.responseUrl ||
-      response.request?._redirectable?._currentUrl ||
-      new URL(response.config.url || '', response.config.baseURL || this.baseUrl).toString()
-    )
   }
 
   /**
@@ -1429,7 +1440,7 @@ export class V2exClient {
     const responseUrl = response.request?.res?.responseUrl
     if (responseUrl) {
       const url = new URL(responseUrl)
-      if (this.isV2exUrl(url) && url.pathname === '/2fa') {
+      if (isV2exPath(url, '/2fa')) {
         throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
       }
     }
