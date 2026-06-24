@@ -1,4 +1,4 @@
-import * as cheerio from 'cheerio'
+import * as cheerio from 'cheerio/slim'
 import axios, { AxiosResponse } from 'axios'
 import { parse as parseCookieHeader } from 'cookie'
 import dayjs from 'dayjs'

@@ -1,4 +1,4 @@
-import * as cheerio from 'cheerio'
+import * as cheerio from 'cheerio/slim'
 import { describe, expect, test } from 'vitest'
 import { V2exClient } from './client'
 import type {
