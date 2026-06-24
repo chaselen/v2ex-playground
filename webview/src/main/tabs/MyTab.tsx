@@ -212,10 +212,11 @@ export default function MyTab(props: MyTabProps) {
       .then(data => {
         if (!disposed) {
           setDailySignedIn(data.signedIn)
+          setDailySignInLoading(!!data.loading)
         }
       })
-      .catch(err => console.error(err))
-      .finally(() => {
+      .catch(err => {
+        console.error(err)
         if (!disposed) {
           setDailySignInLoading(false)
         }
@@ -247,7 +248,10 @@ export default function MyTab(props: MyTabProps) {
   }))
 
   useEffect(() => {
-    return vscode.on('dailySignInStatusChanged', data => setDailySignedIn(data.signedIn))
+    return vscode.on('dailySignInStatusChanged', data => {
+      setDailySignedIn(data.signedIn)
+      setDailySignInLoading(!!data.loading)
+    })
   }, [])
 
   /**
@@ -411,9 +415,9 @@ export default function MyTab(props: MyTabProps) {
     try {
       const data = await vscode.dailySignIn()
       setDailySignedIn(data.signedIn)
+      setDailySignInLoading(!!data.loading)
     } catch (err) {
       console.error(err)
-    } finally {
       setDailySignInLoading(false)
     }
   }

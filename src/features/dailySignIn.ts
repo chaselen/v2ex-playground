@@ -14,6 +14,8 @@ export interface AutoDailySignInOptions {
 export interface DailySignInData {
   /** 今日是否已签到 */
   signedIn: boolean
+  /** 是否正在签到 */
+  loading?: boolean
   /** 签到结果 */
   result?: DailyRes
   /** 当日签到奖励铜币数 */
@@ -25,6 +27,12 @@ const LAST_AUTO_SIGN_IN_DATE_KEY = 'lastAutoSignInDate'
 
 /** 当前签到任务 */
 let dailySignInTask: Promise<DailySignInData> | undefined
+
+/** 每日签到状态变化事件 */
+const dailySignInStatusEmitter = new vscode.EventEmitter<DailySignInData>()
+
+/** 监听每日签到状态变化 */
+export const onDailySignInStatusChanged = dailySignInStatusEmitter.event
 
 /**
  * 自动执行每日签到
@@ -47,9 +55,7 @@ export default function autoDailySignIn(
   }
 
   if (!dailySignInTask) {
-    dailySignInTask = runDailySignIn(options).finally(() => {
-      dailySignInTask = undefined
-    })
+    dailySignInTask = startDailySignInTask(options)
   }
   return dailySignInTask
 }
@@ -64,9 +70,23 @@ export function isDailySignedInToday(): boolean {
 }
 
 /**
+ * 是否正在执行每日签到
+ */
+function isDailySignInLoading(): boolean {
+  return !!dailySignInTask
+}
+
+/**
  * 查询每日签到状态
  */
 export async function getDailySignInStatus(): Promise<DailySignInData> {
+  if (isDailySignInLoading()) {
+    return {
+      signedIn: isDailySignedInToday(),
+      loading: true
+    }
+  }
+
   if (!G.getCookie()) {
     return {
       signedIn: false
@@ -108,11 +128,33 @@ export function dailySignIn(): Promise<DailySignInData> {
   }
 
   if (!dailySignInTask) {
-    dailySignInTask = runDailySignIn({ notifyOnSuccess: true }).finally(() => {
-      dailySignInTask = undefined
-    })
+    dailySignInTask = startDailySignInTask({ notifyOnSuccess: true })
   }
   return dailySignInTask
+}
+
+/**
+ * 启动每日签到任务
+ * @param options 自动签到选项
+ */
+function startDailySignInTask(options: AutoDailySignInOptions): Promise<DailySignInData> {
+  dailySignInStatusEmitter.fire({
+    signedIn: isDailySignedInToday(),
+    loading: true
+  })
+
+  return runDailySignIn(options)
+    .then(data => {
+      const nextData = {
+        ...data,
+        loading: false
+      }
+      dailySignInStatusEmitter.fire(nextData)
+      return nextData
+    })
+    .finally(() => {
+      dailySignInTask = undefined
+    })
 }
 
 /**

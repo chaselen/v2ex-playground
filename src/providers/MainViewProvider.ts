@@ -4,6 +4,7 @@ import { EOL } from 'os'
 import autoDailySignIn, {
   dailySignIn,
   getDailySignInStatus,
+  onDailySignInStatusChanged,
   type AutoDailySignInOptions
 } from '@/features/dailySignIn'
 import G from '@/global'
@@ -43,6 +44,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _pendingSelectedTab?: MainPanelTabKey
   private _pendingNode?: WebviewNode
   private _accountOverviewChangedDisposable?: { dispose: () => void }
+  private _dailySignInStatusDisposable?: { dispose: () => void }
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this._view = webviewView
@@ -62,6 +64,10 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     this._accountOverviewChangedDisposable = G.V2ex.onAccountOverviewChanged(
       (overview, oldOverview) => this._handleAccountOverviewChanged(overview, oldOverview)
     )
+    this._dailySignInStatusDisposable?.dispose()
+    this._dailySignInStatusDisposable = onDailySignInStatusChanged(data =>
+      this._rpc?.post('dailySignInStatusChanged', data)
+    )
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
         this.autoDailySignIn()
@@ -71,6 +77,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       visibilityDisposable.dispose()
       this._accountOverviewChangedDisposable?.dispose()
       this._accountOverviewChangedDisposable = undefined
+      this._dailySignInStatusDisposable?.dispose()
+      this._dailySignInStatusDisposable = undefined
       this._rpc?.dispose()
       if (this._view === webviewView) {
         this._view = undefined
@@ -436,9 +444,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param options 自动签到选项
    */
   autoDailySignIn(options: AutoDailySignInOptions = {}) {
-    autoDailySignIn(options)
-      .then(data => this._rpc?.post('dailySignInStatusChanged', data))
-      .catch(err => console.error(err))
+    autoDailySignIn(options).catch(err => console.error(err))
   }
 
   /**

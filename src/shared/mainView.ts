@@ -196,6 +196,8 @@ export type WebviewDailySignInResult = 'success' | 'repetitive' | 'failed'
 export interface WebviewDailySignInData {
   /** 今日是否已签到 */
   signedIn: boolean
+  /** 是否正在签到 */
+  loading?: boolean
   /** 签到结果 */
   result?: WebviewDailySignInResult
   /** 当日签到奖励铜币数 */
