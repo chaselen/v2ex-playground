@@ -74,15 +74,29 @@ function openImage(src: string, event: MouseEvent) {
 
 /**
  * 转换 imgur 图片代理地址
+ * @param imageSrc 图片地址
+ */
+function proxyImgurImageSrc(imageSrc: string): string {
+  try {
+    const url = new URL(imageSrc, document.baseURI)
+    if (url.hostname === 'i.imgur.com') {
+      return 'https://img.noobzone.ru/getimg.php?url=' + encodeURIComponent(url.href)
+    }
+  } catch {
+    return imageSrc
+  }
+
+  return imageSrc
+}
+
+/**
+ * 转换 imgur 图片代理地址
  * @param img 图片元素
  */
 function proxyImgurImage(img: HTMLImageElement) {
   const originalSrc = img.dataset.previewSrc || img.currentSrc || img.src
   img.dataset.previewSrc = originalSrc
-
-  if (img.src.startsWith('https://i.imgur.com/')) {
-    img.src = 'https://img.noobzone.ru/getimg.php?url=' + encodeURIComponent(originalSrc)
-  }
+  img.src = proxyImgurImageSrc(originalSrc)
 }
 
 /**
@@ -168,7 +182,7 @@ function bindImageLinkPreview(anchor: HTMLAnchorElement) {
     return
   }
 
-  const imageSrc = anchor.href
+  const imageSrc = proxyImgurImageSrc(anchor.href)
 
   if (anchor.childNodes[0] && anchor.childNodes[0].nodeName === 'IMG') {
     return
