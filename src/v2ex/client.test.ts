@@ -335,6 +335,12 @@ describe.concurrent('V2exClient topics', () => {
     })
     expectTopicDetail(detail)
   })
+
+  test('gets author PRO badge from a known public topic', async () => {
+    const detail = await client.getTopicDetail(443648)
+
+    expect(detail.isAuthorPro).toBe(true)
+  })
 })
 
 describe.concurrent('V2exClient members', () => {

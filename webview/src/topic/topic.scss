@@ -108,6 +108,15 @@ $panel-border: var(--v2ex-border);
   flex: 0 0 auto;
 }
 
+.topic-pro-badge {
+  flex: 0 0 auto;
+  border: 1px solid var(--vscode-contrastBorder, var(--vscode-badge-background));
+  border-radius: 6px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-weight: 700;
+}
+
 .topic-content {
   @include topic-content-shared.base($panel-border);
 

@@ -1233,6 +1233,7 @@ export class V2exClient {
       },
       authorAvatar: '',
       authorName: '',
+      isAuthorPro: false,
       displayTime: '',
       visitCount: 0,
       content: '',
@@ -1252,10 +1253,14 @@ export class V2exClient {
     topic.node.name = node.attr('href')?.split('go/')[1] || ''
     topic.node.title = node.text().trim()
     topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''
-    const meta = $('.header > .gray').text().split('·')
-    topic.authorName = $('.header > .gray a[href^=/member]').text().trim()
-    topic.displayTime = $('.header > .gray > span').last().text().trim()
-    topic.visitCount = parseInt(meta[2].trim())
+    const headerMeta = $('.header > .gray')
+    const meta = headerMeta.text().split('·')
+    topic.authorName = headerMeta.find('a[href^=/member]').text().trim()
+    topic.isAuthorPro = headerMeta.find('.badges .badge.pro').length > 0
+    topic.displayTime = headerMeta.children('span').last().text().trim()
+    topic.visitCount = Number(
+      meta.find(item => /(?:views|次点击)/i.test(item))?.match(/\d+/)?.[0] || 0
+    )
     topic.content = $('#Main .topic_content').html() || ''
     $('.subtle').each((_, element) => {
       topic.appends.push({

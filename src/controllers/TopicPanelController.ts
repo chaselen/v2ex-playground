@@ -56,6 +56,7 @@ export class TopicPanelController {
     },
     authorAvatar: '',
     authorName: '',
+    isAuthorPro: false,
     displayTime: '',
     visitCount: 0,
     content: '',

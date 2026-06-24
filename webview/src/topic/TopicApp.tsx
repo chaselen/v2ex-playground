@@ -7,6 +7,7 @@ import {
   Pagination,
   Popconfirm,
   Spin,
+  Tag,
   TextArea,
   Toast,
   Tooltip
@@ -263,6 +264,11 @@ export default function TopicApp() {
             >
               {topic.authorName}
             </a>
+            {topic.isAuthorPro && (
+              <Tag className="topic-pro-badge" size="small">
+                PRO
+              </Tag>
+            )}
             <span className="time">
               {topic.displayTime} · {topic.visitCount} 次点击
             </span>

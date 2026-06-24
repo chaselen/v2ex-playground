@@ -68,6 +68,8 @@ export interface TopicDetail {
   authorAvatar: string
   /** 作者名字 */
   authorName: string
+  /** 作者是否为 PRO 会员 */
+  isAuthorPro: boolean
   /** 时间 */
   displayTime: string
   /** 点击次数 */
