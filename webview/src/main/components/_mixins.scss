@@ -55,9 +55,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 16px;
+  box-sizing: border-box;
   color: var(--v2ex-main-content-fg);
-
-  :global(.semi-spin-wrapper) {
-    color: var(--v2ex-focus-border, var(--vscode-progressBar-background));
-  }
 }
