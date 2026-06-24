@@ -30,6 +30,21 @@
   color: var(--vscode-badge-foreground, #fff);
 }
 
+/* PRO 标签使用 VS Code Badge Theme Color */
+.vscode-pro-tag,
+.vscode-pro-tag[class*='semi-tag-'] {
+  flex: 0 0 auto;
+  border-color: var(--vscode-contrastBorder, var(--vscode-badge-background));
+  border-radius: 6px;
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-weight: 700;
+
+  .semi-tag-content {
+    color: inherit;
+  }
+}
+
 /* Semi solid primary 不提供独立的前景色 token */
 .semi-button-primary:not(.semi-button-borderless):not(.semi-button-light):not(
     .semi-button-outline

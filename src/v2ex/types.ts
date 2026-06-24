@@ -282,6 +282,8 @@ export interface MemberInfo {
   memberNumber: number
   /** 加入时间 */
   joinedAt: string
+  /** 是否为 PRO 会员 */
+  isPro: boolean
   /** 今日活跃度排名 */
   activityRank?: number
 }

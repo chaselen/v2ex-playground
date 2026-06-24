@@ -7,7 +7,6 @@ import {
   Pagination,
   Popconfirm,
   Spin,
-  Tag,
   TextArea,
   Toast,
   Tooltip
@@ -15,6 +14,7 @@ import {
 import { IconArrowDown, IconArrowUp, IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
+import { VscodeProTag } from '@/shared/SemiVscode'
 import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
 import type {
   TopicPanelRpcCommands,
@@ -264,11 +264,7 @@ export default function TopicApp() {
             >
               {topic.authorName}
             </a>
-            {topic.isAuthorPro && (
-              <Tag className="topic-pro-badge" size="small">
-                PRO
-              </Tag>
-            )}
+            {topic.isAuthorPro && <VscodeProTag />}
             <span className="time">
               {topic.displayTime} · {topic.visitCount} 次点击
             </span>

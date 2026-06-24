@@ -1014,6 +1014,7 @@ export class V2exClient {
         fallbackUsername,
       memberNumber,
       joinedAt,
+      isPro: profileBox.find('.badges .badge.pro').length > 0,
       activityRank
     }
   }

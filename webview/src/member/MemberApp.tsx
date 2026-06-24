@@ -6,7 +6,7 @@ import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
-import { VscodeBadge, VscodeTag } from '@/shared/SemiVscode'
+import { VscodeBadge, VscodeProTag, VscodeTag } from '@/shared/SemiVscode'
 import { createVsCodeClient } from '@/shared/vscode'
 import type {
   MemberContentTabKey,
@@ -238,6 +238,12 @@ export default function MemberApp() {
               </div>
               {!!profile.member.activityRank && (
                 <div className="member-rank">活跃度排名 {profile.member.activityRank}</div>
+              )}
+              {profile.member.isPro && (
+                <div className="member-pro">
+                  <VscodeProTag />
+                  <span>PRO 会员</span>
+                </div>
               )}
             </div>
             <Button

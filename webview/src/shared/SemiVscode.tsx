@@ -16,6 +16,18 @@ export function VscodeTag(props: TagProps) {
 }
 
 /**
+ * 使用 VS Code Badge Theme Color 的 PRO 标签
+ * @param props Semi Tag 参数
+ */
+export function VscodeProTag(props: Omit<TagProps, 'children' | 'size'>) {
+  return (
+    <Tag {...props} className={mergeClassNames('vscode-pro-tag', props.className)} size="small">
+      PRO
+    </Tag>
+  )
+}
+
+/**
  * 使用 VS Code Badge Theme Color 的 Semi Badge
  * @param props Semi Badge 参数
  */

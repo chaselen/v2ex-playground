@@ -170,6 +170,7 @@ function expectMemberInfo(member: MemberInfo) {
   expect(member.memberNumber).toEqual(expect.any(Number))
   expect(member.memberNumber).toBeGreaterThanOrEqual(0)
   expect(member.joinedAt).toEqual(expect.any(String))
+  expect(member.isPro).toEqual(expect.any(Boolean))
 }
 
 /**
@@ -359,6 +360,12 @@ describe.concurrent('V2exClient members', () => {
     expectMemberInfo(member)
     expectMemberContent(content)
     expectTopic(content.topics[0])
+  })
+
+  test('gets PRO badge from a known public member page', async () => {
+    const member = await client.getMemberInfo('livid')
+
+    expect(member.isPro).toBe(true)
   })
 
   test('handles hidden member topic list and keeps recent replies', async () => {

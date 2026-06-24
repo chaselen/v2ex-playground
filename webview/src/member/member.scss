@@ -64,6 +64,15 @@ $panel-border: var(--v2ex-border);
   line-height: 1.5;
 }
 
+.member-pro {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+  color: $muted-color;
+  line-height: 1.5;
+}
+
 .member-content {
   margin-top: 14px;
 }
