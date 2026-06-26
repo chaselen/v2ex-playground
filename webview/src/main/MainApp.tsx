@@ -222,6 +222,7 @@ export default function MainApp() {
           <NodeTreeTab
             tab="custom"
             nodes={nodeTreeTabs.tabs.custom}
+            loading={initializing}
             onAddNode={nodeTreeTabs.addNode}
             {...nodeTreeTabProps}
           />
