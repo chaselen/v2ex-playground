@@ -1,8 +1,7 @@
 import vscode from 'vscode'
 import G from '@/global'
-import { normalizeLoginCookie } from '@/shared/cookie'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
-import { TwoFactorRequiredError } from '@/v2ex'
+import { normalizeLoginCookie, TwoFactorRequiredError } from '@/v2ex'
 
 /**
  * 登录逻辑

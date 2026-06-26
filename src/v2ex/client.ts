@@ -4,7 +4,7 @@ import { parse as parseCookieHeader } from 'cookie'
 import dayjs from 'dayjs'
 import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
-import { normalizeLoginCookie } from '../shared/cookie'
+import { normalizeLoginCookie } from './cookie'
 import {
   findCookieHeaderName,
   getConfigUrl,

@@ -1,5 +1,4 @@
-import type { Node, V2exClient } from '@/v2ex'
-import { normalizeLoginCookie } from '@/shared/cookie'
+import { normalizeLoginCookie, type Node, type V2exClient } from '@/v2ex'
 import { ExtensionContext, Webview, Uri } from 'vscode'
 import vscode from 'vscode'
 
