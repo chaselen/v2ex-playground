@@ -23,6 +23,14 @@ const client = new V2exClient(v2exCookie)
  */
 const authTest = v2exCookie ? test : test.skip
 
+describe('V2exClient login cookies', () => {
+  test('gets only persistable login cookies', () => {
+    const client = new V2exClient('A2=login; A2O=two-factor; V2EX_LANG=zhcn')
+
+    expect(client.getLoginCookie()).toBe('A2=login; A2O=two-factor')
+  })
+})
+
 /**
  * 校验话题列表项
  * @param topic 话题列表项

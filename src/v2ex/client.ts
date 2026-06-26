@@ -4,6 +4,7 @@ import { parse as parseCookieHeader } from 'cookie'
 import dayjs from 'dayjs'
 import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
+import { normalizeLoginCookie } from '../shared/cookie'
 import {
   findCookieHeaderName,
   getConfigUrl,
@@ -208,6 +209,16 @@ export class V2exClient {
    */
   getCookie(url = this.baseUrl): string {
     return this.cookieJar.getCookieStringSync(url)
+  }
+
+  /**
+   * 获取可持久化的登录 Cookie
+   *
+   * 运行时 CookieJar 还包含服务端下发的内部 Cookie，持久化时只保留 A2/A2O
+   * @param url 目标链接
+   */
+  getLoginCookie(url = this.baseUrl): string {
+    return normalizeLoginCookie(this.getCookie(url))
   }
 
   /**
@@ -1535,7 +1546,7 @@ export class V2exClient {
     const today = dayjs().format('YYYY-MM-DD')
     let reward = 0
 
-    $('table.data > tbody > tr').each((_, element) => {
+    $('table.data tr').each((_, element) => {
       if (reward) {
         return
       }

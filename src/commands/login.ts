@@ -40,6 +40,7 @@ export default async function login(): Promise<LoginResult> {
       location: vscode.ProgressLocation.Notification
     },
     async () => {
+      const previousLoginCookie = G.getCookie() || ''
       let isCookieValid = false
       let cookieToPersist = loginCookie
       try {
@@ -49,9 +50,22 @@ export default async function login(): Promise<LoginResult> {
           throw err
         }
 
-        await G.setCookie(loginCookie)
-        isCookieValid = await requestTwoFactorVerification()
-        cookieToPersist = G.V2ex.getCookie() || loginCookie
+        // 2FA 提交需要先让运行时请求带上新的 A2，但此时还不能写入持久化
+        G.V2ex.setCookie(loginCookie)
+        try {
+          isCookieValid = await requestTwoFactorVerification()
+        } catch (verifyError) {
+          // 验证流程异常时恢复旧登录态，避免切号失败后留下新 A2
+          G.V2ex.setCookie(previousLoginCookie)
+          throw verifyError
+        }
+        if (isCookieValid) {
+          // 2FA 成功后服务端会写入 A2O，只持久化 A2/A2O
+          cookieToPersist = G.V2ex.getLoginCookie() || loginCookie
+        } else {
+          // 用户取消 2FA 时回滚运行时 Cookie，持久化内容仍保持旧账号
+          G.V2ex.setCookie(previousLoginCookie)
+        }
       }
       console.log('Cookie是否有效：', isCookieValid)
       if (isCookieValid) {

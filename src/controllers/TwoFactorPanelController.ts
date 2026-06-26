@@ -64,7 +64,8 @@ export class TwoFactorPanelController {
     return {
       verify: async payload => {
         await G.V2ex.submitTwoFactorCode(payload.code)
-        await G.setCookie(G.V2ex.getCookie())
+        // 2FA 成功响应会更新 A2O，持久化前先过滤掉内部 Cookie
+        await G.setCookie(G.V2ex.getLoginCookie())
         vscode.window.showInformationMessage('V2EX 两步验证成功')
         this.resolve(true)
         this.panel.dispose()
