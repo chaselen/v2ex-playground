@@ -1,16 +1,19 @@
 import vscode from 'vscode'
 import path from 'path'
 import { EOL } from 'os'
-import autoDailySignIn, {
+import {
   dailySignIn,
   getDailySignInStatus,
-  onDailySignInStatusChanged,
-  type AutoDailySignInOptions
+  onDailySignInStatusChanged
 } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
+import {
+  refreshLoginSession as refreshV2exLoginSession,
+  type RefreshLoginSessionOptions
+} from '@/features/loginSession'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
@@ -45,6 +48,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _pendingNode?: WebviewNode
   private _accountOverviewChangedDisposable?: { dispose: () => void }
   private _dailySignInStatusDisposable?: { dispose: () => void }
+  /** Webview 恢复可见时的数据刷新任务 */
+  private _visibleRefreshPromise?: Promise<void>
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this._view = webviewView
@@ -70,7 +75,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     )
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
-        this.autoDailySignIn()
+        this.refreshVisibleViewData()
       }
     })
     webviewView.onDidDispose(() => {
@@ -84,6 +89,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         this._view = undefined
         this._rpc = undefined
         this._webviewReady = false
+        this._visibleRefreshPromise = undefined
       }
     })
   }
@@ -255,8 +261,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
       const children = topics.map(t => this._toWebviewTopic(t))
 
-      // 检查登录是否有效
-      G.V2ex.checkCookie().catch(err => console.error(err))
+      this.refreshLoginSession()
 
       return {
         tab,
@@ -288,8 +293,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private async _handleGetNodeTopics(nodeName: string, page = 1): Promise<NodeTopicListData> {
     const result = await G.V2ex.getTopicListByNode(nodeName, page)
 
-    // 检查登录是否有效
-    G.V2ex.checkCookie().catch(err => console.error(err))
+    this.refreshLoginSession()
 
     return {
       node: result.node,
@@ -440,11 +444,34 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 自动执行每日签到并同步状态
-   * @param options 自动签到选项
+   * Webview 恢复可见时刷新会话和主视图数据
    */
-  autoDailySignIn(options: AutoDailySignInOptions = {}) {
-    autoDailySignIn(options).catch(err => console.error(err))
+  private refreshVisibleViewData() {
+    if (this._visibleRefreshPromise) {
+      return
+    }
+
+    this._visibleRefreshPromise = this.doRefreshVisibleViewData()
+      .catch(err => console.error('V2EX 主视图数据刷新失败', err))
+      .finally(() => {
+        this._visibleRefreshPromise = undefined
+      })
+  }
+
+  /**
+   * 执行 Webview 恢复可见后的刷新逻辑
+   */
+  private async doRefreshVisibleViewData(): Promise<void> {
+    await refreshV2exLoginSession({ autoDailySignIn: true })
+    await this.reloadViewData()
+  }
+
+  /**
+   * 后台刷新登录会话
+   * @param options 刷新选项
+   */
+  private refreshLoginSession(options: RefreshLoginSessionOptions = {}) {
+    refreshV2exLoginSession(options).catch(err => console.error('V2EX 登录会话刷新失败', err))
   }
 
   /**
@@ -501,10 +528,13 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   /**
    * 刷新整个视图数据（外部调用）
    */
-  reloadViewData() {
-    this._getInitData()
-      .then(data => this._rpc?.post('initData', data))
-      .catch(err => console.error(err))
+  async reloadViewData(): Promise<void> {
+    try {
+      const data = await this._getInitData()
+      this._rpc?.post('initData', data)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   /**

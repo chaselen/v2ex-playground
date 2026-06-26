@@ -5,6 +5,7 @@ import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
+import { refreshLoginSession } from '@/features/loginSession'
 import { openSearch, setOpenNodeTabHandler } from '@/features/panelNavigation'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 
@@ -27,15 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
   // 插件激活后直接获取节点信息缓存下来
   // G.V2ex.getAllNodes()
   // 刷新登录会话后再尝试自动签到
-  G.V2ex.checkCookie()
-    .then(isCookieValid => {
-      if (isCookieValid) {
-        mainViewProvider.autoDailySignIn()
-      }
-    })
-    .catch(err => {
-      console.error('V2EX 登录会话刷新失败', err)
-    })
+  refreshLoginSession({ autoDailySignIn: true }).catch(err => {
+    console.error('V2EX 登录会话刷新失败', err)
+  })
 
   // 注册主视图 WebviewView
   context.subscriptions.push(
@@ -52,7 +47,12 @@ export function activate(context: vscode.ExtensionContext) {
         mainViewProvider.reloadViewData()
       }
       if (loginResult === LoginResult.success) {
-        mainViewProvider.autoDailySignIn({ notifyOnSuccess: true })
+        refreshLoginSession({
+          autoDailySignIn: true,
+          dailySignInOptions: { notifyOnSuccess: true }
+        }).catch(err => {
+          console.error('V2EX 登录会话刷新失败', err)
+        })
       }
     })
   )

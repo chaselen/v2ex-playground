@@ -1422,7 +1422,7 @@ export class V2exClient {
 
   /**
    * 尝试使用 Cookie 登录
-   * @param cookie 待检查的 Cookie
+   * @param cookie 待检查的 Cookie 如：`A2=""; A2O=""`，最好只包含这两个cookie
    * @throws {TwoFactorRequiredError} 需要两步验证的错误
    */
   async tryLogin(cookie: string): Promise<boolean> {
