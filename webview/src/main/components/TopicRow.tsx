@@ -1,4 +1,6 @@
 import { Dropdown } from '@douyinfe/semi-ui'
+import { useEffect, useState } from 'react'
+import type { MouseEvent } from 'react'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
 import { VscodeBadge } from '@/shared/SemiVscode'
 import { createVsCodeClient } from '@/shared/vscode'
@@ -48,11 +50,40 @@ interface TopicRowProps {
  */
 export default function TopicRow(props: TopicRowProps) {
   const { topicId, title, replies, as = 'div', className, openOnClick = true } = props
+  const [contextMenuVisible, setContextMenuVisible] = useState(false)
+
+  useEffect(() => {
+    if (!contextMenuVisible) {
+      return
+    }
+
+    /** 关闭右键菜单 */
+    function closeContextMenu() {
+      setContextMenuVisible(false)
+    }
+
+    /** 页面可见性变化时关闭右键菜单 */
+    function closeContextMenuWhenHidden() {
+      if (document.hidden) {
+        closeContextMenu()
+      }
+    }
+
+    window.addEventListener('blur', closeContextMenu)
+    document.addEventListener('visibilitychange', closeContextMenuWhenHidden)
+
+    return () => {
+      window.removeEventListener('blur', closeContextMenu)
+      document.removeEventListener('visibilitychange', closeContextMenuWhenHidden)
+    }
+  }, [contextMenuVisible])
 
   /**
    * 打开主题
+   * @param event 鼠标事件
    */
-  function openTopic() {
+  function openTopic(event: MouseEvent<HTMLElement>) {
+    event.stopPropagation()
     vscode.openTopic({ topicId, title })
   }
 
@@ -65,6 +96,15 @@ export default function TopicRow(props: TopicRowProps) {
       topicId,
       label: title
     })
+    setContextMenuVisible(false)
+  }
+
+  /**
+   * 阻止菜单事件继续冒泡到话题行
+   * @param event 鼠标事件
+   */
+  function stopMenuEvent(event: MouseEvent<HTMLElement>) {
+    event.stopPropagation()
   }
 
   const content = (
@@ -81,11 +121,17 @@ export default function TopicRow(props: TopicRowProps) {
         className={rowClassName}
         title={title}
         onClick={openOnClick ? openTopic : undefined}
+        onContextMenu={stopMenuEvent}
       >
         {content}
       </button>
     ) : (
-      <div className={rowClassName} title={title} onClick={openOnClick ? openTopic : undefined}>
+      <div
+        className={rowClassName}
+        title={title}
+        onClick={openOnClick ? openTopic : undefined}
+        onContextMenu={stopMenuEvent}
+      >
         {content}
       </div>
     )
@@ -101,7 +147,15 @@ export default function TopicRow(props: TopicRowProps) {
   )
 
   return (
-    <Dropdown trigger="contextMenu" position="bottomLeft" clickToHide render={menu}>
+    <Dropdown
+      trigger="contextMenu"
+      position="bottomLeft"
+      clickToHide
+      stopPropagation
+      visible={contextMenuVisible}
+      onVisibleChange={setContextMenuVisible}
+      render={menu}
+    >
       {row}
     </Dropdown>
   )
