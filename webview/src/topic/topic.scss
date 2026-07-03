@@ -375,7 +375,7 @@ $panel-border: var(--v2ex-border);
   }
 }
 
-.scroll-actions {
+.floating-actions {
   position: fixed;
   right: 18px;
   bottom: 18px;
@@ -385,7 +385,11 @@ $panel-border: var(--v2ex-border);
   gap: 8px;
 }
 
-.scroll-action-button {
+.floating-action-popconfirm-trigger {
+  display: inline-flex;
+}
+
+.floating-action-button {
   width: 36px;
   height: 36px;
   border: 1px solid var(--vscode-button-border, #{$panel-border});
@@ -401,6 +405,18 @@ $panel-border: var(--v2ex-border);
   &:active {
     background: var(--v2ex-active-bg);
     color: var(--v2ex-active-fg);
+  }
+
+  &.is-active {
+    border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 65%, #{$panel-border});
+    color: var(--vscode-textLink-foreground);
+  }
+
+  &.semi-button-disabled,
+  &.semi-button-disabled:hover {
+    background: var(--v2ex-widget-bg);
+    color: color-mix(in srgb, var(--vscode-textLink-foreground) 72%, transparent);
+    opacity: 0.78;
   }
 }
 
@@ -421,8 +437,9 @@ $panel-border: var(--v2ex-border);
     margin-left: 0;
   }
 
-  .scroll-actions {
+  .floating-actions {
     right: 12px;
     bottom: 12px;
+    gap: 6px;
   }
 }

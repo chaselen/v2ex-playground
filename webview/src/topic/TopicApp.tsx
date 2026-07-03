@@ -11,7 +11,15 @@ import {
   Toast,
   Tooltip
 } from '@douyinfe/semi-ui'
-import { IconArrowDown, IconArrowUp, IconHeartStroked, IconReply } from '@douyinfe/semi-icons'
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconBookmark,
+  IconBookmarkAddStroked,
+  IconHeartStroked,
+  IconRefresh,
+  IconReply
+} from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
 import { VscodeProTag } from '@/shared/SemiVscode'
@@ -151,6 +159,20 @@ export default function TopicApp() {
   }
 
   /**
+   * 收藏主题
+   */
+  function collectTopic() {
+    requestTopicAction(() => vscode.collect(), setCollecting)
+  }
+
+  /**
+   * 取消收藏主题
+   */
+  function cancelCollectTopic() {
+    requestTopicAction(() => vscode.cancelCollect(), setCancelingCollect)
+  }
+
+  /**
    * 快捷回复楼层
    * @param replyAuthor 回复作者
    * @param replyFloor 楼层
@@ -205,6 +227,155 @@ export default function TopicApp() {
     }
     enhanceHtmlContentAfterRender(showImages)
   }, [topic, showImages])
+
+  /**
+   * 渲染主题操作按钮
+   * @param variant 操作按钮形态
+   */
+  function renderTopicActionButtons(variant: 'toolbar' | 'floating') {
+    if (!topic) {
+      return null
+    }
+
+    const isFloating = variant === 'floating'
+    const buttonSize = isFloating ? 'large' : 'small'
+    const buttonTheme = isFloating ? 'solid' : 'light'
+    const buttonType = isFloating ? 'tertiary' : 'secondary'
+    const refreshButton = (
+      <Button
+        aria-label="刷新页面"
+        className={isFloating ? 'floating-action-button' : undefined}
+        icon={isFloating ? <IconRefresh /> : undefined}
+        size={buttonSize}
+        theme={buttonTheme}
+        type={buttonType}
+        onClick={() => vscode.refresh()}
+      >
+        {isFloating ? null : '刷新页面'}
+      </Button>
+    )
+
+    return (
+      <>
+        {isFloating ? (
+          <Tooltip content="刷新页面" position="left">
+            {refreshButton}
+          </Tooltip>
+        ) : (
+          refreshButton
+        )}
+
+        {state.canOperate && (
+          <>
+            {!topic.isCollected ? (
+              isFloating ? (
+                <Tooltip content="加入收藏" position="left">
+                  <Button
+                    aria-label="加入收藏"
+                    className="floating-action-button"
+                    icon={<IconBookmarkAddStroked />}
+                    loading={collecting}
+                    size={buttonSize}
+                    theme={buttonTheme}
+                    type={buttonType}
+                    onClick={collectTopic}
+                  />
+                </Tooltip>
+              ) : (
+                <Button
+                  aria-label="加入收藏"
+                  loading={collecting}
+                  size={buttonSize}
+                  theme={buttonTheme}
+                  type={buttonType}
+                  onClick={collectTopic}
+                >
+                  加入收藏
+                </Button>
+              )
+            ) : isFloating ? (
+              <Tooltip content="取消收藏" position="left">
+                <Button
+                  aria-label="取消收藏"
+                  className="floating-action-button is-active"
+                  icon={<IconBookmark />}
+                  loading={cancelingCollect}
+                  size={buttonSize}
+                  theme={buttonTheme}
+                  type={buttonType}
+                  onClick={cancelCollectTopic}
+                />
+              </Tooltip>
+            ) : (
+              <Button
+                aria-label="取消收藏"
+                loading={cancelingCollect}
+                size={buttonSize}
+                theme={buttonTheme}
+                type={buttonType}
+                onClick={cancelCollectTopic}
+              >
+                取消收藏
+              </Button>
+            )}
+
+            {topic.canThank && !topic.isThanked && (
+              <Popconfirm
+                title="你确定要向本主题创建者发送谢意？"
+                okText="确认"
+                cancelText="取消"
+                onConfirm={thankTopic}
+              >
+                <span className={isFloating ? 'floating-action-popconfirm-trigger' : undefined}>
+                  {isFloating ? (
+                    <Tooltip content="感谢主题创建者" position="left">
+                      <Button
+                        aria-label="感谢主题创建者"
+                        className="floating-action-button"
+                        icon={<IconHeartStroked />}
+                        loading={thankingTopic}
+                        size={buttonSize}
+                        theme={buttonTheme}
+                        type={buttonType}
+                      />
+                    </Tooltip>
+                  ) : (
+                    <Button
+                      aria-label="感谢主题创建者"
+                      loading={thankingTopic}
+                      size={buttonSize}
+                      theme={buttonTheme}
+                      type={buttonType}
+                    >
+                      感谢
+                    </Button>
+                  )}
+                </span>
+              </Popconfirm>
+            )}
+
+            {topic.canThank &&
+              topic.isThanked &&
+              (isFloating ? (
+                <Tooltip content="感谢已发送" position="left">
+                  <Button
+                    aria-label="感谢已发送"
+                    className="floating-action-button is-active"
+                    disabled
+                    icon={<IconHeartStroked />}
+                    size="large"
+                    theme="solid"
+                    type="tertiary"
+                  />
+                </Tooltip>
+              ) : (
+                <span className="toolbar-text">感谢已发送</span>
+              ))}
+          </>
+        )}
+      </>
+    )
+  }
 
   return (
     <main className="topic-shell" ref={topicShellRef}>
@@ -290,45 +461,7 @@ export default function TopicApp() {
 
           {state.canOperate && (
             <div className="topic-toolbar">
-              <Button size="small" type="secondary" onClick={() => vscode.refresh()}>
-                刷新页面
-              </Button>
-              {!topic.isCollected ? (
-                <Button
-                  size="small"
-                  type="secondary"
-                  loading={collecting}
-                  onClick={() => requestTopicAction(() => vscode.collect(), setCollecting)}
-                >
-                  加入收藏
-                </Button>
-              ) : (
-                <Button
-                  size="small"
-                  type="secondary"
-                  loading={cancelingCollect}
-                  onClick={() =>
-                    requestTopicAction(() => vscode.cancelCollect(), setCancelingCollect)
-                  }
-                >
-                  取消收藏
-                </Button>
-              )}
-              {topic.canThank && !topic.isThanked && (
-                <Popconfirm
-                  title="你确定要向本主题创建者发送谢意？"
-                  okText="确认"
-                  cancelText="取消"
-                  onConfirm={thankTopic}
-                >
-                  <Button size="small" type="secondary" loading={thankingTopic}>
-                    感谢
-                  </Button>
-                </Popconfirm>
-              )}
-              {topic.canThank && topic.isThanked && (
-                <span className="toolbar-text">感谢已发送</span>
-              )}
+              {renderTopicActionButtons('toolbar')}
               <span className="toolbar-count">
                 {topic.visitCount} 次点击
                 {!!topic.collectCount && ` · ${topic.collectCount} 人收藏`}
@@ -488,25 +621,30 @@ export default function TopicApp() {
       )}
 
       {state.status === 'topic' && topic && (
-        <div className="scroll-actions">
-          <Button
-            aria-label="滚动到顶部"
-            className="scroll-action-button"
-            icon={<IconArrowUp />}
-            size="large"
-            theme="solid"
-            type="tertiary"
-            onClick={scrollToTop}
-          />
-          <Button
-            aria-label="滚动到底部"
-            className="scroll-action-button"
-            icon={<IconArrowDown />}
-            size="large"
-            theme="solid"
-            type="tertiary"
-            onClick={scrollToBottom}
-          />
+        <div className="floating-actions" aria-label="话题快捷操作">
+          {renderTopicActionButtons('floating')}
+          <Tooltip content="滚动到顶部" position="left">
+            <Button
+              aria-label="滚动到顶部"
+              className="floating-action-button"
+              icon={<IconArrowUp />}
+              size="large"
+              theme="solid"
+              type="tertiary"
+              onClick={scrollToTop}
+            />
+          </Tooltip>
+          <Tooltip content="滚动到底部" position="left">
+            <Button
+              aria-label="滚动到底部"
+              className="floating-action-button"
+              icon={<IconArrowDown />}
+              size="large"
+              theme="solid"
+              type="tertiary"
+              onClick={scrollToBottom}
+            />
+          </Tooltip>
         </div>
       )}
     </main>
