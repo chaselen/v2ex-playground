@@ -104,7 +104,7 @@ function proxyImgurImageSrc(imageSrc: string): string {
   try {
     const url = new URL(imageSrc, document.baseURI)
     if (url.hostname === 'i.imgur.com') {
-      return 'https://img.noobzone.ru/getimg.php?url=' + encodeURIComponent(url.href)
+      return 'https://img.fuyou.tech/get?url=' + encodeURIComponent(url.href)
     }
   } catch {
     return imageSrc
