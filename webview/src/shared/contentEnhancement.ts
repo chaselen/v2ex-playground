@@ -16,7 +16,31 @@ let hiddenImagePlaceholderCount = 0
  * @param html 原始 html
  */
 export function normalizeHtml(html?: string | null): string {
-  return html || ''
+  const normalizedHtml = html || ''
+
+  if (!normalizedHtml.includes('i.imgur.com')) {
+    return normalizedHtml
+  }
+
+  const template = document.createElement('template')
+  template.innerHTML = normalizedHtml
+
+  template.content.querySelectorAll<HTMLImageElement>('img').forEach(img => {
+    const originalSrc = img.getAttribute('data-preview-src') || img.getAttribute('src') || ''
+    if (!originalSrc) {
+      return
+    }
+
+    const proxiedSrc = proxyImgurImageSrc(originalSrc)
+    if (proxiedSrc === originalSrc) {
+      return
+    }
+
+    img.dataset.previewSrc = originalSrc
+    img.src = proxiedSrc
+  })
+
+  return template.innerHTML
 }
 
 /**
