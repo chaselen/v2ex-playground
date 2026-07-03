@@ -1,0 +1,10 @@
+sandbox_mode = "workspace-write"
+[mcp_servers]
+
+[mcp_servers.Semi-Design]
+type = "stdio"
+command = "npx"
+args = ["-y", "@douyinfe/semi-mcp"]
+
+[mcp_servers.Semi-Design.tools.get_semi_document]
+approval_mode = "approve"
