@@ -356,6 +356,38 @@ $panel-border: var(--v2ex-border);
 .post-reply {
   margin-top: 18px;
 
+  .reply-composer-tabs {
+    display: flex;
+    gap: 24px;
+    align-items: flex-end;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--v2ex-border);
+
+    button {
+      appearance: none;
+      min-height: 32px;
+      margin: 0 0 -1px;
+      padding: 0;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--v2ex-muted-fg);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        color: var(--v2ex-webview-fg);
+      }
+
+      &.is-active {
+        border-bottom-color: var(--v2ex-primary-button-bg);
+        color: var(--v2ex-webview-fg);
+      }
+    }
+  }
+
   .semi-input-textarea-wrapper {
     border: 1px solid var(--vscode-input-border, #{$panel-border});
     border-radius: 4px;
@@ -370,7 +402,30 @@ $panel-border: var(--v2ex-border);
     border-color: var(--v2ex-focus-border);
   }
 
-  .submit {
+  .reply-preview-panel {
+    min-height: 130px;
+    padding: 4px 0 0;
+
+    .semi-spin {
+      display: flex;
+      min-height: 110px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .muted {
+      margin: 0;
+    }
+  }
+
+  .reply-preview-content {
+    min-height: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .reply-submit-row {
     margin-top: 10px;
   }
 }

@@ -30,6 +30,8 @@ export interface TopicPanelRpcCommands extends WebviewContentRpcCommands {
   cancelCollect(): void
   thank(): void
   postReply(payload: { content: string }): void
+  /** 预览回复内容 */
+  previewReply(payload: { content: string }): string
   thankReply(payload: { replyId: string }): void
   loadReplyPage(payload: { replyPage: number }): void
 }

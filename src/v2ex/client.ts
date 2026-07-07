@@ -1507,6 +1507,22 @@ export class V2exClient {
   }
 
   /**
+   * 预览回复内容
+   * @param text 回复内容
+   * @param syntax 预览语法
+   */
+  async previewReply(text: string, syntax: 'default' | 'markdown'): Promise<string> {
+    const formData = new FormData()
+    formData.append('text', text)
+
+    const resp = await this.http.post<string>(`/preview/${syntax}`, formData, {
+      responseType: 'text',
+      transformResponse: data => data
+    })
+    return String(resp.data || '')
+  }
+
+  /**
    * 感谢回复者
    * @param replyId 回复id
    */

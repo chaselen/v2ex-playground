@@ -30,6 +30,9 @@ import type {
   TopicPanelWebviewEvents
 } from '@extension/shared/webview'
 
+/** 回复编辑模式 */
+type ReplyComposerMode = 'edit' | 'preview'
+
 /** 话题面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<TopicPanelRpcCommands, TopicPanelWebviewEvents>()
 
@@ -52,6 +55,10 @@ export default function TopicApp() {
   const [thankingTopic, setThankingTopic] = useState(false)
   const [postingReply, setPostingReply] = useState(false)
   const [loadingReplyPage, setLoadingReplyPage] = useState(false)
+  const [replyComposerMode, setReplyComposerMode] = useState<ReplyComposerMode>('edit')
+  const [previewingReply, setPreviewingReply] = useState(false)
+  const [replyPreviewHtml, setReplyPreviewHtml] = useState('')
+  const [replyPreviewSource, setReplyPreviewSource] = useState('')
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const topicShellRef = useRef<HTMLElement>(null)
   const topic = state.topic
@@ -132,8 +139,59 @@ export default function TopicApp() {
     await requestTopicAction(
       () => vscode.postReply({ content }),
       setPostingReply,
-      () => setReplyContent('')
+      () => {
+        setReplyContent('')
+        setReplyPreviewHtml('')
+        setReplyPreviewSource('')
+        setReplyComposerMode('edit')
+      }
     )
+  }
+
+  /**
+   * 更新回复内容
+   * @param value 输入内容
+   */
+  function updateReplyContent(value: string) {
+    setReplyContent(value)
+    if (value !== replyPreviewSource) {
+      setReplyPreviewHtml('')
+    }
+  }
+
+  /**
+   * 预览回复内容
+   */
+  async function previewReply() {
+    const content = replyContent
+
+    if (!content.trim()) {
+      Toast.warning('回复内容不能为空')
+      setReplyComposerMode('edit')
+      requestAnimationFrame(() => {
+        const textarea = document.querySelector<HTMLTextAreaElement>('.post-reply textarea')
+        textarea?.focus()
+      })
+      return
+    }
+
+    if (replyPreviewHtml && replyPreviewSource === content) {
+      setReplyComposerMode('preview')
+      return
+    }
+
+    setReplyComposerMode('preview')
+    setPreviewingReply(true)
+    try {
+      const html = await vscode.previewReply({ content })
+      setReplyPreviewHtml(html)
+      setReplyPreviewSource(content)
+    } catch (err) {
+      Toast.error((err as Error).message || '预览失败')
+      setReplyComposerMode('edit')
+    } finally {
+      setPreviewingReply(false)
+    }
   }
 
   /**
@@ -179,6 +237,8 @@ export default function TopicApp() {
    */
   function floorReply(replyAuthor: string, replyFloor: string) {
     setReplyContent(`@${replyAuthor} #${replyFloor} `)
+    setReplyPreviewHtml('')
+    setReplyComposerMode('edit')
     requestAnimationFrame(() => {
       const textarea = document.querySelector<HTMLTextAreaElement>('.post-reply textarea')
       textarea?.focus()
@@ -227,6 +287,13 @@ export default function TopicApp() {
     }
     enhanceHtmlContentAfterRender(showImages)
   }, [topic, showImages])
+
+  useEffect(() => {
+    if (replyComposerMode !== 'preview' || !replyPreviewHtml) {
+      return
+    }
+    enhanceHtmlContentAfterRender(showImages)
+  }, [replyComposerMode, replyPreviewHtml, showImages])
 
   /**
    * 渲染主题操作按钮
@@ -596,23 +663,62 @@ export default function TopicApp() {
                 onSubmit()
               }}
             >
-              <TextArea
-                value={replyContent}
-                maxCount={10000}
-                autosize={{ minRows: 5, maxRows: 12 }}
-                placeholder="请尽量让自己的回复能够对别人有帮助"
-                showClear
-                onChange={value => setReplyContent(String(value || ''))}
-              />
-              <Button
-                className="submit"
-                theme="solid"
-                type="primary"
-                htmlType="submit"
-                loading={postingReply}
-              >
-                回复
-              </Button>
+              <div className="reply-composer-tabs" role="tablist" aria-label="回复编辑模式">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={replyComposerMode === 'edit'}
+                  className={replyComposerMode === 'edit' ? 'is-active' : undefined}
+                  onClick={() => setReplyComposerMode('edit')}
+                >
+                  编辑
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={replyComposerMode === 'preview'}
+                  className={replyComposerMode === 'preview' ? 'is-active' : undefined}
+                  onClick={previewReply}
+                >
+                  预览
+                </button>
+              </div>
+
+              {replyComposerMode === 'edit' ? (
+                <TextArea
+                  value={replyContent}
+                  maxCount={10000}
+                  autosize={{ minRows: 5, maxRows: 12 }}
+                  placeholder="请尽量让自己的回复能够对别人有帮助"
+                  showClear
+                  onChange={value => updateReplyContent(String(value || ''))}
+                />
+              ) : (
+                <div className="reply-preview-panel">
+                  {previewingReply ? (
+                    <Spin />
+                  ) : replyPreviewHtml ? (
+                    <div
+                      className="topic-content reply-preview-content"
+                      dangerouslySetInnerHTML={{ __html: normalizeHtml(replyPreviewHtml) }}
+                    />
+                  ) : (
+                    <p className="muted">暂无预览内容</p>
+                  )}
+                </div>
+              )}
+
+              <div className="reply-submit-row">
+                <Button
+                  className="submit"
+                  theme="solid"
+                  type="primary"
+                  htmlType="submit"
+                  loading={postingReply}
+                >
+                  回复
+                </Button>
+              </div>
             </form>
           ) : (
             <p className="muted">您目前还不能回复，请先登录</p>

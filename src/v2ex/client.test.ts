@@ -503,6 +503,16 @@ describe('V2exClient authenticated requests', () => {
     }
   })
 
+  authTest('previews default reply syntax with V2EX_COOKIE', async () => {
+    await expect(client.previewReply('1\n2', 'default')).resolves.toBe('1<br />2')
+  })
+
+  authTest('previews markdown reply syntax with V2EX_COOKIE', async () => {
+    await expect(client.previewReply('`123`', 'markdown')).resolves.toBe(
+      '<p><code>123</code></p>\n'
+    )
+  })
+
   authTest('signs in daily and returns the reward with V2EX_COOKIE', async () => {
     const result = await client.dailySignIn()
 

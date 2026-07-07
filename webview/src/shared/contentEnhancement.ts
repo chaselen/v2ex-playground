@@ -15,8 +15,8 @@ let hiddenImagePlaceholderCount = 0
  * 规范化 html 文本，避免插值时出现 undefined
  * @param html 原始 html
  */
-export function normalizeHtml(html?: string | null): string {
-  const normalizedHtml = html || ''
+export function normalizeHtml(html?: unknown): string {
+  const normalizedHtml = typeof html === 'string' ? html : ''
 
   if (!normalizedHtml.includes('i.imgur.com')) {
     return normalizedHtml

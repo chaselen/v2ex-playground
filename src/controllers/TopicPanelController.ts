@@ -222,6 +222,7 @@ export class TopicPanelController {
       cancelCollect: () => this.runTopicMutation(() => G.V2ex.cancelCollectTopic(this.detail.id)),
       thank: () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)),
       postReply: msg => this.handlePostReply(msg),
+      previewReply: msg => this.handlePreviewReply(msg),
       thankReply: msg => this.handleThankReply(msg),
       loadReplyPage: msg => this.handleLoadReplyPage(msg)
     }
@@ -289,6 +290,19 @@ export class TopicPanelController {
     }
 
     return this.runTopicMutation(() => G.V2ex.postReply(this.topicId, content))
+  }
+
+  /**
+   * 处理回复预览
+   * @param message 页面消息
+   */
+  private handlePreviewReply(message: { content: string }) {
+    const { content } = message
+    if (!content.trim()) {
+      throw new Error('请输入回复内容')
+    }
+
+    return G.V2ex.previewReply(content, 'default')
   }
 
   /**
