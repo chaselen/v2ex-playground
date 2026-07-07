@@ -53,6 +53,7 @@ export interface TreeItem {
   topicId?: number
   title?: string
   replies?: number
+  isRead?: boolean
   page?: number
   totalPage?: number
   totalCount?: number

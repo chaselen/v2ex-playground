@@ -45,6 +45,12 @@ import {
 /** Cheerio 选择结果 */
 type CheerioSelection = ReturnType<cheerio.CheerioAPI>
 
+/** V2EX 时间元素查找选项 */
+interface V2exTimeSpanOptions {
+  /** 是否只查找直接子元素 */
+  direct?: boolean
+}
+
 /** V2EX 请求超时时间 */
 const v2exRequestTimeout = 15000
 
@@ -92,6 +98,25 @@ const redirectCheckPathPatterns = ['/balance', '/go/*', '/t/*']
 
 /** 自动重定向检查页面路径匹配器 */
 const isRedirectCheckPath = picomatch(redirectCheckPathPatterns)
+
+/**
+ * 查找 V2EX 时间元素
+ * @param container 查找范围
+ * @param options 查找选项
+ */
+function getV2exTimeSpan(
+  container: CheerioSelection,
+  options: V2exTimeSpanOptions = {}
+): CheerioSelection {
+  const spans = options.direct ? container.children('span') : container.find('span')
+  // V2EX 完整时间在 title 中，格式通常为 20xx-xx-xx xx:xx:xx +08:00
+  const fullTimeSpan = spans.filter('[title^="20"]').last()
+  if (fullTimeSpan.length) {
+    return fullTimeSpan
+  }
+
+  return spans.filter('[title]').last()
+}
 
 export class V2exClient {
   /** 域名 */
@@ -508,7 +533,7 @@ export class V2exClient {
               title: nodeElement.text().trim()
             },
         replies: Number(countElement.text().trim()) || 0,
-        displayTime: topicInfo.find('span[title]').last().text().trim(),
+        displayTime: getV2exTimeSpan(topicInfo).text().trim(),
         lastReplyUser: hasLastReply
           ? topicInfo.find('strong a[href^="/member/"]').last().text().trim()
           : ''
@@ -1258,6 +1283,7 @@ export class V2exClient {
       authorName: '',
       isAuthorPro: false,
       displayTime: '',
+      publishedAt: '',
       visitCount: 0,
       content: '',
       appends: [],
@@ -1280,7 +1306,12 @@ export class V2exClient {
     const meta = headerMeta.text().split('·')
     topic.authorName = headerMeta.find('a[href^=/member]').text().trim()
     topic.isAuthorPro = headerMeta.find('.badges .badge.pro').length > 0
-    topic.displayTime = headerMeta.children('span').last().text().trim()
+    const publishedTime = getV2exTimeSpan(headerMeta, { direct: true })
+    const publishedTimeTitle = publishedTime.attr('title')
+    topic.displayTime = publishedTime.text().trim()
+    topic.publishedAt = publishedTimeTitle
+      ? dayjs(publishedTimeTitle).format('YYYY-MM-DD HH:mm:ss')
+      : topic.displayTime
     topic.visitCount = Number(
       meta.find(item => /(?:views|次点击)/i.test(item))?.match(/\d+/)?.[0] || 0
     )

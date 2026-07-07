@@ -49,6 +49,12 @@ a {
   &:hover {
     color: $link-active-color;
   }
+
+  // 鼠标按住链接时不显示浏览器默认焦点框，保留键盘 focus-visible 样式
+  &:active,
+  &:focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 .text-bold {

@@ -34,6 +34,11 @@
         "icon": "$(search)"
       },
       {
+        "command": "v2ex.recentBrowse",
+        "title": "最近浏览",
+        "icon": "$(history)"
+      },
+      {
         "command": "v2ex.settings",
         "title": "设置",
         "icon": "$(gear)"
@@ -69,6 +74,10 @@
           "when": "false"
         },
         {
+          "command": "v2ex.recentBrowse",
+          "when": "false"
+        },
+        {
           "command": "v2ex.settings",
           "when": "false"
         }
@@ -80,14 +89,19 @@
           "group": "navigation@0"
         },
         {
-          "command": "v2ex.settings",
+          "command": "v2ex.recentBrowse",
           "when": "view == v2ex-main",
           "group": "navigation@1"
         },
         {
-          "command": "v2ex.login",
+          "command": "v2ex.settings",
           "when": "view == v2ex-main",
           "group": "navigation@2"
+        },
+        {
+          "command": "v2ex.login",
+          "when": "view == v2ex-main",
+          "group": "navigation@3"
         }
       ]
     },

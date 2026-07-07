@@ -11,6 +11,7 @@ import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
+import { markTopicListRead } from '../nodeData'
 import type {
   MyContentTabKey,
   MainViewRpcCommands,
@@ -46,6 +47,8 @@ interface MyTabProps {
 export interface MyTabHandle {
   /** 刷新已加载的内容标签 */
   refreshLoadedTabs: () => Promise<void>
+  /** 标记已加载的主题已读 */
+  markTopicRead: (topicId: number) => void
 }
 
 /** 收藏统计字段 */
@@ -244,6 +247,12 @@ export default function MyTab(props: MyTabProps) {
         requests.push(loadMyNotifications(1))
       }
       await Promise.all(requests)
+    },
+    markTopicRead(topicId: number) {
+      setTopicLists(current => ({
+        topicCollection: markMyTopicListRead(current.topicCollection, topicId),
+        specialFollowing: markMyTopicListRead(current.specialFollowing, topicId)
+      }))
     }
   }))
 
@@ -435,6 +444,7 @@ export default function MyTab(props: MyTabProps) {
         className={styles['my-topic-item']}
         title={topic.title}
         replies={topic.replies}
+        isRead={topic.isRead}
       />
     )
   }
@@ -822,4 +832,16 @@ export default function MyTab(props: MyTabProps) {
       </div>
     </SimpleBar>
   )
+}
+
+/**
+ * 标记我的主题列表中的话题已读
+ * @param state 主题列表状态
+ * @param topicId 话题 id
+ */
+function markMyTopicListRead(state: MyTopicListState, topicId: number): MyTopicListState {
+  return {
+    ...state,
+    topics: markTopicListRead(state.topics, topicId)
+  }
 }

@@ -89,6 +89,8 @@ function expectTopicDetail(detail: TopicDetail) {
   expect(detail.authorName).toEqual(expect.any(String))
   expect(detail.authorName.length).toBeGreaterThan(0)
   expect(detail.displayTime).toEqual(expect.any(String))
+  expect(detail.publishedAt).toEqual(expect.any(String))
+  expect(detail.publishedAt.length).toBeGreaterThan(0)
   expect(detail.visitCount).toEqual(expect.any(Number))
   expect(detail.visitCount).toBeGreaterThanOrEqual(0)
   expect(detail.content).toEqual(expect.any(String))

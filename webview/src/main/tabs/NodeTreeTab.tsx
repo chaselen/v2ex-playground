@@ -103,6 +103,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
     type: 'topic',
     topicId: topic.id,
     replies: topic.replies,
+    isRead: topic.isRead,
     isLeaf: true
   }))
 
@@ -332,6 +333,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
         topicId={data.topicId!}
         title={topicTitle}
         replies={data.replies}
+        isRead={data.isRead}
         openOnClick={false}
       />
     )

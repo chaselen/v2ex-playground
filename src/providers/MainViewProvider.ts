@@ -10,6 +10,7 @@ import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
+import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import {
   refreshLoginSession as refreshV2exLoginSession,
   type RefreshLoginSessionOptions
@@ -48,6 +49,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _pendingNode?: WebviewNode
   private _accountOverviewChangedDisposable?: { dispose: () => void }
   private _dailySignInStatusDisposable?: { dispose: () => void }
+  private _topicReadDisposable?: { dispose: () => void }
   /** Webview 恢复可见时的数据刷新任务 */
   private _visibleRefreshPromise?: Promise<void>
 
@@ -73,6 +75,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     this._dailySignInStatusDisposable = onDailySignInStatusChanged(data =>
       this._rpc?.post('dailySignInStatusChanged', data)
     )
+    this._topicReadDisposable?.dispose()
+    this._topicReadDisposable = onTopicRead(topicId => this._rpc?.post('topicRead', { topicId }))
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
         this.refreshVisibleViewData()
@@ -84,6 +88,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       this._accountOverviewChangedDisposable = undefined
       this._dailySignInStatusDisposable?.dispose()
       this._dailySignInStatusDisposable = undefined
+      this._topicReadDisposable?.dispose()
+      this._topicReadDisposable = undefined
       this._rpc?.dispose()
       if (this._view === webviewView) {
         this._view = undefined
@@ -494,7 +500,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       nodeTitle: topic.node?.title,
       replies: topic.replies,
       displayTime: topic.displayTime,
-      lastReplyUser: topic.lastReplyUser
+      lastReplyUser: topic.lastReplyUser,
+      isRead: isTopicRead(topic.id)
     }
   }
 

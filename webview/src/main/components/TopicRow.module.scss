@@ -19,3 +19,13 @@
   color: var(--v2ex-main-content-fg);
   @include mixins.ellipsis;
 }
+
+.topic-row--read {
+  .topic-title {
+    color: var(--vscode-descriptionForeground);
+  }
+
+  :global(.semi-badge) {
+    opacity: 0.72;
+  }
+}

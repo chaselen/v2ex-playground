@@ -41,3 +41,12 @@ export function normalizeTopics(topics: WebviewTopic[]): WebviewTopic[] {
     replies: topic.replies || 0
   }))
 }
+
+/**
+ * 标记话题列表中的指定话题已读
+ * @param topics 话题列表
+ * @param topicId 话题 id
+ */
+export function markTopicListRead(topics: WebviewTopic[], topicId: number): WebviewTopic[] {
+  return topics.map(topic => (topic.id === topicId ? { ...topic, isRead: true } : topic))
+}

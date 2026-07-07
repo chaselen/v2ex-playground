@@ -155,6 +155,11 @@ export default function MainApp() {
         lastFixedTab.current = data.tab
         setActiveTab(data.tab)
       }),
+      vscode.on('topicRead', data => {
+        nodeTreeTabs.markTopicRead(data.topicId)
+        nodeTopicTab.markTopicRead(data.topicId)
+        myTabRef.current?.markTopicRead(data.topicId)
+      }),
       vscode.on('openNode', openNodeTab)
     ]
     vscode
@@ -168,7 +173,7 @@ export default function MainApp() {
     return () => {
       disposables.forEach(dispose => dispose())
     }
-  }, [onInitData, openNodeTab])
+  }, [nodeTopicTab.markTopicRead, nodeTreeTabs.markTopicRead, onInitData, openNodeTab])
 
   /** 当前标签刷新按钮文案 */
   const activeTabLabel =

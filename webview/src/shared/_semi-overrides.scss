@@ -77,6 +77,12 @@
   box-sizing: content-box;
 }
 
+/* Popconfirm 文案较短时默认宽度过窄，统一给确认框保留可读宽度 */
+.semi-popconfirm {
+  min-width: 320px;
+  max-width: min(400px, calc(100vw - 32px));
+}
+
 /* Tooltip 和 Dropdown 使用各自的 VS Code 浮层主题色 */
 .semi-tooltip-wrapper {
   border: 0;

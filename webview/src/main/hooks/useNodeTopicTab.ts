@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { createVsCodeClient } from '@/shared/vscode'
 import type { MainViewRpcCommands, NodeTopicListData, WebviewNode } from '@extension/shared/webview'
-import { normalizeTopics } from '../nodeData'
+import { markTopicListRead, normalizeTopics } from '../nodeData'
 import type { NodeTopicTabState } from '../types'
 
 /** 主面板 VS Code 通信客户端 */
@@ -118,9 +118,29 @@ export function useNodeTopicTab() {
     setNodeTab(undefined)
   }, [])
 
+  /**
+   * 标记当前节点标签中的话题已读
+   * @param topicId 话题 id
+   */
+  const markTopicRead = useCallback((topicId: number) => {
+    setNodeTab(current => {
+      if (!current) {
+        return current
+      }
+
+      const next = {
+        ...current,
+        topics: markTopicListRead(current.topics, topicId)
+      }
+      nodeTabRef.current = next
+      return next
+    })
+  }, [])
+
   return {
     nodeTab,
     closeNodeTab,
+    markTopicRead,
     openNodeTab,
     requestNodeTopics
   }

@@ -8,7 +8,7 @@ import {
   type NodeChildrenData,
   type NodeListData
 } from '@extension/shared/webview'
-import { createNodeItem, mergeNodeItems, normalizeTopics } from '../nodeData'
+import { createNodeItem, markTopicListRead, mergeNodeItems, normalizeTopics } from '../nodeData'
 import type { MainTabKey, MainTabs, NodeItem } from '../types'
 
 /** 主面板 VS Code 通信客户端 */
@@ -232,6 +232,18 @@ export function useNodeTreeTabs() {
   }, [])
 
   /**
+   * 标记已加载节点中的话题已读
+   * @param topicId 话题 id
+   */
+  const markTopicRead = useCallback((topicId: number) => {
+    setTabs(current => ({
+      explore: markTabTopicRead(current.explore, topicId),
+      custom: markTabTopicRead(current.custom, topicId),
+      collection: markTabTopicRead(current.collection, topicId)
+    }))
+  }, [])
+
+  /**
    * 刷新固定节点标签
    * @param tab 标签 key
    */
@@ -274,8 +286,25 @@ export function useNodeTreeTabs() {
     changeNodePage,
     expandNode,
     initializeTabs,
+    markTopicRead,
     refreshNode,
     refreshTab,
     removeNode
   }
+}
+
+/**
+ * 标记标签页节点中的话题已读
+ * @param nodes 节点列表
+ * @param topicId 话题 id
+ */
+function markTabTopicRead(nodes: NodeItem[], topicId: number): NodeItem[] {
+  return nodes.map(node =>
+    node.children
+      ? {
+          ...node,
+          children: markTopicListRead(node.children, topicId)
+        }
+      : node
+  )
 }

@@ -45,6 +45,7 @@ export default function NodeTopicTab(props: NodeTopicTabProps) {
               topicId={topic.id}
               title={topic.title}
               replies={topic.replies}
+              isRead={topic.isRead}
               className={styles['topic-row']}
             />
           ))}

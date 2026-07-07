@@ -7,6 +7,7 @@ import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { updateRecentBrowseTopic } from '@/features/recentBrowse'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
   TopicPanelRpcCommands,
@@ -58,6 +59,7 @@ export class TopicPanelController {
     authorName: '',
     isAuthorPro: false,
     displayTime: '',
+    publishedAt: '',
     visitCount: 0,
     content: '',
     appends: [],
@@ -247,6 +249,7 @@ export class TopicPanelController {
 
     const detail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
     this.detail = detail
+    updateRecentBrowseTopic(detail).catch(err => console.error('V2EX 最近浏览详情保存失败', err))
     this.panel.title = fmtPanelTitle(detail.title)
     this.render(detail)
   }

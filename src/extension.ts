@@ -6,7 +6,7 @@ import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
 import { refreshLoginSession } from '@/features/loginSession'
-import { openSearch, setOpenNodeTabHandler } from '@/features/panelNavigation'
+import { openRecentBrowse, openSearch, setOpenNodeTabHandler } from '@/features/panelNavigation'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 
 export function activate(context: vscode.ExtensionContext) {
@@ -59,6 +59,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 搜索
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => openSearch()))
+
+  // 最近浏览
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.recentBrowse', () => openRecentBrowse())
+  )
 
   // 设置
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.settings', () => setting()))

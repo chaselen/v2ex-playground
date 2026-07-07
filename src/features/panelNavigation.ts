@@ -3,6 +3,7 @@ import { MemberPanelController } from '@/controllers/MemberPanelController'
 import { TopicPanelController } from '@/controllers/TopicPanelController'
 import { BalancePanelController } from '@/controllers/BalancePanelController'
 import { SearchPanelController } from '@/controllers/SearchPanelController'
+import { RecentBrowsePanelController } from '@/controllers/RecentBrowsePanelController'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import G from '@/global'
 
@@ -25,6 +26,9 @@ let balancePanel: BalancePanelController | undefined
 
 /** 搜索页面控制器 */
 let searchPanel: SearchPanelController | undefined
+
+/** 最近浏览页面控制器 */
+let recentBrowsePanel: RecentBrowsePanelController | undefined
 
 /** 打开主面板节点标签回调 */
 let openNodeTab: (node: NodeTabInput) => void = () => undefined
@@ -135,5 +139,18 @@ export function openSearch() {
   searchPanel = new SearchPanelController(panelDeps)
   searchPanel.onDidDispose(() => {
     searchPanel = undefined
+  })
+}
+
+/** 打开最近浏览页面 */
+export function openRecentBrowse() {
+  if (recentBrowsePanel) {
+    recentBrowsePanel.reveal()
+    return
+  }
+
+  recentBrowsePanel = new RecentBrowsePanelController(panelDeps)
+  recentBrowsePanel.onDidDispose(() => {
+    recentBrowsePanel = undefined
   })
 }

@@ -42,6 +42,8 @@ interface TopicRowProps {
   className?: string
   /** 是否点击时打开主题 */
   openOnClick?: boolean
+  /** 是否已读 */
+  isRead?: boolean
 }
 
 /**
@@ -49,7 +51,7 @@ interface TopicRowProps {
  * @param props 组件参数
  */
 export default function TopicRow(props: TopicRowProps) {
-  const { topicId, title, replies, as = 'div', className, openOnClick = true } = props
+  const { topicId, title, replies, as = 'div', className, openOnClick = true, isRead } = props
   const [contextMenuVisible, setContextMenuVisible] = useState(false)
 
   useEffect(() => {
@@ -113,7 +115,9 @@ export default function TopicRow(props: TopicRowProps) {
       {!!replies && replies > 0 && <VscodeBadge count={replies} overflowCount={99} />}
     </>
   )
-  const rowClassName = [styles['topic-row'], className].filter(Boolean).join(' ')
+  const rowClassName = [styles['topic-row'], isRead ? styles['topic-row--read'] : '', className]
+    .filter(Boolean)
+    .join(' ')
   const row =
     as === 'button' ? (
       <button

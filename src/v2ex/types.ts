@@ -72,6 +72,8 @@ export interface TopicDetail {
   isAuthorPro: boolean
   /** 时间 */
   displayTime: string
+  /** 完整发布时间 */
+  publishedAt: string
   /** 点击次数 */
   visitCount: number
   /** 内容 */
