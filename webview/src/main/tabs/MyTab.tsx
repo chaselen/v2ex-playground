@@ -786,6 +786,7 @@ export default function MyTab(props: MyTabProps) {
               theme={dailySignedIn ? 'light' : 'solid'}
               type={dailySignedIn ? 'tertiary' : 'primary'}
               size="small"
+              className={dailySignedIn ? styles['my-daily-sign-in-done'] : undefined}
               icon={dailySignedIn ? <IconTickCircle /> : <IconGiftStroked />}
               loading={dailySignInLoading}
               disabled={dailySignedIn}

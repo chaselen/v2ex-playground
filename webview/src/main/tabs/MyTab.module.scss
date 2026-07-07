@@ -175,6 +175,17 @@
   }
 }
 
+.my-daily-sign-in-done:global(.semi-button-disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: color-mix(in srgb, var(--v2ex-success-fg) 72%, var(--v2ex-main-content-fg));
+  opacity: 1;
+
+  :global(.semi-button-content-left) {
+    color: color-mix(in srgb, var(--v2ex-success-fg) 86%, var(--v2ex-main-content-fg));
+  }
+}
+
 .my-notice {
   flex: 1;
   min-width: 56px;
