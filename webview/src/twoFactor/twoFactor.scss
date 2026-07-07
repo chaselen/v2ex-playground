@@ -43,6 +43,62 @@
   line-height: 1.6;
 }
 
+.two-factor-error {
+  display: grid;
+  align-items: flex-start;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px 12px;
+  border: 1px solid var(--vscode-inputValidation-errorBorder, var(--v2ex-danger-border));
+  border-radius: 4px;
+  color: var(--vscode-inputValidation-errorForeground, var(--v2ex-danger-fg));
+  background: var(--vscode-inputValidation-errorBackground, var(--v2ex-danger-bg));
+}
+
+.two-factor-error-icon {
+  margin-top: 2px;
+  color: var(--v2ex-danger-fg);
+  font-size: 18px;
+}
+
+.two-factor-error-content {
+  min-width: 0;
+}
+
+.two-factor-error-title {
+  color: var(--vscode-foreground);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.two-factor-error-description {
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.two-factor-error-close {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--vscode-icon-foreground);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--vscode-foreground);
+    background: var(--vscode-toolbar-hoverBackground);
+  }
+}
+
 .two-factor-input {
   display: flex;
   width: 100%;

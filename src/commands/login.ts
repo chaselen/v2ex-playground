@@ -33,6 +33,7 @@ export default async function login(): Promise<LoginResult> {
     return LoginResult.failed
   }
 
+  let isLoginCanceled = false
   const isLoginSuccess = await vscode.window.withProgress(
     {
       title: '正在登录',
@@ -41,6 +42,7 @@ export default async function login(): Promise<LoginResult> {
     async () => {
       const previousLoginCookie = G.getCookie() || ''
       let isCookieValid = false
+      let isTwoFactorCanceled = false
       let cookieToPersist = loginCookie
       try {
         isCookieValid = await G.V2ex.tryLogin(loginCookie)
@@ -63,6 +65,7 @@ export default async function login(): Promise<LoginResult> {
           cookieToPersist = G.V2ex.getLoginCookie() || loginCookie
         } else {
           // 用户取消 2FA 时回滚运行时 Cookie，持久化内容仍保持旧账号
+          isTwoFactorCanceled = true
           G.V2ex.setCookie(previousLoginCookie)
         }
       }
@@ -70,12 +73,18 @@ export default async function login(): Promise<LoginResult> {
       if (isCookieValid) {
         await G.setCookie(cookieToPersist)
         vscode.window.showInformationMessage('登录成功')
+      } else if (isTwoFactorCanceled) {
+        isLoginCanceled = true
+        return false
       } else {
         vscode.window.showErrorMessage('登录失败，Cookie无效')
       }
       return isCookieValid
     }
   )
+  if (isLoginCanceled) {
+    return LoginResult.cancel
+  }
   return isLoginSuccess ? LoginResult.success : LoginResult.failed
 }
 

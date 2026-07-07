@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
-import { Banner, Button, PinCode } from '@douyinfe/semi-ui'
-import { IconClose, IconTickCircle } from '@douyinfe/semi-icons'
+import { Button, PinCode } from '@douyinfe/semi-ui'
+import { IconAlertCircle, IconClose, IconTickCircle } from '@douyinfe/semi-icons'
 import { createVsCodeClient } from '@/shared/vscode'
 import type {
   TwoFactorPanelRpcCommands,
@@ -18,7 +18,7 @@ export default function TwoFactorApp() {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const canSubmit = code.length === twoFactorCodeLength && !submitting
+  const canSubmit = code.length === twoFactorCodeLength
 
   /**
    * 更新验证码
@@ -74,7 +74,23 @@ export default function TwoFactorApp() {
 
         <p className="two-factor-intro">你的 V2EX 账号已经开启了两步验证，请输入验证码继续</p>
 
-        {error && <Banner type="danger" title="验证失败" description={error} />}
+        {error && (
+          <section className="two-factor-error" role="alert">
+            <IconAlertCircle className="two-factor-error-icon" aria-hidden />
+            <div className="two-factor-error-content">
+              <div className="two-factor-error-title">验证失败</div>
+              <div className="two-factor-error-description">{error}</div>
+            </div>
+            <button
+              className="two-factor-error-close"
+              type="button"
+              aria-label="关闭错误提示"
+              onClick={() => setError('')}
+            >
+              <IconClose />
+            </button>
+          </section>
+        )}
 
         <PinCode
           className={`two-factor-input${error ? ' two-factor-input--error' : ''}`}
@@ -89,6 +105,15 @@ export default function TwoFactorApp() {
 
         <div className="two-factor-actions">
           <Button
+            type="danger"
+            theme="borderless"
+            icon={<IconClose />}
+            disabled={submitting}
+            onClick={() => vscode.cancel()}
+          >
+            取消
+          </Button>
+          <Button
             type="primary"
             theme="solid"
             htmlType="submit"
@@ -97,14 +122,6 @@ export default function TwoFactorApp() {
             disabled={!canSubmit}
           >
             验证
-          </Button>
-          <Button
-            theme="borderless"
-            icon={<IconClose />}
-            disabled={submitting}
-            onClick={() => vscode.cancel()}
-          >
-            取消
           </Button>
         </div>
       </form>
