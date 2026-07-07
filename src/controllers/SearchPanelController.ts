@@ -87,6 +87,9 @@ function createPanel(): vscode.WebviewPanel {
       vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
     ]
   })
-  panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
+  panel.iconPath = {
+    light: vscode.Uri.file(path.join(G.context.extensionPath, 'resources/light/panelSearch.svg')),
+    dark: vscode.Uri.file(path.join(G.context.extensionPath, 'resources/dark/panelSearch.svg'))
+  }
   return panel
 }
