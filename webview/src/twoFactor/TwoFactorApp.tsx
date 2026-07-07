@@ -1,4 +1,5 @@
-import { FormEvent, useState } from 'react'
+import type { SubmitEvent } from 'react'
+import { useState } from 'react'
 import { Button, PinCode } from '@douyinfe/semi-ui'
 import { IconAlertCircle, IconClose, IconTickCircle } from '@douyinfe/semi-icons'
 import { createVsCodeClient } from '@/shared/vscode'
@@ -57,8 +58,8 @@ export default function TwoFactorApp() {
    * 提交当前验证码
    * @param event 表单事件
    */
-  function submit(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault()
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
     void submitCode(code)
   }
 
