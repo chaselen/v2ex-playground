@@ -76,6 +76,8 @@ export interface TopicDetail {
   node: Node
   /** 作者头像 */
   authorAvatar: string
+  /** 话题图标地址 */
+  topicIcon: string
   /** 作者名字 */
   authorName: string
   /** 作者是否为 PRO 会员 */

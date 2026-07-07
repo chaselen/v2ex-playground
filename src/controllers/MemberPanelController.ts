@@ -5,6 +5,7 @@ import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { setDefaultPanelIcon, setRemotePanelIcon } from '@/features/panelIcon'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } from '@/v2ex'
 import type {
@@ -180,6 +181,9 @@ export class MemberPanelController {
     ])
     this.profile = this.createProfile(member, content)
     this.panel.title = fmtPanelTitle(this.profile.member.username)
+    setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
+      console.error('V2EX 用户面板图标更新失败', err)
+    )
     this.render(this.profile)
   }
 
@@ -206,6 +210,9 @@ export class MemberPanelController {
     const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
     this.profile = this.createProfile(member, content)
     this.panel.title = fmtPanelTitle(this.profile.member.username)
+    setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
+      console.error('V2EX 用户面板图标更新失败', err)
+    )
     return this.profile
   }
 
@@ -250,6 +257,6 @@ function createPanel(id: string, label: string): vscode.WebviewPanel {
       ]
     }
   )
-  panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
+  setDefaultPanelIcon(panel)
   return panel
 }

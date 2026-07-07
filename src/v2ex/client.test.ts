@@ -88,6 +88,7 @@ function expectTopicDetail(detail: TopicDetail) {
   expectNode(detail.node)
   expect(detail.authorName).toEqual(expect.any(String))
   expect(detail.authorName.length).toBeGreaterThan(0)
+  expect(detail.topicIcon).toMatch(/^https?:\/\//)
   expect(detail.displayTime).toEqual(expect.any(String))
   expect(detail.publishedAt).toEqual(expect.any(String))
   expect(detail.publishedAt.length).toBeGreaterThan(0)

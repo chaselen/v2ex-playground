@@ -1375,6 +1375,7 @@ export class V2exClient {
         title: ''
       },
       authorAvatar: '',
+      topicIcon: '',
       authorName: '',
       isAuthorPro: false,
       displayTime: '',
@@ -1396,6 +1397,8 @@ export class V2exClient {
     const node = $('.header a[href^=/go/]')
     topic.node.name = node.attr('href')?.split('go/')[1] || ''
     topic.node.title = node.text().trim()
+    const topicIcon = $('head link[rel~="icon"]').first().attr('href')
+    topic.topicIcon = topicIcon ? new URL(topicIcon, this.baseUrl).toString() : ''
     topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''
     const headerMeta = $('.header > .gray')
     const meta = headerMeta.text().split('·')

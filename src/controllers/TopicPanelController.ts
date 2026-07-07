@@ -8,6 +8,7 @@ import Config from '@/config'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { updateRecentBrowseTopic } from '@/features/recentBrowse'
+import { setDefaultPanelIcon, setRemotePanelIcon } from '@/features/panelIcon'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
   TopicPanelRpcCommands,
@@ -56,6 +57,7 @@ export class TopicPanelController {
       title: ''
     },
     authorAvatar: '',
+    topicIcon: '',
     authorName: '',
     isAuthorPro: false,
     displayTime: '',
@@ -252,6 +254,9 @@ export class TopicPanelController {
     this.detail = detail
     updateRecentBrowseTopic(detail).catch(err => console.error('V2EX 最近浏览详情保存失败', err))
     this.panel.title = fmtPanelTitle(detail.title)
+    setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
+      console.error('V2EX 话题面板图标更新失败', err)
+    )
     this.render(detail)
   }
 
@@ -338,6 +343,9 @@ export class TopicPanelController {
 
     const detail = await G.V2ex.getTopicDetail(this.topicId, replyPage)
     this.detail = detail
+    setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
+      console.error('V2EX 话题面板图标更新失败', err)
+    )
     this.render(detail)
   }
 }
@@ -370,7 +378,7 @@ function createPanel(id: string, label: string): vscode.WebviewPanel {
       ]
     }
   )
-  panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
+  setDefaultPanelIcon(panel)
   return panel
 }
 
