@@ -48,6 +48,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _pendingSelectedTab?: MainPanelTabKey
   private _pendingNode?: WebviewNode
   private _accountOverviewChangedDisposable?: { dispose: () => void }
+  private _onlineCountChangedDisposable?: { dispose: () => void }
   private _dailySignInStatusDisposable?: { dispose: () => void }
   private _topicReadDisposable?: { dispose: () => void }
   /** Webview 恢复可见时的数据刷新任务 */
@@ -71,6 +72,10 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     this._accountOverviewChangedDisposable = G.V2ex.onAccountOverviewChanged(
       (overview, oldOverview) => this._handleAccountOverviewChanged(overview, oldOverview)
     )
+    this._onlineCountChangedDisposable?.dispose()
+    this._onlineCountChangedDisposable = G.V2ex.onOnlineCountChanged(onlineCount =>
+      this._updateOnlineCountTitle(onlineCount)
+    )
     this._dailySignInStatusDisposable?.dispose()
     this._dailySignInStatusDisposable = onDailySignInStatusChanged(data =>
       this._rpc?.post('dailySignInStatusChanged', data)
@@ -86,6 +91,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       visibilityDisposable.dispose()
       this._accountOverviewChangedDisposable?.dispose()
       this._accountOverviewChangedDisposable = undefined
+      this._onlineCountChangedDisposable?.dispose()
+      this._onlineCountChangedDisposable = undefined
       this._dailySignInStatusDisposable?.dispose()
       this._dailySignInStatusDisposable = undefined
       this._topicReadDisposable?.dispose()
@@ -158,6 +165,18 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       overview,
       oldOverview
     })
+  }
+
+  /**
+   * 更新视图标题区在线人数
+   * @param onlineCount 在线人数
+   */
+  private _updateOnlineCountTitle(onlineCount?: number): void {
+    if (!this._view) {
+      return
+    }
+
+    this._view.title = onlineCount === undefined ? 'V2EX' : `${onlineCount} 人在线`
   }
 
   /**

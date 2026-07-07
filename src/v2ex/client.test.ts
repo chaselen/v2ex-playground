@@ -292,6 +292,13 @@ describe.concurrent('V2exClient topics', () => {
     await expect(client.getOnce()).resolves.toMatch(/^\d+$/)
   })
 
+  test('gets online count', async () => {
+    const onlineCount = await client.getOnlineCount({ force: true })
+
+    expect(onlineCount).toEqual(expect.any(Number))
+    expect(onlineCount).toBeGreaterThan(0)
+  })
+
   test('gets topics by tab', async () => {
     const topics = await client.getTopicListByTab('tech')
 

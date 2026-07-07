@@ -39,7 +39,8 @@ import {
   MemberContentTabKey,
   MemberInfo,
   MemberReply,
-  NodeTopicList
+  NodeTopicList,
+  OnlineCountChangedHandler
 } from './types'
 
 /** Cheerio 选择结果 */
@@ -128,8 +129,14 @@ export class V2exClient {
   /** 缓存的账户概览 */
   private accountOverview?: AccountOverview
 
+  /** 缓存的在线人数 */
+  private onlineCount?: number
+
   /** 账户概览变化监听器 */
   private readonly accountOverviewChangedHandlers = new Set<AccountOverviewChangedHandler>()
+
+  /** 在线人数变化监听器 */
+  private readonly onlineCountChangedHandlers = new Set<OnlineCountChangedHandler>()
 
   /** 已重试过两步验证的请求 */
   private readonly twoFactorRetriedConfigs = new WeakSet<object>()
@@ -225,6 +232,7 @@ export class V2exClient {
 
     this.checkRedirectFromResponse(response)
     this.updateAccountOverviewFromResponse(response)
+    this.updateOnlineCountFromResponse(response)
     return response
   }
 
@@ -253,6 +261,7 @@ export class V2exClient {
   setCookie(cookie: string): void {
     this.cookieJar.removeAllCookiesSync()
     this.accountOverview = undefined
+    this.onlineCount = undefined
     if (!cookie) {
       return
     }
@@ -267,6 +276,17 @@ export class V2exClient {
     this.accountOverviewChangedHandlers.add(handler)
     return {
       dispose: () => this.accountOverviewChangedHandlers.delete(handler)
+    }
+  }
+
+  /**
+   * 监听在线人数变化
+   * @param handler 在线人数变化回调
+   */
+  onOnlineCountChanged(handler: OnlineCountChangedHandler): { dispose: () => void } {
+    this.onlineCountChangedHandlers.add(handler)
+    return {
+      dispose: () => this.onlineCountChangedHandlers.delete(handler)
     }
   }
 
@@ -451,6 +471,23 @@ export class V2exClient {
     }
 
     this.updateAccountOverviewFromHtml(cheerio.load(response.data))
+  }
+
+  /**
+   * 从 HTML 响应更新在线人数缓存
+   * @param response HTTP 响应
+   */
+  private updateOnlineCountFromResponse(response: AxiosResponse): void {
+    if (typeof response.data !== 'string') {
+      return
+    }
+
+    const requestUrl = getConfigUrl(response.config, this.baseUrl)
+    if (!isV2exUrl(requestUrl)) {
+      return
+    }
+
+    this.updateOnlineCountFromHtml(cheerio.load(response.data))
   }
 
   /**
@@ -803,6 +840,19 @@ export class V2exClient {
   }
 
   /**
+   * 获取在线人数
+   * @param options 获取选项
+   */
+  async getOnlineCount(options: { force?: boolean } = {}): Promise<number | undefined> {
+    if (!options.force && this.onlineCount !== undefined) {
+      return this.onlineCount
+    }
+
+    await this.http.get<string>('/')
+    return this.onlineCount
+  }
+
+  /**
    * 获取账户余额详情
    * @param page 页码
    */
@@ -948,6 +998,40 @@ export class V2exClient {
     }
 
     return overview
+  }
+
+  /**
+   * 从 HTML 中解析并更新在线人数缓存
+   * @param $ cheerio 实例
+   */
+  private updateOnlineCountFromHtml($: cheerio.CheerioAPI): number | undefined {
+    const onlineCount = this.parseOnlineCount($)
+    if (onlineCount === undefined) {
+      return undefined
+    }
+
+    const oldOnlineCount = this.onlineCount
+    this.onlineCount = onlineCount
+
+    if (oldOnlineCount !== onlineCount) {
+      this.notifyOnlineCountChanged(onlineCount, oldOnlineCount)
+    }
+
+    return onlineCount
+  }
+
+  /**
+   * 从 HTML 中解析在线人数
+   * @param $ cheerio 实例
+   */
+  private parseOnlineCount($: cheerio.CheerioAPI): number | undefined {
+    const text = $('body').text().replace(/\s+/g, ' ')
+    const match = text.match(/([\d,]+)\s*(?:Online|人在线)/i)
+    if (!match) {
+      return undefined
+    }
+
+    return Number(match[1].replace(/,/g, '')) || undefined
   }
 
   /**
@@ -1263,6 +1347,17 @@ export class V2exClient {
   private notifyAccountOverviewChanged(overview: AccountOverview, oldOverview?: AccountOverview) {
     this.accountOverviewChangedHandlers.forEach(handler => {
       void handler(overview, oldOverview)
+    })
+  }
+
+  /**
+   * 通知在线人数变化
+   * @param onlineCount 最新在线人数
+   * @param oldOnlineCount 旧在线人数
+   */
+  private notifyOnlineCountChanged(onlineCount: number, oldOnlineCount?: number) {
+    this.onlineCountChangedHandlers.forEach(handler => {
+      void handler(onlineCount, oldOnlineCount)
     })
   }
 

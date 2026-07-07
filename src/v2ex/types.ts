@@ -32,6 +32,16 @@ export type AccountOverviewChangedHandler = (
 ) => void | Promise<void>
 
 /**
+ * 在线人数变化回调
+ * @param onlineCount 最新在线人数
+ * @param oldOnlineCount 旧在线人数
+ */
+export type OnlineCountChangedHandler = (
+  onlineCount: number,
+  oldOnlineCount?: number
+) => void | Promise<void>
+
+/**
  * 话题
  */
 export interface Topic {
