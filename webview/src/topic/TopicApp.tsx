@@ -17,6 +17,7 @@ import {
   IconBookmark,
   IconBookmarkAddStroked,
   IconHeartStroked,
+  IconLikeHeart,
   IconRefresh,
   IconReply
 } from '@douyinfe/semi-icons'
@@ -429,7 +430,7 @@ export default function TopicApp() {
                     aria-label="感谢已发送"
                     className="floating-action-button is-active"
                     disabled
-                    icon={<IconHeartStroked />}
+                    icon={<IconLikeHeart />}
                     size="large"
                     theme="solid"
                     type="tertiary"

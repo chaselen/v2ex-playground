@@ -29,7 +29,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 
 - `npm run build:webview` — 使用 Vite 构建 Webview 到 `html/`
 - `npm run build:extension` — 使用 esbuild 生产构建扩展到 `out/`
-- `npm run build` — 构建 Webview 并生产构建扩展。修改后**必须执行**
+- `npm run build` — 构建 Webview 并生产构建扩展，发布前或跨侧改动时执行
 - `npm run check` — 检查扩展侧和 Webview TypeScript 类型
 - `npm run check:extension` — 使用 TypeScript 检查扩展侧类型
 - `npm run check:extension:watch` — 持续检查扩展侧 TypeScript 类型
@@ -47,9 +47,10 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 
 验证要求：
 
-- 所有代码改动至少运行 `npm run build`
-- 修改扩展侧 TypeScript 时运行 `npm run check:extension`
-- 修改 Webview 源码或共享 RPC 契约时运行 `npm run check:webview`
+- 修改扩展侧 TypeScript 时运行 `npm run check:extension` 和 `npm run build:extension`
+- 修改 Webview 源码时运行 `npm run check:webview` 和 `npm run build:webview`
+- 修改共享 RPC 契约、Webview HTML 加载链路、构建配置或会同时影响扩展侧与 Webview 的代码时，运行相关两侧类型检查并执行 `npm run build`
+- 发布前、打包前或无法判断影响范围时，运行 `npm run check` 和 `npm run build`
 - 涉及 `src/v2ex/`、`src/shared/cookie.ts`、Cookie 或请求解析逻辑时运行 `npm test`
 - 手动验证按改动范围覆盖登录、节点刷新、话题打开、用户打开、搜索、设置项和 Webview 行为
 
@@ -81,7 +82,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 常规语义状态优先直接使用 Semi `Badge` 和 `Tag`；只有需要统一采用 VS Code Badge Theme Color 或中性标签配色时，才使用 `webview/src/shared/SemiVscode.tsx` 中的 `VscodeBadge` 和 `VscodeTag`
 - 修改主题 token、Semi 兼容覆盖或公共组件适配时，使用 `webview/theme.html` 回归检查亮色、暗色和高对比主题
 
-修改 Webview 文件后，需运行 `npm run check:webview` 和 `npm run build`，并手动验证 Webview 渲染。
+仅修改 Webview 文件时，运行 `npm run check:webview` 和 `npm run build:webview`，并手动验证 Webview 渲染。若同时改动共享 RPC 契约或扩展侧处理器，则按跨侧改动处理，运行相关两侧类型检查并执行 `npm run build`，无需额外重复执行 `npm run build:webview`。
 
 修改共享链接导航或 HTML 内容增强逻辑时，需手动验证话题、用户、节点、外部链接和图片预览，确认一次点击只触发一种打开行为。
 
