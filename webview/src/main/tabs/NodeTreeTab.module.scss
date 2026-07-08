@@ -78,6 +78,10 @@
     color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
   }
 
+  :global(.semi-tree-option-empty-icon) {
+    width: 0;
+  }
+
   :global(.semi-tree-option:hover) .node-actions {
     opacity: 1;
   }
