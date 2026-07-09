@@ -113,4 +113,45 @@
       color: var(--vscode-menu-selectionForeground, var(--v2ex-webview-fg));
     }
   }
+
+  .semi-select-option {
+    color: var(--vscode-menu-foreground, var(--v2ex-webview-fg));
+
+    &:hover,
+    &-focused {
+      background: var(--vscode-menu-selectionBackground, var(--v2ex-hover-bg));
+      color: var(--vscode-menu-selectionForeground, var(--v2ex-webview-fg));
+    }
+
+    &:active {
+      background: var(--vscode-menu-selectionBackground, var(--v2ex-active-bg));
+      color: var(--vscode-menu-selectionForeground, var(--v2ex-active-fg));
+    }
+
+    &-selected {
+      background: transparent;
+      color: var(--vscode-menu-foreground, var(--v2ex-webview-fg));
+    }
+
+    &-selected:hover {
+      background: var(--vscode-menu-selectionBackground, var(--v2ex-hover-bg));
+      color: var(--vscode-menu-selectionForeground, var(--v2ex-webview-fg));
+    }
+
+    &-disabled,
+    &-empty {
+      color: var(--v2ex-disabled-fg);
+
+      &:hover,
+      &:active {
+        background: transparent;
+        color: var(--v2ex-disabled-fg);
+      }
+    }
+  }
+
+  .semi-select-option-selected.semi-select-option-focused {
+    background: var(--vscode-menu-selectionBackground, var(--v2ex-hover-bg));
+    color: var(--vscode-menu-selectionForeground, var(--v2ex-webview-fg));
+  }
 }
