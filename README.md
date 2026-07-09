@@ -60,6 +60,10 @@
 
 ---
 
+## 致谢
+
+回复框的部分代码设计和交互参考了 [coolpace/V2EX_Polish](https://github.com/coolpace/V2EX_Polish) 项目。
+
 ## 反馈
 
 如果您有任何问题或意见，欢迎在[我的创作帖](https://www.v2ex.com/t/703733)中进行回复，或者提交 [issues](https://github.com/chaselen/v2ex-playground/issues)。

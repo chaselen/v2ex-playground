@@ -5,6 +5,7 @@ import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
+import { uploadImage } from '@/core/imageUpload'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { updateRecentBrowseTopic } from '@/features/recentBrowse'
@@ -224,6 +225,7 @@ export class TopicPanelController {
       cancelCollect: () => this.runTopicMutation(() => G.V2ex.cancelCollectTopic(this.detail.id)),
       thank: () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)),
       postReply: msg => this.handlePostReply(msg),
+      uploadImage: msg => uploadImage(msg),
       previewReply: msg => this.handlePreviewReply(msg),
       thankReply: msg => this.handleThankReply(msg),
       loadReplyPage: msg => this.handleLoadReplyPage(msg)

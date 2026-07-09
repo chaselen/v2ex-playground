@@ -7,7 +7,6 @@ import {
   Pagination,
   Popconfirm,
   Spin,
-  TextArea,
   Toast,
   Tooltip
 } from '@douyinfe/semi-ui'
@@ -25,14 +24,13 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
 import { VscodeProTag } from '@/shared/SemiVscode'
 import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
+import ReplyComposer, { type ReplyComposerHandle, type ReplyComposerMode } from './ReplyComposer'
+import { replaceImageEmoticonTokens } from './emoticons'
 import type {
   TopicPanelRpcCommands,
   TopicPanelViewState,
   TopicPanelWebviewEvents
 } from '@extension/shared/webview'
-
-/** 回复编辑模式 */
-type ReplyComposerMode = 'edit' | 'preview'
 
 /** 话题面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<TopicPanelRpcCommands, TopicPanelWebviewEvents>()
@@ -62,6 +60,7 @@ export default function TopicApp() {
   const [replyPreviewSource, setReplyPreviewSource] = useState('')
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const topicShellRef = useRef<HTMLElement>(null)
+  const replyComposerRef = useRef<ReplyComposerHandle>(null)
   const topic = state.topic
   const showImages = state.showImages !== false
 
@@ -126,13 +125,12 @@ export default function TopicApp() {
    * 提交回复
    */
   async function onSubmit() {
-    const content = replyContent.trim()
+    const content = replaceImageEmoticonTokens(replyContent)
 
     if (!content) {
       Toast.warning('回复内容不能为空')
       requestAnimationFrame(() => {
-        const textarea = document.querySelector<HTMLTextAreaElement>('.post-reply textarea')
-        textarea?.focus()
+        replyComposerRef.current?.focus()
       })
       return
     }
@@ -147,6 +145,35 @@ export default function TopicApp() {
         setReplyComposerMode('edit')
       }
     )
+  }
+
+  /**
+   * 上传回复图片
+   * @param file 图片文件
+   */
+  async function uploadReplyImage(file: File) {
+    return vscode.uploadImage({
+      filename: file.name,
+      mimeType: file.type || 'application/octet-stream',
+      base64: await readFileAsBase64(file)
+    })
+  }
+
+  /**
+   * 读取文件为 base64 内容
+   * @param file 文件对象
+   */
+  function readFileAsBase64(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+
+      reader.onload = () => {
+        const result = String(reader.result || '')
+        resolve(result.replace(/^data:[^,]*,/, ''))
+      }
+      reader.onerror = () => reject(reader.error || new Error('读取图片失败'))
+      reader.readAsDataURL(file)
+    })
   }
 
   /**
@@ -165,13 +192,13 @@ export default function TopicApp() {
    */
   async function previewReply() {
     const content = replyContent
+    const previewContent = replaceImageEmoticonTokens(content)
 
     if (!content.trim()) {
       Toast.warning('回复内容不能为空')
       setReplyComposerMode('edit')
       requestAnimationFrame(() => {
-        const textarea = document.querySelector<HTMLTextAreaElement>('.post-reply textarea')
-        textarea?.focus()
+        replyComposerRef.current?.focus()
       })
       return
     }
@@ -184,7 +211,7 @@ export default function TopicApp() {
     setReplyComposerMode('preview')
     setPreviewingReply(true)
     try {
-      const html = await vscode.previewReply({ content })
+      const html = await vscode.previewReply({ content: previewContent })
       setReplyPreviewHtml(html)
       setReplyPreviewSource(content)
     } catch (err) {
@@ -241,8 +268,7 @@ export default function TopicApp() {
     setReplyPreviewHtml('')
     setReplyComposerMode('edit')
     requestAnimationFrame(() => {
-      const textarea = document.querySelector<HTMLTextAreaElement>('.post-reply textarea')
-      textarea?.focus()
+      replyComposerRef.current?.focus()
     })
   }
 
@@ -657,70 +683,19 @@ export default function TopicApp() {
           </section>
 
           {state.canOperate ? (
-            <form
-              className="post-reply"
-              onSubmit={event => {
-                event.preventDefault()
-                onSubmit()
-              }}
-            >
-              <div className="reply-composer-tabs" role="tablist" aria-label="回复编辑模式">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={replyComposerMode === 'edit'}
-                  className={replyComposerMode === 'edit' ? 'is-active' : undefined}
-                  onClick={() => setReplyComposerMode('edit')}
-                >
-                  编辑
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={replyComposerMode === 'preview'}
-                  className={replyComposerMode === 'preview' ? 'is-active' : undefined}
-                  onClick={previewReply}
-                >
-                  预览
-                </button>
-              </div>
-
-              {replyComposerMode === 'edit' ? (
-                <TextArea
-                  value={replyContent}
-                  maxCount={10000}
-                  autosize={{ minRows: 5, maxRows: 12 }}
-                  placeholder="请尽量让自己的回复能够对别人有帮助"
-                  showClear
-                  onChange={value => updateReplyContent(String(value || ''))}
-                />
-              ) : (
-                <div className="reply-preview-panel">
-                  {previewingReply ? (
-                    <Spin />
-                  ) : replyPreviewHtml ? (
-                    <div
-                      className="topic-content reply-preview-content"
-                      dangerouslySetInnerHTML={{ __html: normalizeHtml(replyPreviewHtml) }}
-                    />
-                  ) : (
-                    <p className="muted">暂无预览内容</p>
-                  )}
-                </div>
-              )}
-
-              <div className="reply-submit-row">
-                <Button
-                  className="submit"
-                  theme="solid"
-                  type="primary"
-                  htmlType="submit"
-                  loading={postingReply}
-                >
-                  回复
-                </Button>
-              </div>
-            </form>
+            <ReplyComposer
+              ref={replyComposerRef}
+              value={replyContent}
+              mode={replyComposerMode}
+              previewHtml={replyPreviewHtml}
+              previewing={previewingReply}
+              posting={postingReply}
+              onChange={updateReplyContent}
+              onModeChange={setReplyComposerMode}
+              onPreview={previewReply}
+              onSubmit={onSubmit}
+              onUploadImage={uploadReplyImage}
+            />
           ) : (
             <p className="muted">您目前还不能回复，请先登录</p>
           )}

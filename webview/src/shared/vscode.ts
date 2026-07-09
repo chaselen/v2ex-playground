@@ -23,6 +23,12 @@ let messageListenerReady = false
 const pendingRequests = new Map<string, PendingRequest>()
 const eventHandlers = new Map<string, Set<(payload: object) => void>>()
 
+/** 默认 RPC 超时时间 */
+const defaultRequestTimeout = 30000
+
+/** 图片上传 RPC 超时时间 */
+const uploadImageRequestTimeout = 60000
+
 /**
  * 获取 VS Code Webview API 单例
  */
@@ -86,11 +92,19 @@ function request(command: string, args: unknown[]): Promise<unknown> {
     const timer = setTimeout(() => {
       pendingRequests.delete(requestId)
       reject(new Error(`请求 ${command} 超时`))
-    }, 30000)
+    }, getRequestTimeout(command))
 
     pendingRequests.set(requestId, { resolve, reject, timer })
     getVsCodeApi().postMessage({ command, requestId, args })
   })
+}
+
+/**
+ * 获取 RPC 超时时间
+ * @param command 命令名
+ */
+function getRequestTimeout(command: string) {
+  return command === 'uploadImage' ? uploadImageRequestTimeout : defaultRequestTimeout
 }
 
 /**

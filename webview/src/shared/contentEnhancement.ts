@@ -1,6 +1,7 @@
 import type { WebviewContentRpcCommands } from '@extension/shared/webview'
 import { handleWebviewLinkClick } from './linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
+import { isImageEmoticonSrc } from './imageEmoticons'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
 const vscode = createVsCodeClient<WebviewContentRpcCommands>()
@@ -32,6 +33,10 @@ export function normalizeHtml(html?: unknown): string {
     }
 
     const proxiedSrc = proxyImgurImageSrc(originalSrc)
+    if (isImageEmoticonSrc(originalSrc)) {
+      img.classList.add('v2ex-emoticon-image')
+    }
+
     if (proxiedSrc === originalSrc) {
       return
     }
@@ -120,6 +125,9 @@ function proxyImgurImageSrc(imageSrc: string): string {
 function proxyImgurImage(img: HTMLImageElement) {
   const originalSrc = img.dataset.previewSrc || img.currentSrc || img.src
   img.dataset.previewSrc = originalSrc
+  if (isImageEmoticonSrc(originalSrc)) {
+    img.classList.add('v2ex-emoticon-image')
+  }
   img.src = proxyImgurImageSrc(originalSrc)
 }
 
