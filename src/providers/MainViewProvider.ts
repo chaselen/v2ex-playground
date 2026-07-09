@@ -195,7 +195,11 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     }
 
     if (this._badgeUnreadNoticeCount <= 0) {
-      this._view.badge = undefined
+      // VS Code 运行时设置 undefined 无法稳定清除已有徽标
+      this._view.badge = {
+        value: 0,
+        tooltip: ''
+      }
       return
     }
 
