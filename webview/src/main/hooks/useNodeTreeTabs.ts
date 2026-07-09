@@ -23,6 +23,12 @@ export function useNodeTreeTabs() {
     custom: [],
     collection: []
   })
+  const [tabErrors, setTabErrors] = useState<Partial<Record<MainTabKey, string | null>>>({})
+  const [tabLoaded, setTabLoaded] = useState<Record<MainTabKey, boolean>>({
+    explore: true,
+    custom: true,
+    collection: false
+  })
   const nodeRequestSeq = useRef(new Map<string, number>())
 
   /**
@@ -229,6 +235,16 @@ export function useNodeTreeTabs() {
       custom: mergeNodeItems(data.custom, current.custom),
       collection: data.collection.map(createNodeItem)
     }))
+    setTabErrors(current => ({
+      ...current,
+      collection: null
+    }))
+    setTabLoaded(current => ({
+      ...current,
+      explore: true,
+      custom: true,
+      collection: false
+    }))
   }, [])
 
   /**
@@ -249,23 +265,43 @@ export function useNodeTreeTabs() {
    */
   async function refreshTab(tab: MainTabKey) {
     if (tab === 'collection') {
-      const data = await vscode.refreshCollectionNodes()
-      const nodeNames = new Set(data.nodes.map(node => node.name))
-      const loadedNodes = tabs.collection.filter(
-        node => nodeNames.has(node.name) && node.children !== null
-      )
-      const loadedNodeNames = new Set(loadedNodes.map(node => node.name))
-
-      setTabs(current => ({
-        ...current,
-        collection: mergeNodeItems(data.nodes, current.collection).map(node =>
-          loadedNodeNames.has(node.name) ? { ...node, loading: true } : node
+      try {
+        const data = await vscode.refreshCollectionNodes()
+        const nodeNames = new Set(data.nodes.map(node => node.name))
+        const loadedNodes = tabs.collection.filter(
+          node => nodeNames.has(node.name) && node.children !== null
         )
-      }))
+        const loadedNodeNames = new Set(loadedNodes.map(node => node.name))
 
-      await Promise.all(
-        loadedNodes.map(node => requestNodeChildren('refreshNode', 'collection', node.name, 1))
-      )
+        setTabErrors(current => ({
+          ...current,
+          collection: null
+        }))
+        setTabLoaded(current => ({
+          ...current,
+          collection: true
+        }))
+        setTabs(current => ({
+          ...current,
+          collection: mergeNodeItems(data.nodes, current.collection).map(node =>
+            loadedNodeNames.has(node.name) ? { ...node, loading: true } : node
+          )
+        }))
+
+        await Promise.all(
+          loadedNodes.map(node => requestNodeChildren('refreshNode', 'collection', node.name, 1))
+        )
+      } catch (err) {
+        setTabErrors(current => ({
+          ...current,
+          collection: (err as Error).message || '收藏节点加载失败'
+        }))
+        setTabLoaded(current => ({
+          ...current,
+          collection: true
+        }))
+        throw err
+      }
       return
     }
 
@@ -281,6 +317,8 @@ export function useNodeTreeTabs() {
 
   return {
     tabs,
+    tabErrors,
+    tabLoaded,
     addNode,
     cancelCollectNode,
     changeNodePage,

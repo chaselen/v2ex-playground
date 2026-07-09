@@ -946,10 +946,21 @@ export class V2exClient {
     const { data: html } = await this.http.get<string>('/')
     const $ = cheerio.load(html)
     const isCookieValid = $('#member-activity').length > 0
-    if (!isCookieValid) {
-      this.notifyLoginExpired()
+    if (isCookieValid) {
+      return true
     }
-    return isCookieValid
+
+    /*
+     * 纯网络错误会在上面的请求阶段直接抛出，不会进入这里
+     * 这里处理的是代理、网关或异常拦截页返回 200 HTML 的情况，避免误清 Cookie
+     */
+    const isSignedOutPage = $('a[href^="/signin"], form[action^="/signin"]').length > 0
+    if (isSignedOutPage) {
+      this.notifyLoginExpired()
+      return false
+    }
+
+    throw new Error('登录状态检查失败，请检查网络后重试')
   }
 
   /**

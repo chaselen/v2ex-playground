@@ -30,6 +30,20 @@ const tabLabels: Record<MainPanelTabKey, string> = {
 /** Webview 主面板标签 key */
 type WebviewMainTabKey = MainPanelTabKey | 'node'
 
+/** 刷新标签选项 */
+interface RefreshTabOptions {
+  /** 是否静默处理错误 */
+  silent?: boolean
+  /** 是否显示工具栏刷新按钮 loading */
+  showToolbarLoading?: boolean
+}
+
+/** 页面内重试选项 */
+const contentRetryOptions: RefreshTabOptions = {
+  silent: true,
+  showToolbarLoading: false
+}
+
 /**
  * 截取动态节点标签标题
  * @param title 完整节点标题
@@ -43,9 +57,12 @@ function getNodeTabTitle(title: string): string {
  */
 export default function MainApp() {
   const [activeTab, setActiveTab] = useState<WebviewMainTabKey>('explore')
+  const [pendingTabs, setPendingTabs] = useState<WebviewMainTabKey[]>([])
   const [refreshingTabs, setRefreshingTabs] = useState<WebviewMainTabKey[]>([])
   const [loggedIn, setLoggedIn] = useState(false)
   const [accountOverview, setAccountOverview] = useState<WebviewAccountOverview>()
+  const [accountOverviewError, setAccountOverviewError] = useState<string | null>(null)
+  const [accountOverviewLoaded, setAccountOverviewLoaded] = useState(false)
   const [initializing, setInitializing] = useState(true)
   const myTabRef = useRef<MyTabHandle>(null)
   const lastFixedTab = useRef<MainPanelTabKey>('explore')
@@ -82,6 +99,8 @@ export default function MainApp() {
     (data: InitData) => {
       setLoggedIn(data.loggedIn)
       setAccountOverview(data.accountOverview)
+      setAccountOverviewError(null)
+      setAccountOverviewLoaded(!!data.accountOverview)
       if (data.selectedTab) {
         lastFixedTab.current = data.selectedTab
         setActiveTab(data.selectedTab)
@@ -104,6 +123,8 @@ export default function MainApp() {
       myTabRef.current?.refreshLoadedTabs()
     ])
     if (overviewResult.status === 'rejected') {
+      setAccountOverviewError((overviewResult.reason as Error).message || '账户概览加载失败')
+      setAccountOverviewLoaded(true)
       throw overviewResult.reason
     }
     if (tabsResult.status === 'rejected') {
@@ -113,18 +134,24 @@ export default function MainApp() {
     const data = overviewResult.value
     setLoggedIn(data.loggedIn)
     setAccountOverview(data.accountOverview)
+    setAccountOverviewError(null)
+    setAccountOverviewLoaded(true)
   }
 
   /**
    * 刷新当前标签
    * @param tab 标签 key
+   * @param options 刷新选项
    */
-  async function refreshTab(tab: WebviewMainTabKey) {
-    if (refreshingTabs.includes(tab)) {
+  async function refreshTab(tab: WebviewMainTabKey, options: RefreshTabOptions = {}) {
+    if (pendingTabs.includes(tab)) {
       return
     }
 
-    setRefreshingTabs(current => [...current, tab])
+    setPendingTabs(current => [...current, tab])
+    if (options.showToolbarLoading !== false) {
+      setRefreshingTabs(current => [...current, tab])
+    }
 
     try {
       if (tab === 'node') {
@@ -141,16 +168,52 @@ export default function MainApp() {
 
       await nodeTreeTabs.refreshTab(tab)
     } catch (err) {
-      Toast.error((err as Error).message || '刷新失败')
+      if (!options.silent) {
+        Toast.error((err as Error).message || '刷新失败')
+      }
     } finally {
+      setPendingTabs(current => current.filter(key => key !== tab))
       setRefreshingTabs(current => current.filter(key => key !== tab))
     }
   }
 
   useEffect(() => {
+    if (initializing) {
+      return
+    }
+
+    if (activeTab === 'collection' && loggedIn && !nodeTreeTabs.tabLoaded.collection) {
+      refreshTab('collection', contentRetryOptions)
+      return
+    }
+
+    if (
+      activeTab === 'my' &&
+      loggedIn &&
+      !accountOverviewLoaded &&
+      !accountOverview &&
+      !accountOverviewError
+    ) {
+      refreshTab('my', contentRetryOptions)
+    }
+  }, [
+    accountOverview,
+    accountOverviewError,
+    accountOverviewLoaded,
+    activeTab,
+    initializing,
+    loggedIn,
+    nodeTreeTabs.tabLoaded.collection
+  ])
+
+  useEffect(() => {
     const disposables = [
       vscode.on('initData', onInitData),
-      vscode.on('accountOverviewChanged', data => setAccountOverview(data.overview)),
+      vscode.on('accountOverviewChanged', data => {
+        setAccountOverview(data.overview)
+        setAccountOverviewError(null)
+        setAccountOverviewLoaded(true)
+      }),
       vscode.on('selectMainTab', data => {
         lastFixedTab.current = data.tab
         setActiveTab(data.tab)
@@ -178,6 +241,33 @@ export default function MainApp() {
   /** 当前标签刷新按钮文案 */
   const activeTabLabel =
     activeTab === 'node' ? nodeTopicTab.nodeTab?.title || '节点' : tabLabels[activeTab]
+  /** 当前标签是否有页面级错误 */
+  const activeTabHasError =
+    (activeTab === 'collection' && !!nodeTreeTabs.tabErrors.collection) ||
+    (activeTab === 'my' && !!accountOverviewError && !accountOverview) ||
+    (activeTab === 'node' && !!nodeTopicTab.nodeTab?.error && !nodeTopicTab.nodeTab.topics.length)
+  /** 收藏节点标签是否处于加载状态 */
+  const collectionTabLoading =
+    initializing ||
+    pendingTabs.includes('collection') ||
+    (activeTab === 'collection' && loggedIn && !nodeTreeTabs.tabLoaded.collection)
+  /** 我的标签是否处于账户概览加载状态 */
+  const myOverviewLoading =
+    initializing ||
+    pendingTabs.includes('my') ||
+    (activeTab === 'my' &&
+      loggedIn &&
+      !accountOverviewLoaded &&
+      !accountOverview &&
+      !accountOverviewError)
+  /** 当前标签是否能使用工具栏刷新 */
+  const canRefreshActiveTab =
+    !initializing &&
+    !pendingTabs.includes(activeTab) &&
+    !activeTabHasError &&
+    !(activeTab === 'collection' && !loggedIn) &&
+    !(activeTab === 'my' && !loggedIn) &&
+    !(activeTab === 'node' && !nodeTopicTab.nodeTab)
 
   /** 固定节点标签公共参数 */
   const nodeTreeTabProps = {
@@ -207,6 +297,7 @@ export default function MainApp() {
             size="small"
             icon={<IconRefresh />}
             loading={refreshingTabs.includes(activeTab)}
+            disabled={!canRefreshActiveTab}
             title={`刷新${activeTabLabel}`}
             aria-label={`刷新${activeTabLabel}`}
             onClick={() => refreshTab(activeTab)}
@@ -236,17 +327,21 @@ export default function MainApp() {
           <NodeTreeTab
             tab="collection"
             nodes={nodeTreeTabs.tabs.collection}
-            loading={initializing}
+            error={nodeTreeTabs.tabErrors.collection}
+            loading={collectionTabLoading}
             onCancelCollectNode={nodeTreeTabs.cancelCollectNode}
+            onRetryTab={() => refreshTab('collection', contentRetryOptions)}
             {...nodeTreeTabProps}
           />
         </Tabs.TabPane>
         <Tabs.TabPane itemKey="my" tab={tabLabels.my}>
           <MyTab
             ref={myTabRef}
-            loading={initializing}
+            loading={myOverviewLoading}
             loggedIn={loggedIn}
             overview={accountOverview}
+            overviewError={accountOverviewError}
+            onRetryOverview={() => refreshTab('my', contentRetryOptions)}
             onOpenNodeCollection={() => {
               lastFixedTab.current = 'collection'
               setActiveTab('collection')

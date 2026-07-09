@@ -37,6 +37,10 @@ interface MyTabProps {
   loggedIn: boolean
   /** 账户概览 */
   overview?: WebviewAccountOverview
+  /** 账户概览加载错误 */
+  overviewError?: string | null
+  /** 重试加载账户概览 */
+  onRetryOverview: () => void
   /** 打开节点收藏 */
   onOpenNodeCollection: () => void
 }
@@ -151,7 +155,8 @@ function openMember(username: string) {
  * @param props 组件参数
  */
 export default function MyTab(props: MyTabProps) {
-  const { ref, loading, loggedIn, overview, onOpenNodeCollection } = props
+  const { ref, loading, loggedIn, overview, overviewError, onRetryOverview, onOpenNodeCollection } =
+    props
   const [activeContentTab, setActiveContentTab] = useState<MyContentTabKey>('topicCollection')
   const [topicLists, setTopicLists] = useState<MyTopicListsState>({
     topicCollection: createMyTopicListState(),
@@ -168,17 +173,6 @@ export default function MyTab(props: MyTabProps) {
   })
   const notificationRequestSeq = useRef(0)
   const accountKeyRef = useRef<string | undefined>(undefined)
-
-  useEffect(() => {
-    const accountKey = loggedIn ? overview?.username : undefined
-
-    if (accountKeyRef.current === accountKey) {
-      return
-    }
-
-    accountKeyRef.current = accountKey
-    resetMyContentState()
-  }, [loggedIn, overview?.username])
 
   useEffect(() => {
     if (!loggedIn) {
@@ -200,10 +194,22 @@ export default function MyTab(props: MyTabProps) {
     loadMyTopics(activeContentTab, 1)
   }, [activeContentTab, loggedIn, notificationList, topicLists])
 
+  /** 当前账户 key */
+  const accountKey = loggedIn ? overview?.username : undefined
+
+  useEffect(() => {
+    if (accountKeyRef.current === accountKey) {
+      return
+    }
+
+    accountKeyRef.current = accountKey
+    resetMyContentState()
+  }, [accountKey])
+
   useEffect(() => {
     let disposed = false
 
-    if (!loggedIn) {
+    if (!accountKey) {
       setDailySignedIn(false)
       setDailySignInLoading(false)
       return
@@ -228,7 +234,7 @@ export default function MyTab(props: MyTabProps) {
     return () => {
       disposed = true
     }
-  }, [loggedIn])
+  }, [accountKey])
 
   useImperativeHandle(ref, () => ({
     async refreshLoadedTabs() {
@@ -670,6 +676,24 @@ export default function MyTab(props: MyTabProps) {
       <SimpleBar className={styles['my-panel']} autoHide={false}>
         <div className={styles['my-panel-content']}>
           <LoginPrompt />
+        </div>
+      </SimpleBar>
+    )
+  }
+
+  if (!overview && overviewError) {
+    return (
+      <SimpleBar className={styles['my-panel']} autoHide={false}>
+        <div className={`${styles['my-panel-content']} ${styles['empty-panel']}`}>
+          <Empty
+            title="加载失败"
+            description={overviewError}
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
+          />
+          <Button size="small" loading={loading} onClick={onRetryOverview}>
+            重试
+          </Button>
         </div>
       </SimpleBar>
     )

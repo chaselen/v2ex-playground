@@ -7,7 +7,7 @@ import {
   onDailySignInStatusChanged
 } from '@/features/dailySignIn'
 import G from '@/global'
-import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
+import { Topic, V2exNotification } from '@/v2ex'
 import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
 import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
@@ -217,43 +217,19 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       name: n.name,
       title: n.title
     }))
-
-    let collectionNodes: WebviewNode[] = []
-    let accountOverview: WebviewAccountOverview | undefined
     const loggedIn = !!G.getCookie()
 
-    if (loggedIn) {
-      try {
-        const rawNodes = await G.V2ex.getCollectionNodes()
-        collectionNodes = rawNodes.map(n => ({
-          name: n.name,
-          title: n.title
-        }))
-      } catch (err) {
-        if (err instanceof LoginRequiredError) {
-          collectionNodes = []
-        }
-      }
-
-      try {
-        accountOverview = await G.V2ex.getAccountOverview()
-      } catch (err) {
-        if (!(err instanceof LoginRequiredError)) {
-          console.error(err)
-        }
-      }
+    if (!loggedIn) {
+      this._syncUnreadNoticeBadge(0)
     }
-
-    this._syncUnreadNoticeBadge(accountOverview?.unreadNoticeCount || 0)
 
     return {
       tabs: {
         explore: EXPLORE_NODES,
         custom: customNodes,
-        collection: collectionNodes
+        collection: []
       },
       loggedIn,
-      accountOverview,
       selectedTab: this.consumePendingSelectedTab(),
       selectedNode: this.consumePendingNode()
     }
@@ -400,7 +376,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       return this._getCustomNodesData()
     }
 
-    const isAdd = G.addCustomNode({
+    const isAdd = await G.addCustomNode({
       name: select.description!,
       title: select.label
     })
@@ -418,7 +394,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param nodeName 节点 name
    */
   private async _handleRemoveNode(nodeName: string): Promise<NodeListData> {
-    G.removeCustomNode(nodeName)
+    await G.removeCustomNode(nodeName)
     return this._getCustomNodesData()
   }
 

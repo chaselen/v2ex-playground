@@ -58,8 +58,8 @@ export default class G {
    * 设置自定义节点
    * @param newNodes 节点列表
    */
-  static setCustomNodes(newNodes: Node[]) {
-    this.context.globalState.update('nodes', newNodes)
+  static async setCustomNodes(newNodes: Node[]) {
+    await this.context.globalState.update('nodes', newNodes)
   }
 
   /**
@@ -67,14 +67,14 @@ export default class G {
    * @param node 要添加的节点
    * @returns true表示添加成功，false表示节点已存在无需添加
    */
-  static addCustomNode(node: Node): boolean {
+  static async addCustomNode(node: Node): Promise<boolean> {
     const nodes = this.getCustomNodes()
     // 如果节点已经有了，则忽略
     if (nodes.find(n => n.name === node.name)) {
       return false
     }
     nodes.push(node)
-    this.setCustomNodes(nodes)
+    await this.setCustomNodes(nodes)
     return true
   }
 
@@ -82,13 +82,13 @@ export default class G {
    * 删除自定义节点
    * @param nodeName 要删除的节点 name
    */
-  static removeCustomNode(nodeName: string) {
+  static async removeCustomNode(nodeName: string) {
     const nodes = this.getCustomNodes()
     const i = nodes.findIndex(n => n.name === nodeName)
     if (i >= 0) {
       nodes.splice(i, 1)
     }
-    this.setCustomNodes(nodes)
+    await this.setCustomNodes(nodes)
   }
 
   /**

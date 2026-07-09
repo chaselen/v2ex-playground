@@ -25,8 +25,12 @@ interface NodeTreeTabProps {
   loggedIn: boolean
   /** 是否加载中 */
   loading?: boolean
+  /** 标签加载错误 */
+  error?: string | null
   /** 添加自定义节点 */
   onAddNode?: () => void
+  /** 重试加载标签 */
+  onRetryTab?: () => void
   /** 展开节点 */
   onExpandNode: (tab: MainTabKey, itemKey: string) => void
   /** 刷新节点 */
@@ -190,7 +194,9 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     nodes,
     loggedIn,
     loading,
+    error,
     onAddNode,
+    onRetryTab,
     onExpandNode,
     onRefreshNode,
     onPageChange,
@@ -468,6 +474,22 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
 
     if (showLoginPrompt) {
       return <LoginPrompt />
+    }
+
+    if (error) {
+      return (
+        <div className={styles['empty-panel']}>
+          <Empty
+            title="加载失败"
+            description={error}
+            image={<IllustrationNoContent className={styles['empty-illustration']} />}
+            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
+          />
+          <Button size="small" loading={loading} onClick={onRetryTab}>
+            重试
+          </Button>
+        </div>
+      )
     }
 
     return (
