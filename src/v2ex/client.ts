@@ -5,6 +5,16 @@ import dayjs from 'dayjs'
 import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
 import { normalizeLoginCookie } from './cookie'
+import { isSameAccountOverview, parseAccountOverview, parseOnlineCount } from './parsers/account'
+import { parseBalance } from './parsers/balance'
+import { parsePagerTotalPage } from './parsers/common'
+import { parseMemberContent, parseMemberInfo } from './parsers/member'
+import {
+  parseReplies,
+  parseTopicIdByLink,
+  parseTopicListCells,
+  parseTopicMeta
+} from './parsers/topic'
 import {
   findCookieHeaderName,
   getConfigUrl,
@@ -27,30 +37,18 @@ import {
   AccountOverviewChangedHandler,
   ThankResponse,
   TopicDetail,
-  TopicReply,
   SoV2exSearchParams,
   SoV2exSearchResult,
   AccountOverview,
   BalanceDetail,
-  BalanceTransaction,
   V2exNotification,
   MemberContent,
   MemberContentOptions,
   MemberContentTabKey,
   MemberInfo,
-  MemberReply,
   NodeTopicList,
   OnlineCountChangedHandler
 } from './types'
-
-/** Cheerio 选择结果 */
-type CheerioSelection = ReturnType<cheerio.CheerioAPI>
-
-/** V2EX 时间元素查找选项 */
-interface V2exTimeSpanOptions {
-  /** 是否只查找直接子元素 */
-  direct?: boolean
-}
 
 /** V2EX 请求超时时间 */
 const v2exRequestTimeout = 15000
@@ -99,25 +97,6 @@ const redirectCheckPathPatterns = ['/balance', '/go/*', '/t/*']
 
 /** 自动重定向检查页面路径匹配器 */
 const isRedirectCheckPath = picomatch(redirectCheckPathPatterns)
-
-/**
- * 查找 V2EX 时间元素
- * @param container 查找范围
- * @param options 查找选项
- */
-function getV2exTimeSpan(
-  container: CheerioSelection,
-  options: V2exTimeSpanOptions = {}
-): CheerioSelection {
-  const spans = options.direct ? container.children('span') : container.find('span')
-  // V2EX 完整时间在 title 中，格式通常为 20xx-xx-xx xx:xx:xx +08:00
-  const fullTimeSpan = spans.filter('[title^="20"]').last()
-  if (fullTimeSpan.length) {
-    return fullTimeSpan
-  }
-
-  return spans.filter('[title]').last()
-}
 
 export class V2exClient {
   /** 域名 */
@@ -513,71 +492,9 @@ export class V2exClient {
     const cells = $('#Main > .box').last().children('.cell.item')
 
     return {
-      totalPage: this.parsePagerTotalPage($),
-      list: this.parseTopicListCells($, cells)
+      totalPage: parsePagerTotalPage($),
+      list: parseTopicListCells($, cells)
     }
-  }
-
-  /**
-   * 解析通用分页组件总页数
-   * @param $ cheerio 实例
-   */
-  private parsePagerTotalPage($: cheerio.CheerioAPI): number {
-    const pageNumbers = $('.ps_container a.page_current, .ps_container a.page_normal')
-      .map((_, element) => Number($(element).text().trim()) || 0)
-      .get()
-    const inputMax = Number($('.ps_container input.page_input').attr('max') || 0)
-
-    return Math.max(1, inputMax, ...pageNumbers)
-  }
-
-  /**
-   * 解析话题列表项
-   * @param $ cheerio 实例
-   * @param cells 话题列表元素
-   * @param fallbackNode 固定节点信息
-   */
-  private parseTopicListCells(
-    $: cheerio.CheerioAPI,
-    cells: CheerioSelection,
-    fallbackNode?: Node
-  ): Topic[] {
-    const list: Topic[] = []
-
-    cells.each((_, cell) => {
-      const topicElement = $(cell).find('a.topic-link')
-      const topicHref = topicElement.attr('href')
-      const topicId = topicHref ? this.getTopicIdByLink(topicHref) : undefined
-
-      if (!topicId) {
-        return
-      }
-
-      const nodeElement = $(cell).find('a.node')
-      const nodeHref = nodeElement.attr('href') || ''
-      // 在/my/topics页面中，自己的帖子回复数元素名为.count_orange
-      const countElement = $(cell).find('.count_livid, .count_orange')
-      const topicInfo = $(cell).find('.topic_info')
-      const hasLastReply = /Lastly replied by|最后回复/.test(topicInfo.text())
-
-      list.push({
-        id: topicId,
-        title: topicElement.text().trim(),
-        node: fallbackNode
-          ? { ...fallbackNode }
-          : {
-              name: nodeHref.split('go/')[1] || '',
-              title: nodeElement.text().trim()
-            },
-        replies: Number(countElement.text().trim()) || 0,
-        displayTime: getV2exTimeSpan(topicInfo).text().trim(),
-        lastReplyUser: hasLastReply
-          ? topicInfo.find('strong a[href^="/member/"]').last().text().trim()
-          : ''
-      })
-    })
-
-    return list
   }
 
   /**
@@ -638,8 +555,7 @@ export class V2exClient {
    * @returns 主题id
    */
   getTopicIdByLink(topicLink: string): number | undefined {
-    const match = topicLink.match(/t\/(\d+)/)
-    return match ? Number(match[1]) : undefined
+    return parseTopicIdByLink(topicLink)
   }
 
   /**
@@ -659,7 +575,7 @@ export class V2exClient {
 
     const home$ = cheerio.load(homeRes.data)
 
-    return this.parseMemberInfo(home$, username)
+    return parseMemberInfo(home$, username)
   }
 
   /**
@@ -677,7 +593,7 @@ export class V2exClient {
 
     const $ = cheerio.load(res.data)
 
-    return this.parseMemberContent($, username, tab, page)
+    return parseMemberContent($, username, tab, page)
   }
 
   /**
@@ -689,7 +605,7 @@ export class V2exClient {
     const $ = cheerio.load(html)
     const cells = $('#Main > .box').eq(0).children('.cell.item')
 
-    return this.parseTopicListCells($, cells)
+    return parseTopicListCells($, cells)
   }
 
   /**
@@ -706,9 +622,9 @@ export class V2exClient {
 
     return {
       node,
-      totalPage: this.parsePagerTotalPage($),
+      totalPage: parsePagerTotalPage($),
       totalCount: this.parseNodeTopicTotalCount($),
-      list: this.parseTopicListCells($, cells, node)
+      list: parseTopicListCells($, cells, node)
     }
   }
 
@@ -778,7 +694,7 @@ export class V2exClient {
       const summary = cell.find('span.fade').first()
       const topic = summary.find('a.topic-link').first()
       const topicPath = topic.attr('href') || ''
-      const topicId = topicPath ? this.getTopicIdByLink(topicPath) : undefined
+      const topicId = topicPath ? parseTopicIdByLink(topicPath) : undefined
       const id = Number((cell.attr('id') || '').replace(/^n_/, '')) || 0
 
       if (!id) {
@@ -800,7 +716,7 @@ export class V2exClient {
     })
 
     return {
-      totalPage: this.parsePagerTotalPage($),
+      totalPage: parsePagerTotalPage($),
       totalCount,
       list
     }
@@ -816,9 +732,9 @@ export class V2exClient {
     const res = await this.http.get<string>(`/t/${topicId}?p=${replyPage}`)
 
     const $ = cheerio.load(res.data)
-    const topic = this.parseTopicMeta($, topicId)
-    topic.replies = this.parseReplies($)
-    topic.replyTotalPage = this.parsePagerTotalPage($)
+    const topic = parseTopicMeta($, topicId, this.baseUrl)
+    topic.replies = parseReplies($)
+    topic.replyTotalPage = parsePagerTotalPage($)
     topic.replyCurrentPage = Math.min(replyPage, topic.replyTotalPage)
 
     return topic
@@ -860,106 +776,7 @@ export class V2exClient {
     const balancePage = this.normalizePage(page)
     const { data: html } = await this.http.get<string>(`/balance?p=${balancePage}`)
 
-    return this.parseBalance(cheerio.load(html), balancePage)
-  }
-
-  /**
-   * 解析账户余额详情
-   * @param $ cheerio 实例
-   * @param requestedPage 请求页码
-   */
-  private parseBalance($: cheerio.CheerioAPI, requestedPage: number): BalanceDetail {
-    const balanceText = $('#Main .balance_area').first().text()
-    const balances = (balanceText.match(/\d+/g) || []).map(Number)
-    const transactions: BalanceTransaction[] = []
-
-    $('#Main table.data > tbody > tr, #Main table.data > tr').each((index, element) => {
-      const cells = $(element).children('td.d')
-      if (cells.length < 5) {
-        return
-      }
-
-      const amountCell = cells.eq(2)
-      const amount = amountCell.text().trim()
-      const direction = amountCell.find('.positive').length
-        ? 'positive'
-        : amountCell.find('.negative').length
-          ? 'negative'
-          : 'neutral'
-      const time = cells.eq(0).text().trim()
-
-      transactions.push({
-        key: `${requestedPage}-${index}-${time}`,
-        time,
-        type: cells.eq(1).text().trim(),
-        amount,
-        direction,
-        balance: cells.eq(3).text().trim(),
-        descriptionHtml: cells.eq(4).html() || ''
-      })
-    })
-
-    const currentPage =
-      Number($('#Main .ps_container a.page_current').first().text().trim()) || requestedPage
-
-    return {
-      gold: balances[0] || 0,
-      silver: balances[1] || 0,
-      bronze: balances[2] || 0,
-      page: currentPage,
-      totalPage: this.parsePagerTotalPage($),
-      transactions
-    }
-  }
-
-  /**
-   * 解析金币、银币和铜币余额
-   *
-   * V2EX 账户概览会省略数量为 0 的高位币种，所以不能只按文本数字顺序解析。
-   * 这里按 DOM 顺序读取文本金额，并在遇到币种图片时通过 alt 确认金额归属。
-   *
-   * @param balanceArea 余额区域
-   * @example
-   * 11 <img alt="G"> 25 <img alt="S"> 21 <img alt="B"> -> 11 金 25 银 21 铜
-   * @example
-   * 25 <img alt="S"> 21 <img alt="B"> -> 0 金 25 银 21 铜
-   */
-  private parseCoinBalance(
-    balanceArea: CheerioSelection
-  ): Pick<AccountOverview, 'gold' | 'silver' | 'bronze'> {
-    const balance = {
-      gold: 0,
-      silver: 0,
-      bronze: 0
-    }
-    const coinMap = {
-      G: 'gold',
-      S: 'silver',
-      B: 'bronze'
-    } as const
-    let pendingAmount = 0
-
-    balanceArea.contents().each((_, element) => {
-      if (element.type === 'text') {
-        // 金额总是在对应币种图片前的文本节点中
-        const matchedAmount = element.data.match(/[\d,]+/g)?.pop()
-        pendingAmount = matchedAmount ? Number(matchedAmount.replace(/,/g, '')) || 0 : 0
-        return
-      }
-
-      if (element.type !== 'tag' || element.name !== 'img') {
-        return
-      }
-
-      // 图片 alt 表示币种，缺失的币种保持默认 0
-      const coinType = coinMap[element.attribs?.alt as keyof typeof coinMap]
-      if (coinType) {
-        balance[coinType] = pendingAmount
-      }
-      pendingAmount = 0
-    })
-
-    return balance
+    return parseBalance(cheerio.load(html), balancePage)
   }
 
   /**
@@ -985,7 +802,7 @@ export class V2exClient {
    * @param $ cheerio 实例
    */
   private updateAccountOverviewFromHtml($: cheerio.CheerioAPI): AccountOverview | undefined {
-    const overview = this.parseAccountOverview($)
+    const overview = parseAccountOverview($)
     if (!overview) {
       return undefined
     }
@@ -993,7 +810,7 @@ export class V2exClient {
     const oldOverview = this.accountOverview
     this.accountOverview = overview
 
-    if (!oldOverview || !this.isSameAccountOverview(overview, oldOverview)) {
+    if (!oldOverview || !isSameAccountOverview(overview, oldOverview)) {
       this.notifyAccountOverviewChanged(overview, oldOverview)
     }
 
@@ -1005,7 +822,7 @@ export class V2exClient {
    * @param $ cheerio 实例
    */
   private updateOnlineCountFromHtml($: cheerio.CheerioAPI): number | undefined {
-    const onlineCount = this.parseOnlineCount($)
+    const onlineCount = parseOnlineCount($)
     if (onlineCount === undefined) {
       return undefined
     }
@@ -1018,325 +835,6 @@ export class V2exClient {
     }
 
     return onlineCount
-  }
-
-  /**
-   * 从 HTML 中解析在线人数
-   * @param $ cheerio 实例
-   */
-  private parseOnlineCount($: cheerio.CheerioAPI): number | undefined {
-    const text = $('body').text().replace(/\s+/g, ' ')
-    const match = text.match(/([\d,]+)\s*(?:Online|人在线)/i)
-    if (!match) {
-      return undefined
-    }
-
-    return Number(match[1].replace(/,/g, '')) || undefined
-  }
-
-  /**
-   * 从 HTML 中解析账户概览
-   * @param $ cheerio 实例
-   */
-  private parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | undefined {
-    const overview: AccountOverview = {
-      avatar: '',
-      username: '',
-      nodeCollectionCount: 0,
-      topicCollectionCount: 0,
-      specialFollowingCount: 0,
-      activityPercent: 0,
-      unreadNoticeCount: 0,
-      gold: 0,
-      silver: 0,
-      bronze: 0
-    }
-
-    const accountBox = $('#Rightbar > .box').has('#member-activity').first()
-    if (!accountBox.length) {
-      return undefined
-    }
-
-    const avatar = accountBox.find('td[width="48"] img.avatar').first()
-    const activityHtml = accountBox.find('#member-activity').html() || ''
-
-    overview.avatar = avatar.attr('src') || ''
-    overview.username =
-      accountBox.find('a[href^="/member/"]').first().text().trim() || avatar.attr('alt') || ''
-    overview.nodeCollectionCount = Number(
-      accountBox.find('a[href="/my/nodes"] .bigger').first().text().trim() || 0
-    )
-    overview.topicCollectionCount = Number(
-      accountBox.find('a[href="/my/topics"] .bigger').first().text().trim() || 0
-    )
-    overview.specialFollowingCount = Number(
-      accountBox.find('a[href="/my/following"] .bigger').first().text().trim() || 0
-    )
-    /*
-    V2EX 的活跃度条在不同状态下会使用不同的内部元素类名：
-
-    已满时：
-    <div id="member-activity">
-      <div class="member-activity-done" style="width: 100%;"></div>
-    </div>
-
-    未满时：
-    <div id="member-activity">
-      <div class="member-activity-bar">
-        <div class="member-activity-start" style="width: 18%;"></div>
-      </div>
-    </div>
-
-    因此这里直接从 #member-activity 的内部 HTML 中匹配 width，避免后续站点调整
-    活跃度内部类名或嵌套层级时导致解析遗漏
-    */
-    overview.activityPercent = Number(activityHtml.match(/width\s*:\s*([\d.]+)%/)?.[1] || 0)
-
-    const unreadText = $('#Rightbar a[href="/notifications"]').first().text().trim()
-    overview.unreadNoticeCount = Number(unreadText.match(/(\d+)\s*未读提醒/)?.[1] || 0)
-
-    const balance = this.parseCoinBalance($('#Rightbar .balance_area').first())
-    overview.gold = balance.gold
-    overview.silver = balance.silver
-    overview.bronze = balance.bronze
-
-    if (!overview.username && !overview.avatar) {
-      return undefined
-    }
-
-    return overview
-  }
-
-  /**
-   * 解析用户基本信息
-   * @param $ cheerio 实例
-   * @param fallbackUsername 兜底用户名
-   */
-  private parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string): MemberInfo {
-    const profileBox = this.findMemberProfileBox($)
-    const avatar = profileBox.find('img.avatar[data-uid]').first()
-    const grayText = profileBox
-      .find('span.gray')
-      .filter((_, element) => {
-        const text = $(element).text()
-        return text.includes('member #') || text.includes('号会员')
-      })
-      .first()
-      .text()
-      .replace(/\s+/g, ' ')
-      .trim()
-    const ldJson = this.parseMemberLdJson($)
-    const memberNumber =
-      Number(avatar.attr('data-uid')) ||
-      Number(grayText.match(/member #(\d+)/i)?.[1] || 0) ||
-      Number(ldJson?.identifier || 0)
-    const joinedAt =
-      grayText.match(/(?:joined on|加入于)\s*([\d-]+\s+[\d:]+\s+[+-][\d:]+)/i)?.[1]?.trim() ||
-      String(ldJson?.dateCreated || '')
-    const activityRank =
-      Number(grayText.match(/(?:activity rank|活跃度排名)\s*(\d+)/i)?.[1] || 0) || undefined
-
-    return {
-      avatar: avatar.attr('src') || String(ldJson?.image || ''),
-      username:
-        profileBox.find('h1').first().text().trim() ||
-        avatar.attr('alt') ||
-        String(ldJson?.name || '') ||
-        fallbackUsername,
-      memberNumber,
-      joinedAt,
-      isPro: profileBox.find('.badges .badge.pro').length > 0,
-      activityRank
-    }
-  }
-
-  /**
-   * 查找用户基本信息容器
-   * @param $ cheerio 实例
-   */
-  private findMemberProfileBox($: cheerio.CheerioAPI): CheerioSelection {
-    const boxes = $('#Main > .box')
-    const profileBox = boxes
-      .filter((_, element) => $(element).find('img.avatar[data-uid]').length > 0)
-      .first()
-
-    return profileBox
-  }
-
-  /**
-   * 解析用户页结构化数据
-   * @param $ cheerio 实例
-   */
-  private parseMemberLdJson($: cheerio.CheerioAPI): Record<string, unknown> | undefined {
-    const rawJson = $('script[type="application/ld+json"]').first().text().trim()
-    if (!rawJson) {
-      return undefined
-    }
-
-    try {
-      const parsed = JSON.parse(rawJson) as { mainEntity?: Record<string, unknown> }
-      return parsed.mainEntity
-    } catch {
-      return undefined
-    }
-  }
-
-  /**
-   * 解析用户页内容
-   * @param $ cheerio 实例
-   * @param username 用户名
-   * @param tab 标签
-   * @param page 页码
-   */
-  private parseMemberContent(
-    $: cheerio.CheerioAPI,
-    username: string,
-    tab: MemberContentTabKey,
-    page: number
-  ): MemberContent {
-    const content: MemberContent = {
-      tab,
-      page,
-      totalPage: this.parsePagerTotalPage($),
-      totalCount: this.parseMemberContentTotalCount($),
-      topics: [],
-      replies: [],
-      hidden: false,
-      message: ''
-    }
-
-    if (tab === 'replies') {
-      content.replies = this.parseMemberReplies($)
-      return content
-    }
-
-    const topicBox = this.findMemberTopicBox($)
-    content.hidden =
-      topicBox.text().includes('topics list is hidden') ||
-      topicBox.text().includes('主题列表被隐藏') ||
-      $('#Main').text().includes('topics list is hidden') ||
-      $('#Main').text().includes('主题列表被隐藏')
-    content.message = this.parseMemberTopicMessage($, topicBox, username)
-
-    if (!content.hidden) {
-      content.topics = this.parseTopicListCells($, topicBox.children('.cell.item'))
-    }
-
-    return content
-  }
-
-  /**
-   * 查找用户页主题列表容器
-   * @param $ cheerio 实例
-   */
-  private findMemberTopicBox($: cheerio.CheerioAPI): CheerioSelection {
-    const boxes = $('#Main > .box')
-    const tabBox = boxes
-      .filter((_, element) => $(element).children('.cell_tabs').length > 0)
-      .first()
-    if (tabBox.length) {
-      return tabBox
-    }
-
-    return boxes.filter((_, element) => $(element).children('.cell.item').length > 0).first()
-  }
-
-  /**
-   * 解析用户主题列表提示
-   * @param topicBox 主题列表容器
-   * @param username 用户名
-   */
-  private parseMemberTopicMessage(
-    $: cheerio.CheerioAPI,
-    topicBox: CheerioSelection,
-    username: string
-  ): string {
-    const hiddenText =
-      topicBox.find('.topic_content .gray').first().text().trim() ||
-      $('#Main .topic_content .gray')
-        .filter(
-          (_, element) =>
-            $(element).text().includes('topics list is hidden') ||
-            $(element).text().includes('主题列表被隐藏')
-        )
-        .first()
-        .text()
-        .trim()
-    if (hiddenText) {
-      return hiddenText
-    }
-
-    if (
-      topicBox.text().includes('topics list is hidden') ||
-      topicBox.text().includes('主题列表被隐藏')
-    ) {
-      return `${username} 已隐藏主题列表`
-    }
-
-    return ''
-  }
-
-  /**
-   * 解析用户内容总数
-   * @param $ cheerio 实例
-   */
-  private parseMemberContentTotalCount($: cheerio.CheerioAPI): number {
-    const text = $('#Main > .box .header .fr strong.gray').first().text().trim()
-    return Number(text.replace(/,/g, '')) || 0
-  }
-
-  /**
-   * 解析用户回复列表
-   * @param $ cheerio 实例
-   */
-  private parseMemberReplies($: cheerio.CheerioAPI): MemberReply[] {
-    const replies: MemberReply[] = []
-
-    $('#Main > .box .dock_area').each((_, element) => {
-      const dock = $(element)
-      const body = dock.next('.inner, .cell')
-      const summary = dock.find('.gray').first()
-      const topic = summary.find('a[href*="/t/"]').last()
-      const topicPath = topic.attr('href') || ''
-      const node = summary.find('a[href^="/go/"]').last()
-      const topicAuthor = summary.find('a[href^="/member/"]').first()
-
-      replies.push({
-        topicId: topicPath ? this.getTopicIdByLink(topicPath) : undefined,
-        topicTitle: topic.text().trim(),
-        topicPath,
-        node: {
-          name: (node.attr('href') || '').split('/go/')[1] || '',
-          title: node.text().trim()
-        },
-        topicAuthor: topicAuthor.text().trim(),
-        time: dock.find('.fade').first().attr('title') || dock.find('.fade').first().text().trim(),
-        summaryHtml: summary.html()?.trim() || '',
-        contentHtml: body.find('.reply_content').first().html()?.trim() || ''
-      })
-    })
-
-    return replies.filter(reply => reply.topicTitle || reply.contentHtml)
-  }
-
-  /**
-   * 判断账户概览是否一致
-   * @param overview 最新账户概览
-   * @param oldOverview 旧账户概览
-   */
-  private isSameAccountOverview(overview: AccountOverview, oldOverview: AccountOverview): boolean {
-    return (
-      overview.avatar === oldOverview.avatar &&
-      overview.username === oldOverview.username &&
-      overview.nodeCollectionCount === oldOverview.nodeCollectionCount &&
-      overview.topicCollectionCount === oldOverview.topicCollectionCount &&
-      overview.specialFollowingCount === oldOverview.specialFollowingCount &&
-      overview.activityPercent === oldOverview.activityPercent &&
-      overview.unreadNoticeCount === oldOverview.unreadNoticeCount &&
-      overview.gold === oldOverview.gold &&
-      overview.silver === oldOverview.silver &&
-      overview.bronze === oldOverview.bronze
-    )
   }
 
   /**
@@ -1359,128 +857,6 @@ export class V2exClient {
     this.onlineCountChangedHandlers.forEach(handler => {
       void handler(onlineCount, oldOnlineCount)
     })
-  }
-
-  /**
-   * 解析话题元信息
-   * @param $ cheerio 实例
-   * @param topicId 话题id
-   */
-  private parseTopicMeta($: cheerio.CheerioAPI, topicId: number): TopicDetail {
-    const topic: TopicDetail = {
-      id: topicId,
-      title: $('.header > h1').text(),
-      node: {
-        name: '',
-        title: ''
-      },
-      authorAvatar: '',
-      topicIcon: '',
-      authorName: '',
-      isAuthorPro: false,
-      displayTime: '',
-      publishedAt: '',
-      visitCount: 0,
-      content: '',
-      appends: [],
-      collectCount: 0,
-      thankCount: 0,
-      isCollected: false,
-      isThanked: false,
-      canThank: true,
-      collectParamT: null,
-      replyCount: 0,
-      replyCurrentPage: 1,
-      replyTotalPage: 1,
-      replies: []
-    }
-    const node = $('.header a[href^=/go/]')
-    topic.node.name = node.attr('href')?.split('go/')[1] || ''
-    topic.node.title = node.text().trim()
-    const topicIcon = $('head link[rel~="icon"]').first().attr('href')
-    topic.topicIcon = topicIcon ? new URL(topicIcon, this.baseUrl).toString() : ''
-    topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''
-    const headerMeta = $('.header > .gray')
-    const meta = headerMeta.text().split('·')
-    topic.authorName = headerMeta.find('a[href^=/member]').text().trim()
-    topic.isAuthorPro = headerMeta.find('.badges .badge.pro').length > 0
-    const publishedTime = getV2exTimeSpan(headerMeta, { direct: true })
-    const publishedTimeTitle = publishedTime.attr('title')
-    topic.displayTime = publishedTime.text().trim()
-    topic.publishedAt = publishedTimeTitle
-      ? dayjs(publishedTimeTitle).format('YYYY-MM-DD HH:mm:ss')
-      : topic.displayTime
-    topic.visitCount = Number(
-      meta.find(item => /(?:views|次点击)/i.test(item))?.match(/\d+/)?.[0] || 0
-    )
-    topic.content = $('#Main .topic_content').html() || ''
-    $('.subtle').each((_, element) => {
-      topic.appends.push({
-        time: $(element).children('.fade').text().split('·')[1].trim(),
-        content: $(element).children('.topic_content').html() || ''
-      })
-    })
-
-    const topicButtons = $('.topic_buttons')
-    if (topicButtons.length) {
-      const countStr = topicButtons.children('.topic_stats').text()
-      if (/(\d+)\s*人收藏/.test(countStr)) {
-        topic.collectCount = parseInt(RegExp.$1)
-      }
-      if (/(\d+)\s*人感谢/.test(countStr)) {
-        topic.thankCount = parseInt(RegExp.$1)
-      }
-      const collectButton = topicButtons.children('a.tb').eq(0)
-      topic.isCollected = collectButton.text().indexOf('取消收藏') >= 0
-      topic.collectParamT = collectButton.attr('href')?.split('?t=')[1] || null
-      topic.canThank = topicButtons.children('#topic_thank').length > 0
-      topic.isThanked = topicButtons.find('.topic_thanked').length > 0
-    }
-
-    let topicBoxIndex = 1
-    const boxes = $('#Main > .box')
-    if (boxes.eq(1).attr('id') === 'topic-tip-box') {
-      topicBoxIndex = 2
-    }
-    const topicBox = boxes.eq(topicBoxIndex)
-    topic.replyCount = this.parseReplyCount(topicBox)
-    return topic
-  }
-
-  /**
-   * 解析回复总数
-   * @param topicBox 回复列表外层容器
-   */
-  private parseReplyCount(topicBox: CheerioSelection): number {
-    const headerText = topicBox.children('div.cell').first().find('span.gray').first().text()
-    return Number(headerText.match(/(\d+)\s*条回复/)?.[1] || 0)
-  }
-
-  /**
-   * 获取回复列表
-   * @param $ cheerio 实例
-   */
-  private parseReplies($: cheerio.CheerioAPI): TopicReply[] {
-    const replies: TopicReply[] = []
-    let topicBoxIndex = 1
-    const boxes = $('#Main > .box')
-    if (boxes.eq(1).attr('id') === 'topic-tip-box') {
-      topicBoxIndex = 2
-    }
-    const topicBox = boxes.eq(topicBoxIndex)
-    topicBox.children('div[id].cell').each((_, element) => {
-      replies.push({
-        replyId: $(element).attr('id')?.split('r_')[1] || '0',
-        userAvatar: $(element).find('img.avatar').attr('src') || '',
-        userName: $(element).find('a.dark').html() || '',
-        time: $(element).find('span.ago').text(),
-        floor: $(element).find('span.no').text(),
-        content: $(element).find('.reply_content').html() || '',
-        thanks: parseInt($(element).find('span.small.fade').text().trim() || '0'),
-        thanked: $(element).find('.thank_area.thanked').length > 0
-      })
-    })
-    return replies
   }
 
   /**
