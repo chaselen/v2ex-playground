@@ -134,12 +134,22 @@ export const imageEmoticonLinks = Object.fromEntries(
   Object.entries(imageEmoticonSources).map(([token, links]) => [token, links.hd])
 ) as { [Token in keyof typeof imageEmoticonSources]: (typeof imageEmoticonSources)[Token]['hd'] }
 
+/** 低清图片表情链接 */
+export const imageEmoticonLdLinks = Object.fromEntries(
+  Object.entries(imageEmoticonSources).map(([token, links]) => [token, links.ld])
+) as { [Token in keyof typeof imageEmoticonSources]: (typeof imageEmoticonSources)[Token]['ld'] }
+
 /** 图片表情 token */
 export type ImageEmoticonToken = keyof typeof imageEmoticonLinks
 
 /** 图片表情地址集合 */
 const imageEmoticonSrcSet = new Set<string>(
   Object.values(imageEmoticonSources).flatMap(({ ld, hd }) => [ld, hd])
+)
+
+/** 低清到高清图片表情映射 */
+const imageEmoticonHdSrcMap = new Map<string, string>(
+  Object.values(imageEmoticonSources).map(({ ld, hd }) => [ld, hd])
 )
 
 /**
@@ -159,5 +169,18 @@ export function isImageEmoticonSrc(src: string) {
     return imageEmoticonSrcSet.has(new URL(src, document.baseURI).toString())
   } catch {
     return imageEmoticonSrcSet.has(src)
+  }
+}
+
+/**
+ * 转换为高清图片表情地址
+ * @param src 图片地址
+ */
+export function normalizeImageEmoticonSrc(src: string) {
+  try {
+    const url = new URL(src, document.baseURI).toString()
+    return imageEmoticonHdSrcMap.get(url) || src
+  } catch {
+    return imageEmoticonHdSrcMap.get(src) || src
   }
 }

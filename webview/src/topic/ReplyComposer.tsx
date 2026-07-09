@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import { Button, Popover, Spin, TextArea, Toast, Tooltip } from '@douyinfe/semi-ui'
 import { IconEmoji, IconImageStroked } from '@douyinfe/semi-icons'
 import SimpleBar from 'simplebar-react'
-import { normalizeHtml } from '@/shared/contentEnhancement'
+import { normalizeHtml, proxyImgurImageSrc } from '@/shared/contentEnhancement'
 import { imageEmoticonLinks, isImageEmoticon } from '@/shared/imageEmoticons'
 import { emoticonGroups } from './emoticons'
 
@@ -208,6 +208,23 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   }
 
   /**
+   * 渲染图片表情
+   * @param emoticon 图片表情文本
+   */
+  function renderImageEmoticon(emoticon: keyof typeof imageEmoticonLinks) {
+    const originalSrc = imageEmoticonLinks[emoticon]
+
+    return (
+      <img
+        src={proxyImgurImageSrc(originalSrc)}
+        data-preview-src={originalSrc}
+        alt={emoticon}
+        loading="lazy"
+      />
+    )
+  }
+
+  /**
    * 渲染表情面板
    */
   function renderEmoticonPanel() {
@@ -227,7 +244,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
                     onClick={() => insertEmoticon(emoticon)}
                   >
                     {isImageEmoticon(emoticon) ? (
-                      <img src={imageEmoticonLinks[emoticon]} alt={emoticon} loading="lazy" />
+                      renderImageEmoticon(emoticon)
                     ) : (
                       <span>{emoticon}</span>
                     )}

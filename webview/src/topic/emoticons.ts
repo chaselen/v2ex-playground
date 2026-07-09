@@ -1,4 +1,8 @@
-import { imageEmoticonLinks, type ImageEmoticonToken } from '@/shared/imageEmoticons'
+import {
+  imageEmoticonLdLinks,
+  imageEmoticonLinks,
+  type ImageEmoticonToken
+} from '@/shared/imageEmoticons'
 
 /** 图片表情匹配表达式 */
 const imageEmoticonPattern = new RegExp(
@@ -127,7 +131,10 @@ export const emoticonGroups = [
  */
 export function replaceImageEmoticonTokens(content: string) {
   return content
-    .replace(imageEmoticonPattern, token => ` ${imageEmoticonLinks[token as ImageEmoticonToken]} `)
+    .replace(
+      imageEmoticonPattern,
+      token => ` ${imageEmoticonLdLinks[token as ImageEmoticonToken]} `
+    )
     .replace(/[^\S\r\n]+/g, ' ')
     .replace(/ *(\r?\n) */g, '$1')
     .trim()

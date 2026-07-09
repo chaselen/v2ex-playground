@@ -1,7 +1,7 @@
 import type { WebviewContentRpcCommands } from '@extension/shared/webview'
 import { handleWebviewLinkClick } from './linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
-import { isImageEmoticonSrc } from './imageEmoticons'
+import { isImageEmoticonSrc, normalizeImageEmoticonSrc } from './imageEmoticons'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
 const vscode = createVsCodeClient<WebviewContentRpcCommands>()
@@ -11,6 +11,23 @@ const SUPPORT_IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
 
 /** 隐藏图片占位按钮 id 计数 */
 let hiddenImagePlaceholderCount = 0
+
+/**
+ * 获取图片在 Webview 中实际展示的地址
+ * @param imageSrc 图片地址
+ */
+function getImageDisplaySrc(imageSrc: string): string {
+  return normalizeImageEmoticonSrc(imageSrc)
+}
+
+/**
+ * 判断图片是否为内置图片表情
+ * @param originalSrc 原始图片地址
+ * @param displaySrc 展示图片地址
+ */
+function isImageEmoticonDisplaySrc(originalSrc: string, displaySrc: string) {
+  return isImageEmoticonSrc(originalSrc) || isImageEmoticonSrc(displaySrc)
+}
 
 /**
  * 规范化 html 文本，避免插值时出现 undefined
@@ -32,8 +49,10 @@ export function normalizeHtml(html?: unknown): string {
       return
     }
 
-    const proxiedSrc = proxyImgurImageSrc(originalSrc)
-    if (isImageEmoticonSrc(originalSrc)) {
+    // 图片表情提交使用 LD 地址，渲染时统一切回 HD 地址
+    const displaySrc = getImageDisplaySrc(originalSrc)
+    const proxiedSrc = proxyImgurImageSrc(displaySrc)
+    if (isImageEmoticonDisplaySrc(originalSrc, displaySrc)) {
       img.classList.add('v2ex-emoticon-image')
     }
 
@@ -41,7 +60,8 @@ export function normalizeHtml(html?: unknown): string {
       return
     }
 
-    img.dataset.previewSrc = originalSrc
+    // DOM 中展示代理地址，同时保留规范化后的真实图片地址
+    img.dataset.previewSrc = displaySrc
     img.src = proxiedSrc
   })
 
@@ -102,10 +122,10 @@ function openImage(src: string, event: MouseEvent) {
 }
 
 /**
- * 转换 imgur 图片代理地址
+ * 转换 imgur 图片为代理地址
  * @param imageSrc 图片地址
  */
-function proxyImgurImageSrc(imageSrc: string): string {
+export function proxyImgurImageSrc(imageSrc: string): string {
   try {
     const url = new URL(imageSrc, document.baseURI)
     if (url.hostname === 'i.imgur.com') {
@@ -119,16 +139,17 @@ function proxyImgurImageSrc(imageSrc: string): string {
 }
 
 /**
- * 转换 imgur 图片代理地址
+ * 应用图片展示地址
  * @param img 图片元素
  */
-function proxyImgurImage(img: HTMLImageElement) {
+function applyImageDisplaySrc(img: HTMLImageElement) {
   const originalSrc = img.dataset.previewSrc || img.currentSrc || img.src
-  img.dataset.previewSrc = originalSrc
-  if (isImageEmoticonSrc(originalSrc)) {
+  const displaySrc = getImageDisplaySrc(originalSrc)
+  img.dataset.previewSrc = displaySrc
+  if (isImageEmoticonDisplaySrc(originalSrc, displaySrc)) {
     img.classList.add('v2ex-emoticon-image')
   }
-  img.src = proxyImgurImageSrc(originalSrc)
+  img.src = proxyImgurImageSrc(displaySrc)
 }
 
 /**
@@ -253,7 +274,7 @@ export function enhanceHtmlContent(root: ParentNode, showImages: boolean) {
   const topicLinks = root.querySelectorAll<HTMLAnchorElement>('.topic-content a')
 
   topicImages.forEach(img => {
-    proxyImgurImage(img)
+    applyImageDisplaySrc(img)
     bindImagePreview(img)
     syncImageVisibility(img, showImages)
   })
