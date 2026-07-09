@@ -4,23 +4,26 @@
 
 VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译输出到 `out/`。
 
-- `src/commands/` — VS Code 命令模块，小驼峰命名（`login.ts`、`search.ts`、`setting.ts`）
+- `src/commands/` — VS Code 命令模块，小驼峰命名（如 `login.ts`、`setting.ts`）；面板类命令可在 `src/extension.ts` 中直接注册并委托给功能模块
 - `src/providers/` — 单 WebviewView Provider（`MainViewProvider.ts`），通过 Webview RPC 与前端通信
-- `src/controllers/` — 话题和用户详情 Webview Panel 控制器及共享输入类型
+- `src/controllers/` — 话题、用户、搜索、最近浏览、余额和两步验证等 Webview Panel 控制器及共享输入类型
 - `src/core/http.ts` — HTTP 客户端（axios）
 - `src/core/WebviewRpcBridge.ts` — 扩展侧 Webview RPC 桥接
 - `src/core/webviewHtml.ts` — Vite Webview HTML 资源路径转换
-- `src/v2ex/` — V2EX 请求、HTML 解析、领域类型和领域错误，统一从 `src/v2ex/index.ts` 导出
-- `src/features/` — 独立功能模块，如每日签到、图片预览、外部链接打开和详情面板导航
-- `src/shared/` — 扩展侧与 Webview 共享的 RPC 契约、类型和 Cookie 工具
+- `src/v2ex/` — V2EX 请求、HTML 解析、领域类型、领域错误和 Cookie 工具，统一从 `src/v2ex/index.ts` 导出
+- `src/features/` — 独立功能模块，如每日签到、图片预览、外部链接打开、详情面板导航、最近浏览、登录会话和两步验证
+- `src/shared/` — 扩展侧与 Webview 共享的 RPC 契约和类型
 - `src/config.ts` / `src/global.ts` — 配置读取和扩展运行时全局状态
 - `webview/` — React + Vite + Semi Design Webview 源码
-  - `main.html` / `topic.html` / `member.html` / `balance.html` — 生产 Webview 的 Vite 多页面入口
+  - `main.html` / `topic.html` / `member.html` / `balance.html` / `search.html` / `recent-browse.html` / `two-factor.html` — 生产 Webview 的 Vite 多页面入口
   - `theme.html` / `src/theme/` — Semi 与 VS Code 主题适配回归页
   - `src/main/` — 主面板 WebviewView
   - `src/topic/` — 帖子详情 Webview Panel
   - `src/member/` — 用户详情 Webview Panel
   - `src/balance/` — 账户余额 Webview Panel
+  - `src/search/` — 搜索 Webview Panel
+  - `src/recentBrowse/` — 最近浏览 Webview Panel
+  - `src/twoFactor/` — 两步验证 Webview Panel
   - `src/shared/` — Webview 侧 RPC 封装、链接导航、公共样式和内容增强逻辑
 - `html/` — Vite 构建后的 Webview 运行时资源，不手工编辑
 - `out/` — esbuild 生成的扩展产物，不手工编辑
@@ -51,8 +54,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 修改 Webview 源码时运行 `npm run check:webview` 和 `npm run build:webview`
 - 修改共享 RPC 契约、Webview HTML 加载链路、构建配置或会同时影响扩展侧与 Webview 的代码时，运行相关两侧类型检查并执行 `npm run build`
 - 发布前、打包前或无法判断影响范围时，运行 `npm run check` 和 `npm run build`
-- 涉及 `src/v2ex/`、`src/shared/cookie.ts`、Cookie 或请求解析逻辑时运行 `npm test`
-- 手动验证按改动范围覆盖登录、节点刷新、话题打开、用户打开、搜索、设置项和 Webview 行为
+- 涉及 `src/v2ex/`、`src/v2ex/cookie.ts`、Cookie、两步验证或请求解析逻辑时运行 `npm test`
+- 手动验证按改动范围覆盖登录、两步验证、节点刷新、话题打开、用户打开、搜索、最近浏览、设置项和 Webview 行为
 
 ## Webview 架构
 
@@ -63,10 +66,10 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 主面板 CSS Modules 的省略文本、空状态和加载状态等重复模式集中在 `webview/src/main/components/_mixins.scss`；新增同类样式时优先复用 mixin，保持最终类名由各 CSS Module 管理
 - Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)，样式优先使用官方 Theme Color CSS 变量（`var(--vscode-*)`）；Semi 组件应优先通过 `webview/src/shared/_vscode-semi-theme.scss` 中的 [Design Token](https://semi.design/zh-CN/basic/tokens) 映射适配
 - 无法通过 Semi Design Token 表达的兼容样式集中在 `webview/src/shared/_semi-overrides.scss`，不要在页面样式中新增全局 `.semi-*` 覆盖
-- 话题页、用户页、“我的”消息和余额页使用 Semi Design 外层组件，V2EX 返回的 HTML 内容通过 `dangerouslySetInnerHTML` 渲染；HTML 中的链接点击统一复用 `webview/src/shared/linkNavigation.ts`，图片预览和隐藏图片等富文本增强复用 `webview/src/shared/contentEnhancement.ts`
+- 话题页、用户页、“我的”消息、余额页、搜索页、最近浏览页和两步验证页使用 Semi Design 外层组件；V2EX 返回的 HTML 内容通过 `dangerouslySetInnerHTML` 渲染时，HTML 中的链接点击统一复用 `webview/src/shared/linkNavigation.ts`，图片预览和隐藏图片等富文本增强复用 `webview/src/shared/contentEnhancement.ts`
 - Webview 通过 `webview/src/shared/vscode.ts` 中的 Proxy RPC 客户端封装 `acquireVsCodeApi().postMessage`，业务侧使用 `vscode.command(payload)` 调用扩展能力，使用 `vscode.on(event, handler)` 订阅扩展事件
 - 扩展侧通过 `src/core/WebviewRpcBridge.ts` 接收 RPC；创建桥接器时传入完整且类型安全的处理器映射，通过 `rpc.post(event, payload)` 向 Webview 发送事件
-- RPC 契约使用函数签名定义，集中在 `src/shared/commonView.ts`、`src/shared/mainView.ts`、`src/shared/topicView.ts`、`src/shared/memberView.ts`、`src/shared/balanceView.ts` 和 `src/shared/webviewRpc.ts`
+- RPC 契约使用函数签名定义，集中在 `src/shared/commonView.ts`、`src/shared/mainView.ts`、`src/shared/topicView.ts`、`src/shared/memberView.ts`、`src/shared/balanceView.ts`、`src/shared/searchView.ts`、`src/shared/recentBrowseView.ts`、`src/shared/twoFactorView.ts` 和 `src/shared/webviewRpc.ts`
 - 新增或修改 RPC 命令、事件、请求参数或响应字段时，先更新 `src/shared/` 中的契约，再同步扩展侧处理器和 Webview 调用方；不要绕过 Proxy 客户端直接调用 `postMessage`
 - Webview HTML 入口使用 `https://www.v2ex.com/` 作为 `<base>`；普通业务按钮打开外部链接前使用 `resolveWebviewUrl()` 基于 `document.baseURI` 解析为绝对地址，HTML 内容中的链接交由 `handleWebviewLinkClick()` 统一识别和分发，扩展侧统一复用 `src/features/openExternal.ts`
 - 扩展侧使用 `src/core/webviewHtml.ts` 读取 Vite 输出 HTML，并将本地 `src` / `href` 转换为 `webview.asWebviewUri(...)`
