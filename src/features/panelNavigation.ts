@@ -114,6 +114,15 @@ export function openTopic(topic: TopicPanelInput) {
 }
 
 /**
+ * 登录态变化后刷新已打开的话题面板
+ */
+export function refreshTopicPanelsForAuthChange() {
+  Object.values(topicPanels).forEach(topicPanel => {
+    topicPanel.refreshForAuthChange()
+  })
+}
+
+/**
  * 打开账户余额页面
  */
 export function openBalance() {

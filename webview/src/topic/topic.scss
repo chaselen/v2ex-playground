@@ -353,6 +353,54 @@ $panel-border: var(--v2ex-border);
   text-align: center;
 }
 
+.reply-login-prompt {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--v2ex-border) 72%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--v2ex-widget-bg) 78%, transparent);
+}
+
+.reply-login-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--vscode-textLink-foreground) 42%, #{$panel-border});
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 10%, transparent);
+  color: var(--vscode-textLink-foreground);
+  font-size: 18px;
+}
+
+.reply-login-content {
+  min-width: 0;
+
+  h2 {
+    margin: 0 0 4px;
+    color: var(--v2ex-webview-fg);
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  p {
+    margin: 0;
+    color: $muted-color;
+    line-height: 1.55;
+  }
+}
+
+.reply-login-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
 .post-reply {
   margin-top: 18px;
 
@@ -684,6 +732,15 @@ $panel-border: var(--v2ex-border);
   .toolbar-count,
   .reply-actions {
     margin-left: 0;
+  }
+
+  .reply-login-prompt {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .reply-login-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 
   .floating-actions {

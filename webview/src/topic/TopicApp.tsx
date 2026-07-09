@@ -17,8 +17,10 @@ import {
   IconBookmarkAddStroked,
   IconHeartStroked,
   IconLikeHeart,
+  IconLockStroked,
   IconRefresh,
-  IconReply
+  IconReply,
+  IconUserCircleStroked
 } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
@@ -471,6 +473,43 @@ export default function TopicApp() {
     )
   }
 
+  /**
+   * 渲染未登录回复提示
+   */
+  function renderLoginReplyPrompt() {
+    return (
+      <section className="reply-login-prompt" aria-label="登录后回复">
+        <div className="reply-login-icon">
+          <IconLockStroked />
+        </div>
+        <div className="reply-login-content">
+          <h2>登录后参与回复</h2>
+          <p>登录 V2EX 账号后，才能回复话题、感谢回复者，并使用收藏等话题操作。</p>
+        </div>
+        <div className="reply-login-actions">
+          <Button
+            icon={<IconUserCircleStroked />}
+            size="small"
+            theme="solid"
+            type="primary"
+            onClick={() => vscode.login()}
+          >
+            登录 V2EX
+          </Button>
+          <Button
+            icon={<IconRefresh />}
+            size="small"
+            theme="light"
+            type="tertiary"
+            onClick={() => vscode.refresh()}
+          >
+            刷新
+          </Button>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <main className="topic-shell" ref={topicShellRef}>
       {state.status === 'loading' && (
@@ -697,7 +736,7 @@ export default function TopicApp() {
               onUploadImage={uploadReplyImage}
             />
           ) : (
-            <p className="muted">您目前还不能回复，请先登录</p>
+            renderLoginReplyPrompt()
           )}
         </article>
       )}

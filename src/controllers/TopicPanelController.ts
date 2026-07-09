@@ -151,6 +151,15 @@ export class TopicPanelController {
   }
 
   /**
+   * 登录态变化后刷新话题
+   */
+  refreshForAuthChange() {
+    this.refreshTopic().catch(err => {
+      console.error('V2EX 话题登录态刷新失败', err)
+    })
+  }
+
+  /**
    * 渲染话题详情
    * @param topicDetail 话题详情
    */
