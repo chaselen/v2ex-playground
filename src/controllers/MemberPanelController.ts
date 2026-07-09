@@ -1,11 +1,10 @@
-import path from 'path'
 import vscode from 'vscode'
 import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
-import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
-import { setDefaultPanelIcon, setRemotePanelIcon } from '@/features/panelIcon'
+import { setRemotePanelIcon } from '@/features/panelIcon'
+import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } from '@/v2ex'
 import type {
@@ -60,8 +59,13 @@ export class MemberPanelController {
     this.username = input.username
     this.key = G.V2ex.getMemberLink(this.username)
     this.deps = deps
-    this.panel = createPanel(this.key, input.label || this.username)
-    this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'member.html')
+    this.panel = createV2exWebviewPanel({
+      viewType: this.key,
+      title: input.label || this.username,
+      htmlEntry: 'member.html',
+      enableFindWidget: true,
+      useDefaultIcon: true
+    })
     this.rpc = new WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>(
       this.panel.webview,
       this.createRpcHandlers()
@@ -180,7 +184,7 @@ export class MemberPanelController {
       G.V2ex.getMemberContent(this.username)
     ])
     this.profile = this.createProfile(member, content)
-    this.panel.title = fmtPanelTitle(this.profile.member.username)
+    this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
       console.error('V2EX 用户面板图标更新失败', err)
     )
@@ -209,7 +213,7 @@ export class MemberPanelController {
     const content = await G.V2ex.getMemberContent(this.username, { tab, page })
     const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
     this.profile = this.createProfile(member, content)
-    this.panel.title = fmtPanelTitle(this.profile.member.username)
+    this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
       console.error('V2EX 用户面板图标更新失败', err)
     )
@@ -227,36 +231,4 @@ export class MemberPanelController {
       content
     }
   }
-}
-
-/**
- * 截断面板标题
- * @param title 原始标题
- */
-function fmtPanelTitle(title: string) {
-  return title.length <= 15 ? title : title.slice(0, 15) + '...'
-}
-
-/**
- * 创建用户 webview 面板
- * @param id 面板 id
- * @param label 面板标题
- */
-function createPanel(id: string, label: string): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    id,
-    fmtPanelTitle(label),
-    vscode.ViewColumn.Active,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      enableFindWidget: true,
-      localResourceRoots: [
-        vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
-        vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
-      ]
-    }
-  )
-  setDefaultPanelIcon(panel)
-  return panel
 }

@@ -8,6 +8,7 @@ import { normalizeHtml } from '@/shared/contentEnhancement'
 import CurrencyBalance from '@/shared/CurrencyBalance'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
 import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
+import { useLatestRequest } from '@/shared/useLatestRequest'
 import type {
   BalanceDetail,
   BalancePanelRpcCommands,
@@ -29,7 +30,7 @@ export default function BalanceApp() {
   const [state, setState] = useState<BalancePanelViewState>({ status: 'loading' })
   const [loadingPage, setLoadingPage] = useState(false)
   const scrollRef = useRef<SimpleBarCore | null>(null)
-  const requestIdRef = useRef(0)
+  const { startRequest } = useLatestRequest()
   const detail = state.detail
 
   const columns = useMemo(
@@ -89,12 +90,11 @@ export default function BalanceApp() {
    * @param page 页码
    */
   async function loadPage(page: number) {
-    const requestId = requestIdRef.current + 1
-    requestIdRef.current = requestId
+    const request = startRequest()
     setLoadingPage(true)
     try {
       const nextDetail = await vscode.loadPage({ page })
-      if (requestId !== requestIdRef.current) {
+      if (!request.isLatest()) {
         return
       }
       setState({ status: 'balance', detail: nextDetail, showRefresh: true })
@@ -102,7 +102,7 @@ export default function BalanceApp() {
     } catch (err) {
       console.error(err)
     } finally {
-      if (requestId === requestIdRef.current) {
+      if (request.isLatest()) {
         setLoadingPage(false)
       }
     }

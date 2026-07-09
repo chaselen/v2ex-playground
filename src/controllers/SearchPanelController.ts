@@ -1,9 +1,8 @@
-import path from 'path'
 import vscode from 'vscode'
 import G from '@/global'
 import { openExternal } from '@/features/openExternal'
-import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type {
   SearchPanelRpcCommands,
@@ -33,8 +32,13 @@ export class SearchPanelController {
    * @param deps 外部面板导航依赖
    */
   constructor(deps: SearchPanelDeps) {
-    this.panel = createPanel()
-    this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'search.html')
+    this.panel = createV2exWebviewPanel({
+      viewType: 'v2ex.search',
+      title: '搜索',
+      htmlEntry: 'search.html',
+      enableFindWidget: true,
+      resourceIcon: 'panelSearch.svg'
+    })
     this.rpc = new WebviewRpcBridge<SearchPanelRpcCommands, SearchPanelWebviewEvents>(
       this.panel.webview,
       this.createRpcHandlers(deps)
@@ -74,22 +78,4 @@ export class SearchPanelController {
       openNode: msg => deps.openNode(msg)
     }
   }
-}
-
-/** 创建搜索 Webview 面板 */
-function createPanel(): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel('v2ex.search', '搜索', vscode.ViewColumn.Active, {
-    enableScripts: true,
-    retainContextWhenHidden: true,
-    enableFindWidget: true,
-    localResourceRoots: [
-      vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
-      vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
-    ]
-  })
-  panel.iconPath = {
-    light: vscode.Uri.file(path.join(G.context.extensionPath, 'resources/light/panelSearch.svg')),
-    dark: vscode.Uri.file(path.join(G.context.extensionPath, 'resources/dark/panelSearch.svg'))
-  }
-  return panel
 }

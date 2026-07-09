@@ -1,8 +1,7 @@
-import path from 'path'
 import vscode from 'vscode'
 import G from '@/global'
-import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type {
   TwoFactorPanelRpcCommands,
   TwoFactorPanelWebviewEvents,
@@ -30,8 +29,13 @@ export class TwoFactorPanelController {
   private settled = false
 
   constructor() {
-    this.panel = createPanel()
-    this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'two-factor.html')
+    this.panel = createV2exWebviewPanel({
+      viewType: 'v2ex.twoFactor',
+      title: '两步验证',
+      htmlEntry: 'two-factor.html',
+      retainContextWhenHidden: true,
+      resourceIcon: 'panelTwoFactor.svg'
+    })
     this.verified = new Promise(resolve => {
       this.resolveVerified = resolve
     })
@@ -88,28 +92,4 @@ export class TwoFactorPanelController {
     this.settled = true
     this.resolveVerified(verified)
   }
-}
-
-/** 创建两步验证 Webview 面板 */
-function createPanel(): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    'v2ex.twoFactor',
-    '两步验证',
-    vscode.ViewColumn.Active,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      localResourceRoots: [
-        vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
-        vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
-      ]
-    }
-  )
-  panel.iconPath = {
-    light: vscode.Uri.file(
-      path.join(G.context.extensionPath, 'resources/light/panelTwoFactor.svg')
-    ),
-    dark: vscode.Uri.file(path.join(G.context.extensionPath, 'resources/dark/panelTwoFactor.svg'))
-  }
-  return panel
 }

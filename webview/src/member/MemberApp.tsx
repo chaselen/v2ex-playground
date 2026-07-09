@@ -8,6 +8,7 @@ import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEn
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
 import { VscodeBadge, VscodeProTag, VscodeTag } from '@/shared/SemiVscode'
 import { createVsCodeClient } from '@/shared/vscode'
+import { useLatestRequest } from '@/shared/useLatestRequest'
 import type {
   MemberContentTabKey,
   MemberPanelRpcCommands,
@@ -52,7 +53,7 @@ export default function MemberApp() {
   const [loadingContent, setLoadingContent] = useState(false)
   const scrollRef = useRef<SimpleBarCore | null>(null)
   const profileCacheRef = useRef(new Map<string, MemberProfile>())
-  const requestIdRef = useRef(0)
+  const { startRequest } = useLatestRequest()
   const profile = state.profile
 
   /**
@@ -92,8 +93,7 @@ export default function MemberApp() {
     tab: MemberContentTabKey,
     page = 1
   ) {
-    const requestId = requestIdRef.current + 1
-    requestIdRef.current = requestId
+    const request = startRequest()
     const cachedProfile = profileCacheRef.current.get(getProfileCacheKey(tab, page))
     if (cachedProfile) {
       setLoadingContent(false)
@@ -110,7 +110,7 @@ export default function MemberApp() {
     setLoadingContent(true)
     try {
       const nextProfile = await vscode[command]({ tab, page })
-      if (requestId !== requestIdRef.current) {
+      if (!request.isLatest()) {
         return undefined
       }
 
@@ -124,7 +124,7 @@ export default function MemberApp() {
       scrollToTop()
       return nextProfile
     } finally {
-      if (requestId === requestIdRef.current) {
+      if (request.isLatest()) {
         setLoadingContent(false)
       }
     }

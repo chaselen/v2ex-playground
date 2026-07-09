@@ -1,10 +1,9 @@
-import path from 'path'
 import vscode from 'vscode'
 import { LoginRequiredError, type BalanceDetail } from '@/v2ex'
 import G from '@/global'
 import { openExternal } from '@/features/openExternal'
-import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type {
   BalancePanelRpcCommands,
@@ -46,8 +45,13 @@ export class BalancePanelController {
    */
   constructor(deps: BalancePanelDeps) {
     this.deps = deps
-    this.panel = createPanel()
-    this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'balance.html')
+    this.panel = createV2exWebviewPanel({
+      viewType: 'v2ex.balance',
+      title: '账户余额',
+      htmlEntry: 'balance.html',
+      enableFindWidget: true,
+      resourceIcon: 'panelBalance.svg'
+    })
     this.rpc = new WebviewRpcBridge<BalancePanelRpcCommands, BalancePanelWebviewEvents>(
       this.panel.webview,
       this.createRpcHandlers()
@@ -171,29 +175,4 @@ export class BalancePanelController {
   private postViewState(state: BalancePanelViewState) {
     this.rpc.post('balanceStateChanged', { state })
   }
-}
-
-/**
- * 创建账户余额 Webview 面板
- */
-function createPanel(): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    'v2ex.balance',
-    '账户余额',
-    vscode.ViewColumn.Active,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      enableFindWidget: true,
-      localResourceRoots: [
-        vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
-        vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
-      ]
-    }
-  )
-  panel.iconPath = {
-    light: vscode.Uri.file(path.join(G.context.extensionPath, 'resources/light/panelBalance.svg')),
-    dark: vscode.Uri.file(path.join(G.context.extensionPath, 'resources/dark/panelBalance.svg'))
-  }
-  return panel
 }

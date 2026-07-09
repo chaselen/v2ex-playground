@@ -1,10 +1,8 @@
-import path from 'path'
 import vscode from 'vscode'
-import G from '@/global'
 import { openExternal } from '@/features/openExternal'
 import { clearRecentBrowseTopics, getRecentBrowseTopics } from '@/features/recentBrowse'
-import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type {
   RecentBrowsePanelRpcCommands,
@@ -37,8 +35,13 @@ export class RecentBrowsePanelController {
    * @param deps 外部面板导航依赖
    */
   constructor(deps: RecentBrowsePanelDeps) {
-    this.panel = createPanel()
-    this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'recent-browse.html')
+    this.panel = createV2exWebviewPanel({
+      viewType: 'v2ex.recentBrowse',
+      title: '最近浏览',
+      htmlEntry: 'recent-browse.html',
+      enableFindWidget: true,
+      resourceIcon: 'panelRecentBrowse.svg'
+    })
     this.rpc = new WebviewRpcBridge<RecentBrowsePanelRpcCommands, RecentBrowsePanelWebviewEvents>(
       this.panel.webview,
       this.createRpcHandlers(deps)
@@ -84,31 +87,4 @@ export class RecentBrowsePanelController {
       openNode: msg => deps.openNode(msg)
     }
   }
-}
-
-/** 创建最近浏览 Webview 面板 */
-function createPanel(): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    'v2ex.recentBrowse',
-    '最近浏览',
-    vscode.ViewColumn.Active,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      enableFindWidget: true,
-      localResourceRoots: [
-        vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
-        vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
-      ]
-    }
-  )
-  panel.iconPath = {
-    light: vscode.Uri.file(
-      path.join(G.context.extensionPath, 'resources/light/panelRecentBrowse.svg')
-    ),
-    dark: vscode.Uri.file(
-      path.join(G.context.extensionPath, 'resources/dark/panelRecentBrowse.svg')
-    )
-  }
-  return panel
 }

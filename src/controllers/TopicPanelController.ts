@@ -1,4 +1,3 @@
-import path from 'path'
 import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
@@ -6,10 +5,10 @@ import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
 import { uploadImage } from '@/core/imageUpload'
-import { renderWebviewHtml } from '@/core/webviewHtml'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { updateRecentBrowseTopic } from '@/features/recentBrowse'
-import { setDefaultPanelIcon, setRemotePanelIcon } from '@/features/panelIcon'
+import { setRemotePanelIcon } from '@/features/panelIcon'
+import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
   TopicPanelRpcCommands,
@@ -93,8 +92,13 @@ export class TopicPanelController {
     this.key = G.V2ex.getTopicLinkById(topicId)
     this.topicId = topicId
     this.deps = deps
-    this.panel = createPanel(this.key, input.label)
-    this.panel.webview.html = renderWebviewHtml(this.panel.webview, 'topic.html')
+    this.panel = createV2exWebviewPanel({
+      viewType: this.key,
+      title: input.label,
+      htmlEntry: 'topic.html',
+      enableFindWidget: true,
+      useDefaultIcon: true
+    })
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
       this.panel.webview,
       this.createRpcHandlers()
@@ -255,7 +259,7 @@ export class TopicPanelController {
     const detail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
     this.detail = detail
     updateRecentBrowseTopic(detail).catch(err => console.error('V2EX 最近浏览详情保存失败', err))
-    this.panel.title = fmtPanelTitle(detail.title)
+    this.panel.title = formatPanelTitle(detail.title)
     setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
       console.error('V2EX 话题面板图标更新失败', err)
     )
@@ -350,38 +354,6 @@ export class TopicPanelController {
     )
     this.render(detail)
   }
-}
-
-/**
- * 截断面板标题
- * @param title 原始标题
- */
-function fmtPanelTitle(title: string) {
-  return title.length <= 15 ? title : title.slice(0, 15) + '...'
-}
-
-/**
- * 创建话题 webview 面板
- * @param id 面板 id
- * @param label 面板标题
- */
-function createPanel(id: string, label: string): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    id,
-    fmtPanelTitle(label),
-    vscode.ViewColumn.Active,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      enableFindWidget: true,
-      localResourceRoots: [
-        vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
-        vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
-      ]
-    }
-  )
-  setDefaultPanelIcon(panel)
-  return panel
 }
 
 /**
