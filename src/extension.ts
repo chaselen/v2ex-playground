@@ -11,8 +11,16 @@ import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
-  G.V2ex = new V2exClient(G.getCookie(), () => G.setCookie(''), requestTwoFactorVerification)
   const mainViewProvider = new MainViewProvider()
+  G.V2ex = new V2exClient(
+    G.getCookie(),
+    async () => {
+      await G.setCookie('')
+      G.unreadNoticeCount = 0
+      await mainViewProvider.reloadViewData()
+    },
+    requestTwoFactorVerification
+  )
   setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
   context.subscriptions.push(

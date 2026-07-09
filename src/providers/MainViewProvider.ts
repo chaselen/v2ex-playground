@@ -51,11 +51,14 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _onlineCountChangedDisposable?: { dispose: () => void }
   private _dailySignInStatusDisposable?: { dispose: () => void }
   private _topicReadDisposable?: { dispose: () => void }
+  /** 当前主视图徽标上的未读提醒数量 */
+  private _badgeUnreadNoticeCount = 0
   /** Webview 恢复可见时的数据刷新任务 */
   private _visibleRefreshPromise?: Promise<void>
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this._view = webviewView
+    this._syncUnreadNoticeBadge(this._badgeUnreadNoticeCount)
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -161,6 +164,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param oldOverview 旧账户概览
    */
   private _handleAccountOverviewChanged(overview: AccountOverview, oldOverview?: AccountOverview) {
+    this._syncUnreadNoticeBadge(overview.unreadNoticeCount)
     this._rpc?.post('accountOverviewChanged', {
       overview,
       oldOverview
@@ -177,6 +181,28 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     }
 
     this._view.title = onlineCount === undefined ? 'V2EX' : `${onlineCount} 人在线`
+  }
+
+  /**
+   * 同步主视图未读提醒徽标
+   * @param count 未读提醒数量
+   */
+  private _syncUnreadNoticeBadge(count: number): void {
+    this._badgeUnreadNoticeCount = Math.max(count, 0)
+
+    if (!this._view) {
+      return
+    }
+
+    if (this._badgeUnreadNoticeCount <= 0) {
+      this._view.badge = undefined
+      return
+    }
+
+    this._view.badge = {
+      value: this._badgeUnreadNoticeCount,
+      tooltip: `${this._badgeUnreadNoticeCount} 条未读提醒`
+    }
   }
 
   /**
@@ -213,6 +239,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         }
       }
     }
+
+    this._syncUnreadNoticeBadge(accountOverview?.unreadNoticeCount || 0)
 
     return {
       tabs: {
