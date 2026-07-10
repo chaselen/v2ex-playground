@@ -54,17 +54,16 @@ export function useNodeTreeTabs() {
   }
 
   /**
-   * 批量标记节点加载中
+   * 批量设置节点加载状态
    * @param tab 标签 key
    * @param itemKeys 列表项 key
+   * @param loading 是否加载中
    */
-  function setNodesLoading(tab: MainTabKey, itemKeys: string[]) {
+  function setNodesLoading(tab: MainTabKey, itemKeys: string[], loading = true) {
     const itemKeySet = new Set(itemKeys)
     setTabs(current => ({
       ...current,
-      [tab]: current[tab].map(node =>
-        itemKeySet.has(node.name) ? { ...node, loading: true } : node
-      )
+      [tab]: current[tab].map(node => (itemKeySet.has(node.name) ? { ...node, loading } : node))
     }))
   }
 
@@ -265,13 +264,15 @@ export function useNodeTreeTabs() {
    */
   async function refreshTab(tab: MainTabKey) {
     if (tab === 'collection') {
+      const loadedNodes = tabs.collection.filter(node => node.children !== null)
+      const loadedNodeNames = loadedNodes.map(node => node.name)
+      setNodesLoading('collection', loadedNodeNames)
+
       try {
         const data = await vscode.refreshCollectionNodes()
         const nodeNames = new Set(data.nodes.map(node => node.name))
-        const loadedNodes = tabs.collection.filter(
-          node => nodeNames.has(node.name) && node.children !== null
-        )
-        const loadedNodeNames = new Set(loadedNodes.map(node => node.name))
+        const retainedLoadedNodes = loadedNodes.filter(node => nodeNames.has(node.name))
+        const retainedLoadedNodeNames = new Set(retainedLoadedNodes.map(node => node.name))
 
         setTabErrors(current => ({
           ...current,
@@ -284,14 +285,17 @@ export function useNodeTreeTabs() {
         setTabs(current => ({
           ...current,
           collection: mergeNodeItems(data.nodes, current.collection).map(node =>
-            loadedNodeNames.has(node.name) ? { ...node, loading: true } : node
+            retainedLoadedNodeNames.has(node.name) ? { ...node, loading: true } : node
           )
         }))
 
         await Promise.all(
-          loadedNodes.map(node => requestNodeChildren('refreshNode', 'collection', node.name, 1))
+          retainedLoadedNodes.map(node =>
+            requestNodeChildren('refreshNode', 'collection', node.name, 1)
+          )
         )
       } catch (err) {
+        setNodesLoading('collection', loadedNodeNames, false)
         setTabErrors(current => ({
           ...current,
           collection: (err as Error).message || '收藏节点加载失败'

@@ -34,6 +34,8 @@ type WebviewMainTabKey = MainPanelTabKey | 'node'
 interface RefreshTabOptions {
   /** 是否静默处理错误 */
   silent?: boolean
+  /** 是否显示页面内容 loading */
+  showContentLoading?: boolean
   /** 是否显示工具栏刷新按钮 loading */
   showToolbarLoading?: boolean
 }
@@ -41,6 +43,7 @@ interface RefreshTabOptions {
 /** 页面内重试选项 */
 const contentRetryOptions: RefreshTabOptions = {
   silent: true,
+  showContentLoading: true,
   showToolbarLoading: false
 }
 
@@ -58,6 +61,7 @@ function getNodeTabTitle(title: string): string {
 export default function MainApp() {
   const [activeTab, setActiveTab] = useState<WebviewMainTabKey>('explore')
   const [pendingTabs, setPendingTabs] = useState<WebviewMainTabKey[]>([])
+  const [contentLoadingTabs, setContentLoadingTabs] = useState<WebviewMainTabKey[]>([])
   const [refreshingTabs, setRefreshingTabs] = useState<WebviewMainTabKey[]>([])
   const [loggedIn, setLoggedIn] = useState(false)
   const [accountOverview, setAccountOverview] = useState<WebviewAccountOverview>()
@@ -149,6 +153,9 @@ export default function MainApp() {
     }
 
     setPendingTabs(current => [...current, tab])
+    if (options.showContentLoading) {
+      setContentLoadingTabs(current => [...current, tab])
+    }
     if (options.showToolbarLoading !== false) {
       setRefreshingTabs(current => [...current, tab])
     }
@@ -173,8 +180,18 @@ export default function MainApp() {
       }
     } finally {
       setPendingTabs(current => current.filter(key => key !== tab))
+      setContentLoadingTabs(current => current.filter(key => key !== tab))
       setRefreshingTabs(current => current.filter(key => key !== tab))
     }
+  }
+
+  /**
+   * 通过工具栏刷新当前标签
+   */
+  function refreshActiveTab() {
+    refreshTab(activeTab, {
+      showContentLoading: activeTab === 'my'
+    })
   }
 
   useEffect(() => {
@@ -241,6 +258,8 @@ export default function MainApp() {
   /** 当前标签刷新按钮文案 */
   const activeTabLabel =
     activeTab === 'node' ? nodeTopicTab.nodeTab?.title || '节点' : tabLabels[activeTab]
+  /** 当前标签是否正在通过工具栏刷新 */
+  const activeTabRefreshing = refreshingTabs.includes(activeTab)
   /** 当前标签是否有页面级错误 */
   const activeTabHasError =
     (activeTab === 'collection' && !!nodeTreeTabs.tabErrors.collection) ||
@@ -249,12 +268,12 @@ export default function MainApp() {
   /** 收藏节点标签是否处于加载状态 */
   const collectionTabLoading =
     initializing ||
-    pendingTabs.includes('collection') ||
+    contentLoadingTabs.includes('collection') ||
     (activeTab === 'collection' && loggedIn && !nodeTreeTabs.tabLoaded.collection)
   /** 我的标签是否处于账户概览加载状态 */
   const myOverviewLoading =
     initializing ||
-    pendingTabs.includes('my') ||
+    contentLoadingTabs.includes('my') ||
     (activeTab === 'my' &&
       loggedIn &&
       !accountOverviewLoaded &&
@@ -263,7 +282,7 @@ export default function MainApp() {
   /** 当前标签是否能使用工具栏刷新 */
   const canRefreshActiveTab =
     !initializing &&
-    !pendingTabs.includes(activeTab) &&
+    (!pendingTabs.includes(activeTab) || activeTabRefreshing) &&
     !activeTabHasError &&
     !(activeTab === 'collection' && !loggedIn) &&
     !(activeTab === 'my' && !loggedIn) &&
@@ -296,11 +315,11 @@ export default function MainApp() {
             type="tertiary"
             size="small"
             icon={<IconRefresh />}
-            loading={refreshingTabs.includes(activeTab)}
+            loading={activeTabRefreshing}
             disabled={!canRefreshActiveTab}
             title={`刷新${activeTabLabel}`}
             aria-label={`刷新${activeTabLabel}`}
-            onClick={() => refreshTab(activeTab)}
+            onClick={refreshActiveTab}
           />
         }
         onChange={value => {
