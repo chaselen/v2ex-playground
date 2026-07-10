@@ -37,6 +37,22 @@ import {
 import type { AccountOverview } from '@/v2ex'
 import type { NodeTabInput } from '@/controllers/panelTypes'
 
+/**
+ * 更新视图标题并兼容不同编辑器的标题渲染方式
+ * @param view Webview 视图
+ * @param detail 标题附加信息
+ */
+function updateViewTitle(view: vscode.WebviewView, detail?: string): void {
+  if (!detail) {
+    view.title = 'V2EX'
+    return
+  }
+
+  // VS Code 会自动添加视图容器标题，Cursor 则直接显示运行时标题
+  const titlePrefix = vscode.env.appName.toLowerCase().includes('cursor') ? 'V2EX: ' : ''
+  view.title = `${titlePrefix}${detail}`
+}
+
 export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView
   private _rpc?: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>
@@ -176,7 +192,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       return
     }
 
-    this._view.title = onlineCount === undefined ? 'V2EX' : `${onlineCount} 人在线`
+    updateViewTitle(this._view, onlineCount === undefined ? undefined : `${onlineCount} 人在线`)
   }
 
   /**
