@@ -433,6 +433,11 @@ $panel-border: var(--v2ex-border);
         border-bottom-color: var(--v2ex-primary-button-bg);
         color: var(--v2ex-webview-fg);
       }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
     }
   }
 

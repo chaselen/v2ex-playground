@@ -66,11 +66,16 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
 ) {
   const composerRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const postingRef = useRef(posting)
   const uploadAndInsertImagesRef = useRef<(files: FileList | File[]) => void>(() => undefined)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [draggingImage, setDraggingImage] = useState(false)
   const [emoticonPanelVisible, setEmoticonPanelVisible] = useState(false)
   const replyShortcutLabel = isApplePlatform() ? '⌘+Enter' : 'Ctrl+Enter'
+  /** 是否禁用表情选择 */
+  const emoticonDisabled = posting || uploadingImage
+
+  postingRef.current = posting
 
   useImperativeHandle(ref, () => ({
     focus() {
@@ -93,6 +98,11 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       event.preventDefault()
       event.stopPropagation()
       event.stopImmediatePropagation()
+
+      if (postingRef.current) {
+        setDraggingImage(false)
+        return
+      }
 
       if (event.dataTransfer) {
         event.dataTransfer.dropEffect = 'copy'
@@ -130,6 +140,16 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       window.removeEventListener('drop', preventWebviewDrop, true)
     }
   }, [])
+
+  useEffect(() => {
+    if (posting) {
+      setDraggingImage(false)
+    }
+
+    if (emoticonDisabled) {
+      setEmoticonPanelVisible(false)
+    }
+  }, [emoticonDisabled, posting])
 
   /**
    * 获取实际文本框节点
@@ -176,6 +196,10 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param text 表情文本
    */
   function insertEmoticon(text: string) {
+    if (emoticonDisabled) {
+      return
+    }
+
     insertText(text)
   }
 
@@ -241,6 +265,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
                     type="button"
                     className="reply-emoticon-option"
                     title={emoticon}
+                    disabled={emoticonDisabled}
                     onClick={() => insertEmoticon(emoticon)}
                   >
                     {isImageEmoticon(emoticon) ? (
@@ -263,6 +288,10 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param files 文件列表
    */
   async function uploadAndInsertImages(files: FileList | File[]) {
+    if (postingRef.current) {
+      return
+    }
+
     const imageFiles = getImageFiles(files)
 
     if (!imageFiles.length) {
@@ -303,6 +332,10 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param event 粘贴事件
    */
   function handlePaste(event: React.ClipboardEvent<HTMLFormElement>) {
+    if (posting) {
+      return
+    }
+
     const files = getImageFiles(
       Array.from(event.clipboardData.items)
         .map(item => item.getAsFile())
@@ -322,7 +355,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param event 键盘事件
    */
   function handleKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
-    if (event.key !== 'Enter' || (!event.metaKey && !event.ctrlKey)) {
+    if (posting || event.key !== 'Enter' || (!event.metaKey && !event.ctrlKey)) {
       return
     }
 
@@ -334,9 +367,14 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     <form
       ref={composerRef}
       className="post-reply"
+      aria-busy={posting}
+      aria-disabled={posting}
+      inert={posting}
       onSubmit={event => {
         event.preventDefault()
-        onSubmit()
+        if (!posting) {
+          onSubmit()
+        }
       }}
       onPaste={handlePaste}
       onDragLeave={() => setDraggingImage(false)}
@@ -348,6 +386,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           role="tab"
           aria-selected={mode === 'edit'}
           className={mode === 'edit' ? 'is-active' : undefined}
+          disabled={posting}
           onClick={() => onModeChange('edit')}
         >
           编辑
@@ -357,6 +396,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           role="tab"
           aria-selected={mode === 'preview'}
           className={mode === 'preview' ? 'is-active' : undefined}
+          disabled={posting}
           onClick={onPreview}
         >
           预览
@@ -371,14 +411,14 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             autosize={{ minRows: 5, maxRows: 12 }}
             placeholder="请尽量让自己的回复能够对别人有帮助"
             showClear
-            disabled={uploadingImage}
+            disabled={posting || uploadingImage}
             onChange={nextValue => onChange(String(nextValue || ''))}
           />
           <div className="reply-upload-bar">
             <button
               type="button"
               className="reply-upload-link"
-              disabled={uploadingImage}
+              disabled={posting || uploadingImage}
               onClick={selectImage}
             >
               {uploadingImage ? '正在上传图片...' : '选择、粘贴、拖放上传图片'}
@@ -406,10 +446,14 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           trigger="click"
           position="topRight"
           showArrow
-          visible={emoticonPanelVisible}
+          visible={!emoticonDisabled && emoticonPanelVisible}
           content={renderEmoticonPanel()}
           contentClassName="reply-emoticon-popover"
-          onVisibleChange={setEmoticonPanelVisible}
+          onVisibleChange={visible => {
+            if (!emoticonDisabled) {
+              setEmoticonPanelVisible(visible)
+            }
+          }}
         >
           <span className="reply-extra-popover-trigger">
             <Tooltip content="插入表情">
@@ -420,6 +464,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
                 size="small"
                 theme="light"
                 type="tertiary"
+                disabled={emoticonDisabled}
               />
             </Tooltip>
           </span>
@@ -432,7 +477,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             size="small"
             theme="light"
             type="tertiary"
-            disabled={uploadingImage}
+            disabled={posting || uploadingImage}
             loading={uploadingImage}
             onClick={selectImage}
           />
@@ -443,10 +488,16 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           type="primary"
           htmlType="submit"
           loading={posting}
-          disabled={uploadingImage}
+          disabled={posting || uploadingImage}
         >
-          回复
-          <kbd>{replyShortcutLabel}</kbd>
+          {posting ? (
+            '回复中'
+          ) : (
+            <>
+              回复
+              <kbd>{replyShortcutLabel}</kbd>
+            </>
+          )}
         </Button>
       </div>
 
@@ -456,6 +507,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         accept="image/*"
         multiple
         hidden
+        disabled={posting || uploadingImage}
         onChange={handleFileChange}
       />
     </form>
