@@ -98,6 +98,8 @@ export async function cleanupExpiredCacheFiles(cacheDirName: string, ttlMs: numb
   const expireBefore = Date.now() - ttlMs
 
   try {
+    // Cursor 会在 readDirectory 的 ENOENT 被调用方捕获前输出错误日志
+    await vscode.workspace.fs.createDirectory(cacheDirUri)
     const cacheFiles = await vscode.workspace.fs.readDirectory(cacheDirUri)
     await Promise.all(
       cacheFiles.map(async ([fileName, fileType]) => {
@@ -155,5 +157,15 @@ function createImageCacheKey(imageSrc: string) {
  * @param err 错误对象
  */
 function isFileNotFoundError(err: unknown) {
-  return err instanceof vscode.FileSystemError && err.code === 'FileNotFound'
+  if (err instanceof vscode.FileSystemError && err.code === 'FileNotFound') {
+    return true
+  }
+
+  // Cursor 的文件系统实现可能直接透传 Node.js ENOENT 错误
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err.code === 'FileNotFound' || err.code === 'ENOENT')
+  )
 }
