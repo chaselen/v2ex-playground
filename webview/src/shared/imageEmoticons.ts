@@ -126,6 +126,50 @@ export const imageEmoticonSources = {
   '[偷笑R]': {
     ld: 'https://i.imgur.com/aF7QiE5.png',
     hd: 'https://i.imgur.com/WneGpK9.png'
+  },
+  '[买爆R]': {
+    ld: 'https://i.imgur.com/2JhZFtb.png',
+    hd: 'https://i.imgur.com/za9t585.png'
+  },
+  '[色色R]': {
+    ld: 'https://i.imgur.com/ZA1jRv1.png',
+    hd: 'https://i.imgur.com/mEGRKJy.png'
+  },
+  '[抠鼻R]': {
+    ld: 'https://i.imgur.com/pYtTFnj.png',
+    hd: 'https://i.imgur.com/ErnQrMJ.png'
+  },
+  '[黑薯问号R]': {
+    ld: 'https://i.imgur.com/aCjmFLD.png',
+    hd: 'https://i.imgur.com/i4Wgtyv.png'
+  },
+  '[扶墙R]': {
+    ld: 'https://i.imgur.com/RV7y6tR.png',
+    hd: 'https://i.imgur.com/PjhjZsJ.png'
+  },
+  '[鄙视R]': {
+    ld: 'https://i.imgur.com/LaO5dh3.png',
+    hd: 'https://i.imgur.com/StrGaFx.png'
+  },
+  '[蹲R]': {
+    ld: 'https://i.imgur.com/t876WSv.png',
+    hd: 'https://i.imgur.com/jdTq0YI.png'
+  },
+  '[庆祝R]': {
+    ld: 'https://i.imgur.com/wQw2kD0.png',
+    hd: 'https://i.imgur.com/lx6jrkm.png'
+  },
+  '[六R]': {
+    ld: 'https://i.imgur.com/JqoC4L5.png',
+    hd: 'https://i.imgur.com/cUVWKc2.png'
+  },
+  '[可R]': {
+    ld: 'https://i.imgur.com/I70yy88.png',
+    hd: 'https://i.imgur.com/nRgXwUT.png'
+  },
+  '[加一R]': {
+    ld: 'https://i.imgur.com/hpVvbVh.png',
+    hd: 'https://i.imgur.com/abBCCK9.png'
   }
 } as const satisfies Record<string, { ld: string; hd: string }>
 

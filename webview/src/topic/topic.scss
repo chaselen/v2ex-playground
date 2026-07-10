@@ -670,12 +670,12 @@ $panel-border: var(--v2ex-border);
 
   img {
     display: block;
-    max-width: 27px;
-    max-height: 27px;
+    width: 24px;
+    height: 24px;
   }
 
   span {
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1;
   }
 }

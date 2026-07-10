@@ -17,8 +17,8 @@ export const emoticonGroups = [
   {
     title: '流行',
     list: [
-      '[脱单doge]',
       '[doge]',
+      '[脱单doge]',
       '[打call]',
       '[星星眼]',
       '[吃瓜]',
@@ -47,7 +47,18 @@ export const emoticonGroups = [
       '[害羞R]',
       '[偷笑R]',
       '[哭惹R]',
-      '[汗颜R]'
+      '[汗颜R]',
+      '[色色R]',
+      '[抠鼻R]',
+      '[鄙视R]',
+      '[买爆R]',
+      '[黑薯问号R]',
+      '[扶墙R]',
+      '[蹲R]',
+      '[可R]',
+      '[六R]',
+      '[加一R]',
+      '[庆祝R]'
     ]
   },
   {
