@@ -21,10 +21,7 @@ $panel-border: var(--v2ex-border);
 }
 
 .search-header {
-  --search-control-border: var(
-    --vscode-input-border,
-    color-mix(in srgb, var(--v2ex-webview-fg) 24%, transparent)
-  );
+  --search-control-border: color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent);
 
   padding: 14px;
   border: 1px solid $panel-border;

@@ -7,6 +7,13 @@
   color: var(--vscode-progressBar-background, var(--vscode-textLink-foreground));
 }
 
+/* Cursor Webview 会为原生输入节点恢复焦点轮廓，焦点边框统一由 Semi wrapper 绘制 */
+.semi-input:focus,
+.semi-input-textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 /* Semi Tag 的色彩 token 带有颜色变体，按需使用 VS Code 中性标签配色 */
 .vscode-tag,
 .vscode-tag[class*='semi-tag-'] {
