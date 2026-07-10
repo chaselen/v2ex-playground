@@ -594,7 +594,7 @@ $panel-border: var(--v2ex-border);
 }
 
 .semi-popover-wrapper:has(.reply-emoticon-popover) {
-  width: 390px;
+  width: fit-content;
   max-width: calc(100vw - 40px);
   padding: 0;
   border: 1px solid var(--v2ex-border);
@@ -612,17 +612,20 @@ $panel-border: var(--v2ex-border);
 }
 
 .reply-emoticon-popover {
-  width: 100%;
+  width: auto;
   padding: 0;
   background: transparent;
 }
 
 .reply-emoticon-panel {
-  width: 100%;
+  width: max-content;
+  max-width: 100%;
   max-height: min(520px, calc(100vh - 120px));
 }
 
 .reply-emoticon-content {
+  box-sizing: content-box;
+  width: max-content;
   padding: 12px 14px;
 }
 
