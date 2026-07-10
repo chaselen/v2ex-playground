@@ -71,6 +71,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 扩展侧通过 `src/core/WebviewRpcBridge.ts` 接收 RPC；创建桥接器时传入完整且类型安全的处理器映射，通过 `rpc.post(event, payload)` 向 Webview 发送事件
 - RPC 契约使用函数签名定义，集中在 `src/shared/commonView.ts`、`src/shared/mainView.ts`、`src/shared/topicView.ts`、`src/shared/memberView.ts`、`src/shared/balanceView.ts`、`src/shared/searchView.ts`、`src/shared/recentBrowseView.ts`、`src/shared/twoFactorView.ts` 和 `src/shared/webviewRpc.ts`
 - 新增或修改 RPC 命令、事件、请求参数或响应字段时，先更新 `src/shared/` 中的契约，再同步扩展侧处理器和 Webview 调用方；不要绕过 Proxy 客户端直接调用 `postMessage`
+- 有状态的 Webview 初始化不能依赖扩展侧在面板创建后单向发送一次状态事件；Cursor 中缓存命中、脚本启动或 Webview 上下文重建的时序可能与 VS Code 不同，事件可能早于 React 监听注册而丢失。此类页面应由扩展侧保存最新状态，RPC 契约复用 `WebviewStateRpcCommands<State>` 提供 `ready()` 状态读取，并在 Webview 端复用 `subscribeWebviewState()` 先注册事件监听、再主动读取当前状态；状态事件仅用于后续增量同步
 - Webview HTML 入口使用 `https://www.v2ex.com/` 作为 `<base>`；普通业务按钮打开外部链接前使用 `resolveWebviewUrl()` 基于 `document.baseURI` 解析为绝对地址，HTML 内容中的链接交由 `handleWebviewLinkClick()` 统一识别和分发，扩展侧统一复用 `src/features/openExternal.ts`
 - 扩展侧使用 `src/core/webviewHtml.ts` 读取 Vite 输出 HTML，并将本地 `src` / `href` 转换为 `webview.asWebviewUri(...)`
 - HTML 内容中的话题、用户、节点和外部链接统一由 `webview/src/shared/linkNavigation.ts` 识别与分发；页面只传入必要的标题或话题 fallback，不在页面内重复路径正则、URL 解码或 RPC 分支
@@ -86,6 +87,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 修改主题 token、Semi 兼容覆盖或公共组件适配时，使用 `webview/theme.html` 回归检查亮色、暗色和高对比主题
 
 仅修改 Webview 文件时，运行 `npm run check:webview` 和 `npm run build:webview`，并手动验证 Webview 渲染。若同时改动共享 RPC 契约或扩展侧处理器，则按跨侧改动处理，运行相关两侧类型检查并执行 `npm run build`，无需额外重复执行 `npm run build:webview`。
+
+修改有状态 Webview 的初始化、状态同步或面板复用逻辑时，需在 VS Code 和 Cursor 中手动验证首次打开、重复打开以及面板隐藏后恢复，确认页面不会因初始化事件丢失而停留在加载状态。
 
 修改共享链接导航或 HTML 内容增强逻辑时，需手动验证话题、用户、节点、外部链接和图片预览，确认一次点击只触发一种打开行为。
 

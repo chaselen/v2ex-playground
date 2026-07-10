@@ -7,7 +7,7 @@ import type SimpleBarCore from 'simplebar-core'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
 import { VscodeBadge, VscodeProTag, VscodeTag } from '@/shared/SemiVscode'
-import { createVsCodeClient } from '@/shared/vscode'
+import { createVsCodeClient, subscribeWebviewState } from '@/shared/vscode'
 import { useLatestRequest } from '@/shared/useLatestRequest'
 import type {
   MemberContentTabKey,
@@ -165,7 +165,8 @@ export default function MemberApp() {
   }
 
   useEffect(() => {
-    const dispose = vscode.on('memberStateChanged', ({ state: nextState }) => {
+    /** 应用扩展侧同步的用户页状态 */
+    const applyViewState = (nextState: MemberPanelViewState) => {
       setState({
         profile: nextState.profile,
         message: nextState.message || '',
@@ -176,7 +177,13 @@ export default function MemberApp() {
         cacheProfile(nextState.profile)
         setActiveTab(nextState.profile.content.tab)
       }
-    })
+    }
+
+    const dispose = subscribeWebviewState(
+      handler => vscode.on('memberStateChanged', data => handler(data.state)),
+      () => vscode.ready(),
+      applyViewState
+    )
 
     enhanceHtmlContentAfterRender(true)
 

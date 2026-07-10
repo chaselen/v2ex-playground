@@ -7,7 +7,7 @@ import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/shared/contentEnhancement'
 import CurrencyBalance from '@/shared/CurrencyBalance'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
-import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
+import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
 import { useLatestRequest } from '@/shared/useLatestRequest'
 import type {
   BalanceDetail,
@@ -131,7 +131,11 @@ export default function BalanceApp() {
   }
 
   useEffect(() => {
-    return vscode.on('balanceStateChanged', data => setState(data.state))
+    return subscribeWebviewState(
+      handler => vscode.on('balanceStateChanged', data => handler(data.state)),
+      () => vscode.ready(),
+      setState
+    )
   }, [])
 
   useEffect(() => {

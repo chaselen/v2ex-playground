@@ -1,5 +1,5 @@
 import type { TopicDetail } from '../v2ex/types'
-import type { WebviewContentRpcCommands } from './commonView'
+import type { WebviewContentRpcCommands, WebviewStateRpcCommands } from './commonView'
 /**
  * 发往 webview 的话题页面状态
  */
@@ -23,7 +23,8 @@ export interface TopicPanelViewState {
 /**
  * 话题面板 Webview RPC 命令
  */
-export interface TopicPanelRpcCommands extends WebviewContentRpcCommands {
+export interface TopicPanelRpcCommands
+  extends WebviewContentRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
   login(): void
   refresh(): void
   collect(): void

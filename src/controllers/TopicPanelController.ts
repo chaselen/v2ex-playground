@@ -209,11 +209,18 @@ export class TopicPanelController {
   private postViewState(state: TopicPanelViewState) {
     this.viewState = state
     this.rpc.post('topicStateChanged', {
-      state: {
-        ...state,
-        showImages: Config.showImagesInTopic()
-      }
+      state: this.getViewState()
     })
+  }
+
+  /**
+   * 获取包含当前配置的话题视图状态
+   */
+  private getViewState(): TopicPanelViewState {
+    return {
+      ...this.viewState,
+      showImages: Config.showImagesInTopic()
+    }
   }
 
   /**
@@ -221,6 +228,7 @@ export class TopicPanelController {
    */
   private createRpcHandlers(): WebviewRpcHandlers<TopicPanelRpcCommands> {
     return {
+      ready: () => this.getViewState(),
       browseImage: msg => {
         openImagePreview(msg.src)
       },

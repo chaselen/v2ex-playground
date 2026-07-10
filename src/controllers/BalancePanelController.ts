@@ -40,6 +40,9 @@ export class BalancePanelController {
   /** 当前账户余额详情 */
   private detail?: BalanceDetail
 
+  /** 当前视图状态 */
+  private viewState: BalancePanelViewState = { status: 'loading' }
+
   /**
    * @param deps 外部面板导航依赖
    */
@@ -91,6 +94,7 @@ export class BalancePanelController {
    */
   private createRpcHandlers(): WebviewRpcHandlers<BalancePanelRpcCommands> {
     return {
+      ready: () => this.viewState,
       openExternal: msg => {
         openExternal(msg.path)
       },
@@ -173,6 +177,7 @@ export class BalancePanelController {
    * @param state 页面状态
    */
   private postViewState(state: BalancePanelViewState) {
+    this.viewState = state
     this.rpc.post('balanceStateChanged', { state })
   }
 }

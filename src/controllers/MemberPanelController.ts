@@ -149,6 +149,7 @@ export class MemberPanelController {
    */
   private createRpcHandlers(): WebviewRpcHandlers<MemberPanelRpcCommands> {
     return {
+      ready: () => this.viewState,
       browseImage: msg => {
         openImagePreview(msg.src)
       },

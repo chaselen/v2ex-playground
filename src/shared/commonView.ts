@@ -14,3 +14,11 @@ export interface WebviewNavigationRpcCommands {
 export interface WebviewContentRpcCommands extends WebviewNavigationRpcCommands {
   browseImage(payload: { src: string }): void
 }
+
+/**
+ * 有状态 Webview 的初始化 RPC 命令
+ */
+export interface WebviewStateRpcCommands<State> {
+  /** 获取当前视图状态 */
+  ready(): State
+}

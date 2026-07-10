@@ -1,5 +1,5 @@
 import type { BalanceDetail } from '../v2ex/types'
-import type { WebviewNavigationRpcCommands } from './commonView'
+import type { WebviewNavigationRpcCommands, WebviewStateRpcCommands } from './commonView'
 export type { BalanceDetail, BalanceTransaction } from '../v2ex/types'
 
 /**
@@ -21,7 +21,8 @@ export interface BalancePanelViewState {
 /**
  * 账户余额面板 Webview RPC 命令
  */
-export interface BalancePanelRpcCommands extends WebviewNavigationRpcCommands {
+export interface BalancePanelRpcCommands
+  extends WebviewNavigationRpcCommands, WebviewStateRpcCommands<BalancePanelViewState> {
   login(): void
   refresh(): void
   loadPage(payload: { page: number }): BalanceDetail

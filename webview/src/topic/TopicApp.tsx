@@ -25,7 +25,7 @@ import {
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
 import { VscodeProTag } from '@/shared/SemiVscode'
-import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
+import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
 import ReplyComposer, { type ReplyComposerHandle, type ReplyComposerMode } from './ReplyComposer'
 import { replaceImageEmoticonTokens } from './emoticons'
 import type {
@@ -293,7 +293,8 @@ export default function TopicApp() {
   }
 
   useEffect(() => {
-    const dispose = vscode.on('topicStateChanged', ({ state: nextState }) => {
+    /** 应用扩展侧同步的话题状态 */
+    const applyViewState = (nextState: TopicPanelViewState) => {
       setState({
         topic: nextState.topic,
         message: nextState.message || '',
@@ -303,7 +304,13 @@ export default function TopicApp() {
         canOperate: Boolean(nextState.canOperate),
         status: nextState.status
       })
-    })
+    }
+
+    const dispose = subscribeWebviewState(
+      handler => vscode.on('topicStateChanged', data => handler(data.state)),
+      () => vscode.ready(),
+      applyViewState
+    )
 
     enhanceHtmlContentAfterRender(showImages)
 

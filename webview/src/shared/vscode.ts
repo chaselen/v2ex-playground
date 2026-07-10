@@ -81,6 +81,48 @@ export function createVsCodeClient<Commands, Events = Record<string, never>>(): 
 }
 
 /**
+ * 订阅 Webview 状态并主动读取初始化状态
+ * @param subscribeState 订阅状态事件
+ * @param getState 读取当前状态
+ * @param onState 应用状态
+ * @param onError 初始化失败处理器
+ */
+export function subscribeWebviewState<State>(
+  subscribeState: (handler: (state: State) => void) => () => void,
+  getState: () => Promise<State>,
+  onState: (state: State) => void,
+  onError: (error: unknown) => void = error => console.error(error)
+): () => void {
+  let disposed = false
+  let receivedStateEvent = false
+  const dispose = subscribeState(state => {
+    if (disposed) {
+      return
+    }
+    receivedStateEvent = true
+    onState(state)
+  })
+
+  // 先订阅再读取，且不允许初始化响应覆盖更新的状态事件
+  getState()
+    .then(state => {
+      if (!disposed && !receivedStateEvent) {
+        onState(state)
+      }
+    })
+    .catch(error => {
+      if (!disposed) {
+        onError(error)
+      }
+    })
+
+  return () => {
+    disposed = true
+    dispose()
+  }
+}
+
+/**
  * 向扩展侧发送请求并等待响应
  * @param command 命令名
  * @param args 请求参数
