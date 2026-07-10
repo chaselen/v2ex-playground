@@ -41,6 +41,11 @@ export interface RecentBrowseListData {
  */
 export interface RecentBrowsePanelRpcCommands extends WebviewNavigationRpcCommands {
   getRecentBrowseTopics(payload: { page?: number; pageSize?: number }): RecentBrowseListData
+  deleteRecentBrowseTopic(payload: {
+    topicId: number
+    page?: number
+    pageSize?: number
+  }): RecentBrowseListData
   clearRecentBrowseTopics(): RecentBrowseListData
 }
 

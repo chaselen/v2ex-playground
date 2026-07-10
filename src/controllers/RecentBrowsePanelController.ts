@@ -1,6 +1,10 @@
 import vscode from 'vscode'
 import { openExternal } from '@/features/openExternal'
-import { clearRecentBrowseTopics, getRecentBrowseTopics } from '@/features/recentBrowse'
+import {
+  clearRecentBrowseTopics,
+  deleteRecentBrowseTopic,
+  getRecentBrowseTopics
+} from '@/features/recentBrowse'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
@@ -71,6 +75,10 @@ export class RecentBrowsePanelController {
   ): WebviewRpcHandlers<RecentBrowsePanelRpcCommands> {
     return {
       getRecentBrowseTopics: msg => getRecentBrowseTopics(msg.page, msg.pageSize),
+      deleteRecentBrowseTopic: async msg => {
+        await deleteRecentBrowseTopic(msg.topicId)
+        return getRecentBrowseTopics(msg.page, msg.pageSize)
+      },
       clearRecentBrowseTopics: async () => {
         await clearRecentBrowseTopics()
         return getRecentBrowseTopics()

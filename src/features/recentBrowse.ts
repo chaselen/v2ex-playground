@@ -85,6 +85,16 @@ export function getRecentBrowseTopics(
 }
 
 /**
+ * 删除单条最近浏览话题
+ * @param topicId 话题 id
+ */
+export async function deleteRecentBrowseTopic(topicId: number): Promise<void> {
+  const records = { ...getRecentBrowseRecordsMap() }
+  delete records[topicId]
+  await G.context.globalState.update(RECENT_BROWSE_RECORDS_KEY, records)
+}
+
+/**
  * 清空最近浏览话题
  */
 export async function clearRecentBrowseTopics(): Promise<void> {

@@ -32,6 +32,7 @@ type RecentBrowseViewState =
 export default function RecentBrowseApp() {
   const [state, setState] = useState<RecentBrowseViewState>({ status: 'loading' })
   const [clearing, setClearing] = useState(false)
+  const [deletingTopicId, setDeletingTopicId] = useState<number>()
   const requestIdRef = useRef(0)
   const scrollRef = useRef<SimpleBarCore | null>(null)
   const data = state.data
@@ -76,7 +77,7 @@ export default function RecentBrowseApp() {
    * 清空最近浏览
    */
   async function clearRecentBrowse() {
-    if (clearing) {
+    if (clearing || deletingTopicId !== undefined) {
       return
     }
 
@@ -89,6 +90,31 @@ export default function RecentBrowseApp() {
       Toast.error((err as Error).message || '清空失败')
     } finally {
       setClearing(false)
+    }
+  }
+
+  /**
+   * 删除单条最近浏览话题
+   * @param topicId 话题 id
+   */
+  async function deleteRecentBrowse(topicId: number) {
+    if (clearing || deletingTopicId !== undefined) {
+      return
+    }
+
+    setDeletingTopicId(topicId)
+    try {
+      const nextData = await vscode.deleteRecentBrowseTopic({
+        topicId,
+        page: data?.page || 1,
+        pageSize: recentBrowsePageSize
+      })
+      setState({ status: 'result', data: nextData })
+      Toast.success('已删除浏览记录')
+    } catch (err) {
+      Toast.error((err as Error).message || '删除失败')
+    } finally {
+      setDeletingTopicId(undefined)
     }
   }
 
@@ -165,7 +191,34 @@ export default function RecentBrowseApp() {
             <IconUser />
           </Avatar>
         </span>
-        {!!topic.publishedAt && <time className="recent-topic-published">{topic.publishedAt}</time>}
+        <span className="recent-topic-end">
+          {!!topic.publishedAt && (
+            <time className="recent-topic-published">{topic.publishedAt}</time>
+          )}
+          <Popconfirm
+            title="删除这条浏览记录？"
+            content="删除后不可恢复"
+            okText="删除"
+            okType="danger"
+            cancelText="取消"
+            disabled={clearing || deletingTopicId !== undefined}
+            onConfirm={() => deleteRecentBrowse(topic.topicId)}
+          >
+            <span className="recent-topic-delete-trigger">
+              <Button
+                size="small"
+                theme="borderless"
+                type="tertiary"
+                icon={<IconDelete />}
+                loading={deletingTopicId === topic.topicId}
+                disabled={clearing || deletingTopicId !== undefined}
+                aria-label={`删除浏览记录：${title}`}
+                title="删除浏览记录"
+                className="recent-topic-delete"
+              />
+            </span>
+          </Popconfirm>
+        </span>
         <span className="recent-topic-body">
           <a className="recent-topic-title" href="javascript:;" onClick={() => openTopic(topic)}>
             {title}
@@ -212,7 +265,7 @@ export default function RecentBrowseApp() {
               okText="清空"
               okType="danger"
               cancelText="取消"
-              disabled={!data?.totalCount || loading || clearing}
+              disabled={!data?.totalCount || loading || clearing || deletingTopicId !== undefined}
               onConfirm={clearRecentBrowse}
             >
               <span>
@@ -222,7 +275,7 @@ export default function RecentBrowseApp() {
                   type="tertiary"
                   icon={<IconDelete />}
                   loading={clearing}
-                  disabled={!data?.totalCount || loading}
+                  disabled={!data?.totalCount || loading || deletingTopicId !== undefined}
                   aria-label="清空最近浏览"
                   title="清空最近浏览"
                 />
@@ -234,7 +287,7 @@ export default function RecentBrowseApp() {
               type="tertiary"
               icon={<IconRefresh />}
               loading={loading}
-              disabled={clearing}
+              disabled={clearing || deletingTopicId !== undefined}
               aria-label="刷新"
               title="刷新"
               onClick={() => loadRecentBrowse()}
