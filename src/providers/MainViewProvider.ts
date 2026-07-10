@@ -1,7 +1,7 @@
 import vscode from 'vscode'
 import path from 'path'
 import { EOL } from 'os'
-import {
+import autoDailySignIn, {
   dailySignIn,
   getDailySignInStatus,
   onDailySignInStatusChanged
@@ -11,10 +11,6 @@ import { Topic, V2exNotification } from '@/v2ex'
 import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
 import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
-import {
-  refreshLoginSession as refreshV2exLoginSession,
-  type RefreshLoginSessionOptions
-} from '@/features/loginSession'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
@@ -53,8 +49,8 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   private _topicReadDisposable?: { dispose: () => void }
   /** 当前主视图徽标上的未读提醒数量 */
   private _badgeUnreadNoticeCount = 0
-  /** Webview 恢复可见时的数据刷新任务 */
-  private _visibleRefreshPromise?: Promise<void>
+  /** Webview 恢复可见时的自动签到任务 */
+  private _visibleAutoSignInPromise?: Promise<void>
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this._view = webviewView
@@ -87,7 +83,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     this._topicReadDisposable = onTopicRead(topicId => this._rpc?.post('topicRead', { topicId }))
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
-        this.refreshVisibleViewData()
+        this.autoSignInWhenVisible()
       }
     })
     webviewView.onDidDispose(() => {
@@ -105,7 +101,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         this._view = undefined
         this._rpc = undefined
         this._webviewReady = false
-        this._visibleRefreshPromise = undefined
+        this._visibleAutoSignInPromise = undefined
       }
     })
   }
@@ -294,8 +290,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
       const children = topics.map(t => this._toWebviewTopic(t))
 
-      this.refreshLoginSession()
-
       return {
         tab,
         itemKey,
@@ -325,8 +319,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    */
   private async _handleGetNodeTopics(nodeName: string, page = 1): Promise<NodeTopicListData> {
     const result = await G.V2ex.getTopicListByNode(nodeName, page)
-
-    this.refreshLoginSession()
 
     return {
       node: result.node,
@@ -477,34 +469,19 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * Webview 恢复可见时刷新会话和主视图数据
+   * Webview 恢复可见时尝试自动签到
    */
-  private refreshVisibleViewData() {
-    if (this._visibleRefreshPromise) {
+  private autoSignInWhenVisible() {
+    if (this._visibleAutoSignInPromise) {
       return
     }
 
-    this._visibleRefreshPromise = this.doRefreshVisibleViewData()
-      .catch(err => console.error('V2EX 主视图数据刷新失败', err))
+    this._visibleAutoSignInPromise = autoDailySignIn()
+      .then(() => undefined)
+      .catch(err => console.error('V2EX 自动签到失败', err))
       .finally(() => {
-        this._visibleRefreshPromise = undefined
+        this._visibleAutoSignInPromise = undefined
       })
-  }
-
-  /**
-   * 执行 Webview 恢复可见后的刷新逻辑
-   */
-  private async doRefreshVisibleViewData(): Promise<void> {
-    await refreshV2exLoginSession({ autoDailySignIn: true })
-    await this.reloadViewData()
-  }
-
-  /**
-   * 后台刷新登录会话
-   * @param options 刷新选项
-   */
-  private refreshLoginSession(options: RefreshLoginSessionOptions = {}) {
-    refreshV2exLoginSession(options).catch(err => console.error('V2EX 登录会话刷新失败', err))
   }
 
   /**
