@@ -530,7 +530,6 @@ export default function TopicApp() {
         <div className="state-panel">
           <Banner
             type="danger"
-            title="加载失败"
             description={
               <div
                 className="state-message"
