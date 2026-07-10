@@ -48,7 +48,10 @@
 }
 ```
 
-也可以在 Proxifier 等代理软件中添加域名规则，让 `v2ex.com` 和 `*.v2ex.com` 走代理。
+也可以在 Proxifier 等代理软件中添加域名规则，让以下域名走代理：
+
+- `*.v2ex.com`：访问 V2EX
+- `*.imgur.com`：图片加载与上传（含 `i.imgur.com`、`api.imgur.com`）
 
 ## 设置项
 
