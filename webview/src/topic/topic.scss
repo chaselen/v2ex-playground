@@ -243,7 +243,7 @@ $panel-border: var(--v2ex-border);
 }
 
 .reply h2 {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 16px;
 }
 
@@ -252,6 +252,38 @@ $panel-border: var(--v2ex-border);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 12px;
+}
+
+.reply-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reply-view-switch {
+  flex: 0 0 auto;
+  // 保留按钮型 Radio 的轨道与选中项两层结构
+  --semi-color-fill-0: color-mix(in srgb, var(--v2ex-webview-fg) 8%, transparent);
+  --semi-color-bg-3: var(--v2ex-webview-bg);
+}
+
+.reply-view-nested-label {
+  display: inline-block;
+  padding-right: 13px;
+}
+
+.reply-view-beta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: auto;
+  height: 14px;
+  padding: 0 4px;
+  font-size: 9px;
+  line-height: 1;
+  transform: translate(45%, -58%);
+  transform-origin: right top;
 }
 
 .reply-pagination {
@@ -294,6 +326,18 @@ $panel-border: var(--v2ex-border);
     .reply-actions .reply-action-button {
       visibility: visible;
     }
+  }
+}
+
+.reply-children {
+  margin-top: 10px;
+
+  > .reply-item {
+    margin-left: 12px;
+    padding: 12px 10px;
+    border-bottom: 0;
+    border-left: 1px solid $panel-border;
+    background: color-mix(in srgb, var(--v2ex-widget-bg) 48%, transparent);
   }
 }
 

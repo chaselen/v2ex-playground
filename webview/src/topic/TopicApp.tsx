@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Banner,
+  Badge,
   Button,
   Divider,
   Empty,
   Pagination,
   Popconfirm,
+  Radio,
+  RadioGroup,
   Spin,
   Toast,
   Tooltip
@@ -28,6 +31,7 @@ import { VscodeProTag } from '@/shared/SemiVscode'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
 import ReplyComposer, { type ReplyComposerHandle, type ReplyComposerMode } from './ReplyComposer'
 import { replaceImageEmoticonTokens } from './emoticons'
+import { buildReplyTree, type TopicReplyNode } from './replyTree'
 import type {
   TopicPanelRpcCommands,
   TopicPanelViewState,
@@ -36,6 +40,8 @@ import type {
 
 /** 话题面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<TopicPanelRpcCommands, TopicPanelWebviewEvents>()
+
+type ReplyViewMode = 'flat' | 'nested'
 
 /**
  * 话题页面应用
@@ -61,6 +67,7 @@ export default function TopicApp() {
   const [replyPreviewHtml, setReplyPreviewHtml] = useState('')
   const [replyPreviewSource, setReplyPreviewSource] = useState('')
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
+  const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>('nested')
   const topicShellRef = useRef<HTMLElement>(null)
   const replyComposerRef = useRef<ReplyComposerHandle>(null)
   const imgurImageFailureHandledRef = useRef(false)
@@ -69,6 +76,9 @@ export default function TopicApp() {
 
   /** 话题正文内容 */
   const topicContentHtml = useMemo(() => normalizeHtml(topic?.content), [topic?.content])
+
+  /** 当前回复页的楼中楼结构 */
+  const replyTree = useMemo(() => buildReplyTree(topic?.replies || []), [topic?.replies])
 
   /**
    * 在浏览器中打开链接
@@ -281,6 +291,77 @@ export default function TopicApp() {
   }
 
   /**
+   * 渲染单条回复及其子回复
+   * @param reply 回复节点
+   */
+  function renderReply(reply: TopicReplyNode) {
+    return (
+      <div key={reply.replyId} className="reply-item">
+        <div className="reply-meta">
+          <a
+            className={`user ${topic?.authorName === reply.userName ? 'user--author' : ''}`}
+            href="javascript:;"
+            onClick={() => openMember(reply.userName)}
+          >
+            {reply.userName}
+          </a>
+          <span className="time">{reply.time}</span>
+          {reply.thanks > 0 && <span className="thanks">♥ {reply.thanks}</span>}
+          <div className="reply-actions">
+            {state.canOperate && (
+              <>
+                {reply.thanked ? (
+                  <span className="thanked">感谢已发送</span>
+                ) : (
+                  <Popconfirm
+                    title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
+                    okText="确认"
+                    cancelText="取消"
+                    onConfirm={() => thankReply(reply.replyId)}
+                  >
+                    <span className="reply-action-popconfirm-trigger">
+                      <Tooltip content="感谢回复者">
+                        <Button
+                          aria-label="感谢回复者"
+                          className="reply-action-button"
+                          icon={<IconHeartStroked />}
+                          loading={pendingThankReplyIds.includes(reply.replyId)}
+                          size="small"
+                          theme="borderless"
+                          type="tertiary"
+                        />
+                      </Tooltip>
+                    </span>
+                  </Popconfirm>
+                )}
+                <Tooltip content="回复">
+                  <Button
+                    aria-label="回复"
+                    className="reply-action-button"
+                    icon={<IconReply />}
+                    size="small"
+                    theme="borderless"
+                    type="tertiary"
+                    onClick={() => floorReply(reply.userName, reply.floor)}
+                  />
+                </Tooltip>
+              </>
+            )}
+            <span className="floor">{reply.floor}</span>
+          </div>
+        </div>
+        <div
+          className="topic-content"
+          dangerouslySetInnerHTML={{ __html: normalizeHtml(reply.content) }}
+        />
+        {replyViewMode === 'nested' && reply.children.length > 0 && (
+          <div className="reply-children">{reply.children.map(child => renderReply(child))}</div>
+        )}
+      </div>
+    )
+  }
+
+  /**
    * 加载回复页
    * @param replyPage 回复页码
    */
@@ -328,7 +409,7 @@ export default function TopicApp() {
       return
     }
     enhanceHtmlContentAfterRender(showImages)
-  }, [topic, showImages])
+  }, [topic, showImages, replyViewMode])
 
   useEffect(() => {
     if (replyComposerMode !== 'preview' || !replyPreviewHtml) {
@@ -674,7 +755,33 @@ export default function TopicApp() {
           <section className="reply">
             <div className="reply-heading">
               {topic.replies.length ? <h2>共 {topic.replyCount} 条回复</h2> : <h2>暂无回复</h2>}
-              {loadingReplyPage && <Spin size="small" />}
+              <div className="reply-heading-actions">
+                {loadingReplyPage && <Spin size="small" />}
+                {!!topic.replies.length && (
+                  <RadioGroup
+                    aria-label="回复列表展示模式"
+                    buttonSize="small"
+                    className="reply-view-switch"
+                    name="reply-view-mode"
+                    type="button"
+                    value={replyViewMode}
+                    onChange={event => setReplyViewMode(event.target.value as ReplyViewMode)}
+                  >
+                    <Radio value="flat">普通列表</Radio>
+                    <Radio value="nested">
+                      <Badge
+                        count="BETA"
+                        countClassName="reply-view-beta"
+                        position="rightTop"
+                        theme="solid"
+                        type="danger"
+                      >
+                        <span className="reply-view-nested-label">楼中楼</span>
+                      </Badge>
+                    </Radio>
+                  </RadioGroup>
+                )}
+              </div>
             </div>
 
             {topic.replyTotalPage > 1 && (
@@ -691,67 +798,10 @@ export default function TopicApp() {
               />
             )}
 
-            {topic.replies.map(reply => (
-              <div key={reply.replyId} className="reply-item">
-                <div className="reply-meta">
-                  <a
-                    className={`user ${topic.authorName === reply.userName ? 'user--author' : ''}`}
-                    href="javascript:;"
-                    onClick={() => openMember(reply.userName)}
-                  >
-                    {reply.userName}
-                  </a>
-                  <span className="time">{reply.time}</span>
-                  {reply.thanks > 0 && <span className="thanks">♥ {reply.thanks}</span>}
-                  <div className="reply-actions">
-                    {state.canOperate && (
-                      <>
-                        {reply.thanked ? (
-                          <span className="thanked">感谢已发送</span>
-                        ) : (
-                          <Popconfirm
-                            title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
-                            okText="确认"
-                            cancelText="取消"
-                            onConfirm={() => thankReply(reply.replyId)}
-                          >
-                            <span className="reply-action-popconfirm-trigger">
-                              <Tooltip content="感谢回复者">
-                                <Button
-                                  aria-label="感谢回复者"
-                                  className="reply-action-button"
-                                  icon={<IconHeartStroked />}
-                                  loading={pendingThankReplyIds.includes(reply.replyId)}
-                                  size="small"
-                                  theme="borderless"
-                                  type="tertiary"
-                                />
-                              </Tooltip>
-                            </span>
-                          </Popconfirm>
-                        )}
-                        <Tooltip content="回复">
-                          <Button
-                            aria-label="回复"
-                            className="reply-action-button"
-                            icon={<IconReply />}
-                            size="small"
-                            theme="borderless"
-                            type="tertiary"
-                            onClick={() => floorReply(reply.userName, reply.floor)}
-                          />
-                        </Tooltip>
-                      </>
-                    )}
-                    <span className="floor">{reply.floor}</span>
-                  </div>
-                </div>
-                <div
-                  className="topic-content"
-                  dangerouslySetInnerHTML={{ __html: normalizeHtml(reply.content) }}
-                />
-              </div>
-            ))}
+            {(replyViewMode === 'nested'
+              ? replyTree
+              : topic.replies.map(reply => ({ ...reply, children: [] }))
+            ).map(reply => renderReply(reply))}
 
             {topic.replyTotalPage > 1 && (
               <Pagination
