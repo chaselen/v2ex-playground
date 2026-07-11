@@ -46,6 +46,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - `npm run vscode:package` — 生成 `.vsix` 安装包
 - `npm run vscode:publish` — 发布到 Marketplace
 
+执行 Node、npm 或 npx 命令前需确认当前 Node 版本符合 `.nvmrc`；使用 fnm 时可通过 `fnm exec --using 22.18.0 <command>` 确保命令在项目要求的版本下运行。
+
 `.oxfmtrc.json` 使用 2 空格、单引号、无分号、无尾随逗号。修改文件后必须对改动文件运行增量格式化。
 
 验证要求：
