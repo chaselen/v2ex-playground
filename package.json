@@ -34,6 +34,11 @@
         "icon": "$(search)"
       },
       {
+        "command": "v2ex.openTopic",
+        "title": "打开帖子",
+        "icon": "$(go-to-file)"
+      },
+      {
         "command": "v2ex.recentBrowse",
         "title": "最近浏览",
         "icon": "$(history)"
@@ -79,6 +84,10 @@
           "when": "false"
         },
         {
+          "command": "v2ex.openTopic",
+          "when": "false"
+        },
+        {
           "command": "v2ex.recentBrowse",
           "when": "false"
         },
@@ -89,24 +98,29 @@
       ],
       "view/title": [
         {
-          "command": "v2ex.search",
+          "command": "v2ex.openTopic",
           "when": "view == v2ex-main",
           "group": "navigation@0"
         },
         {
-          "command": "v2ex.recentBrowse",
+          "command": "v2ex.search",
           "when": "view == v2ex-main",
           "group": "navigation@1"
         },
         {
-          "command": "v2ex.settings",
+          "command": "v2ex.recentBrowse",
           "when": "view == v2ex-main",
           "group": "navigation@2"
         },
         {
-          "command": "v2ex.login",
+          "command": "v2ex.settings",
           "when": "view == v2ex-main",
           "group": "navigation@3"
+        },
+        {
+          "command": "v2ex.login",
+          "when": "view == v2ex-main",
+          "group": "navigation@4"
         }
       ]
     },

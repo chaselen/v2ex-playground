@@ -4,6 +4,7 @@ import login, { LoginResult } from '@/commands/login'
 import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
+import openTopic from '@/commands/openTopic'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
 import { refreshLoginSession } from '@/features/loginSession'
 import {
@@ -78,6 +79,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 搜索
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => openSearch()))
+
+  // 打开帖子
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex.openTopic', () => openTopic()))
 
   // 最近浏览
   context.subscriptions.push(
