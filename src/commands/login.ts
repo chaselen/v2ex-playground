@@ -10,6 +10,7 @@ import { logger } from '@/core/logger'
  */
 export default async function login(): Promise<LoginResult> {
   let cookie = await vscode.window.showInputBox({
+    title: '登录 V2EX',
     placeHolder: 'V2EX Cookie',
     prompt:
       '粘贴完整 Cookie、A2="..."、A2+A2O 或单独的 A2 值以登录。（如要退出，请清空 Cookie 并回车确认）',
