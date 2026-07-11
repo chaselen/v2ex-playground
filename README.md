@@ -2,55 +2,58 @@
 
 中文名：V2EX 游乐场
 
-上班累的时候用来放（mō）松（yú）的 VSCode 插件。
+上班累的时候用来放（mō）松（yú）的 VS Code 扩展。
 
-[![Marketplace](https://vsmarketplacebadges.dev/version/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
-[![Installs](https://vsmarketplacebadges.dev/installs/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
-
-- 仓库地址：[github.com](https://github.com/chaselen/v2ex-playground)
-- VS Code 插件地址：[Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
-- Open VSX 插件地址：[Open VSX Registry](https://open-vsx.org/extension/chaselen/v2ex-playground)（从 `v1.15.0` 起提供）
+- VS Code 扩展地址：[![Marketplace](https://vsmarketplacebadges.dev/version/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground) [![Installs](https://vsmarketplacebadges.dev/installs/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
+- Open VSX 扩展地址：[![Open VSX](https://img.shields.io/open-vsx/v/chaselen/v2ex-playground?label=Open%20VSX)](https://open-vsx.org/extension/chaselen/v2ex-playground) [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/chaselen/v2ex-playground?label=downloads)](https://open-vsx.org/extension/chaselen/v2ex-playground)
+- 仓库地址：[github.com/chaselen/v2ex-playground](https://github.com/chaselen/v2ex-playground)
 - 更新日志：[CHANGELOG](https://github.com/chaselen/v2ex-playground/blob/master/CHANGELOG.md)
+
+## 🖼️ 预览
+
+![V2EX Playground 主界面预览](https://files.seeusercontent.com/2026/07/11/7zoO/pasted-image-1783765970466.webp)
 
 ---
 
-## 支持的编辑器
+## 🧩 支持的编辑器
 
 - Visual Studio Code
 - Cursor
 - VSCodium、Eclipse Theia 等支持从 Open VSX 安装扩展的编辑器
 
-`v1.15.0` 起，扩展同时发布至 Visual Studio Marketplace 和 Open VSX Registry。
-
 ---
 
-## 功能
+## ✨ 功能
 
-- [x] 话题浏览：查看首页、自定义节点、收藏节点和节点主题，也可通过帖子 ID 或链接直接打开话题
-- [x] 话题详情：阅读主题内容和回复，支持分页、楼中楼/列表切换、图片预览、隐藏和下载
-- [x] 最近浏览：搜索、打开或删除最近查看过的话题
-- [x] 互动操作：回复话题（支持预览、图片上传和表情）、收藏话题、感谢主题或回复，并复制标题、链接或用浏览器打开
-- [x] 个人中心：查看账户概览、账户余额、收藏主题、特别关注和提醒消息
-- [x] 用户详情：查看用户资料、主题和回复
-- [x] 搜索：按关键词、用户和节点查找话题
-- [x] 签到：自动或手动完成每日签到，并查看签到状态
+- 话题浏览：查看首页、自定义节点、收藏节点和节点主题，也可通过话题 ID 或链接直接打开话题
+- 话题详情：阅读主题内容和回复，支持分页、楼中楼/列表切换、图片预览、隐藏和下载
+- 最近浏览：搜索、打开或删除最近查看过的话题
+- 回复与互动：回复话题（支持预览、图片上传和表情）、收藏话题，以及感谢主题或回复
+- 内容操作：复制标题或链接，也可用浏览器打开内容
+- 个人中心：查看账户概览、账户余额、收藏主题、特别关注和提醒消息
+- 用户详情：查看用户资料、主题和回复
+- 搜索：按关键词、用户和节点查找话题
+- 签到：自动或手动完成每日签到，并查看签到状态
 
-## 使用须知
+## 📖 使用须知
 
 ### 登录 Cookie
 
-插件通过 V2EX Cookie 识别登录状态：
+扩展通过 V2EX Cookie 识别登录状态：
 
-- 未开启两步验证的账号：只需要填写 `A2`
-- 已开启两步验证的账号：从 `v1.11.0` 开始支持，可以同时填写 `A2` 和 `A2O`；如果只填写 `A2`，插件会弹出两步验证页面，完成验证后继续登录
+- **未开启两步验证的账号**：只需要填写 `A2`
+- **已开启两步验证的账号**：可以同时填写 `A2` 和 `A2O`；如果只填写 `A2`，扩展会弹出两步验证页面，完成验证后继续登录
 
 登录时可先在浏览器访问 V2EX，再从开发者工具中复制完整的 Cookie 值，也可以只复制包含 `A2` 和 `A2O` 的部分。
 
-![查看 Cookie](https://files.seeusercontent.com/2026/06/24/6cnO/pasted-image-1782269743637.webp)
+> [!WARNING]
+> Cookie 等同于登录凭据，请勿分享、公开截图或提交到 GitHub Issues。
+
+![在浏览器开发者工具中查看 V2EX Cookie](https://files.seeusercontent.com/2026/06/24/6cnO/pasted-image-1782269743637.webp)
 
 ### 代理访问
 
-插件不再提供应用内自定义代理配置。如需通过代理访问 V2EX，可优先使用 VS Code 自带代理设置。
+扩展不再提供应用内自定义代理配置。如需通过代理访问 V2EX，可优先使用 VS Code 自带代理设置。
 
 在 VS Code 图形界面中打开设置，搜索 `http.proxy` 或 `Proxy`，找到 `Http: Proxy` 后填入代理地址，例如 `http://127.0.0.1:7890`。也可以直接在 `settings.json` 中配置：
 
@@ -68,24 +71,20 @@
 
 如果 Imgur 无法连接，相关图片和图片表情将无法显示，回复框的选择、粘贴和拖放图片上传功能也不可用；文字浏览和回复不受影响。
 
-## 设置项
+## ⚙️ 设置项
 
 | 配置项                          | 说明                     | 默认值 |
 | ------------------------------- | ------------------------ | ------ |
 | `v2ex.browse.openInNewTab`      | 始终在新标签页中打开页面 | `true` |
 | `v2ex.browse.autoSignIn`        | 自动进行每日签到         | `true` |
-| `v2ex.browse.showImagesInTopic` | 查看帖子时显示图片       | `true` |
+| `v2ex.browse.showImagesInTopic` | 查看话题时显示图片       | `true` |
 
 ---
 
-## 致谢
+## 💬 反馈
+
+如果您有任何问题或意见，欢迎在[我的创作帖](https://www.v2ex.com/t/703733)中进行回复，或者提交 [GitHub Issues](https://github.com/chaselen/v2ex-playground/issues)。
+
+## 🙏 致谢
 
 回复框的部分代码设计和交互参考了 [V2EX_Polish](https://github.com/coolpace/V2EX_Polish) 项目。
-
-## 反馈
-
-如果您有任何问题或意见，欢迎在[我的创作帖](https://www.v2ex.com/t/703733)中进行回复，或者提交 [issues](https://github.com/chaselen/v2ex-playground/issues)。
-
-## 预览
-
-![预览1.jpg](https://files.seeusercontent.com/2026/07/11/7zoO/pasted-image-1783765970466.webp)
