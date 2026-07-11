@@ -308,8 +308,10 @@ describe.concurrent('V2exClient topics', () => {
 
 describe.concurrent('V2exClient members', () => {
   test('gets member info and default activity from public member page', async () => {
-    const member = await client.getMemberInfo('livid')
-    const content = await client.getMemberContent('livid')
+    const [member, content] = await Promise.all([
+      client.getMemberInfo('livid'),
+      client.getMemberContent('livid')
+    ])
 
     expect(member.username.toLowerCase()).toBe('livid')
     expect(member.memberNumber).toBe(1)
@@ -331,8 +333,10 @@ describe.concurrent('V2exClient members', () => {
   })
 
   test('handles hidden member topic list and keeps recent replies', async () => {
-    const hiddenTopics = await client.getMemberContent('suzhaharcan')
-    const replies = await client.getMemberContent('chaselen', { tab: 'replies' })
+    const [hiddenTopics, replies] = await Promise.all([
+      client.getMemberContent('suzhaharcan'),
+      client.getMemberContent('chaselen', { tab: 'replies' })
+    ])
 
     expect(hiddenTopics.hidden).toBe(true)
     expect(hiddenTopics.message).toMatch(/hidden|隐藏/)
@@ -351,8 +355,10 @@ describe.concurrent('V2exClient members', () => {
   })
 
   test('gets paged member topics and replies', async () => {
-    const topics = await client.getMemberContent('livid', { tab: 'topics', page: 2 })
-    const replies = await client.getMemberContent('livid', { tab: 'replies', page: 2 })
+    const [topics, replies] = await Promise.all([
+      client.getMemberContent('livid', { tab: 'topics', page: 2 }),
+      client.getMemberContent('livid', { tab: 'replies', page: 2 })
+    ])
 
     expect(topics.tab).toBe('topics')
     expect(topics.page).toBe(2)

@@ -46,7 +46,7 @@ function expectLosslessTree(replies: TopicReply[], tree: TopicReplyNode[]) {
   expect(new Set(flattened.map(reply => reply.floor)).size).toBe(replies.length)
 }
 
-describe('buildReplyTree live V2EX topics', () => {
+describe.concurrent('buildReplyTree live V2EX topics', () => {
   it('1030787：正确处理多人引用后的单个楼层号', async () => {
     const topic = await client.getTopicDetail(1030787)
     const tree = buildReplyTree(topic.replies, extractText)
@@ -58,8 +58,10 @@ describe('buildReplyTree live V2EX topics', () => {
   })
 
   it('1149556：高回复数低引用帖子保持无损', async () => {
-    const firstPage = await client.getTopicDetail(1149556, 1)
-    const secondPage = await client.getTopicDetail(1149556, 2)
+    const [firstPage, secondPage] = await Promise.all([
+      client.getTopicDetail(1149556, 1),
+      client.getTopicDetail(1149556, 2)
+    ])
 
     for (const topic of [firstPage, secondPage]) {
       const tree = buildReplyTree(topic.replies, extractText)

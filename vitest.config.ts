@@ -13,9 +13,10 @@ export default defineConfig(({ mode }) => {
     test: {
       env,
       environment: 'node',
-      fileParallelism: false,
+      fileParallelism: true,
       hookTimeout: 60000,
       include: ['src/**/*.test.ts'],
+      maxConcurrency: 5,
       sequence: {
         concurrent: false
       },
