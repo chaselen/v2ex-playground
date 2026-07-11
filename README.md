@@ -8,15 +8,27 @@
 [![Installs](https://vsmarketplacebadges.dev/installs/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
 
 - 仓库地址：[github.com](https://github.com/chaselen/v2ex-playground)
-- 插件地址：[marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
+- VS Code 插件地址：[Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
+- Open VSX 插件地址：[Open VSX Registry](https://open-vsx.org/extension/chaselen/v2ex-playground)（从 `v1.15.0` 起提供）
 - 更新日志：[CHANGELOG](https://github.com/chaselen/v2ex-playground/blob/master/CHANGELOG.md)
+
+---
+
+## 支持的编辑器
+
+- Visual Studio Code
+- Cursor
+- VSCodium、Eclipse Theia 等支持从 Open VSX 安装扩展的编辑器
+
+`v1.15.0` 起，扩展同时发布至 Visual Studio Marketplace 和 Open VSX Registry。
 
 ---
 
 ## 功能
 
-- [x] 话题浏览：查看首页、自定义节点、收藏节点、节点主题和最近浏览
-- [x] 话题详情：阅读主题内容和回复，支持分页、图片预览、隐藏和下载
+- [x] 话题浏览：查看首页、自定义节点、收藏节点和节点主题，也可通过帖子 ID 或链接直接打开话题
+- [x] 话题详情：阅读主题内容和回复，支持分页、楼中楼/列表切换、图片预览、隐藏和下载
+- [x] 最近浏览：搜索、打开或删除最近查看过的话题
 - [x] 互动操作：回复话题（支持预览、图片上传和表情）、收藏话题、感谢主题或回复，并复制标题、链接或用浏览器打开
 - [x] 个人中心：查看账户概览、账户余额、收藏主题、特别关注和提醒消息
 - [x] 用户详情：查看用户资料、主题和回复
@@ -76,4 +88,4 @@
 
 ## 预览
 
-![预览1.jpg](https://files.seeusercontent.com/2026/07/09/h0xT/pasted-image-1783584735339.webp)
+![预览1.jpg](https://files.seeusercontent.com/2026/07/11/7zoO/pasted-image-1783765970466.webp)
