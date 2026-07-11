@@ -37,6 +37,8 @@ interface ReplyComposerProps {
   onSubmit(): void
   /** 上传图片 */
   onUploadImage(file: File): Promise<string>
+  /** 检测 Imgur 连通性 */
+  onCheckImgurConnectivity(target: 'image' | 'upload', refresh?: boolean): Promise<boolean>
 }
 
 /**
@@ -60,13 +62,15 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     onModeChange,
     onPreview,
     onSubmit,
-    onUploadImage
+    onUploadImage,
+    onCheckImgurConnectivity
   },
   ref
 ) {
   const composerRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const postingRef = useRef(posting)
+  const imgurWarningShownRef = useRef(false)
   const uploadAndInsertImagesRef = useRef<(files: FileList | File[]) => void>(() => undefined)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [draggingImage, setDraggingImage] = useState(false)
@@ -163,6 +167,39 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    */
   function selectImage() {
     fileInputRef.current?.click()
+  }
+
+  /**
+   * 确认 Imgur 可用并给出与当前操作对应的提示
+   * @param refresh 是否强制重新检测
+   */
+  async function ensureImgurAvailable(refresh: boolean) {
+    try {
+      if (await onCheckImgurConnectivity('upload', refresh)) {
+        return true
+      }
+    } catch {
+      // 检测异常按不可用处理，避免继续发起注定失败的上传
+    }
+
+    Toast.warning('当前无法连接 Imgur，图片上传功能不可用，请检查网络或代理设置')
+    return false
+  }
+
+  /** 打开表情面板时按需检查图片表情服务 */
+  async function checkImgurForEmoticons() {
+    try {
+      if ((await onCheckImgurConnectivity('image', false)) || imgurWarningShownRef.current) {
+        return
+      }
+    } catch {
+      if (imgurWarningShownRef.current) {
+        return
+      }
+    }
+
+    imgurWarningShownRef.current = true
+    Toast.warning('Imgur 当前不可用，图片表情无法显示，文字表情仍可使用')
   }
 
   /**
@@ -299,13 +336,22 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       return
     }
 
+    if (!(await ensureImgurAvailable(true))) {
+      return
+    }
+
     setUploadingImage(true)
     try {
       const links = await Promise.all(imageFiles.map(file => onUploadImage(file)))
       insertImageLinks(links)
       Toast.success('图片上传成功')
     } catch (err) {
-      Toast.error((err as Error).message || '图片上传失败')
+      const message = (err as Error).message
+      Toast.error(
+        message && message !== '上传失败'
+          ? `图片上传失败：${message}；请检查 Imgur 连通性或代理设置`
+          : '图片上传失败，请检查 Imgur 连通性或代理设置'
+      )
     } finally {
       setUploadingImage(false)
     }
@@ -452,6 +498,9 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           onVisibleChange={visible => {
             if (!emoticonDisabled) {
               setEmoticonPanelVisible(visible)
+              if (visible) {
+                void checkImgurForEmoticons()
+              }
             }
           }}
         >

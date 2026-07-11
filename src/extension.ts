@@ -13,6 +13,7 @@ import {
   setOpenNodeTabHandler
 } from '@/features/panelNavigation'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
+import { startConnectivityCheck } from '@/features/connectivityCheck'
 
 export function activate(context: vscode.ExtensionContext) {
   G.context = context
@@ -37,6 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   )
   cleanupImagePreviewCache()
+  startConnectivityCheck(context)
 
   // 插件激活后直接获取节点信息缓存下来
   // G.V2ex.getAllNodes()

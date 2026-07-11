@@ -33,6 +33,8 @@ export interface TopicPanelRpcCommands
   postReply(payload: { content: string }): void
   /** 上传回复图片 */
   uploadImage(payload: { filename: string; mimeType: string; base64: string }): string
+  /** 检测 Imgur 连通性 */
+  checkImgurConnectivity(payload: { target: 'image' | 'upload'; refresh?: boolean }): boolean
   /** 预览回复内容 */
   previewReply(payload: { content: string }): string
   thankReply(payload: { replyId: string }): void

@@ -9,6 +9,7 @@ import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { updateRecentBrowseTopic } from '@/features/recentBrowse'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
+import { checkImgurConnectivity } from '@/features/connectivityCheck'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
   TopicPanelRpcCommands,
@@ -247,6 +248,7 @@ export class TopicPanelController {
       thank: () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)),
       postReply: msg => this.handlePostReply(msg),
       uploadImage: msg => uploadImage(msg),
+      checkImgurConnectivity: msg => checkImgurConnectivity(msg.target, msg.refresh),
       previewReply: msg => this.handlePreviewReply(msg),
       thankReply: msg => this.handleThankReply(msg),
       loadReplyPage: msg => this.handleLoadReplyPage(msg)

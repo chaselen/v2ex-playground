@@ -63,6 +63,7 @@ export default function TopicApp() {
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const topicShellRef = useRef<HTMLElement>(null)
   const replyComposerRef = useRef<ReplyComposerHandle>(null)
+  const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
   const showImages = state.showImages !== false
 
@@ -159,6 +160,11 @@ export default function TopicApp() {
       mimeType: file.type || 'application/octet-stream',
       base64: await readFileAsBase64(file)
     })
+  }
+
+  /** 检测 Imgur 连通性 */
+  function checkImgurConnectivity(target: 'image' | 'upload', refresh = false) {
+    return vscode.checkImgurConnectivity({ target, refresh })
   }
 
   /**
@@ -330,6 +336,41 @@ export default function TopicApp() {
     }
     enhanceHtmlContentAfterRender(showImages)
   }, [replyComposerMode, replyPreviewHtml, showImages])
+
+  useEffect(() => {
+    /** 聚合话题内容中的 Imgur 图片加载错误，单个页面仅提示一次 */
+    async function handleImageError(event: Event) {
+      const image = event.target
+      if (
+        imgurImageFailureHandledRef.current ||
+        !(image instanceof HTMLImageElement) ||
+        !image.closest('.topic-content')
+      ) {
+        return
+      }
+
+      try {
+        if (new URL(image.currentSrc || image.src, document.baseURI).hostname !== 'i.imgur.com') {
+          return
+        }
+      } catch {
+        return
+      }
+
+      imgurImageFailureHandledRef.current = true
+      try {
+        if (!(await checkImgurConnectivity('image', true))) {
+          Toast.warning('Imgur 图片加载失败，请检查网络或代理设置')
+        }
+      } catch {
+        Toast.warning('Imgur 图片加载失败，请检查网络或代理设置')
+      }
+    }
+
+    const onImageError = (event: Event) => void handleImageError(event)
+    document.addEventListener('error', onImageError, true)
+    return () => document.removeEventListener('error', onImageError, true)
+  }, [])
 
   /**
    * 渲染主题操作按钮
@@ -740,6 +781,7 @@ export default function TopicApp() {
               onPreview={previewReply}
               onSubmit={onSubmit}
               onUploadImage={uploadReplyImage}
+              onCheckImgurConnectivity={checkImgurConnectivity}
             />
           ) : (
             renderLoginReplyPrompt()
