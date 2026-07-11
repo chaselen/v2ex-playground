@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Avatar, Button, Empty, Pagination, Popconfirm, Spin, Toast } from '@douyinfe/semi-ui'
-import { IconDelete, IconHistory, IconRefresh, IconUser } from '@douyinfe/semi-icons'
+import {
+  Avatar,
+  Button,
+  Empty,
+  Input,
+  Pagination,
+  Popconfirm,
+  Spin,
+  Toast
+} from '@douyinfe/semi-ui'
+import { IconDelete, IconHistory, IconRefresh, IconSearch, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
@@ -33,6 +42,8 @@ export default function RecentBrowseApp() {
   const [state, setState] = useState<RecentBrowseViewState>({ status: 'loading' })
   const [clearing, setClearing] = useState(false)
   const [deletingTopicId, setDeletingTopicId] = useState<number>()
+  const [query, setQuery] = useState('')
+  const [activeQuery, setActiveQuery] = useState('')
   const requestIdRef = useRef(0)
   const scrollRef = useRef<SimpleBarCore | null>(null)
   const data = state.data
@@ -41,8 +52,9 @@ export default function RecentBrowseApp() {
   /**
    * 加载最近浏览
    * @param page 页码
+   * @param searchQuery 搜索词
    */
-  async function loadRecentBrowse(page = data?.page || 1) {
+  async function loadRecentBrowse(page = data?.page || 1, searchQuery = activeQuery) {
     const requestId = requestIdRef.current + 1
     requestIdRef.current = requestId
     setState(current => ({
@@ -53,7 +65,8 @@ export default function RecentBrowseApp() {
     try {
       const nextData = await vscode.getRecentBrowseTopics({
         page,
-        pageSize: recentBrowsePageSize
+        pageSize: recentBrowsePageSize,
+        query: searchQuery
       })
       if (requestId !== requestIdRef.current) {
         return
@@ -70,6 +83,22 @@ export default function RecentBrowseApp() {
         message: (err as Error).message || '加载失败',
         data: current.data
       }))
+    }
+  }
+
+  /** 根据输入的关键词搜索最近浏览 */
+  function searchRecentBrowse() {
+    const nextQuery = query.trim()
+    setActiveQuery(nextQuery)
+    loadRecentBrowse(1, nextQuery).catch(err => console.error(err))
+  }
+
+  /** 更新搜索词，清空输入时立即恢复完整列表 */
+  function updateQuery(value: string) {
+    setQuery(value)
+    if (!value.trim() && activeQuery) {
+      setActiveQuery('')
+      loadRecentBrowse(1, '').catch(err => console.error(err))
     }
   }
 
@@ -107,7 +136,8 @@ export default function RecentBrowseApp() {
       const nextData = await vscode.deleteRecentBrowseTopic({
         topicId,
         page: data?.page || 1,
-        pageSize: recentBrowsePageSize
+        pageSize: recentBrowsePageSize,
+        query: activeQuery
       })
       setState({ status: 'result', data: nextData })
       Toast.success('已删除浏览记录')
@@ -257,7 +287,28 @@ export default function RecentBrowseApp() {
     <SimpleBar ref={scrollRef} className="recent-scroll" role="main" autoHide={false}>
       <main className="recent-container">
         <header className="recent-toolbar">
-          <span className="recent-count">{data ? `${data.totalCount} 个主题` : ''}</span>
+          <div className="recent-search">
+            <Input
+              className="recent-search-input"
+              value={query}
+              prefix={<IconSearch />}
+              placeholder="搜索标题、作者或节点"
+              showClear
+              composition
+              disabled={clearing || deletingTopicId !== undefined}
+              onChange={updateQuery}
+              onEnterPress={searchRecentBrowse}
+            />
+            <Button
+              theme="solid"
+              icon={<IconSearch />}
+              loading={loading}
+              disabled={!query.trim() || clearing || deletingTopicId !== undefined}
+              onClick={searchRecentBrowse}
+            >
+              搜索
+            </Button>
+          </div>
           <div className="recent-toolbar-actions">
             <Popconfirm
               title="清空最近浏览？"
@@ -290,7 +341,7 @@ export default function RecentBrowseApp() {
               disabled={clearing || deletingTopicId !== undefined}
               aria-label="刷新"
               title="刷新"
-              onClick={() => loadRecentBrowse()}
+              onClick={() => loadRecentBrowse(data?.page || 1, activeQuery)}
             />
           </div>
         </header>
@@ -318,7 +369,8 @@ export default function RecentBrowseApp() {
         {data && !data.topics.length && (
           <div className="recent-state">
             <Empty
-              title="暂无最近浏览"
+              title={activeQuery ? '未找到匹配的浏览记录' : '暂无最近浏览'}
+              description={activeQuery ? `没有与“${activeQuery}”相关的标题、作者或节点` : undefined}
               image={<IllustrationNoContent />}
               darkModeImage={<IllustrationNoContentDark />}
             />
@@ -327,6 +379,9 @@ export default function RecentBrowseApp() {
 
         {data && !!data.topics.length && (
           <>
+            <div className="recent-count">
+              {activeQuery ? `找到 ${data.totalCount} 个主题` : `${data.totalCount} 个主题`}
+            </div>
             <div className="recent-list">{data.topics.map(renderTopic)}</div>
             {data.totalPage > 1 && (
               <footer className="recent-pagination">

@@ -74,10 +74,10 @@ export class RecentBrowsePanelController {
     deps: RecentBrowsePanelDeps
   ): WebviewRpcHandlers<RecentBrowsePanelRpcCommands> {
     return {
-      getRecentBrowseTopics: msg => getRecentBrowseTopics(msg.page, msg.pageSize),
+      getRecentBrowseTopics: msg => getRecentBrowseTopics(msg.page, msg.pageSize, msg.query),
       deleteRecentBrowseTopic: async msg => {
         await deleteRecentBrowseTopic(msg.topicId)
-        return getRecentBrowseTopics(msg.page, msg.pageSize)
+        return getRecentBrowseTopics(msg.page, msg.pageSize, msg.query)
       },
       clearRecentBrowseTopics: async () => {
         await clearRecentBrowseTopics()

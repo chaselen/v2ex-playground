@@ -40,11 +40,18 @@ export interface RecentBrowseListData {
  * 最近浏览面板 Webview RPC 命令
  */
 export interface RecentBrowsePanelRpcCommands extends WebviewNavigationRpcCommands {
-  getRecentBrowseTopics(payload: { page?: number; pageSize?: number }): RecentBrowseListData
+  getRecentBrowseTopics(payload: {
+    page?: number
+    pageSize?: number
+    /** 标题、作者或节点搜索词 */
+    query?: string
+  }): RecentBrowseListData
   deleteRecentBrowseTopic(payload: {
     topicId: number
     page?: number
     pageSize?: number
+    /** 标题、作者或节点搜索词 */
+    query?: string
   }): RecentBrowseListData
   clearRecentBrowseTopics(): RecentBrowseListData
 }

@@ -59,17 +59,30 @@ export async function updateRecentBrowseTopic(detail: TopicDetail): Promise<void
  * 获取最近浏览话题
  * @param page 页码
  * @param pageSize 每页数量
+ * @param query 标题、作者或节点搜索词
  */
 export function getRecentBrowseTopics(
   page = 1,
-  pageSize = 20
+  pageSize = 20,
+  query = ''
 ): {
   page: number
   totalPage: number
   totalCount: number
   topics: RecentBrowseTopic[]
 } {
-  const records = Object.values(getRecentBrowseRecordsMap()).sort((a, b) => b.readAt - a.readAt)
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const records = Object.values(getRecentBrowseRecordsMap())
+    .filter(topic => {
+      if (!normalizedQuery) {
+        return true
+      }
+
+      return [topic.title, topic.authorName, topic.nodeName, topic.nodeTitle].some(value =>
+        value.toLocaleLowerCase().includes(normalizedQuery)
+      )
+    })
+    .sort((a, b) => b.readAt - a.readAt)
   const safePageSize = Math.max(pageSize, 1)
   const totalCount = records.length
   const totalPage = Math.max(Math.ceil(totalCount / safePageSize), 1)
