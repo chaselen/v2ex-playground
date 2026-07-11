@@ -1,5 +1,6 @@
 import autoDailySignIn, { type AutoDailySignInOptions } from '@/features/dailySignIn'
 import G from '@/global'
+import { logger } from '@/core/logger'
 
 /** 登录会话刷新选项 */
 export interface RefreshLoginSessionOptions {
@@ -28,9 +29,7 @@ export async function refreshLoginSession(
   const result = await getLoginSessionRefreshTask()
 
   if (options.autoDailySignIn && result.loggedIn) {
-    autoDailySignIn(options.dailySignInOptions).catch(err =>
-      console.error('V2EX 自动签到失败', err)
-    )
+    autoDailySignIn(options.dailySignInOptions).catch(err => logger.error('自动签到失败', err))
   }
 
   return result
@@ -55,6 +54,7 @@ function getLoginSessionRefreshTask(): Promise<RefreshLoginSessionResult> {
 async function doRefreshLoginSession(): Promise<RefreshLoginSessionResult> {
   // checkCookie 会刷新 V2exClient 内部 CookieJar，这里不更新持久化登录 Cookie
   const isCookieValid = await G.V2ex.checkCookie()
+  logger.info(isCookieValid ? '登录会话刷新完成：已登录' : '登录会话刷新完成：未登录')
 
   if (!isCookieValid) {
     return {

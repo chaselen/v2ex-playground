@@ -4,6 +4,7 @@ import {
   cleanupExpiredCacheFiles,
   normalizeRemoteImageSrc
 } from '@/core/remoteImageCache'
+import { logger } from '@/core/logger'
 
 /**
  * 图片预览缓存目录名
@@ -44,7 +45,7 @@ export async function cleanupImagePreviewCache() {
       IMAGE_CACHE_TTL_DAYS * 24 * 60 * 60 * 1000
     )
   } catch (err) {
-    console.warn('清理图片缓存失败', err)
+    logger.warn('清理图片缓存失败', err)
   }
 }
 
@@ -58,7 +59,7 @@ export async function openImagePreview(imageSrc: string) {
     return
   }
 
-  console.log('打开大图：', normalizedImageSrc)
+  logger.debug('打开图片预览', normalizedImageSrc)
 
   try {
     const image = await vscode.window.withProgress(

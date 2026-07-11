@@ -3,6 +3,7 @@ import { LoginRequiredError, type BalanceDetail } from '@/v2ex'
 import G from '@/global'
 import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { logger } from '@/core/logger'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import type {
@@ -84,7 +85,7 @@ export class BalancePanelController {
     try {
       await this.reload(true)
     } catch (err) {
-      console.error(err)
+      logger.error('账户余额加载失败', err)
       this.renderError(err as Error)
     }
   }
@@ -132,7 +133,7 @@ export class BalancePanelController {
     try {
       await this.reload(true)
     } catch (err) {
-      console.error(err)
+      logger.error('账户余额操作失败', err)
       this.renderError(err as Error)
       throw err
     }

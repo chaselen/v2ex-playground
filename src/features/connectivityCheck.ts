@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
 import vscode from 'vscode'
+import { logger } from '@/core/logger'
 
 const CHECK_TIMEOUT_MS = 5000
 const RETRY_DELAY_MS = 1500
@@ -157,9 +158,18 @@ class ConnectivityCheckManager {
     try {
       const results = await checkConnectivity(connectivityHttp)
       this.writeDiagnostics(results)
+      const unavailableTargets = results.filter(result => !result.connected)
+      if (unavailableTargets.length === 0) {
+        logger.info('网络连通性检测完成：全部服务可连接')
+      } else {
+        logger.warn(
+          '网络连通性检测完成：部分服务不可连接',
+          unavailableTargets.map(result => result.name)
+        )
+      }
       await this.notifyIfUnavailable(results)
     } catch (error) {
-      console.error('连通性检测失败', error)
+      logger.error('连通性检测失败', error)
     } finally {
       this.checking = false
     }

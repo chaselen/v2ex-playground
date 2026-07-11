@@ -1,4 +1,5 @@
 import vscode from 'vscode'
+import { logger } from '@/core/logger'
 import {
   WEBVIEW_RESPONSE_COMMAND,
   WebviewEventKey,
@@ -57,7 +58,7 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
     try {
       this.webview.postMessage({ command, ...data })
     } catch (err) {
-      console.log(err)
+      logger.error('Webview 消息发送失败', err)
     }
   }
 
@@ -78,7 +79,7 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
       const data = await this.dispatchRequest(message)
       this.postResponse(message.requestId, true, data)
     } catch (err) {
-      console.error(err)
+      logger.error(`Webview RPC 调用失败: ${message.command}`, err)
       this.postResponse(message.requestId, false, undefined, (err as Error).message)
     }
   }

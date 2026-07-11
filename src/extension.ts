@@ -14,8 +14,11 @@ import {
 } from '@/features/panelNavigation'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 import { startConnectivityCheck } from '@/features/connectivityCheck'
+import { initializeLogger, logger } from '@/core/logger'
 
 export function activate(context: vscode.ExtensionContext) {
+  initializeLogger(context)
+  logger.info('扩展已激活')
   G.context = context
   const mainViewProvider = new MainViewProvider()
   G.V2ex = new V2exClient(
@@ -25,7 +28,8 @@ export function activate(context: vscode.ExtensionContext) {
       G.unreadNoticeCount = 0
       await mainViewProvider.reloadViewData()
     },
-    requestTwoFactorVerification
+    requestTwoFactorVerification,
+    summary => logger.warn('HTTP 请求失败', summary)
   )
   setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
@@ -44,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
   // G.V2ex.getAllNodes()
   // 刷新登录会话后再尝试自动签到
   refreshLoginSession({ autoDailySignIn: true }).catch(err => {
-    console.error('V2EX 登录会话刷新失败', err)
+    logger.error('登录会话刷新失败', err)
   })
 
   // 注册主视图 WebviewView
@@ -67,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
           autoDailySignIn: true,
           dailySignInOptions: { notifyOnSuccess: true }
         }).catch(err => {
-          console.error('V2EX 登录会话刷新失败', err)
+          logger.error('登录会话刷新失败', err)
         })
       }
     })
@@ -83,6 +87,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 设置
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.settings', () => setting()))
+
+  // 查看扩展日志
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex.showLogs', () => logger.show()))
 }
 
 export function deactivate() {

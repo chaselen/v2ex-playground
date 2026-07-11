@@ -6,6 +6,7 @@ import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
 import { uploadImage } from '@/core/imageUpload'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { logger } from '@/core/logger'
 import { updateRecentBrowseTopic } from '@/features/recentBrowse'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
@@ -146,7 +147,7 @@ export class TopicPanelController {
     try {
       await this.reloadTopic(true)
     } catch (err) {
-      console.error(err)
+      logger.error('话题详情加载失败', err)
       this.renderError(err as Error)
     }
   }
@@ -156,7 +157,7 @@ export class TopicPanelController {
    */
   refreshForAuthChange() {
     this.refreshTopic().catch(err => {
-      console.error('V2EX 话题登录态刷新失败', err)
+      logger.error('话题登录态刷新失败', err)
     })
   }
 
@@ -277,10 +278,10 @@ export class TopicPanelController {
 
     const detail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
     this.detail = detail
-    updateRecentBrowseTopic(detail).catch(err => console.error('V2EX 最近浏览详情保存失败', err))
+    updateRecentBrowseTopic(detail).catch(err => logger.error('最近浏览详情保存失败', err))
     this.panel.title = formatPanelTitle(detail.title)
     setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
-      console.error('V2EX 话题面板图标更新失败', err)
+      logger.error('话题面板图标更新失败', err)
     )
     this.render(detail)
   }
@@ -292,7 +293,7 @@ export class TopicPanelController {
     try {
       await this.reloadTopic(true)
     } catch (err) {
-      console.error(err)
+      logger.error('话题操作失败', err)
       this.renderError(err as Error)
       throw err
     }
@@ -369,7 +370,7 @@ export class TopicPanelController {
     const detail = await G.V2ex.getTopicDetail(this.topicId, replyPage)
     this.detail = detail
     setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
-      console.error('V2EX 话题面板图标更新失败', err)
+      logger.error('话题面板图标更新失败', err)
     )
     this.render(detail)
   }

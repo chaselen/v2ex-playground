@@ -3,6 +3,7 @@ import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { logger } from '@/core/logger'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
@@ -105,7 +106,7 @@ export class MemberPanelController {
     try {
       await this.reloadMember(true)
     } catch (err) {
-      console.error(err)
+      logger.error('用户信息加载失败', err)
       this.renderError(err as Error)
     }
   }
@@ -187,7 +188,7 @@ export class MemberPanelController {
     this.profile = this.createProfile(member, content)
     this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
-      console.error('V2EX 用户面板图标更新失败', err)
+      logger.error('用户面板图标更新失败', err)
     )
     this.render(this.profile)
   }
@@ -199,7 +200,7 @@ export class MemberPanelController {
     try {
       await this.reloadMember(true)
     } catch (err) {
-      console.error(err)
+      logger.error('用户内容加载失败', err)
       this.renderError(err as Error)
       throw err
     }
@@ -216,7 +217,7 @@ export class MemberPanelController {
     this.profile = this.createProfile(member, content)
     this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
-      console.error('V2EX 用户面板图标更新失败', err)
+      logger.error('用户面板图标更新失败', err)
     )
     return this.profile
   }

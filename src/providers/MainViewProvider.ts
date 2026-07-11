@@ -12,6 +12,7 @@ import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
 import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
+import { logger } from '@/core/logger'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import {
   EXPLORE_NODES,
@@ -315,7 +316,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         children
       }
     } catch (err) {
-      console.error(err)
+      logger.error('主视图数据加载失败', err)
       return {
         tab,
         itemKey,
@@ -415,7 +416,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     try {
       await G.V2ex.getAccountOverview({ force: true })
     } catch (err) {
-      console.error(err)
+      logger.error('主视图操作失败', err)
     }
   }
 
@@ -494,7 +495,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
     this._visibleAutoSignInPromise = autoDailySignIn()
       .then(() => undefined)
-      .catch(err => console.error('V2EX 自动签到失败', err))
+      .catch(err => logger.error('自动签到失败', err))
       .finally(() => {
         this._visibleAutoSignInPromise = undefined
       })
@@ -560,7 +561,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       const data = await this._getInitData()
       this._rpc?.post('initData', data)
     } catch (err) {
-      console.error(err)
+      logger.error('主视图刷新失败', err)
     }
   }
 

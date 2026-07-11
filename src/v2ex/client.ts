@@ -4,6 +4,7 @@ import { parse as parseCookieHeader } from 'cookie'
 import dayjs from 'dayjs'
 import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
+import { installHttpFailureLogging, type HttpFailureHandler } from '@/core/httpFailureLogging'
 import { normalizeLoginCookie } from './cookie'
 import { isSameAccountOverview, parseAccountOverview, parseOnlineCount } from './parsers/account'
 import { parseBalance } from './parsers/balance'
@@ -142,7 +143,8 @@ export class V2exClient {
   constructor(
     initialCookie?: string,
     private readonly onLoginExpired?: LoginExpiredHandler,
-    private readonly onTwoFactorRequired?: TwoFactorRequiredHandler
+    private readonly onTwoFactorRequired?: TwoFactorRequiredHandler,
+    private readonly onHttpFailure?: HttpFailureHandler
   ) {
     this.setCookie(initialCookie || '')
     this.setupInterceptors()
@@ -154,6 +156,9 @@ export class V2exClient {
   private setupInterceptors(): void {
     this.http.interceptors.request.use(config => this.attachCookieToRequest(config))
     this.http.interceptors.response.use(response => this.handleResponse(response))
+    if (this.onHttpFailure) {
+      installHttpFailureLogging(this.http, this.onHttpFailure)
+    }
   }
 
   /**

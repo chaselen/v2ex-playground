@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import Config from '@/config'
 import G from '@/global'
 import type { DailyRes } from '@/v2ex'
+import { logger } from '@/core/logger'
 
 /** 自动签到选项 */
 export interface AutoDailySignInOptions {
@@ -110,7 +111,7 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
       result: signedIn ? 'repetitive' : undefined
     }
   } catch (err) {
-    console.error('V2EX 每日签到状态查询失败', err)
+    logger.error('每日签到状态查询失败', err)
     return {
       signedIn: false
     }
@@ -170,8 +171,12 @@ async function runDailySignIn(options: AutoDailySignInOptions): Promise<DailySig
     if (result === 'success' && options.notifyOnSuccess) {
       vscode.window.showInformationMessage(`V2EX 每日签到成功，获得 ${reward} 铜币`)
     }
-    if (result === 'failed') {
-      console.warn('V2EX 每日签到失败')
+    if (result === 'success') {
+      logger.info('每日签到成功', { reward })
+    } else if (result === 'repetitive') {
+      logger.info('今日已完成签到')
+    } else {
+      logger.warn('每日签到失败')
     }
     return {
       signedIn: result === 'success' || result === 'repetitive',
@@ -179,7 +184,7 @@ async function runDailySignIn(options: AutoDailySignInOptions): Promise<DailySig
       reward
     }
   } catch (err) {
-    console.error('V2EX 每日签到失败', err)
+    logger.error('每日签到失败', err)
     return {
       signedIn: false,
       result: 'failed'

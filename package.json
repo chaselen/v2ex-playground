@@ -42,6 +42,11 @@
         "command": "v2ex.settings",
         "title": "设置",
         "icon": "$(gear)"
+      },
+      {
+        "command": "v2ex.showLogs",
+        "title": "查看日志",
+        "category": "V2EX"
       }
     ],
     "viewsContainers": {

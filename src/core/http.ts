@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { installHttpFailureLogging } from '@/core/httpFailureLogging'
+import { logger } from '@/core/logger'
 
 const http = axios.create({
   headers: {
@@ -9,6 +11,10 @@ const http = axios.create({
     'Accept-Language': 'zh-CN,zh;q=0.9'
   },
   timeout: 15000
+})
+
+installHttpFailureLogging(http, summary => {
+  logger.warn('HTTP 请求失败', summary)
 })
 
 export default http

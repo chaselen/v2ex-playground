@@ -2,6 +2,7 @@ import vscode from 'vscode'
 import G from '@/global'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 import { normalizeLoginCookie, TwoFactorRequiredError } from '@/v2ex'
+import { logger } from '@/core/logger'
 
 /**
  * 登录逻辑
@@ -23,6 +24,7 @@ export default async function login(): Promise<LoginResult> {
   // 清除cookie
   if (!cookie) {
     await G.setCookie('')
+    logger.info('已退出登录')
     return LoginResult.logout
   }
   const loginCookie = normalizeLoginCookie(cookie)
@@ -69,14 +71,17 @@ export default async function login(): Promise<LoginResult> {
           G.V2ex.setCookie(previousLoginCookie)
         }
       }
-      console.log('Cookie是否有效：', isCookieValid)
+      logger.debug('Cookie 是否有效', isCookieValid)
       if (isCookieValid) {
         await G.setCookie(cookieToPersist)
+        logger.info('登录成功')
         vscode.window.showInformationMessage('登录成功')
       } else if (isTwoFactorCanceled) {
+        logger.info('用户取消两步验证，登录状态未变更')
         isLoginCanceled = true
         return false
       } else {
+        logger.warn('登录失败，Cookie 无效')
         vscode.window.showErrorMessage('登录失败，Cookie无效')
       }
       return isCookieValid
