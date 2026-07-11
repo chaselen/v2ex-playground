@@ -21,16 +21,15 @@ export function activate(context: vscode.ExtensionContext) {
   logger.info('扩展已激活')
   G.context = context
   const mainViewProvider = new MainViewProvider()
-  G.V2ex = new V2exClient(
-    G.getCookie(),
-    async () => {
+  G.V2ex = new V2exClient(G.getCookie(), {
+    onLoginExpired: async () => {
       await G.setCookie('')
       G.unreadNoticeCount = 0
       await mainViewProvider.reloadViewData()
     },
-    requestTwoFactorVerification,
-    summary => logger.warn('HTTP 请求失败', summary)
-  )
+    onTwoFactorRequired: requestTwoFactorVerification,
+    onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
+  })
   setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
   context.subscriptions.push(

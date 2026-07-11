@@ -99,6 +99,16 @@ const redirectCheckPathPatterns = ['/balance', '/go/*', '/t/*']
 /** 自动重定向检查页面路径匹配器 */
 const isRedirectCheckPath = picomatch(redirectCheckPathPatterns)
 
+/** V2EX 客户端配置 */
+export interface V2exClientOptions {
+  /** 登录失效回调 */
+  onLoginExpired?: LoginExpiredHandler
+  /** 需要两步验证时的回调 */
+  onTwoFactorRequired?: TwoFactorRequiredHandler
+  /** HTTP 请求失败回调 */
+  onHttpFailure?: HttpFailureHandler
+}
+
 export class V2exClient {
   /** 域名 */
   readonly baseUrl = 'https://www.v2ex.com'
@@ -121,6 +131,15 @@ export class V2exClient {
   /** 已重试过两步验证的请求 */
   private readonly twoFactorRetriedConfigs = new WeakSet<object>()
 
+  /** 登录失效回调 */
+  private readonly onLoginExpired?: LoginExpiredHandler
+
+  /** 需要两步验证时的回调 */
+  private readonly onTwoFactorRequired?: TwoFactorRequiredHandler
+
+  /** HTTP 请求失败回调 */
+  private readonly onHttpFailure?: HttpFailureHandler
+
   /** v2ex 请求客户端 */
   private readonly http = axios.create({
     baseURL: this.baseUrl,
@@ -137,15 +156,12 @@ export class V2exClient {
 
   /**
    * @param initialCookie 初始 V2EX Cookie
-   * @param onLoginExpired 登录失效回调
-   * @param onTwoFactorRequired 两步验证回调
+   * @param options V2EX 客户端配置
    */
-  constructor(
-    initialCookie?: string,
-    private readonly onLoginExpired?: LoginExpiredHandler,
-    private readonly onTwoFactorRequired?: TwoFactorRequiredHandler,
-    private readonly onHttpFailure?: HttpFailureHandler
-  ) {
+  constructor(initialCookie?: string, options: V2exClientOptions = {}) {
+    this.onLoginExpired = options.onLoginExpired
+    this.onTwoFactorRequired = options.onTwoFactorRequired
+    this.onHttpFailure = options.onHttpFailure
     this.setCookie(initialCookie || '')
     this.setupInterceptors()
   }
