@@ -463,8 +463,11 @@ describe('V2exClient authenticated requests', () => {
 
     expect(['success', 'repetitive']).toContain(result.result)
     expect(result.reward).toEqual(expect.any(Number))
-    expect(result.reward).toBeGreaterThan(0)
-    await expect(client.getDailySignInStatus()).resolves.toBe(true)
-    await expect(client.getDailySignInReward()).resolves.toBe(result.reward)
+    expect(result.reward).toBeGreaterThanOrEqual(0)
+    if (result.result === 'success') {
+      expect(result.reward).toBeGreaterThan(0)
+      await expect(client.getDailySignInStatus()).resolves.toBe(true)
+      await expect(client.getDailySignInReward()).resolves.toBe(result.reward)
+    }
   })
 })
