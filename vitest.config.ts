@@ -1,19 +1,25 @@
+import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
-  resolve: {
-    alias: {
-      '@': new URL('./src', import.meta.url).pathname
-    }
-  },
-  test: {
-    environment: 'node',
-    fileParallelism: false,
-    hookTimeout: 60000,
-    include: ['src/**/*.test.ts'],
-    sequence: {
-      concurrent: false
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, new URL('.', import.meta.url).pathname, 'V2EX_')
+
+  return {
+    resolve: {
+      alias: {
+        '@': new URL('./src', import.meta.url).pathname
+      }
     },
-    testTimeout: 60000
+    test: {
+      env,
+      environment: 'node',
+      fileParallelism: false,
+      hookTimeout: 60000,
+      include: ['src/**/*.test.ts'],
+      sequence: {
+        concurrent: false
+      },
+      testTimeout: 60000
+    }
   }
 })
