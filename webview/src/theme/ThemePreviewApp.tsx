@@ -2,11 +2,14 @@ import { useState } from 'react'
 import {
   Banner,
   Button,
+  DatePicker,
   Dropdown,
   Empty,
   Input,
+  Modal,
   Pagination,
   Popconfirm,
+  Popover,
   Progress,
   Select,
   Space,
@@ -33,6 +36,7 @@ const previewThemes = [
 /** Semi 主题适配回归页 */
 export default function ThemePreviewApp() {
   const [selectedKey, setSelectedKey] = useState('v2ex')
+  const [modalVisible, setModalVisible] = useState(false)
 
   const setPreviewTheme = (bodyClass: string) => {
     document.body.className = bodyClass
@@ -69,12 +73,16 @@ export default function ThemePreviewApp() {
             <Popconfirm title="确认执行此操作吗？">
               <Button>Popconfirm</Button>
             </Popconfirm>
+            <Popover content={<div>VS Code Widget 浮层</div>}>
+              <Button>Popover</Button>
+            </Popover>
             <Dropdown
               trigger="click"
               render={
                 <Dropdown.Menu>
                   <Dropdown.Item>普通菜单项</Dropdown.Item>
                   <Dropdown.Item active>选中菜单项</Dropdown.Item>
+                  <Dropdown.Item disabled>禁用菜单项</Dropdown.Item>
                 </Dropdown.Menu>
               }
             >
@@ -89,7 +97,16 @@ export default function ThemePreviewApp() {
             </VscodeBadge>
             <Progress percent={64} style={{ width: 180 }} />
             <Spin />
+            <Button onClick={() => setModalVisible(true)}>Modal</Button>
           </Space>
+          <Modal
+            title="Modal 主题回归"
+            visible={modalVisible}
+            onCancel={() => setModalVisible(false)}
+            onOk={() => setModalVisible(false)}
+          >
+            检查遮罩、背景、边框、文字和按钮状态
+          </Modal>
         </PreviewSection>
 
         <PreviewSection title="表单">
@@ -104,6 +121,17 @@ export default function ThemePreviewApp() {
                 { label: 'V2EX', value: 'v2ex' },
                 { label: 'Semi Design', value: 'semi' }
               ]}
+            />
+            <Select
+              disabled
+              value="disabled"
+              style={{ width: 260 }}
+              optionList={[{ label: '禁用选择器', value: 'disabled' }]}
+            />
+            <DatePicker
+              type="dateRange"
+              placeholder={['开始日期', '结束日期']}
+              style={{ width: 260 }}
             />
           </Space>
         </PreviewSection>
@@ -138,6 +166,8 @@ export default function ThemePreviewApp() {
             title="信息提示"
             description="背景、边框与文字应来自 VS Code Theme Color"
           />
+          <Banner type="warning" title="警告提示" description="检查语义色及其对比度" />
+          <Banner type="danger" title="错误提示" description="检查错误前景、背景与边框" />
           <Space wrap>
             <Button onClick={() => Toast.success('操作成功')}>Success Toast</Button>
             <Button onClick={() => Toast.error('操作失败')}>Error Toast</Button>

@@ -347,7 +347,11 @@
   &:focus-visible {
     background: var(--v2ex-hover-bg);
     color: var(--v2ex-hover-fg);
-    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
   }
 }
 

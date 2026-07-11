@@ -600,7 +600,7 @@ $panel-border: var(--v2ex-border);
   border: 1px solid var(--v2ex-border);
   border-radius: 6px;
   background: var(--v2ex-widget-bg);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--v2ex-shadow-elevated);
 
   .semi-popover-icon-arrow path:nth-child(1) {
     fill: var(--v2ex-border);
@@ -665,7 +665,11 @@ $panel-border: var(--v2ex-border);
   &:hover,
   &:focus-visible {
     background: var(--v2ex-hover-bg);
-    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 1px;
   }
 
   img {
@@ -701,7 +705,7 @@ $panel-border: var(--v2ex-border);
   border-radius: 6px;
   background: var(--v2ex-widget-bg);
   color: var(--v2ex-webview-fg);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--v2ex-shadow-floating);
 
   &:hover {
     background: var(--v2ex-hover-bg);

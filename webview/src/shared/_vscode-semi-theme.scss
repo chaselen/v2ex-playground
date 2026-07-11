@@ -36,6 +36,10 @@ body {
     var(--vscode-widget-border, var(--vscode-editorWidget-border, transparent))
   );
   --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-control-border: var(
+    --vscode-contrastBorder,
+    color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent)
+  );
   --v2ex-focus-border: var(
     --vscode-contrastActiveBorder,
     var(--vscode-focusBorder, #{$link-color})
@@ -141,6 +145,11 @@ body {
   );
   --v2ex-highlight-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
 
+  /* 浮层阴影：高对比主题在下方关闭阴影并依赖对比边框 */
+  --v2ex-widget-shadow-color: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.18));
+  --v2ex-shadow-elevated: 0 8px 28px var(--v2ex-widget-shadow-color);
+  --v2ex-shadow-floating: 0 4px 14px var(--v2ex-widget-shadow-color);
+
   /* 标签色：Semi Tag 会在下方做类级别兜底覆盖 */
   --v2ex-tag-bg: var(
     --vscode-list-inactiveSelectionBackground,
@@ -234,8 +243,8 @@ body {
   --semi-color-border: var(--v2ex-border);
   --semi-color-nav-bg: var(--v2ex-webview-bg);
   --semi-color-overlay-bg: var(--v2ex-mask-bg);
-  --semi-color-shadow: var(--vscode-widget-shadow, transparent);
-  --semi-shadow-elevated: 0 2px 8px var(--semi-color-shadow);
+  --semi-color-shadow: var(--v2ex-widget-shadow-color);
+  --semi-shadow-elevated: var(--v2ex-shadow-elevated);
   --semi-color-highlight-bg: var(--v2ex-highlight-bg);
   --semi-color-highlight: var(--v2ex-highlight-fg);
   --semi-border-radius-small: 4px;
@@ -259,4 +268,6 @@ body.vscode-high-contrast {
     var(--vscode-focusBorder, #{$link-color})
   );
   --v2ex-disabled-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-shadow-elevated: none;
+  --v2ex-shadow-floating: none;
 }

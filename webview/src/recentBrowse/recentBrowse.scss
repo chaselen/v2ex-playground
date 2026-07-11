@@ -31,6 +31,17 @@ $panel-border: var(--v2ex-border);
 
 .recent-search-input {
   max-width: 420px;
+  border: 1px solid var(--v2ex-control-border);
+  background: var(--v2ex-input-bg);
+
+  &:hover,
+  &.semi-input-wrapper-focus {
+    border-color: var(--v2ex-focus-border);
+  }
+
+  &.semi-input-wrapper-focus {
+    box-shadow: none;
+  }
 }
 
 .recent-count {
