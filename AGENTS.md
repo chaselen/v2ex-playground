@@ -74,6 +74,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - RPC 契约使用函数签名定义，集中在 `src/shared/commonView.ts`、`src/shared/mainView.ts`、`src/shared/topicView.ts`、`src/shared/memberView.ts`、`src/shared/balanceView.ts`、`src/shared/searchView.ts`、`src/shared/recentBrowseView.ts`、`src/shared/twoFactorView.ts` 和 `src/shared/webviewRpc.ts`
 - 新增或修改 RPC 命令、事件、请求参数或响应字段时，先更新 `src/shared/` 中的契约，再同步扩展侧处理器和 Webview 调用方；不要绕过 Proxy 客户端直接调用 `postMessage`
 - 有状态的 Webview 初始化不能依赖扩展侧在面板创建后单向发送一次状态事件；Cursor 中缓存命中、脚本启动或 Webview 上下文重建的时序可能与 VS Code 不同，事件可能早于 React 监听注册而丢失。此类页面应由扩展侧保存最新状态，RPC 契约复用 `WebviewStateRpcCommands<State>` 提供 `ready()` 状态读取，并在 Webview 端复用 `subscribeWebviewState()` 先注册事件监听、再主动读取当前状态；状态事件仅用于后续增量同步
+- Webview 首次打开且尚无可展示内容时，整页或整块内容加载优先复用 `webview/src/shared/PageSkeleton.tsx` 中基于 Semi `Skeleton` 的结构化骨架，不使用居中的 `Spin` 作为整页 loading；新增页面应为 `PageSkeleton` 增加与真实页面信息层级对应的变体，使标题、头像、工具区、列表或表格等占位结构尽量贴近加载完成后的布局
+- 骨架屏必须与真实页面复用或严格对齐容器的最大宽度、外层级、内外间距和响应式断点，尤其避免共享骨架的通用 padding 在窄侧边栏下覆盖页面变体；骨架分割线和边框使用 Semi fill token 同色系，保留 `prefers-reduced-motion` 和加载状态无障碍语义。已有内容上的刷新、分页、标签切换、上传和按钮提交等局部加载继续使用 Semi `Spin` 或组件自身的 `loading` 属性
 - Webview HTML 入口使用 `https://www.v2ex.com/` 作为 `<base>`；普通业务按钮打开外部链接前使用 `resolveWebviewUrl()` 基于 `document.baseURI` 解析为绝对地址，HTML 内容中的链接交由 `handleWebviewLinkClick()` 统一识别和分发，扩展侧统一复用 `src/features/openExternal.ts`
 - 扩展侧使用 `src/core/webviewHtml.ts` 读取 Vite 输出 HTML，并将本地 `src` / `href` 转换为 `webview.asWebviewUri(...)`
 - HTML 内容中的话题、用户、节点和外部链接统一由 `webview/src/shared/linkNavigation.ts` 识别与分发；页面只传入必要的标题或话题 fallback，不在页面内重复路径正则、URL 解码或 RPC 分支
@@ -91,6 +93,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 仅修改 Webview 文件时，运行 `npm run check:webview` 和 `npm run build:webview`，并手动验证 Webview 渲染。若同时改动共享 RPC 契约或扩展侧处理器，则按跨侧改动处理，运行相关两侧类型检查并执行 `npm run build`，无需额外重复执行 `npm run build:webview`。
 
 修改有状态 Webview 的初始化、状态同步或面板复用逻辑时，需在 VS Code 和 Cursor 中手动验证首次打开、重复打开以及面板隐藏后恢复，确认页面不会因初始化事件丢失而停留在加载状态。
+
+新增或修改整页骨架屏时，需对照加载完成后的真实页面手动验证容器宽度、外间距、内容层级和窄侧边栏响应式布局，并覆盖亮色、暗色和高对比主题；同时确认刷新、分页等已有内容上的局部 loading 不会错误切换为整页骨架。
 
 修改共享链接导航或 HTML 内容增强逻辑时，需手动验证话题、用户、节点、外部链接和图片预览，确认一次点击只触发一种打开行为。
 

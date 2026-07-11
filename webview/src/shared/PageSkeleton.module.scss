@@ -1,0 +1,388 @@
+.skeleton {
+  --skeleton-divider: color-mix(in srgb, var(--semi-color-fill-1) 70%, var(--semi-color-fill-0));
+  width: min(100%, 760px);
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.balance {
+  width: min(100%, 1100px);
+}
+
+.member {
+  width: min(100%, 820px);
+}
+
+.search,
+.recent,
+.node-topics {
+  width: 100%;
+  padding: 0;
+}
+
+.node-tree {
+  width: 100%;
+  padding: 8px;
+}
+
+.topic-title {
+  width: 76%;
+  height: 28px;
+  margin-bottom: 14px;
+}
+
+.topic-meta,
+.profile,
+.balance-header,
+.actions,
+.tabs,
+.my-profile,
+.wallet-row {
+  display: flex;
+  align-items: center;
+}
+
+.topic-meta {
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.tag {
+  width: 64px;
+}
+
+.author {
+  width: 96px;
+  height: 16px;
+  margin-bottom: 0;
+}
+
+.time {
+  width: min(34%, 180px);
+  margin-bottom: 0;
+}
+
+.divider {
+  height: 1px;
+  margin: 26px 0;
+  background: var(--skeleton-divider);
+}
+
+.section-title {
+  width: 140px;
+  margin-bottom: 16px;
+}
+
+.reply,
+.row {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--skeleton-divider);
+}
+
+.reply {
+  align-items: flex-start;
+}
+
+.row {
+  align-items: center;
+}
+
+.row-content,
+.profile-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-content > :first-child {
+  height: 18px;
+  margin-bottom: 10px;
+}
+
+.badge,
+.icon-button {
+  width: 32px;
+}
+
+.profile {
+  align-items: flex-start;
+  gap: 16px;
+  padding: 4px 0 20px;
+}
+
+.username {
+  width: 150px;
+  margin-bottom: 12px;
+}
+
+.profile-meta {
+  width: min(70%, 300px);
+}
+
+.tabs {
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--skeleton-divider);
+}
+
+.tabs > * {
+  width: 88px;
+}
+
+.balance-header {
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid var(--skeleton-divider);
+  border-radius: 8px;
+}
+
+.balance-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eyebrow {
+  width: 100px;
+  margin: 0;
+}
+
+.wallet {
+  width: 180px;
+  height: 30px;
+  margin: 0;
+}
+
+.actions {
+  gap: 8px;
+}
+
+.balance-ledger {
+  margin-top: 18px;
+  border: 1px solid var(--skeleton-divider);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-head,
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr 0.7fr;
+  gap: 20px;
+  padding: 12px;
+  border-bottom: 1px solid var(--skeleton-divider);
+}
+
+.table-head > * {
+  height: 16px;
+  margin: 0;
+}
+
+.table-row > * {
+  margin: 0;
+}
+
+.summary {
+  width: 180px;
+  margin: 4px 0 10px;
+}
+
+.search-card {
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--skeleton-divider);
+  border-radius: 8px;
+}
+
+.search-card > :first-child {
+  height: 20px;
+  margin-bottom: 10px;
+}
+
+.search-card > :last-child {
+  margin-bottom: 0;
+}
+
+.search-meta {
+  width: min(48%, 280px);
+  margin-bottom: 12px;
+}
+
+.compact-rows {
+  padding-top: 6px;
+}
+
+.compact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 3px 6px;
+}
+
+.compact-row > :first-child {
+  height: 16px;
+  margin: 0;
+}
+
+.compact-row .badge {
+  width: 28px;
+  height: 18px;
+}
+
+.tree-rows {
+  padding-top: 8px;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+}
+
+.tree-row > :last-child {
+  height: 16px;
+  margin: 0;
+}
+
+.my-card {
+  border: 1px solid var(--skeleton-divider);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.my {
+  width: auto;
+  padding: 0;
+  margin: 0;
+}
+
+.my .tabs {
+  margin-top: 8px;
+}
+
+.my-profile {
+  gap: 9px;
+  padding: 10px 12px 8px;
+}
+
+.my-avatar {
+  width: 36px;
+  height: 36px;
+}
+
+.my-profile .username {
+  width: 42%;
+  margin: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 2px 12px 8px;
+}
+
+.stat {
+  min-width: 0;
+  min-height: 44px;
+  padding: 3px 8px;
+  text-align: center;
+}
+
+.stat + .stat {
+  border-left: 1px solid var(--skeleton-divider);
+}
+
+.stat > * {
+  width: 72%;
+  margin: 0 auto 4px;
+}
+
+.stat > :last-child {
+  width: 54%;
+  margin-bottom: 0;
+}
+
+.activity-row,
+.wallet-row {
+  min-height: 38px;
+  padding: 0 12px;
+  border-top: 1px solid var(--skeleton-divider);
+}
+
+.activity-row {
+  display: flex;
+  align-items: center;
+}
+
+.activity-row > * {
+  width: 100%;
+  margin: 0;
+}
+
+.wallet-row {
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 42px;
+}
+
+.wallet-row > * {
+  width: 120px;
+  margin: 0;
+}
+
+.sign-in-row {
+  display: flex;
+  justify-content: center;
+  padding: 0 12px 10px;
+}
+
+.sign-in-row > * {
+  width: 76px;
+}
+
+@media (max-width: 520px) {
+  .topic,
+  .member {
+    padding: 14px;
+  }
+
+  .balance {
+    padding: 12px;
+  }
+
+  .topic-title {
+    width: 90%;
+  }
+
+  .time,
+  .actions {
+    display: none;
+  }
+
+  .table-head,
+  .table-row {
+    grid-template-columns: 1fr 1.4fr 0.7fr;
+    gap: 8px;
+    padding-inline: 4px;
+  }
+}
+
+@media (min-width: 521px) and (max-width: 640px) {
+  .balance {
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-avatar),
+  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-image),
+  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-title),
+  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-button),
+  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-paragraph) li {
+    animation: none;
+  }
+}

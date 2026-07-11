@@ -16,6 +16,7 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
+import PageSkeleton from '@/shared/PageSkeleton'
 import { createVsCodeClient } from '@/shared/vscode'
 import type {
   SearchPanelRpcCommands,
@@ -314,12 +315,7 @@ export default function SearchApp() {
           </section>
         )}
 
-        {loading && !result && (
-          <div className="search-state search-state--loading">
-            <Spin size="middle" />
-            <span>搜索中</span>
-          </div>
-        )}
+        {loading && !result && <PageSkeleton variant="search" rows={4} />}
       </main>
     </SimpleBar>
   )

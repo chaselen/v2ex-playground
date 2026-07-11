@@ -75,24 +75,6 @@ $panel-border: var(--v2ex-border);
   padding: 48px 20px;
 }
 
-.state-panel--loading {
-  display: flex;
-  min-height: 220px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: $muted-color;
-}
-
-.state-loading-text {
-  display: inline-flex;
-  min-width: max-content;
-  color: $muted-color;
-  line-height: 1.4;
-  white-space: nowrap;
-  writing-mode: horizontal-tb;
-}
-
 .state-actions {
   display: flex;
   gap: 8px;

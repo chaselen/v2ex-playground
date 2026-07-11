@@ -1,19 +1,11 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import {
-  Avatar,
-  Button,
-  Empty,
-  Input,
-  Pagination,
-  Popconfirm,
-  Spin,
-  Toast
-} from '@douyinfe/semi-ui'
+import { Avatar, Button, Empty, Input, Pagination, Popconfirm, Toast } from '@douyinfe/semi-ui'
 import { IconDelete, IconHistory, IconRefresh, IconSearch, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
+import PageSkeleton from '@/shared/PageSkeleton'
 import { VscodeTag } from '@/shared/SemiVscode'
 import { createVsCodeClient } from '@/shared/vscode'
 import type {
@@ -360,11 +352,7 @@ export default function RecentBrowseApp() {
           </div>
         )}
 
-        {loading && !data && (
-          <div className="recent-state recent-state--loading">
-            <Spin size="middle" />
-          </div>
-        )}
+        {loading && !data && <PageSkeleton variant="recent" rows={6} />}
 
         {data && !data.topics.length && (
           <div className="recent-state">

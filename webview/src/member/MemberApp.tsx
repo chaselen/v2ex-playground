@@ -6,6 +6,7 @@ import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
+import PageSkeleton from '@/shared/PageSkeleton'
 import { VscodeBadge, VscodeProTag, VscodeTag } from '@/shared/SemiVscode'
 import { createVsCodeClient, subscribeWebviewState } from '@/shared/vscode'
 import { useLatestRequest } from '@/shared/useLatestRequest'
@@ -200,12 +201,7 @@ export default function MemberApp() {
 
   return (
     <SimpleBar ref={scrollRef} className="member-scroll" role="main" autoHide={false}>
-      {state.status === 'loading' && (
-        <div className="member-state member-state--loading">
-          <Spin size="middle" />
-          <span>加载中</span>
-        </div>
-      )}
+      {state.status === 'loading' && <PageSkeleton variant="member" rows={4} />}
 
       {state.status === 'error' && (
         <div className="member-state">

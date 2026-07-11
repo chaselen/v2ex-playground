@@ -246,15 +246,6 @@ $panel-border: var(--v2ex-border);
   padding: 48px 20px;
 }
 
-.member-state--loading {
-  display: flex;
-  min-height: 220px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: $muted-color;
-}
-
 .member-state-actions {
   display: flex;
   justify-content: center;

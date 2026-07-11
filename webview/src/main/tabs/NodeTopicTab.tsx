@@ -1,7 +1,8 @@
-import { Empty, Spin } from '@douyinfe/semi-ui'
+import { Empty } from '@douyinfe/semi-ui'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type { NodeTopicTabState } from '@/main/types'
+import PageSkeleton from '@/shared/PageSkeleton'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
 import styles from './NodeTopicTab.module.scss'
@@ -23,9 +24,7 @@ export default function NodeTopicTab(props: NodeTopicTabProps) {
   return (
     <SimpleBar className={styles['node-topic-panel']} autoHide={false}>
       {node.loading && !node.topics.length ? (
-        <div className={styles['panel-state']}>
-          <Spin size="middle" />
-        </div>
+        <PageSkeleton variant="node-topics" rows={6} />
       ) : node.error && !node.topics.length ? (
         <div className={`${styles['panel-state']} ${styles['error-text']}`}>{node.error}</div>
       ) : !node.topics.length ? (

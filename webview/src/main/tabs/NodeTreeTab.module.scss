@@ -162,10 +162,6 @@
   @include mixins.empty-illustration;
 }
 
-.loading-panel {
-  @include mixins.loading-panel;
-}
-
 .tree-footer {
   flex: none;
   padding: 8px;

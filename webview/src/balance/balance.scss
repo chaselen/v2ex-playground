@@ -131,15 +131,6 @@ $panel-border: var(--v2ex-border);
   margin: 0 auto;
 }
 
-.balance-state--loading {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  min-height: 240px;
-  color: $muted-color;
-}
-
 .balance-state-actions {
   display: flex;
   gap: 8px;

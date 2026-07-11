@@ -7,6 +7,7 @@ import CurrencyBalance from '@/shared/CurrencyBalance'
 import { VscodeBadge } from '@/shared/SemiVscode'
 import SimpleBar from 'simplebar-react'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
+import PageSkeleton from '@/shared/PageSkeleton'
 import { createVsCodeClient, resolveWebviewUrl } from '@/shared/vscode'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
@@ -664,8 +665,8 @@ export default function MyTab(props: MyTabProps) {
   if (loading) {
     return (
       <SimpleBar className={styles['my-panel']} autoHide={false}>
-        <div className={`${styles['my-panel-content']} ${styles['loading-panel']}`}>
-          <Spin size="middle" />
+        <div className={styles['my-panel-content']}>
+          <PageSkeleton variant="my" rows={4} />
         </div>
       </SimpleBar>
     )

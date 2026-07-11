@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
-import { Button, Empty, Popconfirm, Spin, Tree } from '@douyinfe/semi-ui'
+import { Button, Empty, Popconfirm, Tree } from '@douyinfe/semi-ui'
 import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
 import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
 import { createVsCodeClient } from '@/shared/vscode'
+import PageSkeleton from '@/shared/PageSkeleton'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
@@ -448,11 +449,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
   /** 渲染节点树主体内容 */
   function renderContent() {
     if (loading) {
-      return (
-        <div className={styles['loading-panel']}>
-          <Spin size="middle" />
-        </div>
-      )
+      return <PageSkeleton variant="node-tree" rows={7} />
     }
 
     if (nodes.length) {

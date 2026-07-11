@@ -27,6 +27,7 @@ import {
 } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
+import PageSkeleton from '@/shared/PageSkeleton'
 import { VscodeProTag } from '@/shared/SemiVscode'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
 import ReplyComposer, { type ReplyComposerHandle, type ReplyComposerMode } from './ReplyComposer'
@@ -641,12 +642,7 @@ export default function TopicApp() {
 
   return (
     <main className="topic-shell" ref={topicShellRef}>
-      {state.status === 'loading' && (
-        <div className="state-panel state-panel--loading">
-          <Spin size="middle" />
-          <span className="state-loading-text">加载中</span>
-        </div>
-      )}
+      {state.status === 'loading' && <PageSkeleton variant="topic" />}
 
       {state.status === 'error' && (
         <div className="state-panel">

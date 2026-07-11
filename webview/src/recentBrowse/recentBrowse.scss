@@ -229,10 +229,6 @@ $panel-border: var(--v2ex-border);
   color: var(--vscode-descriptionForeground);
 }
 
-.recent-state--loading {
-  min-height: 180px;
-}
-
 .recent-pagination {
   display: flex;
   flex-wrap: wrap;

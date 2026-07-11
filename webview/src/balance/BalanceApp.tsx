@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Banner, Button, Empty, Pagination, Spin, Table } from '@douyinfe/semi-ui'
+import { Banner, Button, Empty, Pagination, Table } from '@douyinfe/semi-ui'
 import { IconHelpCircle, IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
@@ -7,6 +7,7 @@ import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/shared/contentEnhancement'
 import CurrencyBalance from '@/shared/CurrencyBalance'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
+import PageSkeleton from '@/shared/PageSkeleton'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
 import { useLatestRequest } from '@/shared/useLatestRequest'
 import type {
@@ -146,12 +147,7 @@ export default function BalanceApp() {
 
   return (
     <SimpleBar ref={scrollRef} className="balance-scroll" role="main" autoHide={false}>
-      {state.status === 'loading' && (
-        <div className="balance-state balance-state--loading">
-          <Spin size="middle" />
-          <span>加载中</span>
-        </div>
-      )}
+      {state.status === 'loading' && <PageSkeleton variant="balance" rows={6} />}
 
       {state.status === 'error' && (
         <div className="balance-state">
