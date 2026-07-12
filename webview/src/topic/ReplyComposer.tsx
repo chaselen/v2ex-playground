@@ -6,6 +6,27 @@ import { normalizeHtml, proxyImgurImageSrc } from '@/shared/contentEnhancement'
 import { imageEmoticonLinks, isImageEmoticon } from '@/shared/imageEmoticons'
 import { emoticonGroups } from './emoticons'
 
+/** Imgur 支持上传的图片 MIME 类型 */
+const imgurImageMimeTypes = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/apng',
+  'image/tiff'
+])
+
+/** Imgur 支持上传的图片扩展名 */
+const imgurImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.apng', '.tif', '.tiff'] as const
+
+/** 文件选择器使用的 Imgur 图片类型过滤条件 */
+const imgurImageAccept = [...imgurImageMimeTypes, ...imgurImageExtensions].join(',')
+
+/** Imgur 非动画图片大小上限 */
+const imgurStillImageMaxSize = 50 * 1024 * 1024
+
+/** Imgur 动画图片大小上限 */
+const imgurAnimatedImageMaxSize = 200 * 1024 * 1024
+
 /** 回复编辑模式 */
 export type ReplyComposerMode = 'edit' | 'preview'
 
@@ -46,6 +67,35 @@ interface ReplyComposerProps {
  */
 function isApplePlatform() {
   return /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
+}
+
+/**
+ * 判断文件是否为 Imgur 支持的图片类型
+ * @param file 待判断文件
+ */
+function isImgurImageFile(file: File) {
+  if (imgurImageMimeTypes.has(file.type.toLowerCase())) {
+    return true
+  }
+
+  const filename = file.name.toLowerCase()
+  return imgurImageExtensions.some(extension => filename.endsWith(extension))
+}
+
+/**
+ * 获取 Imgur 对图片文件的大小上限
+ * @param file 图片文件
+ */
+function getImgurImageMaxSize(file: File) {
+  const mimeType = file.type.toLowerCase()
+  const filename = file.name.toLowerCase()
+  const isAnimatedImage =
+    mimeType === 'image/gif' ||
+    mimeType === 'image/apng' ||
+    filename.endsWith('.gif') ||
+    filename.endsWith('.apng')
+
+  return isAnimatedImage ? imgurAnimatedImageMaxSize : imgurStillImageMaxSize
 }
 
 /**
@@ -207,7 +257,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param fileList 文件列表
    */
   function getImageFiles(fileList: FileList | File[]) {
-    return Array.from(fileList).filter(file => file.type.startsWith('image/'))
+    return Array.from(fileList).filter(isImgurImageFile)
   }
 
   /**
@@ -216,7 +266,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    */
   function hasImageTransfer(dataTransfer: DataTransfer) {
     return Array.from(dataTransfer.items).some(
-      item => item.kind === 'file' && item.type.startsWith('image/')
+      item => item.kind === 'file' && imgurImageMimeTypes.has(item.type.toLowerCase())
     )
   }
 
@@ -332,7 +382,15 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     const imageFiles = getImageFiles(files)
 
     if (!imageFiles.length) {
-      Toast.warning('请选择图片文件')
+      Toast.warning('请选择 Imgur 支持的图片文件（JPEG、PNG、GIF、APNG、TIFF）')
+      return
+    }
+
+    const oversizedFile = imageFiles.find(file => file.size > getImgurImageMaxSize(file))
+
+    if (oversizedFile) {
+      const maxSizeInMb = getImgurImageMaxSize(oversizedFile) / 1024 / 1024
+      Toast.warning(`${oversizedFile.name} 超过 Imgur 的 ${maxSizeInMb} MB 大小限制`)
       return
     }
 
@@ -553,7 +611,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={imgurImageAccept}
         multiple
         hidden
         disabled={posting || uploadingImage}
