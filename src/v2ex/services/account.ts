@@ -1,14 +1,9 @@
 import * as cheerio from 'cheerio/slim'
-import dayjs from 'dayjs'
 import type { AxiosResponse } from 'axios'
 import picomatch from 'picomatch'
 import { getConfigUrl, isV2exUrl } from '../clientUtils'
-import {
-  isSameAccountOverview,
-  parseAccountOverview,
-  parseOnlineCount,
-} from '../parsers/account'
-import { parseBalance } from '../parsers/balance'
+import { isSameAccountOverview, parseAccountOverview, parseOnlineCount } from '../parsers/account'
+import { parseBalance, parseLatestDailySignInReward } from '../parsers/balance'
 import { parsePagerTotalPage } from '../parsers/common'
 import { parseTopicIdByLink, parseTopicListCells } from '../parsers/topic'
 import type { V2exSession } from '../session'
@@ -17,9 +12,11 @@ import type {
   AccountOverviewChangedHandler,
   BalanceDetail,
   DailySignInResult,
+  DailySignInReward,
+  DailySignInStatus,
   OnlineCountChangedHandler,
   Topic,
-  V2exNotification,
+  V2exNotification
 } from '../types'
 
 /** 会返回账户概览的 V2EX 页面路径 */
@@ -34,8 +31,11 @@ const isAccountOverviewPath = picomatch([
   '/t/*',
   '/planes',
   '/mission/daily',
-  '/mission/daily/*',
+  '/mission/daily/*'
 ])
+
+/** 查询最新签到奖励时最多扫描的余额页数 */
+const MAX_DAILY_SIGN_IN_REWARD_PAGES = 5
 
 /** V2EX 账户内容领域服务 */
 export class AccountService {
@@ -44,15 +44,13 @@ export class AccountService {
   /** 缓存的在线人数 */
   private onlineCount?: number
   /** 账户概览变化监听器 */
-  private readonly accountOverviewChangedHandlers =
-    new Set<AccountOverviewChangedHandler>()
+  private readonly accountOverviewChangedHandlers = new Set<AccountOverviewChangedHandler>()
   /** 在线人数变化监听器 */
-  private readonly onlineCountChangedHandlers =
-    new Set<OnlineCountChangedHandler>()
+  private readonly onlineCountChangedHandlers = new Set<OnlineCountChangedHandler>()
 
   constructor(
     private readonly session: V2exSession,
-    private readonly checkCookie: () => Promise<boolean>,
+    private readonly checkCookie: () => Promise<boolean>
   ) {
     this.session.onResponse(response => this.updateFromResponse(response))
   }
@@ -69,7 +67,7 @@ export class AccountService {
   } {
     this.accountOverviewChangedHandlers.add(handler)
     return {
-      dispose: () => this.accountOverviewChangedHandlers.delete(handler),
+      dispose: () => this.accountOverviewChangedHandlers.delete(handler)
     }
   }
 
@@ -82,20 +80,15 @@ export class AccountService {
   }
 
   /** 获取账户概览 */
-  async getAccountOverview(
-    options: { force?: boolean } = {},
-  ): Promise<AccountOverview> {
+  async getAccountOverview(options: { force?: boolean } = {}): Promise<AccountOverview> {
     if (!options.force && this.accountOverview) return this.accountOverview
     await this.session.get<string>('/')
     return this.accountOverview || createEmptyAccountOverview()
   }
 
   /** 获取在线人数 */
-  async getOnlineCount(
-    options: { force?: boolean } = {},
-  ): Promise<number | undefined> {
-    if (!options.force && this.onlineCount !== undefined)
-      return this.onlineCount
+  async getOnlineCount(options: { force?: boolean } = {}): Promise<number | undefined> {
+    if (!options.force && this.onlineCount !== undefined) return this.onlineCount
     await this.session.get<string>('/')
     return this.onlineCount
   }
@@ -113,7 +106,7 @@ export class AccountService {
         this.accountOverview = overview
         if (!oldOverview || !isSameAccountOverview(overview, oldOverview)) {
           this.accountOverviewChangedHandlers.forEach(
-            handler => void handler(overview, oldOverview),
+            handler => void handler(overview, oldOverview)
           )
         }
       }
@@ -122,9 +115,7 @@ export class AccountService {
     if (onlineCount !== undefined && onlineCount !== this.onlineCount) {
       const oldOnlineCount = this.onlineCount
       this.onlineCount = onlineCount
-      this.onlineCountChangedHandlers.forEach(
-        handler => void handler(onlineCount, oldOnlineCount),
-      )
+      this.onlineCountChangedHandlers.forEach(handler => void handler(onlineCount, oldOnlineCount))
     }
   }
 
@@ -134,9 +125,7 @@ export class AccountService {
   }
 
   /** 获取特别关注话题 */
-  getSpecialFollowingTopics(
-    page = 1,
-  ): Promise<{ totalPage: number; list: Topic[] }> {
+  getSpecialFollowingTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
     return this.getTopicList('/my/following', page)
   }
 
@@ -146,9 +135,7 @@ export class AccountService {
     totalCount: number
     list: V2exNotification[]
   }> {
-    const { data: html } = await this.session.get<string>(
-      `/notifications?p=${page}`,
-    )
+    const { data: html } = await this.session.get<string>(`/notifications?p=${page}`)
     const $ = cheerio.load(html)
     const list: V2exNotification[] = []
     $('#notifications > .cell[id^="n_"]').each((_, element) => {
@@ -170,54 +157,53 @@ export class AccountService {
         topicTitle: topic.text().trim() || undefined,
         topicPath: topicPath || undefined,
         time: cell.find('span.snow').first().text().trim(),
-        payloadHtml: cell.find('.payload').first().html()?.trim() || '',
+        payloadHtml: cell.find('.payload').first().html()?.trim() || ''
       })
     })
     return {
       totalPage: parsePagerTotalPage($),
-      totalCount: Number(
-        $('.header .fr strong.gray').first().text().trim() || 0,
-      ),
-      list,
+      totalCount: Number($('.header .fr strong.gray').first().text().trim() || 0),
+      list
     }
   }
 
   /** 获取余额详情 */
   async getBalance(page = 1): Promise<BalanceDetail> {
     const balancePage = normalizePage(page)
-    const { data: html } = await this.session.get<string>(
-      `/balance?p=${balancePage}`,
-    )
+    const { data: html } = await this.session.get<string>(`/balance?p=${balancePage}`)
     return parseBalance(cheerio.load(html), balancePage)
   }
 
   /** 查询每日签到状态 */
-  async getDailySignInStatus(): Promise<boolean> {
-    return (await this.getDailySignInReward()) > 0
-  }
-
-  /** 查询当日签到奖励 */
-  async getDailySignInReward(): Promise<number> {
-    return this.getDailySignInRewardByDate(dayjs().format('YYYY-MM-DD'))
+  async getDailySignInStatus(): Promise<DailySignInStatus> {
+    const { data: html } = await this.session.get<string>('/mission/daily')
+    if (!cheerio.load(html)('.fa.fa-ok-sign').length) {
+      return { signedIn: false }
+    }
+    return {
+      signedIn: true,
+      reward: await this.getDailySignInReward()
+    }
   }
 
   /**
-   * 查询指定日期的签到奖励
-   * @param date 日期，格式为 YYYY-MM-DD
+   * 从余额流水中查询最新一条每日登录奖励
+   *
+   * 余额流水按时间倒序排列；如果第一页没有奖励记录，则继续向后翻页，最多查询 5 页。
    */
-  private async getDailySignInRewardByDate(date: string): Promise<number> {
-    const { data: html } = await this.session.get<string>('/balance')
-    const $ = cheerio.load(html)
-    let reward = 0
-    $('table.data tr').each((_, element) => {
-      const cells = $(element).children('td')
-      if (!reward && cells.eq(0).text().trim().startsWith(date)) {
-        if (cells.eq(1).text().trim() === '每日登录奖励') {
-          reward = Number(cells.eq(2).text().trim()) || 0
-        }
-      }
-    })
-    return reward
+  async getDailySignInReward(): Promise<DailySignInReward | undefined> {
+    let page = 1
+    let totalPage = 1
+
+    do {
+      const detail = await this.getBalance(page)
+      const reward = parseLatestDailySignInReward(detail.transactions)
+      if (reward) return reward
+      totalPage = detail.totalPage
+      page += 1
+    } while (page <= Math.min(totalPage, MAX_DAILY_SIGN_IN_REWARD_PAGES))
+
+    return undefined
   }
 
   /** 执行每日签到 */
@@ -225,21 +211,20 @@ export class AccountService {
     // 场景 1：未登录，无法执行签到
     if (!(await this.checkCookie())) return { result: 'failed', reward: 0 }
 
-    // 场景 2：当日余额中已有登录奖励，说明已经签到
-    const currentReward = await this.getDailySignInReward()
-    if (currentReward > 0)
-      return { result: 'repetitive', reward: currentReward }
+    // 记录领取前最新奖励，用于确认领取后是否产生了新流水
+    const previousReward = await this.getDailySignInReward()
 
     const { data: html } = await this.session.get<string>('/mission/daily')
     const $ = cheerio.load(html)
 
-    // 场景 3：签到状态并非在本地零点刷新，0:30分时，页面可能仍显示已领取，但奖励记录属于前一天
+    // 签到页尚未进入下一个周期时，页面仍会显示已领取，最新奖励可能属于前一个日期
     // <span class="gray"><li class="fa fa-ok-sign" style="color: #0c0;"></li> &nbsp;每日登录奖励已领取</span>
     if ($('.fa.fa-ok-sign').length) {
-      const previousReward = await this.getDailySignInRewardByDate(
-        dayjs().subtract(1, 'day').format('YYYY-MM-DD'),
-      )
-      return { result: 'repetitive', reward: previousReward }
+      return {
+        result: 'repetitive',
+        reward: previousReward?.reward || 0,
+        rewardDate: previousReward?.date
+      }
     }
 
     // 场景 4：尚未签到，从领取按钮中解析本次请求所需的 once 参数
@@ -253,9 +238,14 @@ export class AccountService {
 
     // 领取奖励后通过余额记录确认签到结果
     await this.session.get(`/mission/daily/redeem?once=${once}`)
-    const reward = await this.getDailySignInReward()
+    const latestReward = await this.getDailySignInReward()
+    const isNewReward = latestReward && latestReward.date !== previousReward?.date
 
-    return { result: reward > 0 ? 'success' : 'failed', reward }
+    return {
+      result: isNewReward ? 'success' : 'failed',
+      reward: isNewReward ? latestReward.reward : 0,
+      rewardDate: isNewReward ? latestReward.date : undefined
+    }
   }
 
   /** 获取账户话题列表 */
@@ -264,10 +254,7 @@ export class AccountService {
     const $ = cheerio.load(html)
     return {
       totalPage: parsePagerTotalPage($),
-      list: parseTopicListCells(
-        $,
-        $('#Main > .box').last().children('.cell.item'),
-      ),
+      list: parseTopicListCells($, $('#Main > .box').last().children('.cell.item'))
     }
   }
 }
@@ -284,7 +271,7 @@ function createEmptyAccountOverview(): AccountOverview {
     unreadNoticeCount: 0,
     gold: 0,
     silver: 0,
-    bronze: 0,
+    bronze: 0
   }
 }
 

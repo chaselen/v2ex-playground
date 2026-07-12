@@ -472,8 +472,17 @@ describe('V2exClient authenticated requests', () => {
     expect(result.reward).toBeGreaterThanOrEqual(0)
     if (result.result === 'success') {
       expect(result.reward).toBeGreaterThan(0)
-      await expect(client.getDailySignInStatus()).resolves.toBe(true)
-      await expect(client.getDailySignInReward()).resolves.toBe(result.reward)
+      await expect(client.getDailySignInStatus()).resolves.toMatchObject({
+        signedIn: true,
+        reward: {
+          date: result.rewardDate,
+          reward: result.reward
+        }
+      })
+      await expect(client.getDailySignInReward()).resolves.toMatchObject({
+        date: result.rewardDate,
+        reward: result.reward
+      })
     }
   })
 })

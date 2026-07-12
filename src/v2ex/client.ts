@@ -11,6 +11,8 @@ import type {
   AccountOverviewChangedHandler,
   BalanceDetail,
   DailySignInResult,
+  DailySignInReward,
+  DailySignInStatus,
   LoginExpiredHandler,
   MemberContent,
   MemberContentOptions,
@@ -319,12 +321,12 @@ export class V2exClient {
   }
 
   /** 查询每日签到状态 */
-  getDailySignInStatus(): Promise<boolean> {
+  getDailySignInStatus(): Promise<DailySignInStatus> {
     return this.account.getDailySignInStatus()
   }
 
-  /** 查询当日签到奖励铜币数 */
-  getDailySignInReward(): Promise<number> {
+  /** 查询最新一条签到奖励 */
+  getDailySignInReward(): Promise<DailySignInReward | undefined> {
     return this.account.getDailySignInReward()
   }
 

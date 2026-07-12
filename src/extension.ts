@@ -6,6 +6,7 @@ import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
 import openTopic from '@/commands/openTopic'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
+import { startDailySignInScheduler } from '@/features/dailySignIn'
 import { refreshLoginSession } from '@/features/loginSession'
 import {
   openRecentBrowse,
@@ -43,6 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
   )
   cleanupImagePreviewCache()
   startConnectivityCheck(context)
+  context.subscriptions.push(startDailySignInScheduler())
 
   // 插件激活后直接获取节点信息缓存下来
   // G.V2ex.getAllNodes()

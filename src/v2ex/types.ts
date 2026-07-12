@@ -177,12 +177,30 @@ export interface NodeTopicList {
 /** 签到结果 */
 export type DailyRes = 'success' | 'repetitive' | 'failed'
 
+/** 每日签到奖励记录 */
+export interface DailySignInReward {
+  /** 奖励流水日期，格式为 YYYY-MM-DD */
+  date: string
+  /** 获得的铜币数 */
+  reward: number
+}
+
+/** 每日签到状态 */
+export interface DailySignInStatus {
+  /** 签到页面是否显示已领取 */
+  signedIn: boolean
+  /** 最新一条签到奖励 */
+  reward?: DailySignInReward
+}
+
 /** 每日签到结果 */
 export interface DailySignInResult {
   /** 签到结果 */
   result: DailyRes
   /** 当日签到奖励铜币数 */
   reward: number
+  /** 奖励流水日期，格式为 YYYY-MM-DD */
+  rewardDate?: string
 }
 
 /**

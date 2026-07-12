@@ -1,6 +1,11 @@
 import * as cheerio from 'cheerio/slim'
 import { parsePagerTotalPage } from './common'
-import type { AccountOverview, BalanceDetail, BalanceTransaction } from '../types'
+import type {
+  AccountOverview,
+  BalanceDetail,
+  BalanceTransaction,
+  DailySignInReward
+} from '../types'
 
 /** Cheerio 选择结果 */
 type CheerioSelection = ReturnType<cheerio.CheerioAPI>
@@ -11,8 +16,7 @@ type CheerioSelection = ReturnType<cheerio.CheerioAPI>
  * @param requestedPage 请求页码
  */
 export function parseBalance($: cheerio.CheerioAPI, requestedPage: number): BalanceDetail {
-  const balanceText = $('#Main .balance_area').first().text()
-  const balances = (balanceText.match(/\d+/g) || []).map(Number)
+  const balance = parseCoinBalance($('#Main .balance_area').first())
   const transactions: BalanceTransaction[] = []
 
   $('#Main table.data > tbody > tr, #Main table.data > tr').each((index, element) => {
@@ -45,13 +49,25 @@ export function parseBalance($: cheerio.CheerioAPI, requestedPage: number): Bala
     Number($('#Main .ps_container a.page_current').first().text().trim()) || requestedPage
 
   return {
-    gold: balances[0] || 0,
-    silver: balances[1] || 0,
-    bronze: balances[2] || 0,
+    ...balance,
     page: currentPage,
     totalPage: parsePagerTotalPage($),
     transactions
   }
+}
+
+/** 从一页倒序余额流水中解析最新的每日登录奖励 */
+export function parseLatestDailySignInReward(
+  transactions: BalanceTransaction[]
+): DailySignInReward | undefined {
+  const transaction = transactions.find(
+    item => item.type === '每日登录奖励' && item.direction === 'positive'
+  )
+  if (!transaction) return undefined
+
+  const reward = Number(transaction.amount.replace(/,/g, '')) || 0
+  const date = transaction.time.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+  return date && reward > 0 ? { date, reward } : undefined
 }
 
 /**
