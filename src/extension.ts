@@ -47,7 +47,10 @@ export function activate(context: vscode.ExtensionContext) {
   // 插件激活后直接获取节点信息缓存下来
   // G.V2ex.getAllNodes()
   // 刷新登录会话后再尝试自动签到
-  refreshLoginSession({ autoDailySignIn: true }).catch(err => {
+  refreshLoginSession({
+    autoDailySignIn: true,
+    dailySignInOptions: { notifyOnSuccess: true }
+  }).catch(err => {
     logger.error('登录会话刷新失败', err)
   })
 

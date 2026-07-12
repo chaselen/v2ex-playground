@@ -493,7 +493,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       return
     }
 
-    this._visibleAutoSignInPromise = autoDailySignIn()
+    this._visibleAutoSignInPromise = autoDailySignIn({ notifyOnSuccess: true })
       .then(() => undefined)
       .catch(err => logger.error('自动签到失败', err))
       .finally(() => {
