@@ -16,6 +16,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - `src/features/` — 独立功能模块，如每日签到、图片预览、外部链接打开、详情面板导航、最近浏览、登录会话和两步验证
 - `src/shared/` — 扩展侧与 Webview 共享的 RPC 契约和类型
 - `src/config.ts` / `src/global.ts` — 配置读取和扩展运行时全局状态
+- `docs/` — 关键功能的实现说明、设计取舍和边界条件
 - `webview/` — React + Vite + Semi Design Webview 源码
   - `main.html` / `topic.html` / `member.html` / `balance.html` / `search.html` / `recent-browse.html` / `two-factor.html` — 生产 Webview 的 Vite 多页面入口
   - `theme.html` / `src/theme/` — Semi 与 VS Code 主题适配回归页
@@ -24,6 +25,12 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
   - `src/shared/` — Webview 侧 RPC 封装、链接导航、公共样式和内容增强逻辑
 - `html/` — Vite 构建后的 Webview 运行时资源，不手工编辑
 - `out/` — esbuild 生成的扩展产物，不手工编辑
+
+## 项目文档
+
+- [每日签到逻辑](docs/daily-sign-in.md) — 每日签到的数据来源、状态判定、缓存、调度和边界处理
+- [帖子回复楼中楼算法](docs/nested-replies.md) — 平铺回复转换为楼中楼结构的推断规则、设计取舍和已知边界
+- 修改上述文档涉及的代码逻辑时，必须同步更新对应文档；新增需要长期维护的关键实现规则或设计取舍时，应在 `docs/` 中补充文档，并在此处添加引用
 
 ## 开发命令
 
