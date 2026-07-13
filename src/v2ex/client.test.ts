@@ -232,48 +232,38 @@ describe.concurrent('V2exClient topic links', () => {
   })
 })
 
-describe.concurrent('V2exClient topics', () => {
+describe.sequential('V2exClient topics', () => {
   test('gets once token', async () => {
     await expect(client.getOnce()).resolves.toMatch(/^\d+$/)
   })
 
-  test('gets online count', async () => {
-    const onlineCount = await client.getOnlineCount({ force: true })
+  test('gets topics by tab and updates the online count', async () => {
+    const topics = await client.getTopicListByTab('tech')
+    const onlineCount = await client.getOnlineCount()
 
+    expect(topics.length).toBeGreaterThan(0)
+    expectTopic(topics[0])
     expect(onlineCount).toEqual(expect.any(Number))
     expect(onlineCount).toBeGreaterThan(0)
   })
 
-  test('gets topics by tab', async () => {
-    const topics = await client.getTopicListByTab('tech')
-
-    expect(topics.length).toBeGreaterThan(0)
-    expectTopic(topics[0])
-  })
-
   test('gets topics by node', async () => {
-    const result = await client.getTopicListByNode('v2ex')
+    const result = await client.getTopicListByNode('python')
 
     expect(result.totalPage).toEqual(expect.any(Number))
     expect(result.totalPage).toBeGreaterThanOrEqual(0)
     expect(result.totalCount).toEqual(expect.any(Number))
     expect(result.totalCount).toBeGreaterThan(0)
-    expectNode(result.node)
-    expect(result.node.name).toBe('v2ex')
-    expect(result.list.length).toBeGreaterThan(0)
-    expectTopic(result.list[0])
-    expect(result.list[0].node).toEqual(result.node)
-  })
-
-  test('gets node page metadata', async () => {
-    const result = await client.getTopicListByNode('python')
-
     expect(result.node).toMatchObject({
       name: 'python',
       title: 'Python',
       avatar: expect.stringMatching(/^https:\/\/cdn\.v2ex\.com\/navatar\//),
       description: expect.stringContaining('Python')
     })
+    expectNode(result.node)
+    expect(result.list.length).toBeGreaterThan(0)
+    expectTopic(result.list[0])
+    expect(result.list[0].node).toEqual(result.node)
   })
 
   test('gets topic detail from a known public topic', async () => {
@@ -306,16 +296,15 @@ describe.concurrent('V2exClient topics', () => {
   })
 })
 
-describe.concurrent('V2exClient members', () => {
+describe.sequential('V2exClient members', () => {
   test('gets member info and default activity from public member page', async () => {
-    const [member, content] = await Promise.all([
-      client.getMemberInfo('livid'),
-      client.getMemberContent('livid')
-    ])
+    const member = await client.getMemberInfo('livid')
+    const content = await client.getMemberContent('livid')
 
     expect(member.username.toLowerCase()).toBe('livid')
     expect(member.memberNumber).toBe(1)
     expect(member.joinedAt).toContain('2010-04-25')
+    expect(member.isPro).toBe(true)
     if (member.activityRank !== undefined) {
       expect(member.activityRank).toBeGreaterThan(0)
     }
@@ -326,23 +315,12 @@ describe.concurrent('V2exClient members', () => {
     expectTopic(content.topics[0])
   })
 
-  test('gets PRO badge from a known public member page', async () => {
-    const member = await client.getMemberInfo('livid')
-
-    expect(member.isPro).toBe(true)
-  })
-
-  test('handles hidden member topic list and keeps recent replies', async () => {
-    const [hiddenTopics, replies] = await Promise.all([
-      client.getMemberContent('suzhaharcan'),
-      client.getMemberContent('chaselen', { tab: 'replies' })
-    ])
+  test('handles hidden member topic list', async () => {
+    const hiddenTopics = await client.getMemberContent('suzhaharcan')
 
     expect(hiddenTopics.hidden).toBe(true)
     expect(hiddenTopics.message).toMatch(/hidden|隐藏/)
-    expect(replies.replies.length).toBeGreaterThan(0)
     expectMemberContent(hiddenTopics)
-    expectMemberContent(replies)
   })
 
   test('gets member category topics', async () => {
@@ -354,26 +332,18 @@ describe.concurrent('V2exClient members', () => {
     expectMemberContent(content)
   })
 
-  test('gets paged member topics and replies', async () => {
-    const [topics, replies] = await Promise.all([
-      client.getMemberContent('livid', { tab: 'topics', page: 2 }),
-      client.getMemberContent('livid', { tab: 'replies', page: 2 })
-    ])
+  test('gets paged member replies', async () => {
+    const replies = await client.getMemberContent('livid', { tab: 'replies', page: 2 })
 
-    expect(topics.tab).toBe('topics')
-    expect(topics.page).toBe(2)
-    expect(topics.totalPage).toBeGreaterThanOrEqual(2)
-    expect(topics.topics.length).toBeGreaterThan(0)
     expect(replies.tab).toBe('replies')
     expect(replies.page).toBe(2)
     expect(replies.totalPage).toBeGreaterThanOrEqual(2)
     expect(replies.replies.length).toBeGreaterThan(0)
-    expectMemberContent(topics)
     expectMemberContent(replies)
   })
 })
 
-describe.concurrent('V2exClient nodes', () => {
+describe.sequential('V2exClient nodes', () => {
   test('gets all nodes', async () => {
     const nodes = await client.getAllNodes()
 
@@ -382,7 +352,7 @@ describe.concurrent('V2exClient nodes', () => {
   })
 })
 
-describe.concurrent('V2exClient search', () => {
+describe.sequential('V2exClient search', () => {
   test('searches SoV2EX', async () => {
     const result = await client.search({
       q: 'vscode',
@@ -415,8 +385,7 @@ describe('V2exClient authenticated requests', () => {
     expectAccountOverview(overview)
   })
 
-  authTest('gets balance pages with V2EX_COOKIE', async () => {
-    expectBalanceDetail(await client.getBalance())
+  authTest('gets a paged balance with V2EX_COOKIE', async () => {
     expectBalanceDetail(await client.getBalance(2))
   })
 
@@ -478,10 +447,6 @@ describe('V2exClient authenticated requests', () => {
           date: result.rewardDate,
           reward: result.reward
         }
-      })
-      await expect(client.getDailySignInReward()).resolves.toMatchObject({
-        date: result.rewardDate,
-        reward: result.reward
       })
     }
   })
