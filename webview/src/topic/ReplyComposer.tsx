@@ -3,6 +3,7 @@ import { Button, Popover, Spin, TextArea, Toast, Tooltip } from '@douyinfe/semi-
 import { IconEmoji, IconImageStroked } from '@douyinfe/semi-icons'
 import SimpleBar from 'simplebar-react'
 import { normalizeHtml, proxyImgurImageSrc } from '@/shared/contentEnhancement'
+import { isApplePlatform } from '@/shared/platform'
 import { imageEmoticonLinks, isImageEmoticon } from '@/shared/imageEmoticons'
 import { emoticonGroups } from './emoticons'
 
@@ -60,13 +61,6 @@ interface ReplyComposerProps {
   onUploadImage(file: File): Promise<string>
   /** 检测 Imgur 连通性 */
   onCheckImgurConnectivity(target: 'image' | 'upload', refresh?: boolean): Promise<boolean>
-}
-
-/**
- * 判断是否为 Apple 平台
- */
-function isApplePlatform() {
-  return /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
 }
 
 /**

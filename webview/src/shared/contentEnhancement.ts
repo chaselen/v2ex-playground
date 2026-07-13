@@ -1,5 +1,6 @@
 import type { WebviewContentRpcCommands } from '@extension/shared/webview'
 import { handleWebviewLinkClick } from './linkNavigation'
+import { isApplePlatform } from './platform'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
 import { isImageEmoticonSrc, normalizeImageEmoticonSrc } from './imageEmoticons'
 
@@ -96,7 +97,16 @@ function isSupportImageLink(anchor: HTMLAnchorElement): boolean {
  * @param event 鼠标事件
  */
 function isOpenExternalClick(event: MouseEvent): boolean {
-  return event.metaKey || event.ctrlKey || event.altKey
+  return isApplePlatform() ? event.metaKey || event.altKey : event.ctrlKey || event.altKey
+}
+
+/**
+ * 获取图片预览操作提示
+ * @param action 默认点击行为
+ */
+function getImagePreviewTitle(action: '查看大图' | '查看图片'): string {
+  const modifierKeys = isApplePlatform() ? 'Cmd/Option' : 'Ctrl/Alt'
+  return `点击${action}，按住 ${modifierKeys} 点击在浏览器中打开`
 }
 
 /**
@@ -119,6 +129,35 @@ function openImage(src: string, event: MouseEvent) {
   }
 
   vscode.browseImage({ src })
+}
+
+/** 图片打开行为配置 */
+interface ImageOpenBindingOptions {
+  /** 默认点击行为 */
+  action: '查看大图' | '查看图片'
+  /** 获取图片预览地址 */
+  getSrc: () => string
+  /** 当前是否允许打开图片 */
+  canOpen?: () => boolean
+}
+
+/**
+ * 给元素绑定图片预览与外部打开行为
+ * @param element 交互元素
+ * @param options 图片打开行为配置
+ */
+function bindImageOpen(element: HTMLElement, { action, getSrc, canOpen }: ImageOpenBindingOptions) {
+  element.title = getImagePreviewTitle(action)
+  element.onclick = event => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (canOpen && !canOpen()) {
+      return
+    }
+
+    openImage(getSrc(), event)
+  }
 }
 
 /**
@@ -158,16 +197,11 @@ function applyImageDisplaySrc(img: HTMLImageElement) {
  */
 function bindImagePreview(img: HTMLImageElement) {
   img.classList.add('image-preview-target')
-  img.title = '点击查看大图，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
-  img.onclick = event => {
-    event.preventDefault()
-    event.stopPropagation()
-
-    if (!img.complete) {
-      return
-    }
-    openImage(getImagePreviewSrc(img), event)
-  }
+  bindImageOpen(img, {
+    action: '查看大图',
+    getSrc: () => getImagePreviewSrc(img),
+    canOpen: () => img.complete
+  })
 }
 
 /**
@@ -178,7 +212,6 @@ function createHiddenImageButton(img: HTMLImageElement): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'hidden-image-button'
-  button.title = '点击查看图片，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
   button.innerHTML = `
     <svg class="hidden-image-icon" viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
@@ -187,10 +220,9 @@ function createHiddenImageButton(img: HTMLImageElement): HTMLButtonElement {
     </svg>
     <span>查看图片</span>
   `
-  button.addEventListener('click', event => {
-    event.preventDefault()
-    event.stopPropagation()
-    openImage(getImagePreviewSrc(img), event)
+  bindImageOpen(button, {
+    action: '查看图片',
+    getSrc: () => getImagePreviewSrc(img)
   })
   return button
 }
@@ -250,11 +282,9 @@ function bindImageLinkPreview(anchor: HTMLAnchorElement) {
 
   anchor.dataset.imagePreviewBound = 'true'
   anchor.classList.add('image-preview-target')
-  anchor.title = '点击查看大图，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
-  anchor.addEventListener('click', event => {
-    event.preventDefault()
-    event.stopPropagation()
-    openImage(imageSrc, event)
+  bindImageOpen(anchor, {
+    action: '查看大图',
+    getSrc: () => imageSrc
   })
 }
 
