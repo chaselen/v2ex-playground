@@ -43,6 +43,10 @@ $panel-border: var(--v2ex-border);
   max-width: 760px;
   padding: 20px;
   margin: 0 auto;
+
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 .topic-header {
@@ -92,6 +96,18 @@ $panel-border: var(--v2ex-border);
 
 .topic-content {
   @include topic-content-shared.base($panel-border);
+
+  .image-preview-target {
+    border-radius: 3px;
+    transition: box-shadow 160ms ease;
+
+    &:hover {
+      outline: none;
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--vscode-textLink-foreground) 35%, transparent),
+        0 6px 18px color-mix(in srgb, var(--vscode-widget-shadow, #000) 55%, transparent);
+    }
+  }
 
   .hidden-image-button {
     &:focus-visible {
@@ -167,6 +183,12 @@ $panel-border: var(--v2ex-border);
     blockquote:last-child {
       margin-bottom: 0;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topic-content .image-preview-target {
+    transition: none;
   }
 }
 
@@ -304,10 +326,9 @@ $panel-border: var(--v2ex-border);
   padding: 14px 0;
   border-bottom: 1px solid $panel-border;
 
-  &:hover {
-    .reply-actions .reply-action-button {
-      visibility: visible;
-    }
+  // 子回复 hover 时祖先也会被命中，仅显示不包含 hover 子回复的最内层操作区
+  &:hover:not(:has(.reply-item:hover)) > .reply-meta > .reply-actions .reply-action-button {
+    visibility: visible;
   }
 }
 
