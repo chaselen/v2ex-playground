@@ -1,7 +1,8 @@
 import vscode from 'vscode'
 import Config from '@/config'
 import G from '@/global'
-import type { AuthSessionIdentity, DailyRes } from '@/v2ex'
+import type { AuthenticatedSession } from '@/features/authSession'
+import type { DailyRes } from '@/v2ex'
 import { logger } from '@/core/logger'
 
 /** 自动签到选项 */
@@ -46,7 +47,7 @@ interface DailySignInRecord {
 /** 签到任务 */
 interface DailySignInTask {
   /** 签到账号身份 */
-  identity: AuthSessionIdentity
+  identity: AuthenticatedSession
   /** 签到任务 Promise */
   promise: Promise<DailySignInData>
 }
@@ -67,18 +68,17 @@ export const onDailySignInStatusChanged = dailySignInStatusEmitter.event
 export default async function autoDailySignIn(
   options: AutoDailySignInOptions = {}
 ): Promise<DailySignInData> {
-  if (!Config.autoSignIn() || !G.authSession.isAuthenticated()) {
+  if (!Config.autoSignIn()) {
     return {
       signedIn: isDailySignedInToday()
     }
   }
 
-  let identity = G.V2ex.getAuthIdentity()
+  let identity = G.authSession.getAuthenticatedSession()
   if (!identity) {
     try {
-      const result = await G.V2ex.checkCookie()
-      if (!result.isValid) return { signedIn: false }
-      identity = G.V2ex.getAuthIdentity()
+      if (!(await G.authSession.ensureAuthenticated())) return { signedIn: false }
+      identity = G.authSession.getAuthenticatedSession()
     } catch (err) {
       logger.error('自动签到登录会话检查失败', err)
       return { signedIn: false }
@@ -105,7 +105,7 @@ export default async function autoDailySignIn(
  * 获取今日签到状态
  */
 export function isDailySignedInToday(): boolean {
-  const identity = G.V2ex.getAuthIdentity()
+  const identity = G.authSession.getAuthenticatedSession()
   return identity ? isDailySignedInTodayFor(identity) : false
 }
 
@@ -113,8 +113,8 @@ export function isDailySignedInToday(): boolean {
  * 获取指定账号的今日签到状态
  * @param identity 签到账号身份
  */
-function isDailySignedInTodayFor(identity: AuthSessionIdentity): boolean {
-  if (!G.V2ex.isAuthIdentityCurrent(identity)) return false
+function isDailySignedInTodayFor(identity: AuthenticatedSession): boolean {
+  if (!G.authSession.isCurrentSession(identity)) return false
 
   const today = getCurrentV2exDate()
   const record = G.context.globalState.get<DailySignInRecord>(LAST_AUTO_SIGN_IN_DATE_KEY)
@@ -147,7 +147,7 @@ export function startDailySignInScheduler(): vscode.Disposable {
  * 是否正在执行每日签到
  */
 function isDailySignInLoading(): boolean {
-  return !!dailySignInTask && G.V2ex.isAuthIdentityCurrent(dailySignInTask.identity)
+  return !!dailySignInTask && G.authSession.isCurrentSession(dailySignInTask.identity)
 }
 
 /**
@@ -161,7 +161,7 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
     }
   }
 
-  const identity = G.V2ex.getAuthIdentity()
+  const identity = G.authSession.getAuthenticatedSession()
   if (!identity) {
     return {
       signedIn: false
@@ -177,7 +177,7 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
 
   try {
     const status = await G.V2ex.getDailySignInStatus()
-    if (!G.V2ex.isAuthIdentityCurrent(identity)) return { signedIn: false }
+    if (!G.authSession.isCurrentSession(identity)) return { signedIn: false }
     const signedIn = status.signedIn && status.reward?.date === getCurrentV2exDate()
     if (signedIn && status.reward) {
       await updateDailySignedInDate(status.reward.date, identity.username)
@@ -198,7 +198,7 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
  * 手动执行每日签到
  */
 export function dailySignIn(): Promise<DailySignInData> {
-  const identity = G.V2ex.getAuthIdentity()
+  const identity = G.authSession.getAuthenticatedSession()
   if (!identity) {
     return Promise.resolve({
       signedIn: false
@@ -217,10 +217,10 @@ export function dailySignIn(): Promise<DailySignInData> {
  * @param options 签到选项
  */
 function getOrStartDailySignInTask(
-  identity: AuthSessionIdentity,
+  identity: AuthenticatedSession,
   options: AutoDailySignInOptions
 ): Promise<DailySignInData> {
-  if (dailySignInTask?.identity.sessionVersion === identity.sessionVersion) {
+  if (dailySignInTask?.identity === identity) {
     return dailySignInTask.promise
   }
 
@@ -234,7 +234,7 @@ function getOrStartDailySignInTask(
  * @param options 自动签到选项
  */
 function startDailySignInTask(
-  identity: AuthSessionIdentity,
+  identity: AuthenticatedSession,
   options: AutoDailySignInOptions
 ): DailySignInTask {
   dailySignInStatusEmitter.fire({
@@ -248,7 +248,7 @@ function startDailySignInTask(
   }
   task.promise = runDailySignInWithRetry(identity, options)
     .then(data => {
-      if (!G.V2ex.isAuthIdentityCurrent(identity)) return data
+      if (!G.authSession.isCurrentSession(identity)) return data
       const nextData = {
         ...data,
         loading: false
@@ -270,21 +270,21 @@ function startDailySignInTask(
  * @param options 签到选项
  */
 async function runDailySignInWithRetry(
-  identity: AuthSessionIdentity,
+  identity: AuthenticatedSession,
   options: AutoDailySignInOptions
 ): Promise<DailySignInData> {
   const retryDelays = options.retryOnFailure ? AUTO_SIGN_IN_RETRY_DELAYS : []
   let data = await runDailySignIn(identity)
 
   for (const [index, delay] of retryDelays.entries()) {
-    if (data.result !== 'failed' || !G.V2ex.isAuthIdentityCurrent(identity)) break
+    if (data.result !== 'failed' || !G.authSession.isCurrentSession(identity)) break
     logger.warn('每日签到将在延迟后重试', { attempt: index + 2, delay })
     await new Promise(resolve => setTimeout(resolve, delay))
-    if (!G.V2ex.isAuthIdentityCurrent(identity)) break
+    if (!G.authSession.isCurrentSession(identity)) break
     data = await runDailySignIn(identity)
   }
 
-  if (!G.V2ex.isAuthIdentityCurrent(identity)) return data
+  if (!G.authSession.isCurrentSession(identity)) return data
   if (data.result === 'success' && options.notifyOnSuccess) {
     vscode.window.showInformationMessage(`V2EX 每日签到成功，获得 ${data.reward} 铜币`)
   } else if (data.result === 'failed' && options.notifyOnFailure) {
@@ -300,11 +300,11 @@ async function runDailySignInWithRetry(
  * 执行签到请求
  * @param identity 签到账号身份
  */
-async function runDailySignIn(identity: AuthSessionIdentity): Promise<DailySignInData> {
+async function runDailySignIn(identity: AuthenticatedSession): Promise<DailySignInData> {
   try {
-    if (!G.V2ex.isAuthIdentityCurrent(identity)) return { signedIn: false, result: 'failed' }
-    const { result, reward, rewardDate } = await G.V2ex.dailySignIn(identity.sessionVersion)
-    if (!G.V2ex.isAuthIdentityCurrent(identity)) return { signedIn: false, result: 'failed' }
+    if (!G.authSession.isCurrentSession(identity)) return { signedIn: false, result: 'failed' }
+    const { result, reward, rewardDate } = await G.V2ex.dailySignIn()
+    if (!G.authSession.isCurrentSession(identity)) return { signedIn: false, result: 'failed' }
     if ((result === 'success' || result === 'repetitive') && rewardDate) {
       await updateDailySignedInDate(rewardDate, identity.username)
     }

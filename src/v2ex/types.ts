@@ -12,9 +12,6 @@ export class LoginRequiredError extends Error {}
 /** 需要两步验证码 */
 export class TwoFactorRequiredError extends Error {}
 
-/** 请求所属的认证会话已经变化 */
-export class AuthSessionChangedError extends Error {}
-
 /** 账号访问受限 */
 export class AccountRestrictedError extends Error {}
 
@@ -33,14 +30,6 @@ export type CheckCookieResult =
       /** 当前登录用户名 */
       username: string
     }
-
-/** 已验证的认证会话身份 */
-export interface AuthSessionIdentity {
-  /** 认证会话版本 */
-  sessionVersion: number
-  /** 当前登录用户名 */
-  username: string
-}
 
 /** 两步验证回调 */
 export type TwoFactorRequiredHandler = () => boolean | Promise<boolean>

@@ -111,9 +111,9 @@ interface DailySignInResult {
 
 `AccountService.dailySignIn()` 按以下顺序执行：
 
-1. 调用 `checkCookie()` 确认登录状态并取得当前用户名
-2. 查询领取前最新的一条签到奖励
-3. 请求 `/mission/daily`
+1. 确认当前 Session 存在登录 Cookie
+2. 请求 `/mission/daily`；失效 Cookie 由受保护页面重定向统一清理
+3. 查询领取前最新的一条签到奖励
 4. 如果页面显示已领取，返回 `repetitive` 及领取前最新奖励
 5. 如果页面提供领取按钮，从 `onclick` 中解析 `once`
 6. 请求 `/mission/daily/redeem?once=...`
@@ -136,7 +136,7 @@ interface DailySignInResult {
 当前触发入口包括：
 
 - 扩展激活并刷新登录会话后
-- 用户登录成功并刷新登录会话后
+- 用户登录成功后
 - 主 Webview 从隐藏恢复为可见时
 - 扩展激活期间每隔 1 小时
 
@@ -150,11 +150,11 @@ interface DailySignInResult {
 
 Webview 调用 `dailySignIn()` 执行手动签到。手动签到不受自动签到配置控制，但要求存在登录 Cookie。
 
-手动和自动签到按“认证会话版本 + 用户名”复用 `dailySignInTask`：
+手动和自动签到按 `AuthSessionManager` 返回的 `AuthenticatedSession` 对象复用 `dailySignInTask`：
 
 - 同一账号的自动和手动请求并发时复用正在进行的任务
 - 切换账号后立即创建新账号任务，不复用旧账号 Promise
-- 会产生领取操作的签到请求链在网络步骤之间检查认证会话版本
+- `AccountService` 在内部捕获启动任务时的 Cookie 会话，并在网络步骤之间检查它是否仍然有效；调用方不传会话版本或守卫参数
 - 旧账号任务不重试、不更新签到缓存，也不发送状态事件或用户提示
 - 当前账号任务完成后清除引用，允许后续重新执行
 
@@ -175,9 +175,9 @@ interface DailySignInRecord {
 
 旧版本保存的日期字符串或 Cookie 指纹结构不会匹配当前结构，会通过 V2EX 页面和余额流水重新确认状态。
 
-插件激活和登录成功后会通过 `checkCookie()` 请求首页。`checkCookie()` 使用账户概览解析器确认 Cookie 有效并显式返回用户名，`V2exClient` 只在认证会话版本未变化时保存该用户名；首页响应仍会独立更新完整账户概览缓存，不需要额外请求用户信息。
+插件激活时会通过 `checkCookie()` 请求首页。`checkCookie()` 使用账户概览解析器确认 Cookie 有效并显式返回用户名，`AuthSessionManager` 保存该用户名并创建当前 `AuthenticatedSession`；首页响应仍会独立更新完整账户概览缓存，不需要额外请求用户信息。候选登录已经完成同样的检查，因此登录成功后可以直接建立已验证会话，不再重复请求首页。
 
-登录会话检查按认证会话版本隔离。`AuthSessionManager.refreshAuthentication()` 主动检查当前登录状态，`AuthSessionManager.ensureAuthenticated()` 复用当前版本已完成的布尔结果或正在进行的任务。插件激活、登录成功和“我的”账户概览主动刷新，其他受保护功能复用已验证状态。登录、退出、Cookie 失效或切换账号会增加版本，旧版本任务不会覆盖新账号状态；会话层也会拒绝旧 Cookie 代次的响应和重定向 Cookie，避免旧请求清理或污染新账号。受保护页面的登录重定向会统一清理当前失效会话，公开标签页不受登录检查阻塞。
+`AuthSessionManager.refreshAuthentication()` 主动检查当前登录状态，`AuthSessionManager.ensureAuthenticated()` 复用当前会话已完成的结果或正在进行的任务。旧检查结果提交前会比较会话对象，不能覆盖新账号状态。登录、退出、Cookie 失效或切换账号会替换会话对象；Session 内部只过滤旧响应对 CookieJar、账户缓存、登录失效和 2FA 重试的副作用，不再向业务层抛出专用的会话变化错误。受保护页面的登录重定向会统一清理当前失效会话，公开标签页不受登录检查阻塞。
 
 ## 重试和用户提示
 

@@ -15,26 +15,41 @@ function createDeferred<T>() {
 }
 
 describe('AccountService authentication session', () => {
-  test('stops the daily sign-in request chain after switching sessions', async () => {
-    const balanceRequest = createDeferred<AxiosResponse<string>>()
-    const get = vi.fn().mockReturnValueOnce(balanceRequest.promise)
+  test('returns failed without sending requests when no login cookie exists', async () => {
+    const get = vi.fn()
     const session = {
       get,
-      onResponse: vi.fn()
+      getLoginCookie: () => '',
+      onResponse: vi.fn(),
+      createSessionGuard: () => () => true
     } as unknown as V2exSession
-    const service = new AccountService(session, async () => ({
-      isValid: true,
-      username: 'OldAccount'
-    }))
-    let isSessionCurrent = true
 
-    const resultPromise = service.dailySignIn(() => isSessionCurrent)
-    await vi.waitFor(() => expect(get).toHaveBeenCalledWith('/balance?p=1'))
-    isSessionCurrent = false
-    balanceRequest.resolve({ data: '<html></html>' } as AxiosResponse<string>)
+    await expect(new AccountService(session).dailySignIn()).resolves.toEqual({
+      result: 'failed',
+      reward: 0
+    })
+    expect(get).not.toHaveBeenCalled()
+  })
+
+  test('stops the daily sign-in request chain after switching sessions', async () => {
+    const missionRequest = createDeferred<AxiosResponse<string>>()
+    const get = vi.fn().mockReturnValueOnce(missionRequest.promise)
+    let isActiveSession = true
+    const session = {
+      get,
+      getLoginCookie: () => 'A2=old',
+      onResponse: vi.fn(),
+      createSessionGuard: () => () => isActiveSession
+    } as unknown as V2exSession
+    const service = new AccountService(session)
+
+    const resultPromise = service.dailySignIn()
+    await vi.waitFor(() => expect(get).toHaveBeenCalledWith('/mission/daily'))
+    isActiveSession = false
+    missionRequest.resolve({ data: '<html></html>' } as AxiosResponse<string>)
 
     await expect(resultPromise).resolves.toEqual({ result: 'failed', reward: 0 })
-    expect(get).not.toHaveBeenCalledWith('/mission/daily')
+    expect(get).not.toHaveBeenCalledWith('/balance?p=1')
     expect(get.mock.calls.some(([url]) => String(url).startsWith('/mission/daily/redeem'))).toBe(
       false
     )

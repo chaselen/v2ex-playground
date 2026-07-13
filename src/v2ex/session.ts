@@ -16,7 +16,6 @@ import {
 } from './clientUtils'
 import {
   AccountRestrictedError,
-  AuthSessionChangedError,
   LoginRequiredError,
   TwoFactorRequiredError,
   type LoginExpiredHandler,
@@ -63,12 +62,14 @@ export class V2exSession {
   private readonly http: AxiosInstance
 
   private readonly cookieJar = new CookieJar()
-  /** Cookie 被整体替换的次数 */
-  private cookieGeneration = 0
+  /** 当前整体 Cookie 会话，仅用于过滤旧响应的副作用 */
+  private cookieSession: object = {}
   /** 当前登录会话是否已经通知失效 */
   private loginExpiredNotified = true
-  /** 请求发起时对应的 Cookie 代次 */
-  private readonly requestCookieGenerations = new WeakMap<object, number>()
+  /** 请求发起时所属的整体 Cookie 会话 */
+  private readonly requestCookieSessions = new WeakMap<object, object>()
+  /** 当前登录失效清理任务 */
+  private loginExpirationTask?: Promise<void>
   private readonly twoFactorRetriedConfigs = new WeakSet<object>()
   private readonly responseHandlers = new Set<V2exResponseHandler>()
 
@@ -79,15 +80,7 @@ export class V2exSession {
     this.http = axios.create({
       baseURL: this.baseUrl,
       headers: V2EX_REQUEST_HEADERS,
-      timeout: V2EX_REQUEST_TIMEOUT,
-      beforeRedirect: (redirectOptions, responseDetails, requestDetails) =>
-        this.handleBeforeRedirect(
-          redirectOptions.href,
-          redirectOptions.headers,
-          responseDetails.headers,
-          requestDetails.url,
-          requestDetails.headers
-        )
+      timeout: V2EX_REQUEST_TIMEOUT
     })
     this.setCookie(initialCookie)
     this.setupInterceptors()
@@ -105,10 +98,17 @@ export class V2exSession {
 
   /** 替换当前会话 Cookie */
   setCookie(cookie: string): void {
-    this.cookieGeneration += 1
+    this.cookieSession = {}
     this.loginExpiredNotified = !cookie
+    if (cookie) this.loginExpirationTask = undefined
     this.cookieJar.removeAllCookiesSync()
     if (cookie) this.writeCookie(cookie, this.baseUrl)
+  }
+
+  /** 创建用于多请求流程的当前 Cookie 会话检查函数 */
+  createSessionGuard(): () => boolean {
+    const session = this.cookieSession
+    return () => this.cookieSession === session
   }
 
   /** 发送自定义 V2EX 请求 */
@@ -147,14 +147,13 @@ export class V2exSession {
 
   /** 处理自动重定向中的 Cookie */
   private handleBeforeRedirect(
+    cookieSession: object,
     redirectHref: string,
     redirectHeaders: Record<string, unknown>,
     headers: Record<string, unknown>,
-    responseUrl: string,
-    requestHeaders: Record<string, unknown>
+    responseUrl: string
   ): void {
-    const requestCookie = getHeader(requestHeaders, 'cookie') || ''
-    if (normalizeLoginCookie(requestCookie) !== this.getLoginCookie(responseUrl)) {
+    if (this.cookieSession !== cookieSession) {
       removeCookieHeader(redirectHeaders)
       return
     }
@@ -171,7 +170,16 @@ export class V2exSession {
   private attachCookieToRequest(config: AxiosResponse['config']): AxiosResponse['config'] {
     const requestUrl = getConfigUrl(config, this.baseUrl)
     if (!isV2exUrl(requestUrl)) return config
-    this.requestCookieGenerations.set(config, this.cookieGeneration)
+    const cookieSession = this.cookieSession
+    this.requestCookieSessions.set(config, cookieSession)
+    config.beforeRedirect = (redirectOptions, responseDetails, requestDetails) =>
+      this.handleBeforeRedirect(
+        cookieSession,
+        redirectOptions.href,
+        redirectOptions.headers,
+        responseDetails.headers,
+        requestDetails.url
+      )
     config.headers = config.headers || {}
     if (!findCookieHeaderName(config.headers)) {
       config.headers.Cookie = this.getCookie(requestUrl.toString())
@@ -182,26 +190,20 @@ export class V2exSession {
   /** 统一处理 V2EX 响应 */
   private async handleResponse(response: AxiosResponse): Promise<AxiosResponse> {
     if (!isV2exUrl(getConfigUrl(response.config, this.baseUrl))) return response
-    this.assertCurrentRequest(response.config)
+    if (!this.isCurrentRequest(response.config)) return response
     this.updateCookieFromResponse(response)
     const twoFactorResponse = await this.handleTwoFactorResponse(response)
     if (twoFactorResponse !== response) return twoFactorResponse
-    this.assertCurrentRequest(response.config)
-    this.checkRedirectFromResponse(response)
+    if (!this.isCurrentRequest(response.config)) return response
+    await this.checkRedirectFromResponse(response)
+    if (!this.isCurrentRequest(response.config)) return response
     this.responseHandlers.forEach(handler => handler(response))
     return response
   }
 
   /** 判断响应是否属于当前 Cookie 会话 */
   private isCurrentRequest(config: AxiosResponse['config']): boolean {
-    return this.requestCookieGenerations.get(config) === this.cookieGeneration
-  }
-
-  /** 确认响应仍属于当前认证会话 */
-  private assertCurrentRequest(config: AxiosResponse['config']): void {
-    if (!this.isCurrentRequest(config)) {
-      throw new AuthSessionChangedError('认证会话已变化，请重试当前操作')
-    }
+    return this.requestCookieSessions.get(config) === this.cookieSession
   }
 
   /** 写入 Cookie 或 Set-Cookie 字符串 */
@@ -242,7 +244,7 @@ export class V2exSession {
     if (!(await this.options.onTwoFactorRequired?.())) {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
-    this.assertCurrentRequest(config)
+    if (!this.isCurrentRequest(config)) return response
     this.refreshConfigCookie(config)
     return this.http.request(config)
   }
@@ -269,7 +271,7 @@ export class V2exSession {
   }
 
   /** 检查受保护页面的异常重定向 */
-  private checkRedirectFromResponse(response: AxiosResponse): void {
+  private async checkRedirectFromResponse(response: AxiosResponse): Promise<void> {
     const requestUrl = getConfigUrl(response.config, this.baseUrl)
     if (!isV2exUrl(requestUrl) || !hasFollowedRedirect(response)) return
     const responseUrl = new URL(getResponseUrl(response, this.baseUrl))
@@ -280,7 +282,7 @@ export class V2exSession {
     if (isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) return
 
     if (response.request.path.indexOf('/signin') >= 0) {
-      this.notifyLoginExpired()
+      await this.expireLogin()
       throw new LoginRequiredError('你要查看的页面需要先登录')
     }
     if (response.request.path === '/') {
@@ -295,11 +297,22 @@ export class V2exSession {
     throw new Error('未知错误')
   }
 
-  /** 清空会话并通知登录失效 */
-  private notifyLoginExpired(): void {
-    if (this.loginExpiredNotified) return
+  /** 清空会话并通知登录失效，同一会话只执行一次 */
+  async expireLogin(): Promise<void> {
+    if (this.loginExpiredNotified) {
+      await this.loginExpirationTask
+      return
+    }
     this.loginExpiredNotified = true
     this.setCookie('')
-    void this.options.onLoginExpired?.()
+    const task = Promise.resolve(this.options.onLoginExpired?.())
+    this.loginExpirationTask = task
+    try {
+      await task
+    } finally {
+      if (this.loginExpirationTask === task) {
+        this.loginExpirationTask = undefined
+      }
+    }
   }
 }

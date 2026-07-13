@@ -1,5 +1,5 @@
 import vscode from 'vscode'
-import { ignoreAuthSessionChange, LoginRequiredError, type BalanceDetail } from '@/v2ex'
+import { LoginRequiredError, type BalanceDetail } from '@/v2ex'
 import G from '@/global'
 import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
@@ -83,7 +83,7 @@ export class BalancePanelController {
    */
   async load() {
     try {
-      await ignoreAuthSessionChange(() => this.reload(true))
+      await this.reload(true)
     } catch (err) {
       logger.error('账户余额加载失败', err)
       this.renderError(err as Error)
@@ -136,7 +136,7 @@ export class BalancePanelController {
    */
   private async refresh() {
     try {
-      await ignoreAuthSessionChange(() => this.reload(true))
+      await this.reload(true)
     } catch (err) {
       logger.error('账户余额操作失败', err)
       this.renderError(err as Error)

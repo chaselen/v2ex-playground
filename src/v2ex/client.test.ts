@@ -407,7 +407,6 @@ describe('V2exClient authenticated requests', () => {
     expect(result.isValid).toBe(true)
     if (!result.isValid) return
     expect(result.username).not.toBe('')
-    expect(client.getAuthIdentity()?.username).toBe(result.username)
   })
 
   authTest('gets account overview with V2EX_COOKIE', async () => {

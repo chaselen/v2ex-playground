@@ -38,13 +38,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
           await mainViewProvider.reloadViewData()
           refreshTopicPanelsForAuthChange()
-          const action = await vscode.window.showWarningMessage(
-            'V2EX 登录状态已失效，请重新登录',
-            '重新登录'
-          )
-          if (action === '重新登录') {
-            await vscode.commands.executeCommand('v2ex.login')
-          }
+          void vscode.window
+            .showWarningMessage('V2EX 登录状态已失效，请重新登录', '重新登录')
+            .then(action => {
+              if (action === '重新登录') {
+                void vscode.commands.executeCommand('v2ex.login')
+              }
+            })
         },
         onTwoFactorRequired,
         onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
@@ -103,9 +103,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         refreshTopicPanelsForAuthChange()
       }
       if (loginResult === LoginResult.success) {
-        refreshLoginAndAutoSignIn().catch(err => {
-          logger.error('登录会话刷新失败', err)
-        })
+        autoDailySignIn({ notifyOnSuccess: true }).catch(err => logger.error('自动签到失败', err))
       }
     })
   )

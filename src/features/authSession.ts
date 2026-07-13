@@ -11,6 +11,12 @@ import {
 /** 候选登录结果 */
 export type AuthenticateResult = 'authenticated' | 'canceled' | 'invalid'
 
+/** 已验证的登录会话；对象身份用于判断异步任务是否仍属于当前账号 */
+export interface AuthenticatedSession {
+  /** 当前登录用户名 */
+  username: string
+}
+
 /** 创建候选 V2EX 客户端 */
 export type CandidateClientFactory = (
   cookie: string,
@@ -33,8 +39,8 @@ export type BusinessClientFactory = (
 
 /** 登录会话检查任务 */
 interface AuthenticationCheckTask {
-  /** 对应的认证会话版本 */
-  sessionVersion: number
+  /** 请求发起时的登录会话 */
+  session: object
   /** 登录会话检查 Promise */
   promise: Promise<boolean>
 }
@@ -47,17 +53,17 @@ export class AuthSessionManager {
   /** 当前持久化登录 Cookie 的内存副本 */
   private loginCookie = ''
 
-  /** 当前登录凭据是否已经验证 */
-  private authenticated = false
+  /** 当前已验证的登录会话 */
+  private authenticatedSession?: AuthenticatedSession
 
-  /** 候选登录尝试版本 */
-  private authenticationAttemptVersion = 0
+  /** 正式 Cookie 会话标识，整体替换 Cookie 时同步替换 */
+  private session: object = {}
+
+  /** 最近一次候选登录编号 */
+  private latestLoginAttempt = 0
 
   /** 凭据写入队列 */
   private credentialMutation = Promise.resolve()
-
-  /** 最近完成登录检查的认证会话版本 */
-  private checkedSessionVersion?: number
 
   /** 当前登录会话检查任务 */
   private authenticationCheckTask?: AuthenticationCheckTask
@@ -85,7 +91,17 @@ export class AuthSessionManager {
 
   /** 当前是否已经验证登录 */
   isAuthenticated(): boolean {
-    return this.authenticated
+    return !!this.authenticatedSession
+  }
+
+  /** 获取当前已验证的登录会话 */
+  getAuthenticatedSession(): AuthenticatedSession | undefined {
+    return this.authenticatedSession
+  }
+
+  /** 判断异步任务是否仍属于当前登录会话 */
+  isCurrentSession(session: AuthenticatedSession): boolean {
+    return this.authenticatedSession === session
   }
 
   /** 获取当前持久化登录 Cookie 的内存副本 */
@@ -110,7 +126,7 @@ export class AuthSessionManager {
   async authenticate(cookie: string): Promise<AuthenticateResult> {
     const loginCookie = normalizeLoginCookie(cookie)
     if (!loginCookie) return 'invalid'
-    const attemptVersion = ++this.authenticationAttemptVersion
+    const attempt = ++this.latestLoginAttempt
 
     let twoFactorCanceled = false
     let candidateClient!: V2exClient
@@ -122,8 +138,11 @@ export class AuthSessionManager {
       return verified
     })
 
+    let username: string
     try {
-      if (!(await candidateClient.checkCookie()).isValid) return 'invalid'
+      const result = await candidateClient.checkCookie()
+      if (!result.isValid) return 'invalid'
+      username = result.username
     } catch (err) {
       if (twoFactorCanceled && err instanceof TwoFactorRequiredError) {
         return 'canceled'
@@ -133,59 +152,66 @@ export class AuthSessionManager {
 
     const committed = await this.commitAuthenticatedLogin(
       candidateClient.getLoginCookie(),
-      attemptVersion
+      username,
+      attempt
     )
     return committed ? 'authenticated' : 'canceled'
   }
 
   /** 保存当前运行时会话中的登录 Cookie */
-  private async persistRuntimeLoginCookie(): Promise<void> {
+  private async persistRuntimeLoginCookie(session: object): Promise<void> {
     await this.enqueueCredentialMutation(async () => {
+      if (this.session !== session) return
       const client = this.getClient()
       const loginCookie = client.getLoginCookie()
       await this.credentialStore.save(loginCookie)
       this.loginCookie = loginCookie
-      this.authenticated = !!loginCookie
-      this.checkedSessionVersion = client.getAuthSessionVersion()
     })
   }
 
   /** 清理已经失效的持久化登录凭据 */
   private handleLoginExpired(): Promise<void> {
+    const session = this.session
     return this.enqueueCredentialMutation(async () => {
+      if (this.session !== session) return
       this.loginCookie = ''
-      this.authenticated = false
-      this.checkedSessionVersion = this.getClient().getAuthSessionVersion()
+      this.authenticatedSession = undefined
+      this.session = {}
       await this.credentialStore.save('')
     })
   }
 
   /** 主动退出登录 */
   async logout(): Promise<void> {
-    this.authenticationAttemptVersion += 1
+    this.latestLoginAttempt += 1
     await this.enqueueCredentialMutation(async () => {
       await this.credentialStore.save('')
       this.getClient().setCookie('')
       this.loginCookie = ''
-      this.authenticated = false
-      this.checkedSessionVersion = this.getClient().getAuthSessionVersion()
+      this.authenticatedSession = undefined
+      this.session = {}
     })
   }
 
   /**
    * 提交已经验证的登录 Cookie
    * @param cookie 登录 Cookie
+   * @param username 已验证用户名
+   * @param attempt 候选登录编号
    */
-  private commitAuthenticatedLogin(cookie: string, attemptVersion: number): Promise<boolean> {
+  private commitAuthenticatedLogin(
+    cookie: string,
+    username: string,
+    attempt: number
+  ): Promise<boolean> {
     const loginCookie = normalizeLoginCookie(cookie)
     return this.enqueueCredentialMutation(async () => {
-      if (this.authenticationAttemptVersion !== attemptVersion) return false
+      if (this.latestLoginAttempt !== attempt) return false
       await this.credentialStore.save(loginCookie)
-      const client = this.getClient()
-      client.setCookie(loginCookie)
+      this.getClient().setCookie(loginCookie)
       this.loginCookie = loginCookie
-      this.authenticated = true
-      this.checkedSessionVersion = client.getAuthSessionVersion()
+      this.authenticatedSession = { username }
+      this.session = {}
       return true
     })
   }
@@ -199,10 +225,13 @@ export class AuthSessionManager {
   /** 使用正式业务会话完成两步验证并持久化更新后的登录 Cookie */
   private requestBusinessTwoFactorVerification(): Promise<boolean> {
     const client = this.getClient()
-    return requestTwoFactorVerification(client, {
+    const session = this.session
+    return requestTwoFactorVerification(session, {
       verify: async code => {
+        if (this.session !== session) throw new Error('登录状态已更新，请重新操作')
         await client.submitTwoFactorCode(code)
-        await this.persistRuntimeLoginCookie()
+        if (this.session !== session) throw new Error('登录状态已更新，请重新操作')
+        await this.persistRuntimeLoginCookie(session)
       }
     })
   }
@@ -213,23 +242,29 @@ export class AuthSessionManager {
    */
   private getAuthenticationCheck(force = false): Promise<boolean> {
     const client = this.getClient()
-    const sessionVersion = client.getAuthSessionVersion()
+    const session = this.session
 
-    if (this.authenticationCheckTask?.sessionVersion === sessionVersion) {
+    if (this.authenticationCheckTask?.session === session) {
       return this.authenticationCheckTask.promise
     }
-    if (!force && this.checkedSessionVersion === sessionVersion) {
-      return Promise.resolve(this.authenticated)
+    if (!force && this.authenticatedSession) {
+      return Promise.resolve(true)
+    }
+    if (!this.loginCookie) {
+      return Promise.resolve(false)
     }
 
     const task: AuthenticationCheckTask = {
-      sessionVersion,
+      session,
       promise: client
         .checkCookie()
         .then(result => {
-          if (this.client === client && client.getAuthSessionVersion() === sessionVersion) {
-            this.authenticated = result.isValid
-            this.checkedSessionVersion = sessionVersion
+          if (this.client !== client || this.session !== session) {
+            return this.isAuthenticated()
+          }
+          if (!result.isValid) return false
+          if (this.authenticatedSession?.username !== result.username) {
+            this.authenticatedSession = { username: result.username }
           }
           return result.isValid
         })

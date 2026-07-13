@@ -18,21 +18,20 @@ export class LoginCredentialStore {
   async load(): Promise<string> {
     const storedCookie = await this.context.secrets.get(LOGIN_COOKIE_SECRET_KEY)
     const legacyCookieValue = this.context.globalState.get<string>(LEGACY_LOGIN_COOKIE_KEY)
-    if (storedCookie !== undefined) {
-      if (legacyCookieValue !== undefined) {
-        await this.context.globalState.update(LEGACY_LOGIN_COOKIE_KEY, undefined)
-      }
-      return normalizeLoginCookie(storedCookie)
-    }
+    const storedLoginCookie = normalizeLoginCookie(storedCookie)
+    const legacyLoginCookie = normalizeLoginCookie(legacyCookieValue)
+    const loginCookie = storedLoginCookie || legacyLoginCookie
 
-    const legacyCookie = normalizeLoginCookie(legacyCookieValue)
-    if (legacyCookie) {
-      await this.context.secrets.store(LOGIN_COOKIE_SECRET_KEY, legacyCookie)
+    if (
+      (loginCookie && loginCookie !== storedCookie) ||
+      (!loginCookie && storedCookie !== undefined)
+    ) {
+      await this.save(loginCookie)
     }
     if (legacyCookieValue !== undefined) {
       await this.context.globalState.update(LEGACY_LOGIN_COOKIE_KEY, undefined)
     }
-    return legacyCookie
+    return loginCookie
   }
 
   /**

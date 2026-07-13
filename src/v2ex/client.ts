@@ -6,11 +6,9 @@ import { NodeService } from './services/node'
 import { SearchService } from './services/search'
 import { TopicService } from './services/topic'
 import { V2exSession } from './session'
-import { AuthSessionChangedError } from './types'
 import type {
   AccountOverview,
   AccountOverviewChangedHandler,
-  AuthSessionIdentity,
   BalanceDetail,
   CheckCookieResult,
   DailySignInResult,
@@ -46,12 +44,6 @@ export class V2exClient {
   /** V2EX 服务地址 */
   readonly baseUrl: string
 
-  /** 当前已验证账户的用户名 */
-  private accountUsername?: string
-  /** 当前认证会话版本 */
-  private authSessionVersion = 0
-  /** 登录失效回调 */
-  private readonly loginExpiredHandler?: LoginExpiredHandler
   /** V2EX HTTP 与登录会话 */
   private readonly session: V2exSession
   /** 话题领域服务 */
@@ -73,14 +65,16 @@ export class V2exClient {
    * @param options 客户端配置
    */
   constructor(initialCookie?: string, options: V2exClientOptions = {}) {
-    this.loginExpiredHandler = options.onLoginExpired
     this.session = new V2exSession(initialCookie, {
       ...options,
-      onLoginExpired: () => this.clearExpiredLogin(this.authSessionVersion, true)
+      onLoginExpired: async () => {
+        this.account.reset()
+        await options.onLoginExpired?.()
+      }
     })
     this.baseUrl = this.session.baseUrl
     this.auth = new AuthService(this.session)
-    this.account = new AccountService(this.session, () => this.checkCookie())
+    this.account = new AccountService(this.session)
     this.topics = new TopicService(this.session, this.baseUrl, () => this.auth.getOnce())
     this.members = new MemberService(this.session, this.baseUrl)
     this.nodes = new NodeService(this.session, this.baseUrl)
@@ -110,8 +104,6 @@ export class V2exClient {
    * @param cookie Cookie 字符串
    */
   setCookie(cookie: string): void {
-    this.authSessionVersion += 1
-    this.accountUsername = undefined
     this.account.reset()
     this.session.setCookie(cookie)
   }
@@ -244,28 +236,6 @@ export class V2exClient {
     return this.account.getAccountOverview(options)
   }
 
-  /** 获取当前已验证的认证会话身份 */
-  getAuthIdentity(): AuthSessionIdentity | undefined {
-    if (!this.accountUsername) return undefined
-    return {
-      sessionVersion: this.authSessionVersion,
-      username: this.accountUsername
-    }
-  }
-
-  /** 判断认证会话身份是否仍然有效 */
-  isAuthIdentityCurrent(identity: AuthSessionIdentity): boolean {
-    return (
-      identity.sessionVersion === this.authSessionVersion &&
-      identity.username === this.accountUsername
-    )
-  }
-
-  /** 获取当前认证会话版本 */
-  getAuthSessionVersion(): number {
-    return this.authSessionVersion
-  }
-
   /**
    * 获取在线人数
    * @param options 获取选项
@@ -318,35 +288,13 @@ export class V2exClient {
 
   /** 检查 Cookie 是否有效 */
   async checkCookie(): Promise<CheckCookieResult> {
-    const sessionVersion = this.authSessionVersion
-    const hadCookie = !!this.session.getCookie()
+    const hadLoginCookie = !!this.session.getLoginCookie()
+    const isCurrentSession = this.session.createSessionGuard()
     const result = await this.auth.checkCookie()
-    if (this.authSessionVersion !== sessionVersion) {
-      throw new AuthSessionChangedError('认证会话已变化，请重试当前操作')
-    }
-
-    this.accountUsername = result.isValid ? result.username : undefined
-    if (!result.isValid && hadCookie) {
-      await this.clearExpiredLogin(sessionVersion)
+    if (!result.isValid && hadLoginCookie && isCurrentSession()) {
+      await this.session.expireLogin()
     }
     return result
-  }
-
-  /**
-   * 清理指定版本的失效登录会话
-   * @param sessionVersion 触发检查时的认证会话版本
-   * @param cookieCleared 会话层是否已经清空 Cookie
-   */
-  private async clearExpiredLogin(sessionVersion: number, cookieCleared = false): Promise<void> {
-    if (this.authSessionVersion !== sessionVersion) return
-    if (cookieCleared) {
-      this.authSessionVersion += 1
-      this.accountUsername = undefined
-      this.account.reset()
-    } else {
-      this.setCookie('')
-    }
-    await this.loginExpiredHandler?.()
   }
 
   /**
@@ -381,8 +329,8 @@ export class V2exClient {
    * 每日签到
    * @returns 签到结果
    */
-  dailySignIn(sessionVersion = this.authSessionVersion): Promise<DailySignInResult> {
-    return this.account.dailySignIn(() => this.authSessionVersion === sessionVersion)
+  dailySignIn(): Promise<DailySignInResult> {
+    return this.account.dailySignIn()
   }
 
   /**

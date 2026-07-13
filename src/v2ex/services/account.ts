@@ -7,17 +7,17 @@ import { parseBalance, parseLatestDailySignInReward } from '../parsers/balance'
 import { parsePagerTotalPage } from '../parsers/common'
 import { parseTopicIdByLink, parseTopicListCells } from '../parsers/topic'
 import type { V2exSession } from '../session'
-import type {
-  AccountOverview,
-  AccountOverviewChangedHandler,
-  BalanceDetail,
-  DailySignInResult,
-  DailySignInReward,
-  DailySignInStatus,
-  OnlineCountChangedHandler,
-  CheckCookieResult,
-  Topic,
-  V2exNotification
+import {
+  LoginRequiredError,
+  type AccountOverview,
+  type AccountOverviewChangedHandler,
+  type BalanceDetail,
+  type DailySignInResult,
+  type DailySignInReward,
+  type DailySignInStatus,
+  type OnlineCountChangedHandler,
+  type Topic,
+  type V2exNotification
 } from '../types'
 
 /** 会返回账户概览的 V2EX 页面路径 */
@@ -38,9 +38,6 @@ const isAccountOverviewPath = picomatch([
 /** 查询最新签到奖励时最多扫描的余额页数 */
 const MAX_DAILY_SIGN_IN_REWARD_PAGES = 5
 
-/** 认证会话是否仍为请求启动时的版本 */
-type IsSessionCurrent = () => boolean
-
 /** V2EX 账户内容领域服务 */
 export class AccountService {
   /** 缓存的账户概览 */
@@ -52,10 +49,7 @@ export class AccountService {
   /** 在线人数变化监听器 */
   private readonly onlineCountChangedHandlers = new Set<OnlineCountChangedHandler>()
 
-  constructor(
-    private readonly session: V2exSession,
-    private readonly checkCookie: () => Promise<CheckCookieResult>
-  ) {
+  constructor(private readonly session: V2exSession) {
     this.session.onResponse(response => this.updateFromResponse(response))
   }
 
@@ -180,7 +174,9 @@ export class AccountService {
 
   /** 查询每日签到状态 */
   async getDailySignInStatus(): Promise<DailySignInStatus> {
+    const isActiveSession = this.session.createSessionGuard()
     const { data: html } = await this.session.get<string>('/mission/daily')
+    if (!isActiveSession()) return { signedIn: false }
     if (!cheerio.load(html)('.fa.fa-ok-sign').length) {
       return { signedIn: false }
     }
@@ -199,20 +195,15 @@ export class AccountService {
     return this.findDailySignInReward()
   }
 
-  /**
-   * 查询最新一条每日登录奖励，并在认证会话变化后停止翻页
-   * @param isSessionCurrent 认证会话是否仍为请求启动时的版本
-   */
-  private async findDailySignInReward(
-    isSessionCurrent?: IsSessionCurrent
-  ): Promise<DailySignInReward | undefined> {
+  /** 查询最新一条每日登录奖励，并在 Cookie 会话变化后停止翻页 */
+  private async findDailySignInReward(): Promise<DailySignInReward | undefined> {
+    const isActiveSession = this.session.createSessionGuard()
     let page = 1
     let totalPage = 1
 
     do {
-      if (isSessionCurrent && !isSessionCurrent()) return undefined
       const detail = await this.getBalance(page)
-      if (isSessionCurrent && !isSessionCurrent()) return undefined
+      if (!isActiveSession()) return undefined
       const reward = parseLatestDailySignInReward(detail.transactions)
       if (reward) return reward
       totalPage = detail.totalPage
@@ -223,50 +214,54 @@ export class AccountService {
   }
 
   /** 执行每日签到 */
-  async dailySignIn(isSessionCurrent: IsSessionCurrent = () => true): Promise<DailySignInResult> {
-    // 场景 1：未登录，无法执行签到
-    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
-    const cookieResult = await this.checkCookie()
-    if (!isSessionCurrent() || !cookieResult.isValid) return { result: 'failed', reward: 0 }
+  async dailySignIn(): Promise<DailySignInResult> {
+    const isActiveSession = this.session.createSessionGuard()
+    const failed: DailySignInResult = { result: 'failed', reward: 0 }
+    if (!this.session.getLoginCookie()) return failed
 
-    // 记录领取前最新奖励，用于确认领取后是否产生了新流水
-    const previousReward = await this.findDailySignInReward(isSessionCurrent)
-    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
+    try {
+      const { data: html } = await this.session.get<string>('/mission/daily')
+      if (!isActiveSession()) return failed
+      const $ = cheerio.load(html)
 
-    const { data: html } = await this.session.get<string>('/mission/daily')
-    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
-    const $ = cheerio.load(html)
+      // 记录领取前最新奖励，用于确认领取后是否产生了新流水
+      const previousReward = await this.findDailySignInReward()
+      if (!isActiveSession()) return failed
 
-    // 签到页尚未进入下一个周期时，页面仍会显示已领取，最新奖励可能属于前一个日期
-    // <span class="gray"><li class="fa fa-ok-sign" style="color: #0c0;"></li> &nbsp;每日登录奖励已领取</span>
-    if ($('.fa.fa-ok-sign').length) {
-      return {
-        result: 'repetitive',
-        reward: previousReward?.reward || 0,
-        rewardDate: previousReward?.date
+      // 签到页尚未进入下一个周期时，页面仍会显示已领取，最新奖励可能属于前一个日期
+      // <span class="gray"><li class="fa fa-ok-sign" style="color: #0c0;"></li> &nbsp;每日登录奖励已领取</span>
+      if ($('.fa.fa-ok-sign').length) {
+        return {
+          result: 'repetitive',
+          reward: previousReward?.reward || 0,
+          rewardDate: previousReward?.date
+        }
       }
-    }
 
-    // 场景 4：尚未签到，从领取按钮中解析本次请求所需的 once 参数
-    const once = $('input[value^="领取"]')
-      .first()
-      .attr('onclick')
-      ?.match(/\/mission\/daily\/redeem\?once=(\d+)/)?.[1]
+      // 尚未签到，从领取按钮中解析本次请求所需的 once 参数
+      const once = $('input[value^="领取"]')
+        .first()
+        .attr('onclick')
+        ?.match(/\/mission\/daily\/redeem\?once=(\d+)/)?.[1]
 
-    // 页面既没有已领取标记，也没有有效的领取入口
-    if (!once) return { result: 'failed', reward: 0 }
+      // 页面既没有已领取标记，也没有有效的领取入口
+      if (!once) return failed
 
-    // 领取奖励后通过余额记录确认签到结果
-    await this.session.get(`/mission/daily/redeem?once=${once}`)
-    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
-    const latestReward = await this.findDailySignInReward(isSessionCurrent)
-    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
-    const isNewReward = latestReward && latestReward.date !== previousReward?.date
+      // 领取奖励后通过余额记录确认签到结果
+      await this.session.get(`/mission/daily/redeem?once=${once}`)
+      if (!isActiveSession()) return failed
+      const latestReward = await this.findDailySignInReward()
+      if (!isActiveSession()) return failed
+      const isNewReward = latestReward && latestReward.date !== previousReward?.date
 
-    return {
-      result: isNewReward ? 'success' : 'failed',
-      reward: isNewReward ? latestReward.reward : 0,
-      rewardDate: isNewReward ? latestReward.date : undefined
+      return {
+        result: isNewReward ? 'success' : 'failed',
+        reward: isNewReward ? latestReward.reward : 0,
+        rewardDate: isNewReward ? latestReward.date : undefined
+      }
+    } catch (err) {
+      if (err instanceof LoginRequiredError) return failed
+      throw err
     }
   }
 
