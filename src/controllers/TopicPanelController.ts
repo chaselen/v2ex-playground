@@ -1,5 +1,10 @@
 import vscode from 'vscode'
-import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
+import {
+  AccountRestrictedError,
+  ignoreAuthSessionChange,
+  LoginRequiredError,
+  TopicDetail
+} from '@/v2ex'
 import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
@@ -145,7 +150,7 @@ export class TopicPanelController {
    */
   async load() {
     try {
-      await this.reloadTopic(true)
+      await ignoreAuthSessionChange(() => this.reloadTopic(true))
     } catch (err) {
       logger.error('话题详情加载失败', err)
       this.renderError(err as Error)
@@ -169,7 +174,7 @@ export class TopicPanelController {
     this.postViewState({
       status: 'topic',
       topic: topicDetail,
-      canOperate: !!G.getCookie()
+      canOperate: G.authSession.isAuthenticated()
     })
   }
 
@@ -291,7 +296,7 @@ export class TopicPanelController {
    */
   private async refreshTopic() {
     try {
-      await this.reloadTopic(true)
+      await ignoreAuthSessionChange(() => this.reloadTopic(true))
     } catch (err) {
       logger.error('话题操作失败', err)
       this.renderError(err as Error)

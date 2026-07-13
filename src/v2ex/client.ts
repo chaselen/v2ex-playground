@@ -6,6 +6,7 @@ import { NodeService } from './services/node'
 import { SearchService } from './services/search'
 import { TopicService } from './services/topic'
 import { V2exSession } from './session'
+import { AuthSessionChangedError } from './types'
 import type {
   AccountOverview,
   AccountOverviewChangedHandler,
@@ -317,18 +318,18 @@ export class V2exClient {
 
   /** 检查 Cookie 是否有效 */
   async checkCookie(): Promise<CheckCookieResult> {
-    while (true) {
-      const sessionVersion = this.authSessionVersion
-      const hadCookie = !!this.session.getCookie()
-      const result = await this.auth.checkCookie()
-      if (this.authSessionVersion !== sessionVersion) continue
-
-      this.accountUsername = result.isValid ? result.username : undefined
-      if (!result.isValid && hadCookie) {
-        await this.clearExpiredLogin(sessionVersion)
-      }
-      return result
+    const sessionVersion = this.authSessionVersion
+    const hadCookie = !!this.session.getCookie()
+    const result = await this.auth.checkCookie()
+    if (this.authSessionVersion !== sessionVersion) {
+      throw new AuthSessionChangedError('认证会话已变化，请重试当前操作')
     }
+
+    this.accountUsername = result.isValid ? result.username : undefined
+    if (!result.isValid && hadCookie) {
+      await this.clearExpiredLogin(sessionVersion)
+    }
+    return result
   }
 
   /**
@@ -346,15 +347,6 @@ export class V2exClient {
       this.setCookie('')
     }
     await this.loginExpiredHandler?.()
-  }
-
-  /**
-   * 尝试使用 Cookie 登录
-   * @param cookie 待检查的 Cookie
-   * @throws {TwoFactorRequiredError} 需要两步验证
-   */
-  tryLogin(cookie: string): Promise<boolean> {
-    return this.auth.tryLogin(cookie)
   }
 
   /**

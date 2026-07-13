@@ -1,9 +1,7 @@
 import * as cheerio from 'cheerio/slim'
-import axios from 'axios'
-import { isV2exPath } from '../clientUtils'
 import { parseAccountOverview } from '../parsers/account'
-import { V2EX_REQUEST_HEADERS, V2EX_REQUEST_TIMEOUT, type V2exSession } from '../session'
-import { TwoFactorRequiredError, type CheckCookieResult } from '../types'
+import type { V2exSession } from '../session'
+import type { CheckCookieResult } from '../types'
 
 /** V2EX 认证领域服务 */
 export class AuthService {
@@ -31,21 +29,6 @@ export class AuthService {
       return { isValid: false }
     }
     throw new Error('登录状态检查失败，请检查网络后重试')
-  }
-
-  /** 尝试使用 Cookie 登录 */
-  async tryLogin(cookie: string): Promise<boolean> {
-    if (!cookie) return false
-    // 登录探测不能污染当前 Session，因此使用独立的一次性请求
-    const response = await axios.get<string>(this.session.baseUrl, {
-      headers: { ...V2EX_REQUEST_HEADERS, Cookie: cookie },
-      timeout: V2EX_REQUEST_TIMEOUT
-    })
-    const responseUrl = response.request?.res?.responseUrl
-    if (responseUrl && isV2exPath(new URL(responseUrl), '/2fa')) {
-      throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
-    }
-    return cheerio.load(response.data)('#member-activity').length > 0
   }
 
   /** 提交两步验证码 */

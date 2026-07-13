@@ -120,6 +120,7 @@ export function refreshTopicPanelsForAuthChange() {
   Object.values(topicPanels).forEach(topicPanel => {
     topicPanel.refreshForAuthChange()
   })
+  balancePanel?.refreshForAuthChange()
 }
 
 /**

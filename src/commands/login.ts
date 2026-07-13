@@ -1,7 +1,6 @@
 import vscode from 'vscode'
 import G from '@/global'
-import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
-import { normalizeLoginCookie, TwoFactorRequiredError } from '@/v2ex'
+import { normalizeLoginCookie } from '@/v2ex'
 import { logger } from '@/core/logger'
 
 /**
@@ -14,7 +13,7 @@ export default async function login(): Promise<LoginResult> {
     placeHolder: 'V2EX Cookie',
     prompt:
       '粘贴完整 Cookie、A2="..."、A2+A2O 或单独的 A2 值以登录。（如要退出，请清空 Cookie 并回车确认）',
-    value: G.getCookie()
+    value: G.authSession.getLoginCookie()
   })
   // 如果用户撤销输入，如ESC，则为undefined
   if (cookie === undefined) {
@@ -24,7 +23,7 @@ export default async function login(): Promise<LoginResult> {
 
   // 清除cookie
   if (!cookie) {
-    await G.setCookie('')
+    await G.authSession.logout()
     logger.info('已退出登录')
     return LoginResult.logout
   }
@@ -36,62 +35,27 @@ export default async function login(): Promise<LoginResult> {
     return LoginResult.failed
   }
 
-  let isLoginCanceled = false
-  const isLoginSuccess = await vscode.window.withProgress(
+  const result = await vscode.window.withProgress(
     {
       title: '正在登录',
       location: vscode.ProgressLocation.Notification
     },
-    async () => {
-      const previousLoginCookie = G.getCookie() || ''
-      let isCookieValid = false
-      let isTwoFactorCanceled = false
-      let cookieToPersist = loginCookie
-      try {
-        isCookieValid = await G.V2ex.tryLogin(loginCookie)
-      } catch (err) {
-        if (!(err instanceof TwoFactorRequiredError)) {
-          throw err
-        }
-
-        // 2FA 提交需要先让运行时请求带上新的 A2，但此时还不能写入持久化
-        G.V2ex.setCookie(loginCookie)
-        try {
-          isCookieValid = await requestTwoFactorVerification()
-        } catch (verifyError) {
-          // 验证流程异常时恢复旧登录态，避免切号失败后留下新 A2
-          G.V2ex.setCookie(previousLoginCookie)
-          throw verifyError
-        }
-        if (isCookieValid) {
-          // 2FA 成功后服务端会写入 A2O，只持久化 A2/A2O
-          cookieToPersist = G.V2ex.getLoginCookie() || loginCookie
-        } else {
-          // 用户取消 2FA 时回滚运行时 Cookie，持久化内容仍保持旧账号
-          isTwoFactorCanceled = true
-          G.V2ex.setCookie(previousLoginCookie)
-        }
-      }
-      logger.debug('Cookie 是否有效', isCookieValid)
-      if (isCookieValid) {
-        await G.setCookie(cookieToPersist)
-        logger.info('登录成功')
-        vscode.window.showInformationMessage('登录成功')
-      } else if (isTwoFactorCanceled) {
-        logger.info('用户取消两步验证，登录状态未变更')
-        isLoginCanceled = true
-        return false
-      } else {
-        logger.warn('登录失败，Cookie 无效')
-        vscode.window.showErrorMessage('登录失败，Cookie无效')
-      }
-      return isCookieValid
-    }
+    () => G.authSession.authenticate(loginCookie)
   )
-  if (isLoginCanceled) {
+
+  if (result === 'canceled') {
+    logger.info('用户取消两步验证，登录状态未变更')
     return LoginResult.cancel
   }
-  return isLoginSuccess ? LoginResult.success : LoginResult.failed
+  if (result === 'invalid') {
+    logger.warn('登录失败，Cookie 无效')
+    vscode.window.showErrorMessage('登录失败，Cookie无效')
+    return LoginResult.failed
+  }
+
+  logger.info('登录成功')
+  vscode.window.showInformationMessage('登录成功')
+  return LoginResult.success
 }
 
 /**

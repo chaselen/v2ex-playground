@@ -67,7 +67,7 @@ export const onDailySignInStatusChanged = dailySignInStatusEmitter.event
 export default async function autoDailySignIn(
   options: AutoDailySignInOptions = {}
 ): Promise<DailySignInData> {
-  if (!Config.autoSignIn() || !G.getCookie()) {
+  if (!Config.autoSignIn() || !G.authSession.isAuthenticated()) {
     return {
       signedIn: isDailySignedInToday()
     }

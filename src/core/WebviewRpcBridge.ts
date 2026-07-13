@@ -1,5 +1,6 @@
 import vscode from 'vscode'
 import { logger } from '@/core/logger'
+import { isAuthSessionChangedError } from '@/v2ex'
 import {
   WEBVIEW_RESPONSE_COMMAND,
   WebviewEventKey,
@@ -79,6 +80,10 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
       const data = await this.dispatchRequest(message)
       this.postResponse(message.requestId, true, data)
     } catch (err) {
+      if (isAuthSessionChangedError(err)) {
+        this.postResponse(message.requestId, false, undefined, '登录状态已更新，请重试')
+        return
+      }
       logger.error(`Webview RPC 调用失败: ${message.command}`, err)
       this.postResponse(message.requestId, false, undefined, (err as Error).message)
     }

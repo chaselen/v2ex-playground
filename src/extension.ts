@@ -6,8 +6,7 @@ import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
 import openTopic from '@/commands/openTopic'
 import { cleanupImagePreviewCache } from '@/features/imagePreview'
-import { startDailySignInScheduler } from '@/features/dailySignIn'
-import { refreshLoginSession } from '@/features/loginSession'
+import autoDailySignIn, { startDailySignInScheduler } from '@/features/dailySignIn'
 import {
   openRecentBrowse,
   openSearch,
@@ -17,15 +16,32 @@ import {
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 import { startConnectivityCheck } from '@/features/connectivityCheck'
 import { initializeLogger, logger } from '@/core/logger'
+import { AuthSessionManager } from '@/features/authSession'
+import { LoginCredentialStore } from '@/features/loginCredentialStore'
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   initializeLogger(context)
   logger.info('扩展已激活')
   G.context = context
   const mainViewProvider = new MainViewProvider()
-  G.V2ex = new V2exClient(G.getCookie(), {
+  const authSession = new AuthSessionManager(
+    new LoginCredentialStore(context),
+    (cookie, onTwoFactorRequired) =>
+      new V2exClient(cookie, {
+        onTwoFactorRequired,
+        onHttpFailure: summary => logger.warn('候选登录请求失败', summary)
+      })
+  )
+  G.authSession = authSession
+  const initialCookie = await authSession.initialize()
+  let client!: V2exClient
+  client = new V2exClient(initialCookie, {
     onLoginExpired: async () => {
-      await G.clearPersistedCookie()
+      try {
+        await authSession.handleLoginExpired()
+      } catch (err) {
+        logger.error('清理失效登录凭据失败', err)
+      }
       await mainViewProvider.reloadViewData()
       refreshTopicPanelsForAuthChange()
       const action = await vscode.window.showWarningMessage(
@@ -36,9 +52,25 @@ export function activate(context: vscode.ExtensionContext) {
         await vscode.commands.executeCommand('v2ex.login')
       }
     },
-    onTwoFactorRequired: requestTwoFactorVerification,
+    onTwoFactorRequired: () => {
+      return requestTwoFactorVerification(client, {
+        verify: async code => {
+          await client.submitTwoFactorCode(code)
+          await authSession.persistRuntimeLoginCookie()
+        }
+      })
+    },
     onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
   })
+  G.V2ex = client
+  authSession.attachClient(client)
+  const refreshLoginAndAutoSignIn = async () => {
+    const authenticated = await authSession.refreshAuthentication()
+    if (authenticated) {
+      autoDailySignIn({ notifyOnSuccess: true }).catch(err => logger.error('自动签到失败', err))
+    }
+    return authenticated
+  }
   setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
   cleanupImagePreviewCache()
@@ -48,12 +80,14 @@ export function activate(context: vscode.ExtensionContext) {
   // 插件激活后直接获取节点信息缓存下来
   // G.V2ex.getAllNodes()
   // 刷新登录会话后再尝试自动签到
-  refreshLoginSession({
-    autoDailySignIn: true,
-    dailySignInOptions: { notifyOnSuccess: true }
-  }).catch(err => {
-    logger.error('登录会话刷新失败', err)
-  })
+  refreshLoginAndAutoSignIn()
+    .then(authenticated => {
+      if (!authenticated) return
+      return mainViewProvider.reloadViewData().then(() => refreshTopicPanelsForAuthChange())
+    })
+    .catch(err => {
+      logger.error('登录会话刷新失败', err)
+    })
 
   // 注册主视图 WebviewView
   context.subscriptions.push(
@@ -71,10 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
         refreshTopicPanelsForAuthChange()
       }
       if (loginResult === LoginResult.success) {
-        refreshLoginSession({
-          autoDailySignIn: true,
-          dailySignInOptions: { notifyOnSuccess: true }
-        }).catch(err => {
+        refreshLoginAndAutoSignIn().catch(err => {
           logger.error('登录会话刷新失败', err)
         })
       }

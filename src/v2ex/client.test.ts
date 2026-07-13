@@ -401,10 +401,6 @@ describe.concurrent('V2exClient search', () => {
 })
 
 describe('V2exClient authenticated requests', () => {
-  authTest('tries login from V2EX_COOKIE', async () => {
-    await expect(client.tryLogin(v2exCookie!)).resolves.toBe(true)
-  })
-
   authTest('refreshes the authenticated session with V2EX_COOKIE', async () => {
     const result = await client.checkCookie()
 

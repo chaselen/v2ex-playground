@@ -1,7 +1,7 @@
 import { AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { describe, expect, test, vi } from 'vitest'
 import { V2exSession } from './session'
-import { LoginRequiredError } from './types'
+import { AuthSessionChangedError, LoginRequiredError } from './types'
 
 /** 会话并发测试需要访问的内部方法 */
 interface SessionInternals {
@@ -49,9 +49,13 @@ describe('V2exSession authentication redirects', () => {
 
     expect(loginExpiredHandler).toHaveBeenCalledTimes(1)
     expect(session.getCookie()).toBe('')
-    expect(results.filter(result => result.status === 'rejected')).toHaveLength(1)
+    expect(results.filter(result => result.status === 'rejected')).toHaveLength(2)
     expect(results.find(result => result.status === 'rejected')).toMatchObject({
       reason: expect.any(LoginRequiredError)
+    })
+    expect(results).toContainEqual({
+      status: 'rejected',
+      reason: expect.any(AuthSessionChangedError)
     })
   })
 
@@ -75,8 +79,61 @@ describe('V2exSession authentication redirects', () => {
     session.setCookie('A2=new-cookie')
     resumeTwoFactorCheck(response)
 
-    await expect(responsePromise).resolves.toBe(response)
+    await expect(responsePromise).rejects.toBeInstanceOf(AuthSessionChangedError)
     expect(session.getCookie()).toContain('A2=new-cookie')
     expect(loginExpiredHandler).not.toHaveBeenCalled()
+  })
+
+  test('does not retry a two-factor request after switching sessions', async () => {
+    let resolveTwoFactor!: (verified: boolean) => void
+    const session = new V2exSession('A2=old-cookie', {
+      onTwoFactorRequired: () =>
+        new Promise<boolean>(resolve => {
+          resolveTwoFactor = resolve
+        })
+    })
+    const internals = session as unknown as SessionInternals
+    const config = internals.attachCookieToRequest({
+      baseURL: 'https://www.v2ex.com',
+      headers: new AxiosHeaders(),
+      url: '/notifications'
+    })
+    const response: AxiosResponse<string> = {
+      config,
+      data: '',
+      headers: { location: '/2fa' },
+      request: { path: '/2fa' },
+      status: 302,
+      statusText: 'Found'
+    }
+
+    const responsePromise = internals.handleResponse(response)
+    await vi.waitFor(() => expect(resolveTwoFactor).toBeTypeOf('function'))
+    session.setCookie('A2=new-cookie')
+    resolveTwoFactor(true)
+
+    await expect(responsePromise).rejects.toBeInstanceOf(AuthSessionChangedError)
+    expect(session.getCookie()).toContain('A2=new-cookie')
+  })
+
+  test('does not cancel an external response after switching sessions', async () => {
+    const session = new V2exSession('A2=old-cookie')
+    const internals = session as unknown as SessionInternals
+    const config = internals.attachCookieToRequest({
+      headers: new AxiosHeaders(),
+      url: 'https://www.sov2ex.com/api/search'
+    })
+    const response: AxiosResponse = {
+      config,
+      data: {},
+      headers: {},
+      request: {},
+      status: 200,
+      statusText: 'OK'
+    }
+
+    session.setCookie('A2=new-cookie')
+
+    await expect(internals.handleResponse(response)).resolves.toBe(response)
   })
 })

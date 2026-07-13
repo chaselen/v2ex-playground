@@ -14,7 +14,6 @@ import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { renderWebviewHtml } from '@/core/webviewHtml'
-import { ensureLoginSession, refreshLoginSession } from '@/features/loginSession'
 import { addCustomNode, getCustomNodes, removeCustomNode } from '@/features/customNodes'
 import {
   EXPLORE_NODES,
@@ -232,7 +231,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       name: n.name,
       title: n.title
     }))
-    const loggedIn = !!G.getCookie()
+    const loggedIn = G.authSession.isAuthenticated()
 
     if (!loggedIn) {
       this._syncUnreadNoticeBadge(0)
@@ -254,8 +253,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 刷新收藏节点列表
    */
   private async _handleRefreshCollectionNodes(): Promise<NodeListData> {
-    const { isValid } = await ensureLoginSession()
-    if (!isValid) {
+    if (!(await G.authSession.ensureAuthenticated())) {
       return { nodes: [] }
     }
 
@@ -272,8 +270,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 刷新我的账户概览
    */
   private async _handleRefreshMyOverview(): Promise<MyOverviewRefreshData> {
-    const { isValid } = await refreshLoginSession()
-    if (!isValid) {
+    if (!(await G.authSession.refreshAuthentication())) {
       return { loggedIn: false }
     }
 
@@ -415,8 +412,9 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param nodeName 节点 name
    */
   private async _handleCancelCollectNode(nodeName: string): Promise<void> {
-    const { isValid } = await ensureLoginSession()
-    if (!isValid) throw new LoginRequiredError('取消收藏节点前请先登录')
+    if (!(await G.authSession.ensureAuthenticated())) {
+      throw new LoginRequiredError('取消收藏节点前请先登录')
+    }
 
     await G.V2ex.cancelCollectNode(nodeName)
     try {
@@ -449,8 +447,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>,
     page = 1
   ): Promise<MyTopicListData> {
-    const { isValid } = await ensureLoginSession()
-    if (!isValid) {
+    if (!(await G.authSession.ensureAuthenticated())) {
       return {
         tab,
         page,
@@ -477,8 +474,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param page 页码
    */
   private async _handleGetMyNotifications(page = 1): Promise<MyNotificationListData> {
-    const { isValid } = await ensureLoginSession()
-    if (!isValid) {
+    if (!(await G.authSession.ensureAuthenticated())) {
       return {
         page,
         totalPage: 1,
@@ -501,8 +497,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 获取每日签到状态
    */
   private async _handleGetDailySignInStatus(): Promise<WebviewDailySignInData> {
-    const { isValid } = await ensureLoginSession()
-    if (!isValid) return { signedIn: false }
+    if (!(await G.authSession.ensureAuthenticated())) return { signedIn: false }
 
     return getDailySignInStatus()
   }
@@ -511,8 +506,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 执行每日签到
    */
   private async _handleDailySignIn(): Promise<WebviewDailySignInData> {
-    const { isValid } = await ensureLoginSession()
-    if (!isValid) return { signedIn: false }
+    if (!(await G.authSession.ensureAuthenticated())) return { signedIn: false }
 
     return dailySignIn()
   }

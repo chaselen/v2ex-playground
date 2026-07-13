@@ -12,6 +12,9 @@ export class LoginRequiredError extends Error {}
 /** 需要两步验证码 */
 export class TwoFactorRequiredError extends Error {}
 
+/** 请求所属的认证会话已经变化 */
+export class AuthSessionChangedError extends Error {}
+
 /** 账号访问受限 */
 export class AccountRestrictedError extends Error {}
 

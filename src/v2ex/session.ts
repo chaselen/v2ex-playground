@@ -16,6 +16,7 @@ import {
 } from './clientUtils'
 import {
   AccountRestrictedError,
+  AuthSessionChangedError,
   LoginRequiredError,
   TwoFactorRequiredError,
   type LoginExpiredHandler,
@@ -168,9 +169,9 @@ export class V2exSession {
 
   /** 为 V2EX 请求附加 Cookie */
   private attachCookieToRequest(config: AxiosResponse['config']): AxiosResponse['config'] {
-    this.requestCookieGenerations.set(config, this.cookieGeneration)
     const requestUrl = getConfigUrl(config, this.baseUrl)
     if (!isV2exUrl(requestUrl)) return config
+    this.requestCookieGenerations.set(config, this.cookieGeneration)
     config.headers = config.headers || {}
     if (!findCookieHeaderName(config.headers)) {
       config.headers.Cookie = this.getCookie(requestUrl.toString())
@@ -180,11 +181,12 @@ export class V2exSession {
 
   /** 统一处理 V2EX 响应 */
   private async handleResponse(response: AxiosResponse): Promise<AxiosResponse> {
-    if (!this.isCurrentRequest(response.config)) return response
+    if (!isV2exUrl(getConfigUrl(response.config, this.baseUrl))) return response
+    this.assertCurrentRequest(response.config)
     this.updateCookieFromResponse(response)
     const twoFactorResponse = await this.handleTwoFactorResponse(response)
     if (twoFactorResponse !== response) return twoFactorResponse
-    if (!this.isCurrentRequest(response.config)) return response
+    this.assertCurrentRequest(response.config)
     this.checkRedirectFromResponse(response)
     this.responseHandlers.forEach(handler => handler(response))
     return response
@@ -193,6 +195,13 @@ export class V2exSession {
   /** 判断响应是否属于当前 Cookie 会话 */
   private isCurrentRequest(config: AxiosResponse['config']): boolean {
     return this.requestCookieGenerations.get(config) === this.cookieGeneration
+  }
+
+  /** 确认响应仍属于当前认证会话 */
+  private assertCurrentRequest(config: AxiosResponse['config']): void {
+    if (!this.isCurrentRequest(config)) {
+      throw new AuthSessionChangedError('认证会话已变化，请重试当前操作')
+    }
   }
 
   /** 写入 Cookie 或 Set-Cookie 字符串 */
@@ -233,6 +242,7 @@ export class V2exSession {
     if (!(await this.options.onTwoFactorRequired?.())) {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
+    this.assertCurrentRequest(config)
     this.refreshConfigCookie(config)
     return this.http.request(config)
   }

@@ -1,5 +1,4 @@
 import vscode from 'vscode'
-import G from '@/global'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type {
@@ -10,6 +9,12 @@ import type {
 
 /** 两步验证完成回调 */
 type TwoFactorResolve = (verified: boolean) => void
+
+/** 两步验证面板选项 */
+export interface TwoFactorPanelControllerOptions {
+  /** 提交验证码 */
+  verify(code: string): Promise<void>
+}
 
 /** 两步验证面板控制器 */
 export class TwoFactorPanelController {
@@ -28,7 +33,10 @@ export class TwoFactorPanelController {
   /** 是否已完成验证流程 */
   private settled = false
 
-  constructor() {
+  /**
+   * @param options 两步验证操作
+   */
+  constructor(private readonly options: TwoFactorPanelControllerOptions) {
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.twoFactor',
       title: '两步验证',
@@ -54,6 +62,11 @@ export class TwoFactorPanelController {
     this.panel.reveal()
   }
 
+  /** 关闭两步验证面板 */
+  dispose(): void {
+    this.panel.dispose()
+  }
+
   /**
    * 等待验证结果
    */
@@ -67,9 +80,7 @@ export class TwoFactorPanelController {
   private createRpcHandlers(): WebviewRpcHandlers<TwoFactorPanelRpcCommands> {
     return {
       verify: async payload => {
-        await G.V2ex.submitTwoFactorCode(payload.code)
-        // 2FA 成功响应会更新 A2O，持久化前先过滤掉内部 Cookie
-        await G.setCookie(G.V2ex.getLoginCookie())
+        await this.options.verify(payload.code)
         vscode.window.showInformationMessage('V2EX 两步验证成功')
         this.resolve(true)
         this.panel.dispose()
