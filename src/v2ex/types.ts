@@ -18,6 +18,27 @@ export class AccountRestrictedError extends Error {}
 /** 登录失效回调 */
 export type LoginExpiredHandler = () => void | Promise<void>
 
+/** Cookie 检查结果 */
+export type CheckCookieResult =
+  | {
+      /** Cookie 无效 */
+      isValid: false
+    }
+  | {
+      /** Cookie 有效 */
+      isValid: true
+      /** 当前登录用户名 */
+      username: string
+    }
+
+/** 已验证的认证会话身份 */
+export interface AuthSessionIdentity {
+  /** 认证会话版本 */
+  sessionVersion: number
+  /** 当前登录用户名 */
+  username: string
+}
+
 /** 两步验证回调 */
 export type TwoFactorRequiredHandler = () => boolean | Promise<boolean>
 

@@ -36,7 +36,14 @@ export const V2EX_REQUEST_HEADERS = {
 }
 
 /** 需要检查自动重定向的页面路径 */
-const isRedirectCheckPath = picomatch(['/balance', '/go/*', '/t/*'])
+const isRedirectCheckPath = picomatch([
+  '/balance',
+  '/go/*',
+  '/mission/daily',
+  '/my/*',
+  '/notifications',
+  '/t/*'
+])
 
 /** V2EX 会话配置 */
 export interface V2exSessionOptions {
@@ -55,6 +62,10 @@ export class V2exSession {
   private readonly http: AxiosInstance
 
   private readonly cookieJar = new CookieJar()
+  /** Cookie 被整体替换的次数 */
+  private cookieGeneration = 0
+  /** 请求发起时对应的 Cookie 代次 */
+  private readonly requestCookieGenerations = new WeakMap<object, number>()
   private readonly twoFactorRetriedConfigs = new WeakSet<object>()
   private readonly responseHandlers = new Set<V2exResponseHandler>()
 
@@ -71,7 +82,8 @@ export class V2exSession {
           redirectOptions.href,
           redirectOptions.headers,
           responseDetails.headers,
-          requestDetails.url
+          requestDetails.url,
+          requestDetails.headers
         )
     })
     this.setCookie(initialCookie)
@@ -90,6 +102,7 @@ export class V2exSession {
 
   /** 替换当前会话 Cookie */
   setCookie(cookie: string): void {
+    this.cookieGeneration += 1
     this.cookieJar.removeAllCookiesSync()
     if (cookie) this.writeCookie(cookie, this.baseUrl)
   }
@@ -133,8 +146,15 @@ export class V2exSession {
     redirectHref: string,
     redirectHeaders: Record<string, unknown>,
     headers: Record<string, unknown>,
-    responseUrl: string
+    responseUrl: string,
+    requestHeaders: Record<string, unknown>
   ): void {
+    const requestCookie = getHeader(requestHeaders, 'cookie') || ''
+    if (normalizeLoginCookie(requestCookie) !== this.getLoginCookie(responseUrl)) {
+      removeCookieHeader(redirectHeaders)
+      return
+    }
+
     this.updateCookieFromHeaders(headers, responseUrl)
     const redirectUrl = new URL(redirectHref)
     removeCookieHeader(redirectHeaders)
@@ -145,6 +165,7 @@ export class V2exSession {
 
   /** 为 V2EX 请求附加 Cookie */
   private attachCookieToRequest(config: AxiosResponse['config']): AxiosResponse['config'] {
+    this.requestCookieGenerations.set(config, this.cookieGeneration)
     const requestUrl = getConfigUrl(config, this.baseUrl)
     if (!isV2exUrl(requestUrl)) return config
     config.headers = config.headers || {}
@@ -156,12 +177,18 @@ export class V2exSession {
 
   /** 统一处理 V2EX 响应 */
   private async handleResponse(response: AxiosResponse): Promise<AxiosResponse> {
+    if (!this.isCurrentRequest(response.config)) return response
     this.updateCookieFromResponse(response)
     const twoFactorResponse = await this.handleTwoFactorResponse(response)
     if (twoFactorResponse !== response) return twoFactorResponse
     this.checkRedirectFromResponse(response)
     this.responseHandlers.forEach(handler => handler(response))
     return response
+  }
+
+  /** 判断响应是否属于当前 Cookie 会话 */
+  private isCurrentRequest(config: AxiosResponse['config']): boolean {
+    return this.requestCookieGenerations.get(config) === this.cookieGeneration
   }
 
   /** 写入 Cookie 或 Set-Cookie 字符串 */

@@ -1,15 +1,13 @@
 import * as cheerio from 'cheerio/slim'
 import axios from 'axios'
 import { isV2exPath } from '../clientUtils'
+import { parseAccountOverview } from '../parsers/account'
 import { V2EX_REQUEST_HEADERS, V2EX_REQUEST_TIMEOUT, type V2exSession } from '../session'
-import { TwoFactorRequiredError } from '../types'
+import { TwoFactorRequiredError, type CheckCookieResult } from '../types'
 
 /** V2EX 认证领域服务 */
 export class AuthService {
-  constructor(
-    private readonly session: V2exSession,
-    private readonly clearExpiredLogin: () => void
-  ) {}
+  constructor(private readonly session: V2exSession) {}
 
   /** 获取一次性操作参数 */
   async getOnce(): Promise<string> {
@@ -18,14 +16,19 @@ export class AuthService {
   }
 
   /** 检查当前 Cookie 是否有效 */
-  async checkCookie(): Promise<boolean> {
-    if (!this.session.getCookie()) return false
+  async checkCookie(): Promise<CheckCookieResult> {
+    if (!this.session.getCookie()) return { isValid: false }
     const { data: html } = await this.session.get<string>('/')
     const $ = cheerio.load(html)
-    if ($('#member-activity').length > 0) return true
+    const overview = parseAccountOverview($)
+    if (overview?.username) {
+      return {
+        isValid: true,
+        username: overview.username
+      }
+    }
     if ($('a[href^="/signin"], form[action^="/signin"]').length > 0) {
-      this.clearExpiredLogin()
-      return false
+      return { isValid: false }
     }
     throw new Error('登录状态检查失败，请检查网络后重试')
   }

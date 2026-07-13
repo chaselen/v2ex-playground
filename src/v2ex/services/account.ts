@@ -15,6 +15,7 @@ import type {
   DailySignInReward,
   DailySignInStatus,
   OnlineCountChangedHandler,
+  CheckCookieResult,
   Topic,
   V2exNotification
 } from '../types'
@@ -37,6 +38,9 @@ const isAccountOverviewPath = picomatch([
 /** 查询最新签到奖励时最多扫描的余额页数 */
 const MAX_DAILY_SIGN_IN_REWARD_PAGES = 5
 
+/** 认证会话是否仍为请求启动时的版本 */
+type IsSessionCurrent = () => boolean
+
 /** V2EX 账户内容领域服务 */
 export class AccountService {
   /** 缓存的账户概览 */
@@ -50,7 +54,7 @@ export class AccountService {
 
   constructor(
     private readonly session: V2exSession,
-    private readonly checkCookie: () => Promise<boolean>
+    private readonly checkCookie: () => Promise<CheckCookieResult>
   ) {
     this.session.onResponse(response => this.updateFromResponse(response))
   }
@@ -191,12 +195,24 @@ export class AccountService {
    *
    * 余额流水按时间倒序排列；如果第一页没有奖励记录，则继续向后翻页，最多查询 5 页。
    */
-  async getDailySignInReward(): Promise<DailySignInReward | undefined> {
+  getDailySignInReward(): Promise<DailySignInReward | undefined> {
+    return this.findDailySignInReward()
+  }
+
+  /**
+   * 查询最新一条每日登录奖励，并在认证会话变化后停止翻页
+   * @param isSessionCurrent 认证会话是否仍为请求启动时的版本
+   */
+  private async findDailySignInReward(
+    isSessionCurrent?: IsSessionCurrent
+  ): Promise<DailySignInReward | undefined> {
     let page = 1
     let totalPage = 1
 
     do {
+      if (isSessionCurrent && !isSessionCurrent()) return undefined
       const detail = await this.getBalance(page)
+      if (isSessionCurrent && !isSessionCurrent()) return undefined
       const reward = parseLatestDailySignInReward(detail.transactions)
       if (reward) return reward
       totalPage = detail.totalPage
@@ -207,14 +223,18 @@ export class AccountService {
   }
 
   /** 执行每日签到 */
-  async dailySignIn(): Promise<DailySignInResult> {
+  async dailySignIn(isSessionCurrent: IsSessionCurrent = () => true): Promise<DailySignInResult> {
     // 场景 1：未登录，无法执行签到
-    if (!(await this.checkCookie())) return { result: 'failed', reward: 0 }
+    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
+    const cookieResult = await this.checkCookie()
+    if (!isSessionCurrent() || !cookieResult.isValid) return { result: 'failed', reward: 0 }
 
     // 记录领取前最新奖励，用于确认领取后是否产生了新流水
-    const previousReward = await this.getDailySignInReward()
+    const previousReward = await this.findDailySignInReward(isSessionCurrent)
+    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
 
     const { data: html } = await this.session.get<string>('/mission/daily')
+    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
     const $ = cheerio.load(html)
 
     // 签到页尚未进入下一个周期时，页面仍会显示已领取，最新奖励可能属于前一个日期
@@ -238,7 +258,9 @@ export class AccountService {
 
     // 领取奖励后通过余额记录确认签到结果
     await this.session.get(`/mission/daily/redeem?once=${once}`)
-    const latestReward = await this.getDailySignInReward()
+    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
+    const latestReward = await this.findDailySignInReward(isSessionCurrent)
+    if (!isSessionCurrent()) return { result: 'failed', reward: 0 }
     const isNewReward = latestReward && latestReward.date !== previousReward?.date
 
     return {
