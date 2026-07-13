@@ -6,15 +6,15 @@
 
 - `LoginCredentialStore` 通过 VS Code `SecretStorage` 持久化 A2/A2O
 - `V2exSession` 的 `CookieJar` 保存当前运行时会话，包括服务端下发的内部 Cookie
-- `AuthSessionManager` 保存登录凭据是否已经验证，供扩展 UI 判断当前能否执行登录操作
+- `AuthSessionManager` 创建并持有正式业务客户端，同时保存登录凭据是否已经验证，供扩展 UI 判断当前能否执行登录操作
 
 旧版 `globalState['cookie']` 只用于一次性迁移。读取 SecretStorage 时仍会清理残留的旧值，后续不能重新使用 globalState 保存登录凭据。
 
 ## 扩展启动
 
-1. `AuthSessionManager.initialize()` 从 SecretStorage 加载 A2/A2O
-2. 启动检查完成前，登录凭据统一视为尚未验证
-3. 使用凭据创建业务 `V2exClient`
+1. `AuthSessionManager.initialize()` 从 SecretStorage 加载 A2/A2O，并创建业务 `V2exClient`
+2. 初始化完成后向扩展入口返回已绑定认证回调的业务客户端，不存在需要外部手动绑定客户端的中间状态
+3. 启动检查完成前，登录凭据统一视为尚未验证
 4. `AuthSessionManager.refreshAuthentication()` 检查实际登录状态
 5. 检查成功后标记为已验证并刷新相关 Webview；检查失效时清理运行时会话和持久化凭据
 

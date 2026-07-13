@@ -33,7 +33,7 @@ function createCredentialStore(initialCookie = '') {
 }
 
 /** 创建业务客户端桩 */
-function createBusinessClient() {
+function createBusinessClientStub() {
   return {
     setCookie: vi.fn(),
     getLoginCookie: vi.fn().mockReturnValue('A2=runtime'),
@@ -41,9 +41,35 @@ function createBusinessClient() {
   } as unknown as V2exClient
 }
 
+/** 创建已配置业务客户端工厂的会话管理器 */
+function createAuthSessionManager(
+  credentialStore: LoginCredentialStore,
+  businessClient: V2exClient,
+  createCandidateClient: CandidateClientFactory
+) {
+  return new AuthSessionManager(
+    credentialStore,
+    vi.fn().mockReturnValue(businessClient),
+    createCandidateClient
+  )
+}
+
 describe('AuthSessionManager', () => {
   beforeEach(() => {
     requestTwoFactorVerificationMock.mockReset()
+  })
+
+  test('creates the business client from the persisted login cookie', async () => {
+    const credentialStore = createCredentialStore('A2=persisted')
+    const businessClient = createBusinessClientStub()
+    const createBusinessClient = vi.fn().mockReturnValue(businessClient)
+    const manager = new AuthSessionManager(credentialStore, createBusinessClient, vi.fn())
+
+    await expect(manager.initialize()).resolves.toBe(businessClient)
+    expect(createBusinessClient).toHaveBeenCalledWith('A2=persisted', {
+      onLoginExpired: expect.any(Function),
+      onTwoFactorRequired: expect.any(Function)
+    })
   })
 
   test('commits a candidate cookie only after isolated validation succeeds', async () => {
@@ -54,10 +80,9 @@ describe('AuthSessionManager', () => {
     } as unknown as V2exClient
     const createCandidateClient = vi.fn().mockReturnValue(candidateClient)
     const credentialStore = createCredentialStore('A2=old')
-    const businessClient = createBusinessClient()
-    const manager = new AuthSessionManager(credentialStore, createCandidateClient)
+    const businessClient = createBusinessClientStub()
+    const manager = createAuthSessionManager(credentialStore, businessClient, createCandidateClient)
     await manager.initialize()
-    manager.attachClient(businessClient)
 
     const authentication = manager.authenticate('A2=new')
     expect(businessClient.setCookie).not.toHaveBeenCalled()
@@ -76,13 +101,13 @@ describe('AuthSessionManager', () => {
       checkCookie: vi.fn().mockResolvedValue({ isValid: false })
     } as unknown as V2exClient
     const credentialStore = createCredentialStore('A2=old')
-    const businessClient = createBusinessClient()
-    const manager = new AuthSessionManager(
+    const businessClient = createBusinessClientStub()
+    const manager = createAuthSessionManager(
       credentialStore,
+      businessClient,
       vi.fn().mockReturnValue(candidateClient)
     )
     await manager.initialize()
-    manager.attachClient(businessClient)
 
     await expect(manager.authenticate('A2=new')).resolves.toBe('invalid')
     expect(credentialStore.save).not.toHaveBeenCalled()
@@ -111,10 +136,9 @@ describe('AuthSessionManager', () => {
       return true
     })
     const credentialStore = createCredentialStore('A2=old')
-    const businessClient = createBusinessClient()
-    const manager = new AuthSessionManager(credentialStore, createCandidateClient)
+    const businessClient = createBusinessClientStub()
+    const manager = createAuthSessionManager(credentialStore, businessClient, createCandidateClient)
     await manager.initialize()
-    manager.attachClient(businessClient)
 
     await expect(manager.authenticate('A2=new')).resolves.toBe('authenticated')
     expect(submitTwoFactorCode).toHaveBeenCalledWith('123456')
@@ -132,13 +156,13 @@ describe('AuthSessionManager', () => {
       getLoginCookie: vi.fn().mockReturnValue('A2=new-candidate')
     } as unknown as V2exClient
     const credentialStore = createCredentialStore('A2=current')
-    const businessClient = createBusinessClient()
-    const manager = new AuthSessionManager(
+    const businessClient = createBusinessClientStub()
+    const manager = createAuthSessionManager(
       credentialStore,
+      businessClient,
       vi.fn().mockReturnValueOnce(oldCandidate).mockReturnValueOnce(newCandidate)
     )
     await manager.initialize()
-    manager.attachClient(businessClient)
 
     const oldAuthentication = manager.authenticate('A2=old-candidate')
     await expect(manager.authenticate('A2=new-candidate')).resolves.toBe('authenticated')
@@ -148,5 +172,33 @@ describe('AuthSessionManager', () => {
     expect(businessClient.setCookie).toHaveBeenCalledTimes(1)
     expect(businessClient.setCookie).toHaveBeenCalledWith('A2=new-candidate')
     expect(manager.getLoginCookie()).toBe('A2=new-candidate')
+  })
+
+  test('persists the runtime login cookie after business two-factor verification', async () => {
+    const credentialStore = createCredentialStore('A2=old')
+    const submitTwoFactorCode = vi.fn().mockResolvedValue(undefined)
+    const businessClient = {
+      ...createBusinessClientStub(),
+      submitTwoFactorCode,
+      getLoginCookie: vi.fn().mockReturnValue('A2=old; A2O=verified'),
+      getAuthSessionVersion: vi.fn().mockReturnValue(2)
+    } as unknown as V2exClient
+    let onTwoFactorRequired!: () => boolean | Promise<boolean>
+    const createBusinessClient = vi.fn((_, handlers) => {
+      onTwoFactorRequired = handlers.onTwoFactorRequired
+      return businessClient
+    })
+    requestTwoFactorVerificationMock.mockImplementation(async (owner, options) => {
+      expect(owner).toBe(businessClient)
+      await options.verify('123456')
+      return true
+    })
+    const manager = new AuthSessionManager(credentialStore, createBusinessClient, vi.fn())
+    await manager.initialize()
+
+    await expect(onTwoFactorRequired()).resolves.toBe(true)
+    expect(submitTwoFactorCode).toHaveBeenCalledWith('123456')
+    expect(credentialStore.save).toHaveBeenCalledWith('A2=old; A2O=verified')
+    expect(manager.getLoginCookie()).toBe('A2=old; A2O=verified')
   })
 })

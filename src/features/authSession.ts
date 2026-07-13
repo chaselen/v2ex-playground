@@ -1,6 +1,12 @@
 import { LoginCredentialStore } from '@/features/loginCredentialStore'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
-import { normalizeLoginCookie, TwoFactorRequiredError, type V2exClient } from '@/v2ex'
+import {
+  normalizeLoginCookie,
+  TwoFactorRequiredError,
+  type LoginExpiredHandler,
+  type TwoFactorRequiredHandler,
+  type V2exClient
+} from '@/v2ex'
 
 /** 候选登录结果 */
 export type AuthenticateResult = 'authenticated' | 'canceled' | 'invalid'
@@ -9,6 +15,20 @@ export type AuthenticateResult = 'authenticated' | 'canceled' | 'invalid'
 export type CandidateClientFactory = (
   cookie: string,
   onTwoFactorRequired: () => Promise<boolean>
+) => V2exClient
+
+/** 业务客户端认证回调 */
+export interface BusinessClientAuthHandlers {
+  /** 登录失效回调 */
+  onLoginExpired: LoginExpiredHandler
+  /** 需要两步验证时的回调 */
+  onTwoFactorRequired: TwoFactorRequiredHandler
+}
+
+/** 创建正式业务客户端 */
+export type BusinessClientFactory = (
+  cookie: string,
+  handlers: BusinessClientAuthHandlers
 ) => V2exClient
 
 /** 登录会话检查任务 */
@@ -44,27 +64,23 @@ export class AuthSessionManager {
 
   /**
    * @param credentialStore 登录凭据存储
+   * @param createBusinessClient 正式业务客户端工厂
    * @param createCandidateClient 候选客户端工厂
    */
   constructor(
     private readonly credentialStore: LoginCredentialStore,
+    private readonly createBusinessClient: BusinessClientFactory,
     private readonly createCandidateClient: CandidateClientFactory
   ) {}
 
-  /** 加载持久化凭据 */
-  async initialize(): Promise<string> {
+  /** 加载持久化凭据并创建正式业务客户端 */
+  async initialize(): Promise<V2exClient> {
     this.loginCookie = await this.credentialStore.load()
-    return this.loginCookie
-  }
-
-  /**
-   * 绑定业务客户端
-   * @param client V2EX 业务客户端
-   */
-  attachClient(client: V2exClient): void {
-    this.client = client
-    this.checkedSessionVersion = undefined
-    this.authenticationCheckTask = undefined
+    this.client = this.createBusinessClient(this.loginCookie, {
+      onLoginExpired: () => this.handleLoginExpired(),
+      onTwoFactorRequired: () => this.requestBusinessTwoFactorVerification()
+    })
+    return this.client
   }
 
   /** 当前是否已经验证登录 */
@@ -123,7 +139,7 @@ export class AuthSessionManager {
   }
 
   /** 保存当前运行时会话中的登录 Cookie */
-  async persistRuntimeLoginCookie(): Promise<void> {
+  private async persistRuntimeLoginCookie(): Promise<void> {
     await this.enqueueCredentialMutation(async () => {
       const client = this.getClient()
       const loginCookie = client.getLoginCookie()
@@ -135,7 +151,7 @@ export class AuthSessionManager {
   }
 
   /** 清理已经失效的持久化登录凭据 */
-  handleLoginExpired(): Promise<void> {
+  private handleLoginExpired(): Promise<void> {
     return this.enqueueCredentialMutation(async () => {
       this.loginCookie = ''
       this.authenticated = false
@@ -174,10 +190,21 @@ export class AuthSessionManager {
     })
   }
 
-  /** 获取已绑定的业务客户端 */
+  /** 获取正式业务客户端 */
   private getClient(): V2exClient {
-    if (!this.client) throw new Error('认证会话尚未绑定 V2EX 客户端')
+    if (!this.client) throw new Error('认证会话尚未初始化 V2EX 客户端')
     return this.client
+  }
+
+  /** 使用正式业务会话完成两步验证并持久化更新后的登录 Cookie */
+  private requestBusinessTwoFactorVerification(): Promise<boolean> {
+    const client = this.getClient()
+    return requestTwoFactorVerification(client, {
+      verify: async code => {
+        await client.submitTwoFactorCode(code)
+        await this.persistRuntimeLoginCookie()
+      }
+    })
   }
 
   /**
