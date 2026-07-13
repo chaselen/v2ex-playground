@@ -179,7 +179,14 @@ function createHiddenImageButton(img: HTMLImageElement): HTMLButtonElement {
   button.type = 'button'
   button.className = 'hidden-image-button'
   button.title = '点击查看图片，按住 Cmd/Ctrl/Alt 点击在浏览器中打开'
-  button.innerHTML = '<span class="hidden-image-icon">▧</span><span>查看图片</span>'
+  button.innerHTML = `
+    <svg class="hidden-image-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.5" />
+      <path d="m5.5 17 4.5-4.5 3.25 3.25 2.25-2.25 3 3" />
+    </svg>
+    <span>查看图片</span>
+  `
   button.addEventListener('click', event => {
     event.preventDefault()
     event.stopPropagation()

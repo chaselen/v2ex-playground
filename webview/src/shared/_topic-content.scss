@@ -38,6 +38,7 @@
     gap: 6px;
     max-width: 100%;
     min-height: 28px;
+    margin: 2px 4px 2px 0;
     padding: 4px 9px;
     border: 1px solid var(--vscode-button-border, #{$panel-border});
     border-radius: 4px;
@@ -50,6 +51,17 @@
 
     &:hover {
       background: var(--v2ex-default-hover-bg);
+    }
+
+    .hidden-image-icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.7;
     }
   }
 
