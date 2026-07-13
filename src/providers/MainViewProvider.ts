@@ -15,6 +15,7 @@ import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { ensureLoginSession, refreshLoginSession } from '@/features/loginSession'
+import { addCustomNode, getCustomNodes, removeCustomNode } from '@/features/customNodes'
 import {
   EXPLORE_NODES,
   InitData,
@@ -227,7 +228,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 获取初始数据
    */
   private async _getInitData(): Promise<InitData> {
-    const customNodes = G.getCustomNodes().map(n => ({
+    const customNodes = getCustomNodes().map(n => ({
       name: n.name,
       title: n.title
     }))
@@ -352,7 +353,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * 获取自定义节点视图数据
    */
   private _getCustomNodesData(): NodeListData {
-    const customNodes = G.getCustomNodes()
+    const customNodes = getCustomNodes()
     return {
       nodes: customNodes.map(n => ({
         name: n.name,
@@ -387,7 +388,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       return this._getCustomNodesData()
     }
 
-    const isAdd = await G.addCustomNode({
+    const isAdd = await addCustomNode({
       name: select.description!,
       title: select.label
     })
@@ -405,7 +406,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
    * @param nodeName 节点 name
    */
   private async _handleRemoveNode(nodeName: string): Promise<NodeListData> {
-    await G.removeCustomNode(nodeName)
+    await removeCustomNode(nodeName)
     return this._getCustomNodesData()
   }
 

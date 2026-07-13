@@ -1,26 +1,11 @@
-import { normalizeLoginCookie, type Node, type V2exClient } from '@/v2ex'
+import { normalizeLoginCookie, type V2exClient } from '@/v2ex'
 import { ExtensionContext, Webview, Uri } from 'vscode'
-import vscode from 'vscode'
-
-/** 未读通知提醒最小间隔 */
-const UNREAD_NOTIFICATION_TIP_INTERVAL_MS = 5 * 60 * 1000
-
-/** 未读通知提醒时间存储 key */
-const UNREAD_NOTIFICATION_LAST_TIP_TIME_KEY = 'unreadNotificationLastTipTime'
-
-/** 旧版未读通知提醒时间存储 key */
-const LEGACY_UNREAD_NOTIFICATION_LAST_TIP_TIME_KEY = 'unReadLastTipTime'
-
-/** 查看未读通知回调 */
-type ViewUnreadNotificationHandler = () => void | Promise<void>
 
 export default class G {
   /** 插件上下文，在插件激活时赋值 */
   static context: ExtensionContext
   /** V2EX API 客户端，在插件激活时赋值 */
   static V2ex: V2exClient
-  /** 未读通知数 */
-  static unreadNoticeCount: number = 0
 
   /**
    * 获取WebView的上下文地址
@@ -50,99 +35,5 @@ export default class G {
    */
   static getCookie(): string | undefined {
     return this.context.globalState.get('cookie')
-  }
-
-  /**
-   * 获取自定义节点
-   */
-  static getCustomNodes(): Node[] {
-    return this.context.globalState.get<Node[]>('nodes') || []
-  }
-
-  /**
-   * 设置自定义节点
-   * @param newNodes 节点列表
-   */
-  static async setCustomNodes(newNodes: Node[]) {
-    await this.context.globalState.update('nodes', newNodes)
-  }
-
-  /**
-   * 添加自定义节点
-   * @param node 要添加的节点
-   * @returns true表示添加成功，false表示节点已存在无需添加
-   */
-  static async addCustomNode(node: Node): Promise<boolean> {
-    const nodes = this.getCustomNodes()
-    // 如果节点已经有了，则忽略
-    if (nodes.find(n => n.name === node.name)) {
-      return false
-    }
-    nodes.push(node)
-    await this.setCustomNodes(nodes)
-    return true
-  }
-
-  /**
-   * 删除自定义节点
-   * @param nodeName 要删除的节点 name
-   */
-  static async removeCustomNode(nodeName: string) {
-    const nodes = this.getCustomNodes()
-    const i = nodes.findIndex(n => n.name === nodeName)
-    if (i >= 0) {
-      nodes.splice(i, 1)
-    }
-    await this.setCustomNodes(nodes)
-  }
-
-  /**
-   * 检查未读通知数，大于0时弹出提醒
-   * @param count 最新未读通知数
-   * @param oldCount 旧未读通知数
-   * @param onViewNotifications 查看未读通知回调
-   */
-  static checkUnreadNotification(
-    count = this.unreadNoticeCount,
-    oldCount?: number,
-    onViewNotifications?: ViewUnreadNotificationHandler
-  ) {
-    if (count <= 0) return
-    if (oldCount !== undefined && count <= oldCount) return
-
-    const timestamp = Date.now()
-    const lastTipTime = this.getUnreadNotificationLastTipTime()
-    if (
-      lastTipTime !== undefined &&
-      timestamp - lastTipTime <= UNREAD_NOTIFICATION_TIP_INTERVAL_MS
-    ) {
-      return
-    }
-
-    vscode.window.showInformationMessage(`您有 ${count} 条未读提醒`, '查看提醒').then(result => {
-      if (result === '查看提醒') {
-        if (onViewNotifications) {
-          void onViewNotifications()
-        } else {
-          vscode.env.openExternal(Uri.parse('https://www.v2ex.com/notifications'))
-        }
-      }
-    })
-    this.context.globalState.update(UNREAD_NOTIFICATION_LAST_TIP_TIME_KEY, timestamp)
-  }
-
-  /**
-   * 获取未读通知上次提醒时间
-   */
-  private static getUnreadNotificationLastTipTime(): number | undefined {
-    const lastTipTime = this.context.globalState.get<number>(UNREAD_NOTIFICATION_LAST_TIP_TIME_KEY)
-    if (lastTipTime !== undefined) {
-      return lastTipTime
-    }
-
-    const legacyLastTipTime = this.context.globalState.get<number>(
-      LEGACY_UNREAD_NOTIFICATION_LAST_TIP_TIME_KEY
-    )
-    return legacyLastTipTime === undefined ? undefined : legacyLastTipTime * 1000
   }
 }

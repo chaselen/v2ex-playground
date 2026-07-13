@@ -26,7 +26,6 @@ export function activate(context: vscode.ExtensionContext) {
   G.V2ex = new V2exClient(G.getCookie(), {
     onLoginExpired: async () => {
       await G.clearPersistedCookie()
-      G.unreadNoticeCount = 0
       await mainViewProvider.reloadViewData()
       refreshTopicPanelsForAuthChange()
       const action = await vscode.window.showWarningMessage(
@@ -42,14 +41,6 @@ export function activate(context: vscode.ExtensionContext) {
   })
   setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
-  context.subscriptions.push(
-    G.V2ex.onAccountOverviewChanged((overview, oldOverview) => {
-      G.unreadNoticeCount = overview.unreadNoticeCount
-      G.checkUnreadNotification(overview.unreadNoticeCount, oldOverview?.unreadNoticeCount, () =>
-        mainViewProvider.openTab('my')
-      )
-    })
-  )
   cleanupImagePreviewCache()
   startConnectivityCheck(context)
   context.subscriptions.push(startDailySignInScheduler())
