@@ -65,6 +65,7 @@
 }
 
 .my-identity {
+  justify-self: start;
   min-width: 0;
   padding: 2px 0;
   font-size: 14px;
@@ -97,17 +98,19 @@
   color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
   text-align: center;
 
-  &:hover {
-    background: var(--v2ex-hover-bg);
-  }
-
   & + & {
     border-left: 1px solid var(--v2ex-border);
+  }
+
+  &:hover strong,
+  &:hover span {
+    color: var(--vscode-textLink-foreground);
   }
 
   strong,
   span {
     max-width: 100%;
+    transition: color 0.1s ease-out;
     @include mixins.ellipsis;
   }
 
