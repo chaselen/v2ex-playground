@@ -75,7 +75,7 @@ export class V2exClient {
     this.loginExpiredHandler = options.onLoginExpired
     this.session = new V2exSession(initialCookie, {
       ...options,
-      onLoginExpired: () => this.clearExpiredLogin(this.authSessionVersion)
+      onLoginExpired: () => this.clearExpiredLogin(this.authSessionVersion, true)
     })
     this.baseUrl = this.session.baseUrl
     this.auth = new AuthService(this.session)
@@ -331,10 +331,20 @@ export class V2exClient {
     }
   }
 
-  /** 清理指定版本的失效登录会话 */
-  private async clearExpiredLogin(sessionVersion: number): Promise<void> {
+  /**
+   * 清理指定版本的失效登录会话
+   * @param sessionVersion 触发检查时的认证会话版本
+   * @param cookieCleared 会话层是否已经清空 Cookie
+   */
+  private async clearExpiredLogin(sessionVersion: number, cookieCleared = false): Promise<void> {
     if (this.authSessionVersion !== sessionVersion) return
-    this.setCookie('')
+    if (cookieCleared) {
+      this.authSessionVersion += 1
+      this.accountUsername = undefined
+      this.account.reset()
+    } else {
+      this.setCookie('')
+    }
     await this.loginExpiredHandler?.()
   }
 

@@ -64,6 +64,8 @@ export class V2exSession {
   private readonly cookieJar = new CookieJar()
   /** Cookie 被整体替换的次数 */
   private cookieGeneration = 0
+  /** 当前登录会话是否已经通知失效 */
+  private loginExpiredNotified = true
   /** 请求发起时对应的 Cookie 代次 */
   private readonly requestCookieGenerations = new WeakMap<object, number>()
   private readonly twoFactorRetriedConfigs = new WeakSet<object>()
@@ -103,6 +105,7 @@ export class V2exSession {
   /** 替换当前会话 Cookie */
   setCookie(cookie: string): void {
     this.cookieGeneration += 1
+    this.loginExpiredNotified = !cookie
     this.cookieJar.removeAllCookiesSync()
     if (cookie) this.writeCookie(cookie, this.baseUrl)
   }
@@ -181,6 +184,7 @@ export class V2exSession {
     this.updateCookieFromResponse(response)
     const twoFactorResponse = await this.handleTwoFactorResponse(response)
     if (twoFactorResponse !== response) return twoFactorResponse
+    if (!this.isCurrentRequest(response.config)) return response
     this.checkRedirectFromResponse(response)
     this.responseHandlers.forEach(handler => handler(response))
     return response
@@ -283,6 +287,8 @@ export class V2exSession {
 
   /** 清空会话并通知登录失效 */
   private notifyLoginExpired(): void {
+    if (this.loginExpiredNotified) return
+    this.loginExpiredNotified = true
     this.setCookie('')
     void this.options.onLoginExpired?.()
   }

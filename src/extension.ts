@@ -25,9 +25,17 @@ export function activate(context: vscode.ExtensionContext) {
   const mainViewProvider = new MainViewProvider()
   G.V2ex = new V2exClient(G.getCookie(), {
     onLoginExpired: async () => {
-      await G.setCookie('')
+      await G.clearPersistedCookie()
       G.unreadNoticeCount = 0
       await mainViewProvider.reloadViewData()
+      refreshTopicPanelsForAuthChange()
+      const action = await vscode.window.showWarningMessage(
+        'V2EX 登录状态已失效，请重新登录',
+        '重新登录'
+      )
+      if (action === '重新登录') {
+        await vscode.commands.executeCommand('v2ex.login')
+      }
     },
     onTwoFactorRequired: requestTwoFactorVerification,
     onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
