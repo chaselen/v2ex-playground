@@ -3,6 +3,14 @@ import { parseMemberContent, parseMemberInfo } from '../parsers/member'
 import type { V2exSession } from '../session'
 import type { MemberContent, MemberContentOptions, MemberContentTabKey, MemberInfo } from '../types'
 
+/** V2EX 用户 API 中的资料字段 */
+interface MemberApiInfo {
+  /** 用户签名 */
+  tagline?: unknown
+  /** 用户简介 */
+  bio?: unknown
+}
+
 /** 用户页支持的内容标签 */
 const memberContentTabs = new Set<MemberContentTabKey>([
   'topics',
@@ -29,8 +37,19 @@ export class MemberService {
 
   /** 获取用户基本信息 */
   async getInfo(username: string): Promise<MemberInfo> {
-    const { data: html } = await this.session.get<string>(`/member/${username}`)
-    return parseMemberInfo(cheerio.load(html), username)
+    const [pageResponse, apiResponse] = await Promise.all([
+      this.session.get<string>(`/member/${username}`),
+      this.session.get<MemberApiInfo>('/api/members/show.json', {
+        params: { username }
+      })
+    ])
+    const member = parseMemberInfo(cheerio.load(pageResponse.data), username)
+
+    return {
+      ...member,
+      tagline: normalizeApiText(apiResponse.data.tagline, member.tagline),
+      bio: normalizeApiText(apiResponse.data.bio)
+    }
   }
 
   /** 获取用户活动内容 */
@@ -55,4 +74,13 @@ export class MemberService {
 /** 归一化页码 */
 function normalizePage(page?: number): number {
   return Number.isFinite(page) ? Math.max(1, Math.floor(Number(page))) : 1
+}
+
+/**
+ * 将 API 文本字段归一化为字符串
+ * @param value API 字段值
+ * @param fallback 字段缺失时的兜底值
+ */
+function normalizeApiText(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback
 }

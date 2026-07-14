@@ -48,6 +48,17 @@ $panel-border: var(--v2ex-border);
   min-width: 0;
 }
 
+.member-tagline,
+.member-bio {
+  margin: 4px 0 0;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  line-height: 1.5;
+}
+
+.member-bio {
+  white-space: pre-wrap;
+}
+
 .member-meta {
   display: flex;
   flex-wrap: wrap;

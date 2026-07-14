@@ -39,6 +39,9 @@ export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string)
       avatar.attr('alt') ||
       String(ldJson?.name || '') ||
       fallbackUsername,
+    tagline:
+      profileBox.find('span.bigger').first().text().trim() || String(ldJson?.description || ''),
+    bio: '',
     memberNumber,
     joinedAt,
     isPro: profileBox.find('.badges .badge.pro').length > 0,

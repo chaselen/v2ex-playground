@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  Avatar,
   Banner,
   Badge,
   Button,
@@ -23,6 +24,7 @@ import {
   IconLockStroked,
   IconRefresh,
   IconReply,
+  IconUser,
   IconUserCircleStroked
 } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
@@ -33,6 +35,7 @@ import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/
 import ReplyComposer, { type ReplyComposerHandle, type ReplyComposerMode } from './ReplyComposer'
 import { replaceImageEmoticonTokens } from './emoticons'
 import { buildReplyTree, type TopicReplyNode } from './replyTree'
+import MemberQuickInfoPopover from './MemberQuickInfoPopover'
 import type {
   TopicPanelRpcCommands,
   TopicPanelViewState,
@@ -95,6 +98,14 @@ export default function TopicApp() {
    */
   function openMember(username: string) {
     vscode.openMember({ username })
+  }
+
+  /**
+   * 加载用户快速信息
+   * @param username 用户名
+   */
+  function loadMemberQuickInfo(username: string) {
+    return vscode.loadMemberQuickInfo({ username })
   }
 
   /**
@@ -299,13 +310,19 @@ export default function TopicApp() {
     return (
       <div key={reply.replyId} className="reply-item">
         <div className="reply-meta">
-          <a
-            className={`user ${topic?.authorName === reply.userName ? 'user--author' : ''}`}
-            href="javascript:;"
-            onClick={() => openMember(reply.userName)}
+          <MemberQuickInfoPopover
+            username={reply.userName}
+            loadMemberInfo={loadMemberQuickInfo}
+            openMember={openMember}
           >
-            {reply.userName}
-          </a>
+            <a
+              className={`user ${topic?.authorName === reply.userName ? 'user--author' : ''}`}
+              href="javascript:;"
+              onClick={() => openMember(reply.userName)}
+            >
+              {reply.userName}
+            </a>
+          </MemberQuickInfoPopover>
           <span className="time">{reply.time}</span>
           {reply.thanks > 0 && <span className="thanks">♥ {reply.thanks}</span>}
           <div className="reply-actions">
@@ -685,13 +702,28 @@ export default function TopicApp() {
             >
               {topic.node.title}
             </Button>
-            <a
-              className="user text-bold"
-              href="javascript:;"
-              onClick={() => openMember(topic.authorName)}
+            <MemberQuickInfoPopover
+              username={topic.authorName}
+              loadMemberInfo={loadMemberQuickInfo}
+              openMember={openMember}
             >
-              {topic.authorName}
-            </a>
+              <Avatar
+                className="topic-author-avatar"
+                size="extra-extra-small"
+                shape="square"
+                src={topic.authorAvatar}
+                alt={topic.authorName}
+              >
+                <IconUser />
+              </Avatar>
+              <a
+                className="user text-bold"
+                href="javascript:;"
+                onClick={() => openMember(topic.authorName)}
+              >
+                {topic.authorName}
+              </a>
+            </MemberQuickInfoPopover>
             {topic.isAuthorPro && <VscodeProTag />}
             <span className="time">
               {topic.displayTime} · {topic.visitCount} 次点击

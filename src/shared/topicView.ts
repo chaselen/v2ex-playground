@@ -1,5 +1,6 @@
-import type { TopicDetail } from '../v2ex/types'
+import type { MemberInfo, TopicDetail } from '../v2ex/types'
 import type { WebviewContentRpcCommands, WebviewStateRpcCommands } from './commonView'
+export type { MemberInfo } from '../v2ex/types'
 /**
  * 发往 webview 的话题页面状态
  */
@@ -39,6 +40,8 @@ export interface TopicPanelRpcCommands
   previewReply(payload: { content: string }): string
   thankReply(payload: { replyId: string }): void
   loadReplyPage(payload: { replyPage: number }): void
+  /** 加载用户快速信息 */
+  loadMemberQuickInfo(payload: { username: string }): MemberInfo
 }
 
 /**

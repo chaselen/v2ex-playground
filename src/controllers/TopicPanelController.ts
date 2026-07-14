@@ -1,5 +1,6 @@
 import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
+import type { MemberInfo } from '@/v2ex'
 import G from '@/global'
 import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
@@ -81,6 +82,9 @@ export class TopicPanelController {
 
   /** 当前视图状态 */
   private viewState: TopicPanelViewState = { status: 'loading' }
+
+  /** 用户快速信息请求缓存 */
+  private readonly memberQuickInfoCache = new Map<string, Promise<MemberInfo>>()
 
   /** 配置变更监听 */
   private readonly configListener: vscode.Disposable
@@ -252,8 +256,29 @@ export class TopicPanelController {
       checkImgurConnectivity: msg => checkImgurConnectivity(msg.target, msg.refresh),
       previewReply: msg => this.handlePreviewReply(msg),
       thankReply: msg => this.handleThankReply(msg),
-      loadReplyPage: msg => this.handleLoadReplyPage(msg)
+      loadReplyPage: msg => this.handleLoadReplyPage(msg),
+      loadMemberQuickInfo: msg => this.loadMemberQuickInfo(msg.username)
     }
+  }
+
+  /**
+   * 加载用户快速信息
+   * @param username 用户名
+   */
+  private loadMemberQuickInfo(username: string): Promise<MemberInfo> {
+    const normalizedUsername = username.trim()
+    const cacheKey = normalizedUsername.toLowerCase()
+    const cached = this.memberQuickInfoCache.get(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    const request = G.V2ex.getMemberInfo(normalizedUsername).catch(err => {
+      this.memberQuickInfoCache.delete(cacheKey)
+      throw err
+    })
+    this.memberQuickInfoCache.set(cacheKey, request)
+    return request
   }
 
   /**

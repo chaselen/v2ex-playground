@@ -94,6 +94,89 @@ $panel-border: var(--v2ex-border);
   flex: 0 0 auto;
 }
 
+.member-quick-trigger {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.topic-author-avatar {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, #{$panel-border} 75%, transparent);
+}
+
+.member-quick-card {
+  width: 280px;
+  padding: 12px;
+  color: var(--v2ex-webview-fg);
+}
+
+.member-quick-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.member-quick-heading {
+  min-width: 0;
+}
+
+.member-quick-username-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  strong {
+    overflow: hidden;
+    font-size: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.member-quick-number,
+.member-quick-meta {
+  color: $muted-color;
+  font-size: 12px;
+}
+
+.member-quick-tagline,
+.member-quick-bio {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 12px 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.member-quick-tagline + .member-quick-bio {
+  margin-top: -6px;
+}
+
+.member-quick-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.member-quick-state {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: $muted-color;
+}
+
+.member-quick-state--error {
+  flex-direction: column;
+  text-align: center;
+}
+
 .topic-content {
   @include topic-content-shared.base($panel-border);
 

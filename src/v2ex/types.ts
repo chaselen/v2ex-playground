@@ -331,6 +331,10 @@ export interface MemberInfo {
   avatar: string
   /** 用户名 */
   username: string
+  /** 用户签名 */
+  tagline: string
+  /** 用户简介 */
+  bio: string
   /** 会员编号 */
   memberNumber: number
   /** 加入时间 */

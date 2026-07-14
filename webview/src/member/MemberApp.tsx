@@ -233,6 +233,10 @@ export default function MemberApp() {
             </Avatar>
             <div className="member-profile-main">
               <h1>{profile.member.username}</h1>
+              {!!profile.member.tagline && (
+                <p className="member-tagline">{profile.member.tagline}</p>
+              )}
+              {!!profile.member.bio && <p className="member-bio">{profile.member.bio}</p>}
               <div className="member-meta">
                 {!!profile.member.memberNumber && (
                   <VscodeTag>第 {profile.member.memberNumber} 号会员</VscodeTag>

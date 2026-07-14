@@ -12,6 +12,8 @@ describe.sequential('V2exClient members', () => {
     expect(member.username.toLowerCase()).toBe('livid')
     expect(member.memberNumber).toBe(1)
     expect(member.joinedAt).toContain('2010-04-25')
+    expect(member.tagline).toBe('Remember the bigger green')
+    expect(member.bio).toBe('')
     expect(member.isPro).toBe(true)
     if (member.activityRank !== undefined) {
       expect(member.activityRank).toBeGreaterThan(0)
@@ -21,6 +23,14 @@ describe.sequential('V2exClient members', () => {
     expectMemberInfo(member)
     expectMemberContent(content)
     expectTopic(content.topics[0])
+  })
+
+  test('distinguishes member tagline from bio', async () => {
+    const member = await client.getMemberInfo('chaselen')
+
+    expect(member.tagline).toBe('qm')
+    expect(member.bio).toBe('jj')
+    expectMemberInfo(member)
   })
 
   test('handles hidden member topic list', async () => {
