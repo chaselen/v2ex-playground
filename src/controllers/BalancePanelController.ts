@@ -138,7 +138,6 @@ export class BalancePanelController {
     try {
       await this.reload(true)
     } catch (err) {
-      logger.error('账户余额操作失败', err)
       this.renderError(err as Error)
       throw err
     }

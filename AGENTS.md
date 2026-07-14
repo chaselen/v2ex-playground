@@ -64,6 +64,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 修改扩展侧 TypeScript 时运行 `npm run check:extension` 和 `npm run build:extension`
 - 修改 Webview 源码时运行 `npm run check:webview` 和 `npm run build:webview`
 - 修改共享 RPC 契约、Webview HTML 加载链路、构建配置或会同时影响扩展侧与 Webview 的代码时，运行相关两侧类型检查并执行 `npm run build`
+- 仅新增必要的单元测试：优先覆盖复杂业务规则、重要边界条件、已修复的回归问题和需要长期稳定的公开契约；不要为简单透传、日志文案、框架自身行为或无业务价值的实现细节机械补测试
 - 开发阶段优先使用 `npm test -- <test-files>` 运行与改动直接相关的测试；涉及共享基础设施、跨领域行为或无法判断影响范围时运行 `npm test`
 - 涉及 `src/v2ex/`、Cookie、两步验证或请求解析逻辑时，至少运行对应领域的测试文件；依赖真实页面结构或外部响应格式的行为还需运行相关 `*.live.test.ts`，执行时需保证网络可访问 V2EX、SoV2EX 等对应外部服务
 - `V2exClient` 真实网页测试位于 `src/v2ex/tests/`，按领域拆分为 `client.topics.live.test.ts`、`client.members.live.test.ts`、`client.nodes.live.test.ts`、`client.search.live.test.ts`、`client.auth.live.test.ts` 和 `client.account.live.test.ts`；修改对应 service、parser 或门面方法时运行相应文件

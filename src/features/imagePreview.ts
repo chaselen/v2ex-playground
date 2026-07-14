@@ -59,7 +59,7 @@ export async function openImagePreview(imageSrc: string) {
     return
   }
 
-  logger.debug('打开图片预览', normalizedImageSrc)
+  const logContext = { target: normalizedImageSrc }
 
   try {
     const image = await vscode.window.withProgress(
@@ -82,11 +82,20 @@ export async function openImagePreview(imageSrc: string) {
     )
 
     await vscode.commands.executeCommand('vscode.open', image.uri)
-  } catch (e: any) {
-    if (e?.code === 'ERR_CANCELED') {
+  } catch (err) {
+    if (isCanceledError(err)) {
       return
     }
 
-    vscode.window.showErrorMessage(`下载图片失败：${e.message}`)
+    logger.error('图片预览下载失败', err, logContext)
+    const message = err instanceof Error ? err.message : String(err)
+    vscode.window.showErrorMessage(`下载图片失败：${message}`)
   }
+}
+
+/** 判断是否为用户取消下载产生的错误 */
+function isCanceledError(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'ERR_CANCELED'
+  )
 }

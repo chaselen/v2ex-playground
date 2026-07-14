@@ -55,11 +55,7 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
    * @param data 附加数据
    */
   private rawPost(command: string, data?: object) {
-    try {
-      this.webview.postMessage({ command, ...data })
-    } catch (err) {
-      logger.error('Webview 消息发送失败', err)
-    }
+    void this.webview.postMessage({ command, ...data })
   }
 
   /**
@@ -79,7 +75,9 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
       const data = await this.dispatchRequest(message)
       this.postResponse(message.requestId, true, data)
     } catch (err) {
-      logger.error(`Webview RPC 调用失败: ${message.command}`, err)
+      logger.error('Webview RPC 调用失败', err, {
+        command: message.command
+      })
       this.postResponse(message.requestId, false, undefined, (err as Error).message)
     }
   }

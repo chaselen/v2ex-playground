@@ -30,8 +30,12 @@ export const logger = {
   warn(message: string, ...args: unknown[]): void {
     output?.warn(message, ...args)
   },
-  error(error: unknown, ...args: unknown[]): void {
-    output?.error(normalizeError(error), ...args)
+  error(message: string, error?: unknown, ...args: unknown[]): void {
+    if (error === undefined) {
+      output?.error(message, ...args)
+      return
+    }
+    output?.error(message, normalizeError(error), ...args)
   },
   show(): void {
     output?.show(true)

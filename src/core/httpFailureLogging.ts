@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 
-/** HTTP 请求失败摘要，不包含查询参数、请求头和请求正文 */
+/** HTTP 请求失败摘要，不包含请求头和请求正文 */
 export interface HttpFailureSummary {
   method: string
   target: string
@@ -11,17 +11,16 @@ export interface HttpFailureSummary {
 /** HTTP 请求失败回调 */
 export type HttpFailureHandler = (summary: HttpFailureSummary) => void
 
-/** 获取不包含查询参数和凭据的请求目标 */
-function getSafeRequestTarget(config: InternalAxiosRequestConfig): string {
+/** 获取包含完整查询参数的请求目标 */
+function getRequestTarget(config: InternalAxiosRequestConfig): string {
   try {
-    const url = new URL(config.url || '', config.baseURL)
-    return `${url.hostname}${url.pathname}`
+    return new URL(config.url || '', config.baseURL).toString()
   } catch {
-    return (config.url || '未知地址').split('?')[0]
+    return config.url || '未知地址'
   }
 }
 
-/** 为 Axios 客户端注册脱敏的请求失败摘要 */
+/** 为 Axios 客户端注册请求失败摘要 */
 export function installHttpFailureLogging(
   http: AxiosInstance,
   onFailure: HttpFailureHandler
@@ -42,7 +41,7 @@ export function installHttpFailureLogging(
         const startedAt = startedAtByConfig.get(error.config)
         onFailure({
           method: (error.config.method || 'GET').toUpperCase(),
-          target: getSafeRequestTarget(error.config),
+          target: getRequestTarget(error.config),
           status: error.response?.status,
           elapsedMs: startedAt === undefined ? undefined : Date.now() - startedAt
         })

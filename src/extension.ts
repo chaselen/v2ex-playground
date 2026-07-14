@@ -29,6 +29,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const client = await V2exClient.create({
     loginCookieStore: new LoginCredentialStore(context),
     onLoginExpired: async () => {
+      logger.warn('登录状态已失效')
       await mainViewProvider.reloadViewData()
       refreshTopicPanelsForAuthChange()
       void vscode.window

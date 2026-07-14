@@ -147,7 +147,7 @@ export class TopicPanelController {
     try {
       await this.reloadTopic(true)
     } catch (err) {
-      logger.error('话题详情加载失败', err)
+      logger.error('话题详情加载失败', err, { topicId: this.topicId })
       this.renderError(err as Error)
     }
   }
@@ -157,7 +157,7 @@ export class TopicPanelController {
    */
   refreshForAuthChange() {
     this.refreshTopic().catch(err => {
-      logger.error('话题登录态刷新失败', err)
+      logger.error('话题登录态刷新失败', err, { topicId: this.topicId })
     })
   }
 
@@ -278,7 +278,9 @@ export class TopicPanelController {
 
     const detail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
     this.detail = detail
-    updateRecentBrowseTopic(detail).catch(err => logger.error('最近浏览详情保存失败', err))
+    updateRecentBrowseTopic(detail).catch(err =>
+      logger.error('最近浏览详情保存失败', err, { topicId: detail.id })
+    )
     this.panel.title = formatPanelTitle(detail.title)
     setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
       logger.error('话题面板图标更新失败', err)
@@ -293,7 +295,6 @@ export class TopicPanelController {
     try {
       await this.reloadTopic(true)
     } catch (err) {
-      logger.error('话题操作失败', err)
       this.renderError(err as Error)
       throw err
     }

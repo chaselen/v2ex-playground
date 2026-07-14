@@ -106,7 +106,7 @@ export class MemberPanelController {
     try {
       await this.reloadMember(true)
     } catch (err) {
-      logger.error('用户信息加载失败', err)
+      logger.error('用户信息加载失败', err, { username: this.username })
       this.renderError(err as Error)
     }
   }
@@ -200,7 +200,6 @@ export class MemberPanelController {
     try {
       await this.reloadMember(true)
     } catch (err) {
-      logger.error('用户内容加载失败', err)
       this.renderError(err as Error)
       throw err
     }

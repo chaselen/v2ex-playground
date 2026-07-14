@@ -316,7 +316,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         children
       }
     } catch (err) {
-      logger.error('主视图数据加载失败', err)
+      logger.error('主视图数据加载失败', err, { tab, itemKey, page })
       return {
         tab,
         itemKey,
