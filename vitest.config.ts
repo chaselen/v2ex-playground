@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
       environment: 'node',
       fileParallelism: true,
       hookTimeout: 60000,
-      include: ['src/**/*.test.ts'],
+      include: ['src/**/*.test.ts', 'webview/src/**/*.test.ts'],
       maxConcurrency: 5,
       sequence: {
         concurrent: false

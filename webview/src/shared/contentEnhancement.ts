@@ -3,6 +3,7 @@ import { handleWebviewLinkClick } from './linkNavigation'
 import { isApplePlatform } from './platform'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
 import { isImageEmoticonSrc, normalizeImageEmoticonSrc } from './imageEmoticons'
+import { decodeCloudflareEmails } from './cloudflareEmail'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
 const vscode = createVsCodeClient<WebviewContentRpcCommands>()
@@ -36,35 +37,42 @@ function isImageEmoticonDisplaySrc(originalSrc: string, displaySrc: string) {
  */
 export function normalizeHtml(html?: unknown): string {
   const normalizedHtml = typeof html === 'string' ? html : ''
+  const hasImgurImage = normalizedHtml.includes('i.imgur.com')
+  const hasCloudflareEmail =
+    normalizedHtml.includes('data-cfemail') ||
+    normalizedHtml.includes('/cdn-cgi/l/email-protection#')
 
-  if (!normalizedHtml.includes('i.imgur.com')) {
+  if (!hasImgurImage && !hasCloudflareEmail) {
     return normalizedHtml
   }
 
   const template = document.createElement('template')
   template.innerHTML = normalizedHtml
+  decodeCloudflareEmails(template.content)
 
-  template.content.querySelectorAll<HTMLImageElement>('img').forEach(img => {
-    const originalSrc = img.getAttribute('data-preview-src') || img.getAttribute('src') || ''
-    if (!originalSrc) {
-      return
-    }
+  if (hasImgurImage) {
+    template.content.querySelectorAll<HTMLImageElement>('img').forEach(img => {
+      const originalSrc = img.getAttribute('data-preview-src') || img.getAttribute('src') || ''
+      if (!originalSrc) {
+        return
+      }
 
-    // 图片表情提交使用 LD 地址，渲染时统一切回 HD 地址
-    const displaySrc = getImageDisplaySrc(originalSrc)
-    const proxiedSrc = proxyImgurImageSrc(displaySrc)
-    if (isImageEmoticonDisplaySrc(originalSrc, displaySrc)) {
-      img.classList.add('v2ex-emoticon-image')
-    }
+      // 图片表情提交使用 LD 地址，渲染时统一切回 HD 地址
+      const displaySrc = getImageDisplaySrc(originalSrc)
+      const proxiedSrc = proxyImgurImageSrc(displaySrc)
+      if (isImageEmoticonDisplaySrc(originalSrc, displaySrc)) {
+        img.classList.add('v2ex-emoticon-image')
+      }
 
-    if (proxiedSrc === originalSrc) {
-      return
-    }
+      if (proxiedSrc === originalSrc) {
+        return
+      }
 
-    // DOM 中展示代理地址，同时保留规范化后的真实图片地址
-    img.dataset.previewSrc = displaySrc
-    img.src = proxiedSrc
-  })
+      // DOM 中展示代理地址，同时保留规范化后的真实图片地址
+      img.dataset.previewSrc = displaySrc
+      img.src = proxiedSrc
+    })
+  }
 
   return template.innerHTML
 }
