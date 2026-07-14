@@ -101,11 +101,6 @@ $panel-border: var(--v2ex-border);
   gap: 6px;
 }
 
-.topic-author-avatar {
-  flex: 0 0 auto;
-  border: 1px solid color-mix(in srgb, #{$panel-border} 75%, transparent);
-}
-
 .member-quick-card {
   width: 280px;
   padding: 12px;

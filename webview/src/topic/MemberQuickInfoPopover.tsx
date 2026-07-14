@@ -130,7 +130,7 @@ export default function MemberQuickInfoPopover({
                 {!!member.activityRank && <span>今日活跃度排名 {member.activityRank}</span>}
               </div>
 
-              <Button block size="small" theme="light" onClick={handleOpenMember}>
+              <Button block size="small" theme="solid" type="primary" onClick={handleOpenMember}>
                 打开完整资料
               </Button>
             </>

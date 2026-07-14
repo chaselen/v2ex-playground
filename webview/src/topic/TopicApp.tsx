@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Avatar,
   Banner,
   Badge,
   Button,
@@ -24,7 +23,6 @@ import {
   IconLockStroked,
   IconRefresh,
   IconReply,
-  IconUser,
   IconUserCircleStroked
 } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
@@ -707,15 +705,6 @@ export default function TopicApp() {
               loadMemberInfo={loadMemberQuickInfo}
               openMember={openMember}
             >
-              <Avatar
-                className="topic-author-avatar"
-                size="extra-extra-small"
-                shape="square"
-                src={topic.authorAvatar}
-                alt={topic.authorName}
-              >
-                <IconUser />
-              </Avatar>
               <a
                 className="user text-bold"
                 href="javascript:;"
