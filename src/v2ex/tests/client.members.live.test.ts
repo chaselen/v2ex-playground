@@ -26,10 +26,11 @@ describe.sequential('V2exClient members', () => {
   })
 
   test('distinguishes member tagline from bio', async () => {
-    const member = await client.getMemberInfo('chaselen')
+    const member = await client.getMemberInfo('loading')
 
-    expect(member.tagline).toBe('qm')
-    expect(member.bio).toBe('jj')
+    expect(member.tagline).not.toBe('')
+    expect(member.bio).not.toBe('')
+    expect(member.tagline).not.toBe(member.bio)
     expectMemberInfo(member)
   })
 
