@@ -33,6 +33,11 @@ const pendingProbeById = new Map<ConnectivityTarget['id'], Promise<ConnectivityR
 const connectivityHttp = axios.create({
   timeout: CHECK_TIMEOUT_MS,
   withCredentials: false,
+  // 避免 Imgur 对 Axios 默认 User-Agent 返回 429
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36'
+  },
   validateStatus: () => true
 })
 
