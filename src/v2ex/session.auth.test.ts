@@ -1,11 +1,23 @@
-import { AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import {
+  AxiosHeaders,
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig
+} from 'axios'
 import { describe, expect, test, vi } from 'vitest'
 import { V2exSession } from './session'
-import { LoginRequiredError } from './types'
+import { LoginRequiredError, TwoFactorRequiredError } from './types'
 
 /** 会话响应测试需要访问的内部方法 */
 interface SessionInternals {
+  http: AxiosInstance
   attachCookieToRequest(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig
+  handleBeforeRedirect(
+    redirectHref: string,
+    redirectHeaders: Record<string, unknown>,
+    headers: Record<string, unknown>,
+    responseUrl: string
+  ): void
   handleResponse(response: AxiosResponse): Promise<AxiosResponse>
 }
 
@@ -50,49 +62,45 @@ describe('V2exSession authentication responses', () => {
     })
   })
 
-  test('ignores Cookie and login-state side effects from a replaced session', async () => {
-    const loginExpiredHandler = vi.fn()
-    const responseHandler = vi.fn()
-    const session = new V2exSession('A2=old-cookie', {
-      onLoginExpired: loginExpiredHandler
-    })
-    session.onResponse(responseHandler)
+  test('stores V2EX redirect cookies without forwarding Cookie across origins', () => {
+    const session = new V2exSession('A2=login-cookie')
     const internals = session as unknown as SessionInternals
-    const response = createLoginRedirectResponse(internals)
-    response.headers = { 'set-cookie': ['A2=stale-cookie; Path=/'] }
+    const redirectHeaders = { Cookie: 'A2=login-cookie' }
 
-    session.setCookie('A2=new-cookie')
-    const redirectHeaders = { Cookie: 'A2=old-cookie' }
-    response.config.beforeRedirect?.(
-      { href: 'https://www.v2ex.com/', headers: redirectHeaders },
-      {
-        headers: { 'set-cookie': 'A2=stale-redirect-cookie; Path=/' },
-        statusCode: 302
-      },
-      {
-        headers: { Cookie: 'A2=old-cookie' },
-        url: 'https://www.v2ex.com/notifications',
-        method: 'GET'
-      }
+    internals.handleBeforeRedirect(
+      'https://example.com/landing',
+      redirectHeaders,
+      { 'set-cookie': 'V2EX_LANG=zhcn; Path=/' },
+      'https://www.v2ex.com/notifications'
     )
 
-    await expect(internals.handleResponse(response)).resolves.toBe(response)
-    expect(session.getCookie()).toContain('A2=new-cookie')
-    expect(session.getCookie()).not.toContain('stale-cookie')
-    expect(session.getCookie()).not.toContain('stale-redirect-cookie')
+    expect(session.getCookie()).toContain('V2EX_LANG=zhcn')
     expect(redirectHeaders).not.toHaveProperty('Cookie')
-    expect(loginExpiredHandler).not.toHaveBeenCalled()
-    expect(responseHandler).not.toHaveBeenCalled()
   })
 
-  test('does not retry a two-factor request with a replacement cookie', async () => {
-    let resolveTwoFactor!: (verified: boolean) => void
-    const session = new V2exSession('A2=old-cookie', {
-      onTwoFactorRequired: () =>
-        new Promise<boolean>(resolve => {
-          resolveTwoFactor = resolve
-        })
+  test('forwards the latest Cookie on a V2EX redirect', () => {
+    const session = new V2exSession('A2=login-cookie')
+    const internals = session as unknown as SessionInternals
+    const redirectHeaders: Record<string, unknown> = {}
+
+    internals.handleBeforeRedirect(
+      'https://www.v2ex.com/notifications',
+      redirectHeaders,
+      { 'set-cookie': 'A2=refreshed-cookie; Path=/' },
+      'https://www.v2ex.com/'
+    )
+
+    expect(session.getCookie()).toContain('A2=refreshed-cookie')
+    expect(redirectHeaders.Cookie).toContain('A2=refreshed-cookie')
+  })
+
+  test('retries the same two-factor request only once with the refreshed Cookie', async () => {
+    let session!: V2exSession
+    const twoFactorHandler = vi.fn(async () => {
+      session.setCookie('A2=verified-cookie; A2O=two-factor-cookie')
+      return true
     })
+    session = new V2exSession('A2=login-cookie', { onTwoFactorRequired: twoFactorHandler })
     const internals = session as unknown as SessionInternals
     const config = internals.attachCookieToRequest({
       baseURL: 'https://www.v2ex.com',
@@ -107,13 +115,16 @@ describe('V2exSession authentication responses', () => {
       status: 302,
       statusText: 'Found'
     }
+    const retriedResponse = { ...response, headers: {}, status: 200, statusText: 'OK' }
+    const request = vi.spyOn(internals.http, 'request').mockResolvedValue(retriedResponse)
 
-    const responsePromise = internals.handleResponse(response)
-    await vi.waitFor(() => expect(resolveTwoFactor).toBeTypeOf('function'))
-    session.setCookie('A2=new-cookie')
-    resolveTwoFactor(true)
+    await expect(internals.handleResponse(response)).resolves.toBe(retriedResponse)
+    expect(request).toHaveBeenCalledOnce()
+    expect(config.headers.Cookie).toContain('A2=verified-cookie')
+    expect(config.headers.Cookie).toContain('A2O=two-factor-cookie')
 
-    await expect(responsePromise).resolves.toBe(response)
-    expect(session.getCookie()).toContain('A2=new-cookie')
+    await expect(internals.handleResponse(response)).rejects.toBeInstanceOf(TwoFactorRequiredError)
+    expect(twoFactorHandler).toHaveBeenCalledOnce()
+    expect(request).toHaveBeenCalledOnce()
   })
 })

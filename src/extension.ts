@@ -15,8 +15,8 @@ import {
 } from '@/features/panelNavigation'
 import { startConnectivityCheck } from '@/features/connectivityCheck'
 import { initializeLogger, logger } from '@/core/logger'
-import { AuthSessionManager } from '@/features/authSession'
 import { LoginCredentialStore } from '@/features/loginCredentialStore'
+import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   // 初始化扩展运行时上下文
@@ -24,46 +24,29 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   logger.info('扩展已激活')
   G.context = context
 
-  // 创建主视图与登录会话管理器
+  // 创建主视图与 V2EX 客户端
   const mainViewProvider = new MainViewProvider()
-  const authSession = new AuthSessionManager(
-    new LoginCredentialStore(context),
-    (cookie, { onLoginExpired, onTwoFactorRequired }) =>
-      new V2exClient(cookie, {
-        onLoginExpired: async () => {
-          try {
-            await onLoginExpired()
-          } catch (err) {
-            logger.error('清理失效登录凭据失败', err)
+  const client = await V2exClient.create({
+    loginCookieStore: new LoginCredentialStore(context),
+    onLoginExpired: async () => {
+      await mainViewProvider.reloadViewData()
+      refreshTopicPanelsForAuthChange()
+      void vscode.window
+        .showWarningMessage('V2EX 登录状态已失效，请重新登录', '重新登录')
+        .then(action => {
+          if (action === '重新登录') {
+            void vscode.commands.executeCommand('v2ex.login')
           }
-          await mainViewProvider.reloadViewData()
-          refreshTopicPanelsForAuthChange()
-          void vscode.window
-            .showWarningMessage('V2EX 登录状态已失效，请重新登录', '重新登录')
-            .then(action => {
-              if (action === '重新登录') {
-                void vscode.commands.executeCommand('v2ex.login')
-              }
-            })
-        },
-        onTwoFactorRequired,
-        onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
-      }),
-    (cookie, onTwoFactorRequired) =>
-      new V2exClient(cookie, {
-        onTwoFactorRequired,
-        onHttpFailure: summary => logger.warn('候选登录请求失败', summary)
-      })
-  )
-  G.authSession = authSession
-
-  // 使用持久化会话初始化 V2EX 客户端
-  const client = await authSession.initialize()
+        })
+    },
+    onTwoFactorRequired: requestTwoFactorVerification,
+    onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
+  })
   G.V2ex = client
 
   // 刷新登录状态，并在登录有效时尝试自动签到
   const refreshLoginAndAutoSignIn = async () => {
-    const authenticated = await authSession.refreshAuthentication()
+    const authenticated = await client.refreshAuthentication()
     if (authenticated) {
       autoDailySignIn({ notifyOnSuccess: true }).catch(err => logger.error('自动签到失败', err))
     }

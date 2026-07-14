@@ -174,9 +174,7 @@ export class AccountService {
 
   /** 查询每日签到状态 */
   async getDailySignInStatus(): Promise<DailySignInStatus> {
-    const isActiveSession = this.session.createSessionGuard()
     const { data: html } = await this.session.get<string>('/mission/daily')
-    if (!isActiveSession()) return { signedIn: false }
     if (!cheerio.load(html)('.fa.fa-ok-sign').length) {
       return { signedIn: false }
     }
@@ -195,15 +193,13 @@ export class AccountService {
     return this.findDailySignInReward()
   }
 
-  /** 查询最新一条每日登录奖励，并在 Cookie 会话变化后停止翻页 */
+  /** 查询最新一条每日登录奖励 */
   private async findDailySignInReward(): Promise<DailySignInReward | undefined> {
-    const isActiveSession = this.session.createSessionGuard()
     let page = 1
     let totalPage = 1
 
     do {
       const detail = await this.getBalance(page)
-      if (!isActiveSession()) return undefined
       const reward = parseLatestDailySignInReward(detail.transactions)
       if (reward) return reward
       totalPage = detail.totalPage
@@ -215,18 +211,16 @@ export class AccountService {
 
   /** 执行每日签到 */
   async dailySignIn(): Promise<DailySignInResult> {
-    const isActiveSession = this.session.createSessionGuard()
     const failed: DailySignInResult = { result: 'failed', reward: 0 }
-    if (!this.session.getLoginCookie()) return failed
+    const loginIdentity = getLoginIdentity(this.session)
+    if (!loginIdentity) return failed
 
     try {
       const { data: html } = await this.session.get<string>('/mission/daily')
-      if (!isActiveSession()) return failed
       const $ = cheerio.load(html)
 
       // 记录领取前最新奖励，用于确认领取后是否产生了新流水
       const previousReward = await this.findDailySignInReward()
-      if (!isActiveSession()) return failed
 
       // 签到页尚未进入下一个周期时，页面仍会显示已领取，最新奖励可能属于前一个日期
       // <span class="gray"><li class="fa fa-ok-sign" style="color: #0c0;"></li> &nbsp;每日登录奖励已领取</span>
@@ -248,10 +242,10 @@ export class AccountService {
       if (!once) return failed
 
       // 领取奖励后通过余额记录确认签到结果
+      if (getLoginIdentity(this.session) !== loginIdentity) return failed
       await this.session.get(`/mission/daily/redeem?once=${once}`)
-      if (!isActiveSession()) return failed
+      if (getLoginIdentity(this.session) !== loginIdentity) return failed
       const latestReward = await this.findDailySignInReward()
-      if (!isActiveSession()) return failed
       const isNewReward = latestReward && latestReward.date !== previousReward?.date
 
       return {
@@ -295,4 +289,9 @@ function createEmptyAccountOverview(): AccountOverview {
 /** 归一化页码 */
 function normalizePage(page?: number): number {
   return Number.isFinite(page) ? Math.max(1, Math.floor(Number(page))) : 1
+}
+
+/** 获取用于识别当前账号的 A2 Cookie */
+function getLoginIdentity(session: V2exSession): string {
+  return session.getLoginCookie().split(';', 1)[0]
 }

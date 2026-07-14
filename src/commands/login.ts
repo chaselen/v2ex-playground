@@ -1,6 +1,5 @@
 import vscode from 'vscode'
 import G from '@/global'
-import { normalizeLoginCookie } from '@/v2ex'
 import { logger } from '@/core/logger'
 
 /**
@@ -13,7 +12,7 @@ export default async function login(): Promise<LoginResult> {
     placeHolder: 'V2EX Cookie',
     prompt:
       '粘贴完整 Cookie、A2="..."、A2+A2O 或单独的 A2 值以登录。（如要退出，请清空 Cookie 并回车确认）',
-    value: G.authSession.getLoginCookie()
+    value: G.V2ex.getLoginCookie()
   })
   // 如果用户撤销输入，如ESC，则为undefined
   if (cookie === undefined) {
@@ -23,16 +22,9 @@ export default async function login(): Promise<LoginResult> {
 
   // 清除cookie
   if (!cookie) {
-    await G.authSession.logout()
+    await G.V2ex.logout()
     logger.info('已退出登录')
     return LoginResult.logout
-  }
-  const loginCookie = normalizeLoginCookie(cookie)
-  if (!loginCookie) {
-    vscode.window.showErrorMessage(
-      '登录失败，Cookie 格式不正确，请确认内容包含 A2="..." 或直接粘贴 A2 值'
-    )
-    return LoginResult.failed
   }
 
   const result = await vscode.window.withProgress(
@@ -40,16 +32,16 @@ export default async function login(): Promise<LoginResult> {
       title: '正在登录',
       location: vscode.ProgressLocation.Notification
     },
-    () => G.authSession.authenticate(loginCookie)
+    () => G.V2ex.switchLoginCookie(cookie)
   )
 
   if (result === 'canceled') {
-    logger.info('用户取消两步验证，登录状态未变更')
+    logger.info('登录已取消或被其他认证操作取代，原登录状态未变更')
     return LoginResult.cancel
   }
   if (result === 'invalid') {
     logger.warn('登录失败，Cookie 无效')
-    vscode.window.showErrorMessage('登录失败，Cookie无效')
+    vscode.window.showErrorMessage('登录失败，Cookie 格式不正确或已失效，请确认内容包含有效的 A2')
     return LoginResult.failed
   }
 

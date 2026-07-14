@@ -6,6 +6,8 @@ import { NodeService } from './services/node'
 import { SearchService } from './services/search'
 import { TopicService } from './services/topic'
 import { V2exSession } from './session'
+import { normalizeLoginCookie } from './cookie'
+import { TwoFactorRequiredError } from './types'
 import type {
   AccountOverview,
   AccountOverviewChangedHandler,
@@ -26,11 +28,25 @@ import type {
   Topic,
   TopicDetail,
   TwoFactorRequiredHandler,
+  TwoFactorVerification,
   V2exNotification
 } from './types'
 
+/** 登录 Cookie 持久化存储 */
+export interface LoginCookieStore {
+  /** 读取持久化登录 Cookie */
+  load(): Promise<string>
+  /** 保存持久化登录 Cookie */
+  save(cookie: string): Promise<void>
+}
+
+/** 切换登录 Cookie 的结果 */
+export type LoginCookieSwitchResult = 'authenticated' | 'canceled' | 'invalid'
+
 /** V2EX 客户端配置 */
 export interface V2exClientOptions {
+  /** 登录 Cookie 持久化存储 */
+  loginCookieStore?: LoginCookieStore
   /** 登录失效回调 */
   onLoginExpired?: LoginExpiredHandler
   /** 需要两步验证时的回调 */
@@ -59,18 +75,49 @@ export class V2exClient {
   /** SoV2EX 搜索领域服务 */
   private readonly searchService: SearchService
 
+  /** 当前已验证用户名 */
+  private authenticatedUsername?: string
+
+  /** 当前认证状态修订号 */
+  private authRevision = 0
+
+  /** 当前登录状态检查任务 */
+  private authenticationCheckTask?: {
+    /** 检查发起时的认证状态修订号 */
+    revision: number
+    /** 登录状态检查 Promise */
+    promise: Promise<boolean>
+  }
+
+  /** 当前认证状态对应的两步验证操作 */
+  private twoFactorVerification!: TwoFactorVerification
+
+  /** 凭据写入队列 */
+  private credentialMutation = Promise.resolve()
+
+  /** 客户端配置 */
+  private readonly options: V2exClientOptions
+
+  /**
+   * 从持久化存储创建 V2EX 客户端
+   * @param options 客户端配置
+   */
+  static async create(options: V2exClientOptions = {}): Promise<V2exClient> {
+    const initialCookie = await options.loginCookieStore?.load()
+    return new V2exClient(initialCookie, options)
+  }
+
   /**
    * 创建客户端并组合会话与各领域服务
    * @param initialCookie 初始 V2EX Cookie
    * @param options 客户端配置
    */
   constructor(initialCookie?: string, options: V2exClientOptions = {}) {
+    this.options = options
     this.session = new V2exSession(initialCookie, {
-      ...options,
-      onLoginExpired: async () => {
-        this.account.reset()
-        await options.onLoginExpired?.()
-      }
+      onLoginExpired: () => this.handleLoginExpired(),
+      onTwoFactorRequired: () => this.handleTwoFactorRequired(),
+      onHttpFailure: options.onHttpFailure
     })
     this.baseUrl = this.session.baseUrl
     this.auth = new AuthService(this.session)
@@ -79,33 +126,88 @@ export class V2exClient {
     this.members = new MemberService(this.session, this.baseUrl)
     this.nodes = new NodeService(this.session, this.baseUrl)
     this.searchService = new SearchService(this.session)
-  }
-
-  /**
-   * 获取当前 V2EX Cookie
-   * @param url 目标链接
-   */
-  getCookie(url = this.baseUrl): string {
-    return this.session.getCookie(url)
+    this.twoFactorVerification = this.createTwoFactorVerification()
   }
 
   /**
    * 获取可持久化的登录 Cookie
    *
    * 运行时 CookieJar 还包含服务端下发的内部 Cookie，持久化时只保留 A2/A2O
-   * @param url 目标链接
    */
-  getLoginCookie(url = this.baseUrl): string {
-    return this.session.getLoginCookie(url)
+  getLoginCookie(): string {
+    return this.session.getLoginCookie()
+  }
+
+  /** 当前登录 Cookie 是否已经通过验证 */
+  isAuthenticated(): boolean {
+    return !!this.authenticatedUsername
+  }
+
+  /** 获取当前已验证用户名 */
+  getAuthenticatedUsername(): string | undefined {
+    return this.authenticatedUsername
+  }
+
+  /** 确保当前登录 Cookie 已经通过验证 */
+  ensureAuthenticated(): Promise<boolean> {
+    return this.getAuthenticationCheck()
+  }
+
+  /** 强制刷新当前登录 Cookie 的验证状态 */
+  refreshAuthentication(): Promise<boolean> {
+    return this.getAuthenticationCheck(true)
   }
 
   /**
-   * 设置当前 V2EX Cookie
-   * @param cookie Cookie 字符串
+   * 在隔离会话中验证并切换登录 Cookie
+   * @param cookie 候选登录 Cookie
    */
-  setCookie(cookie: string): void {
-    this.account.reset()
-    this.session.setCookie(cookie)
+  async switchLoginCookie(cookie: string): Promise<LoginCookieSwitchResult> {
+    const loginCookie = normalizeLoginCookie(cookie)
+    if (!loginCookie) return 'invalid'
+
+    const revision = this.authRevision
+    let twoFactorCanceled = false
+    const candidate = new V2exClient(loginCookie, {
+      onTwoFactorRequired: async verification => {
+        const verified = (await this.options.onTwoFactorRequired?.(verification)) ?? false
+        twoFactorCanceled = !verified
+        return verified
+      },
+      onHttpFailure: this.options.onHttpFailure
+    })
+
+    let result: CheckCookieResult
+    try {
+      result = await candidate.auth.checkCookie()
+    } catch (err) {
+      if (twoFactorCanceled && err instanceof TwoFactorRequiredError) {
+        return 'canceled'
+      }
+      throw err
+    }
+    if (!result.isValid) return 'invalid'
+
+    const committed = await this.enqueueCredentialMutation(async () => {
+      if (this.authRevision !== revision) return false
+      const candidateCookie = candidate.getLoginCookie()
+      await this.options.loginCookieStore?.save(candidateCookie)
+      if (this.authRevision !== revision) return false
+      this.replaceLoginCookie(candidateCookie, result.username)
+      return true
+    })
+    return committed ? 'authenticated' : 'canceled'
+  }
+
+  /** 主动退出登录 */
+  async logout(): Promise<void> {
+    const revision = ++this.authRevision
+    this.twoFactorVerification = this.createTwoFactorVerification()
+    await this.enqueueCredentialMutation(async () => {
+      await this.options.loginCookieStore?.save('')
+      if (this.authRevision !== revision) return
+      this.clearAuthentication()
+    })
   }
 
   /**
@@ -286,25 +388,6 @@ export class V2exClient {
     return this.topics.thankTopic(topicId)
   }
 
-  /** 检查 Cookie 是否有效 */
-  async checkCookie(): Promise<CheckCookieResult> {
-    const hadLoginCookie = !!this.session.getLoginCookie()
-    const isCurrentSession = this.session.createSessionGuard()
-    const result = await this.auth.checkCookie()
-    if (!result.isValid && hadLoginCookie && isCurrentSession()) {
-      await this.session.expireLogin()
-    }
-    return result
-  }
-
-  /**
-   * 提交两步验证码
-   * @param code 6 位验证码
-   */
-  submitTwoFactorCode(code: string): Promise<void> {
-    return this.auth.submitTwoFactorCode(code)
-  }
-
   /** 获取全部节点 */
   getAllNodes(): Promise<Node[]> {
     return this.nodes.getAll()
@@ -363,5 +446,134 @@ export class V2exClient {
    */
   search(params: SoV2exSearchParams): Promise<SoV2exSearchResult> {
     return this.searchService.search(params)
+  }
+
+  /** 获取当前登录状态检查任务 */
+  private getAuthenticationCheck(force = false): Promise<boolean> {
+    const revision = this.authRevision
+    if (this.authenticationCheckTask?.revision === revision) {
+      return this.authenticationCheckTask.promise
+    }
+    if (!force && this.authenticatedUsername) {
+      return Promise.resolve(true)
+    }
+    if (!this.getLoginCookie()) {
+      return Promise.resolve(false)
+    }
+
+    const task = {
+      revision,
+      promise: Promise.resolve(false)
+    }
+    task.promise = this.checkAuthentication(revision).finally(() => {
+      if (this.authenticationCheckTask === task) {
+        this.authenticationCheckTask = undefined
+      }
+    })
+    this.authenticationCheckTask = task
+    return task.promise
+  }
+
+  /**
+   * 检查指定认证状态的登录 Cookie
+   * @param revision 检查发起时的认证状态修订号
+   */
+  private async checkAuthentication(revision: number): Promise<boolean> {
+    const result = await this.auth.checkCookie()
+    if (this.authRevision !== revision) return this.isAuthenticated()
+    if (!result.isValid) {
+      await this.session.expireLogin()
+      return false
+    }
+    this.authenticatedUsername = result.username
+    return true
+  }
+
+  /** 处理当前业务会话的两步验证 */
+  private async handleTwoFactorRequired(): Promise<boolean> {
+    const revision = this.authRevision
+    const verified = (await this.options.onTwoFactorRequired?.(this.twoFactorVerification)) ?? false
+    if (!verified || this.authRevision !== revision) return false
+
+    const loginCookie = this.getLoginCookie()
+    await this.enqueueCredentialMutation(async () => {
+      if (this.authRevision !== revision) return
+      await this.options.loginCookieStore?.save(loginCookie)
+    })
+    return this.authRevision === revision
+  }
+
+  /** 创建只作用于当前认证状态的两步验证操作 */
+  private createTwoFactorVerification(): TwoFactorVerification {
+    const revision = this.authRevision
+    return {
+      submitCode: async code => {
+        if (this.authRevision !== revision) {
+          throw new Error('登录状态已更新，请重新操作')
+        }
+        await this.auth.submitTwoFactorCode(code)
+        if (this.authRevision !== revision) {
+          throw new Error('登录状态已更新，请重新操作')
+        }
+      }
+    }
+  }
+
+  /** 登录失效后清理认证状态和持久化凭据 */
+  private async handleLoginExpired(): Promise<void> {
+    this.invalidateAuthentication()
+    try {
+      await this.enqueueCredentialMutation(async () => {
+        await this.options.loginCookieStore?.save('')
+      })
+    } finally {
+      await this.options.onLoginExpired?.()
+    }
+  }
+
+  /**
+   * 替换已经验证的登录 Cookie
+   * @param cookie 登录 Cookie
+   * @param username 已验证用户名
+   */
+  private replaceLoginCookie(cookie: string, username: string): void {
+    this.authRevision += 1
+    this.session.setCookie(cookie)
+    this.authenticatedUsername = username
+    this.account.reset()
+    this.twoFactorVerification = this.createTwoFactorVerification()
+  }
+
+  /** 提交清空运行时登录状态 */
+  private clearAuthentication(): void {
+    this.authRevision += 1
+    this.session.setCookie('')
+    this.invalidateAuthenticationState()
+  }
+
+  /** 标记 Session 已经清理的登录状态失效 */
+  private invalidateAuthentication(): void {
+    this.authRevision += 1
+    this.invalidateAuthenticationState()
+  }
+
+  /** 清理认证派生状态 */
+  private invalidateAuthenticationState(): void {
+    this.authenticatedUsername = undefined
+    this.account.reset()
+    this.twoFactorVerification = this.createTwoFactorVerification()
+  }
+
+  /**
+   * 串行执行持久化凭据写入
+   * @param operation 凭据写入操作
+   */
+  private enqueueCredentialMutation<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.credentialMutation.then(operation, operation)
+    this.credentialMutation = result.then(
+      () => undefined,
+      () => undefined
+    )
+    return result
   }
 }

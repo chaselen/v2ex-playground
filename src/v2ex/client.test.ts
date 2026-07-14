@@ -372,11 +372,8 @@ describe.sequential('V2exClient search', () => {
 
 describe('V2exClient authenticated requests', () => {
   authTest('refreshes the authenticated session with V2EX_COOKIE', async () => {
-    const result = await client.checkCookie()
-
-    expect(result.isValid).toBe(true)
-    if (!result.isValid) return
-    expect(result.username).not.toBe('')
+    await expect(client.refreshAuthentication()).resolves.toBe(true)
+    expect(client.getAuthenticatedUsername()).not.toBe('')
   })
 
   authTest('gets account overview with V2EX_COOKIE', async () => {

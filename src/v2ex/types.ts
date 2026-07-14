@@ -31,8 +31,16 @@ export type CheckCookieResult =
       username: string
     }
 
+/** 两步验证码提交操作 */
+export interface TwoFactorVerification {
+  /** 提交两步验证码 */
+  submitCode(code: string): Promise<void>
+}
+
 /** 两步验证回调 */
-export type TwoFactorRequiredHandler = () => boolean | Promise<boolean>
+export type TwoFactorRequiredHandler = (
+  verification: TwoFactorVerification
+) => boolean | Promise<boolean>
 
 /**
  * 账户概览变化回调

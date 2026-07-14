@@ -109,7 +109,7 @@ export class BalancePanelController {
       openNode: msg => this.deps.openNode(msg),
       login: async () => {
         await vscode.commands.executeCommand('v2ex.login')
-        if (G.authSession.isAuthenticated()) {
+        if (G.V2ex.isAuthenticated()) {
           await this.reload(true)
         }
       },

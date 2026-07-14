@@ -169,7 +169,7 @@ export class TopicPanelController {
     this.postViewState({
       status: 'topic',
       topic: topicDetail,
-      canOperate: G.authSession.isAuthenticated()
+      canOperate: G.V2ex.isAuthenticated()
     })
   }
 
