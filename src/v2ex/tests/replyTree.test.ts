@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { load } from 'cheerio/slim'
-import { buildReplyTree, type TopicReplyNode } from '../../webview/src/topic/replyTree'
-import type { TopicReply } from './types'
+import { buildReplyTree, type TopicReplyNode } from '../../../webview/src/topic/replyTree'
+import type { TopicReply } from '../types'
 
 /** 创建算法测试所需的最小完整回复数据 */
 function reply(floor: number, userName: string, content = ''): TopicReply {

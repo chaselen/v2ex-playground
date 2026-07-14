@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type { LoginCookieStore } from './client'
-import type { V2exSession, V2exSessionOptions } from './session'
-import { TwoFactorRequiredError, type CheckCookieResult } from './types'
+import type { LoginCookieStore } from '../client'
+import type { V2exSession, V2exSessionOptions } from '../session'
+import { TwoFactorRequiredError, type CheckCookieResult } from '../types'
 
 const { checkCookieMock, submitTwoFactorCodeMock } = vi.hoisted(() => ({
   checkCookieMock: vi.fn<(session: V2exSession) => Promise<CheckCookieResult>>(),
   submitTwoFactorCodeMock: vi.fn<(session: V2exSession, code: string) => Promise<void>>()
 }))
 
-vi.mock('./services/auth', () => ({
+vi.mock('../services/auth', () => ({
   AuthService: class {
     constructor(private readonly session: V2exSession) {}
 
@@ -26,7 +26,7 @@ vi.mock('./services/auth', () => ({
   }
 }))
 
-import { V2exClient } from './client'
+import { V2exClient } from '../client'
 
 /** 创建可从测试中完成的 Promise */
 function createDeferred<T>() {
@@ -70,6 +70,12 @@ describe('V2exClient authentication', () => {
     checkCookieMock.mockReset()
     submitTwoFactorCodeMock.mockReset()
     submitTwoFactorCodeMock.mockResolvedValue(undefined)
+  })
+
+  test('gets only persistable login cookies', () => {
+    const client = new V2exClient('A2=login; A2O=two-factor; V2EX_LANG=zhcn')
+
+    expect(client.getLoginCookie()).toBe('A2=login; A2O=two-factor')
   })
 
   test('loads persisted credentials but waits for validation before marking authenticated', async () => {

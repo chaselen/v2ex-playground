@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { normalizeLoginCookie } from './cookie'
+import { normalizeLoginCookie } from '../cookie'
 
 const a2Value =
   '"2|1:0|10:1773804697|2:A2|56:ZmFrZV92YWx1ZV9mb3JfdGVzdGluZ19vbmx5XzEyMzQ1Njc4OTA=|abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"'

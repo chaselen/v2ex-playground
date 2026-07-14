@@ -5,8 +5,8 @@ import {
   type InternalAxiosRequestConfig
 } from 'axios'
 import { describe, expect, test, vi } from 'vitest'
-import { V2exSession } from './session'
-import { LoginRequiredError, TwoFactorRequiredError } from './types'
+import { V2exSession } from '../session'
+import { LoginRequiredError, TwoFactorRequiredError } from '../types'
 
 /** 会话响应测试需要访问的内部方法 */
 interface SessionInternals {

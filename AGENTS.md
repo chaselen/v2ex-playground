@@ -13,6 +13,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
   - `session.ts` — V2EX HTTP、Cookie、重定向、登录失效和两步验证处理
   - `services/` — 账户、认证、用户、节点、搜索和话题等领域请求
   - `parsers/` — V2EX 页面 HTML 解析器；解析规则应保持在对应领域文件中
+  - `tests/` — 顶层 V2EX 模块的单元测试和真实网页集成测试；`parsers/`、`services/` 的测试与实现保持同目录
 - `src/features/` — 独立功能模块，如每日签到、图片预览、外部链接打开、详情面板导航、最近浏览、登录会话和两步验证
 - `src/shared/` — 扩展侧与 Webview 共享的 RPC 契约和类型
 - `src/config.ts` / `src/global.ts` — 配置读取和扩展运行时全局状态
@@ -43,7 +44,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - `npm run check:extension:watch` — 持续检查扩展侧 TypeScript 类型
 - `npm run check:webview` — 使用 TypeScript 检查 Webview 类型
 - `npm run check:webview:watch` — 持续检查 Webview TypeScript 类型
-- `npm test` — 运行 `src/**/*.test.ts` 下的 Vitest 测试；包含会真实请求 V2EX 页面的 `*.live.test.ts` 集成测试
+- `npm test` — 运行 `src/**/*.test.ts` 下的 Vitest 测试；包含会真实访问 V2EX、SoV2EX 等外部服务的 `*.live.test.ts` 集成测试
+- `npm test -- <test-files>` — 运行指定的 Vitest 测试文件；开发阶段优先根据改动范围选择直接相关的测试
 - `npm run format -- <changed-files>` — 使用 oxfmt 增量格式化
 - `npm run format:check -- <changed-files>` — 检查指定文件格式
 - `npm run vscode:prepublish` — 发布前执行完整类型检查和生产构建
@@ -62,8 +64,11 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 修改扩展侧 TypeScript 时运行 `npm run check:extension` 和 `npm run build:extension`
 - 修改 Webview 源码时运行 `npm run check:webview` 和 `npm run build:webview`
 - 修改共享 RPC 契约、Webview HTML 加载链路、构建配置或会同时影响扩展侧与 Webview 的代码时，运行相关两侧类型检查并执行 `npm run build`
-- 发布前、打包前或无法判断影响范围时，运行 `npm run check` 和 `npm run build`
-- 涉及 `src/v2ex/`、Cookie、两步验证或请求解析逻辑时运行 `npm test`；真实网页测试是必要验证，用于及时发现 V2EX 页面结构变化导致的解析回归，执行时需保证网络可访问 V2EX
+- 开发阶段优先使用 `npm test -- <test-files>` 运行与改动直接相关的测试；涉及共享基础设施、跨领域行为或无法判断影响范围时运行 `npm test`
+- 涉及 `src/v2ex/`、Cookie、两步验证或请求解析逻辑时，至少运行对应领域的测试文件；依赖真实页面结构或外部响应格式的行为还需运行相关 `*.live.test.ts`，执行时需保证网络可访问 V2EX、SoV2EX 等对应外部服务
+- `V2exClient` 真实网页测试位于 `src/v2ex/tests/`，按领域拆分为 `client.topics.live.test.ts`、`client.members.live.test.ts`、`client.nodes.live.test.ts`、`client.search.live.test.ts`、`client.auth.live.test.ts` 和 `client.account.live.test.ts`；修改对应 service、parser 或门面方法时运行相应文件
+- 回复树的真实页面集成测试位于 `src/v2ex/tests/replyTree.live.test.ts`；修改话题回复解析、分页合并或楼中楼算法时需运行该文件
+- 发布前或打包前运行 `npm test`、`npm run check` 和 `npm run build`
 - 手动验证按改动范围覆盖登录、两步验证、节点刷新、话题打开、用户打开、搜索、最近浏览、设置项和 Webview 行为
 
 ## Webview 架构
@@ -88,8 +93,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 跨页面共享样式优先通过不直接生成选择器的 SCSS mixin 复用，由页面样式使用 `@use` 和 `@include` 按需引入；话题与用户内容的公共富文本样式集中在 `webview/src/shared/_topic-content.scss`，不要将 `.topic-content` 直接加入全局样式
 - 主面板 CSS Modules 的省略文本、空状态和加载状态等重复模式集中在 `webview/src/main/components/_mixins.scss`；新增同类样式时优先复用 mixin，保持最终类名由各 CSS Module 管理
 - Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)，样式优先使用官方 Theme Color CSS 变量（`var(--vscode-*)`）；Semi 组件应优先通过 `webview/src/shared/_vscode-semi-theme.scss` 中的 [Design Token](https://semi.design/zh-CN/basic/tokens) 映射适配
-- 无法通过 Semi Design Token 表达的兼容样式集中在 `webview/src/shared/_semi-overrides.scss`，不要在页面样式中新增全局 `.semi-*` 覆盖
-- Tooltip、Popover、Popconfirm 等浮层使用 Semi 默认 Portal 并挂载到 `document.body`；暗色/高对比主题适配优先使用 token，必要的全局浮层兼容覆盖写入 `webview/src/shared/_semi-overrides.scss`
+- 无法通过 Semi Design Token 表达且跨页面通用的兼容样式集中在 `webview/src/shared/_semi-overrides.scss`；页面内的 Semi 布局微调应限定在页面或业务容器下，不新增无作用域的全局 `.semi-*` 覆盖
+- Tooltip、Popover、Popconfirm 等浮层使用 Semi 默认 Portal 并挂载到 `document.body`；暗色/高对比主题适配优先使用 token，跨页面通用的全局浮层兼容覆盖写入 `webview/src/shared/_semi-overrides.scss`；页面专属的 Portal 覆盖可保留在页面样式中，但必须通过页面独有的内容类或浮层类精确限定
 - 常规语义状态优先直接使用 Semi `Badge` 和 `Tag`；只有需要统一采用 VS Code Badge Theme Color 或中性标签配色时，才使用 `webview/src/shared/SemiVscode.tsx` 中的 `VscodeBadge` 和 `VscodeTag`
 
 ## Webview 加载与交互
@@ -117,7 +122,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 不盲猜 V2EX 返回字段、HTML 结构、请求参数或响应格式；修改前先核对现有类型、解析器、测试夹具和实际调用路径
 - 修改 V2EX 领域数据时，先更新 `src/v2ex/types.ts`，再同步对应的 `src/v2ex/services/`、`src/v2ex/parsers/`、`src/v2ex/client.ts`、共享 RPC 类型和消费方
 - 新增 V2EX 能力时，将请求和领域逻辑放入对应的 `src/v2ex/services/`，将 HTML 解析放入 `src/v2ex/parsers/`，再由 `V2exClient` 暴露，并按需从 `src/v2ex/index.ts` 导出；业务模块不直接复制请求或解析逻辑
-- HTML 解析规则变化需在对应的解析器测试或 `src/v2ex/client.test.ts` 中补充或更新覆盖；依赖真实页面结构的关键行为应同步更新或新增 `*.live.test.ts` 集成测试
+- HTML 解析规则变化需在对应的解析器测试或相关领域的 `src/v2ex/tests/client.*.live.test.ts` 中补充或更新覆盖；依赖真实页面结构的关键行为应同步更新或新增 `*.live.test.ts` 集成测试
 
 ## 代码规范
 
