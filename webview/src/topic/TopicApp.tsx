@@ -761,15 +761,12 @@ export default function TopicApp() {
           {topic.appends.map((append, index) => (
             <div className="topic-append" key={`append-${index}`}>
               <section className="topic-content append">
-                <h2>
-                  第 {index + 1} 条附言
-                  {append.time && <span className="append-time"> · {append.time}</span>}
+                <h2 className="append-heading">
+                  <span>第 {index + 1} 条附言</span>
+                  {append.time && <span className="append-time">{append.time}</span>}
                 </h2>
                 <div dangerouslySetInnerHTML={{ __html: normalizeHtml(append.content) }} />
               </section>
-              {index < topic.appends.length - 1 && (
-                <Divider className="topic-divider topic-divider--append-end" />
-              )}
             </div>
           ))}
 

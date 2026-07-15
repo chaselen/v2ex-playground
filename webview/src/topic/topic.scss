@@ -352,18 +352,26 @@ $panel-border: var(--v2ex-border);
   }
 
   &.append {
-    padding: 10px 12px;
-    border-left: 3px solid color-mix(in srgb, var(--vscode-textLink-foreground) 70%, transparent);
-    background: color-mix(in srgb, var(--vscode-textLink-foreground) 6%, transparent);
+    padding: 8px 10px;
+    border-left: 2px solid color-mix(in srgb, var(--vscode-textLink-foreground) 55%, transparent);
+    background: color-mix(in srgb, var(--vscode-textLink-foreground) 4%, transparent);
 
-    h2 {
-      margin: 0 0 10px;
+    .append-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin: 0 0 6px;
+      padding: 0;
+      border: 0;
       color: $muted-color;
-      font-size: 15px;
+      font-size: 13px;
+      font-weight: 600;
     }
 
     .append-time {
-      font-weight: 500;
+      color: color-mix(in srgb, #{$muted-color} 78%, transparent);
+      font-size: 12px;
+      font-weight: 400;
     }
 
     p:last-child,
@@ -395,8 +403,8 @@ $panel-border: var(--v2ex-border);
   margin: 20px 0 14px;
 }
 
-.topic-divider--append-end {
-  margin: 14px 0;
+.topic-append + .topic-append {
+  margin-top: 10px;
 }
 
 .topic-append + .topic-divider--reply-start {
