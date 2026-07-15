@@ -145,6 +145,17 @@ body {
   );
   --v2ex-highlight-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
 
+  /* 代码高亮色：VS Code 未向 Webview 暴露语法 token，按主题类型提供接近编辑器的色盘 */
+  --v2ex-code-keyword: #c586c0;
+  --v2ex-code-type: #4ec9b0;
+  --v2ex-code-literal: #569cd6;
+  --v2ex-code-number: #b5cea8;
+  --v2ex-code-string: #ce9178;
+  --v2ex-code-title: #dcdcaa;
+  --v2ex-code-variable: #9cdcfe;
+  --v2ex-code-comment: #6a9955;
+  --v2ex-code-meta: #c586c0;
+
   /* 浮层阴影：高对比主题在下方关闭阴影并依赖对比边框 */
   --v2ex-widget-shadow-color: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.18));
   --v2ex-shadow-elevated: 0 8px 28px var(--v2ex-widget-shadow-color);
@@ -253,6 +264,15 @@ body {
 
 body.vscode-light {
   color-scheme: light;
+  --v2ex-code-keyword: #0000ff;
+  --v2ex-code-type: #267f99;
+  --v2ex-code-literal: #0000ff;
+  --v2ex-code-number: #098658;
+  --v2ex-code-string: #a31515;
+  --v2ex-code-title: #795e26;
+  --v2ex-code-variable: #001080;
+  --v2ex-code-comment: #008000;
+  --v2ex-code-meta: #af00db;
 }
 
 body.vscode-dark,
@@ -270,4 +290,13 @@ body.vscode-high-contrast {
   --v2ex-disabled-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
   --v2ex-shadow-elevated: none;
   --v2ex-shadow-floating: none;
+  --v2ex-code-keyword: var(--v2ex-link-fg);
+  --v2ex-code-type: var(--v2ex-info-fg);
+  --v2ex-code-literal: var(--v2ex-link-fg);
+  --v2ex-code-number: var(--v2ex-success-fg);
+  --v2ex-code-string: var(--v2ex-warning-fg);
+  --v2ex-code-title: var(--v2ex-info-fg);
+  --v2ex-code-variable: var(--v2ex-webview-fg);
+  --v2ex-code-comment: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  --v2ex-code-meta: var(--v2ex-link-fg);
 }

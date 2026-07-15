@@ -67,6 +67,11 @@
 
   pre {
     overflow-x: auto;
+    margin: 1em 0;
+    padding: 12px 14px;
+    border: 1px solid $panel-border;
+    border-radius: 4px;
+    background: var(--vscode-textCodeBlock-background, var(--vscode-editor-background));
     font-family: var(--vscode-editor-font-family, inherit);
     white-space: pre;
   }
@@ -75,5 +80,82 @@
     font-family: var(--vscode-editor-font-family, inherit);
     white-space: pre-wrap;
     word-break: break-word;
+  }
+
+  pre > code {
+    display: block;
+    min-width: max-content;
+    padding: 0;
+    background: transparent;
+    white-space: pre;
+    word-break: normal;
+  }
+
+  .hljs-comment,
+  .hljs-quote {
+    color: var(--v2ex-code-comment);
+  }
+
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-subst {
+    color: var(--v2ex-code-keyword);
+  }
+
+  .hljs-built_in,
+  .hljs-type,
+  .hljs-class .hljs-title {
+    color: var(--v2ex-code-type);
+  }
+
+  .hljs-literal,
+  .hljs-symbol,
+  .hljs-bullet {
+    color: var(--v2ex-code-literal);
+  }
+
+  .hljs-number,
+  .hljs-link {
+    color: var(--v2ex-code-number);
+  }
+
+  .hljs-string,
+  .hljs-regexp,
+  .hljs-deletion {
+    color: var(--v2ex-code-string);
+  }
+
+  .hljs-addition {
+    color: var(--v2ex-code-number);
+  }
+
+  .hljs-title,
+  .hljs-section,
+  .hljs-selector-id {
+    color: var(--v2ex-code-title);
+  }
+
+  .hljs-variable,
+  .hljs-template-variable,
+  .hljs-attribute,
+  .hljs-attr,
+  .hljs-selector-class,
+  .hljs-selector-attr,
+  .hljs-selector-pseudo {
+    color: var(--v2ex-code-variable);
+  }
+
+  .hljs-meta,
+  .hljs-meta .hljs-keyword,
+  .hljs-tag {
+    color: var(--v2ex-code-meta);
+  }
+
+  .hljs-emphasis {
+    font-style: italic;
+  }
+
+  .hljs-strong {
+    font-weight: 700;
   }
 }

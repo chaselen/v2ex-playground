@@ -365,6 +365,32 @@ function bindNavigationLink(anchor: HTMLAnchorElement) {
 }
 
 /**
+ * 按需加载语法高亮并处理代码块
+ * @param root 根节点
+ */
+function enhanceCodeBlocks(root: ParentNode) {
+  const codeBlocks = Array.from(root.querySelectorAll<HTMLElement>('pre > code')).filter(
+    code => !code.classList.contains('hljs') && code.dataset.syntaxHighlightPending !== 'true'
+  )
+
+  if (!codeBlocks.length) {
+    return
+  }
+
+  codeBlocks.forEach(code => {
+    code.dataset.syntaxHighlightPending = 'true'
+  })
+
+  void import('./syntaxHighlighting')
+    .then(({ highlightCodeBlocks }) => highlightCodeBlocks(codeBlocks))
+    .catch(() => {
+      codeBlocks.forEach(code => {
+        delete code.dataset.syntaxHighlightPending
+      })
+    })
+}
+
+/**
  * 给内容区域挂载图片预览与站内跳转行为
  * @param root 根节点
  * @param showImages 是否显示图片
@@ -386,4 +412,5 @@ export function enhanceHtmlContent(root: ParentNode, showImages: boolean) {
   })
 
   topicLinks.forEach(bindNavigationLink)
+  enhanceCodeBlocks(root)
 }

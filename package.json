@@ -183,6 +183,7 @@
     "dayjs": "^1.11.21",
     "esbuild": "^0.28.0",
     "file-type": "^22.0.1",
+    "highlight.js": "^11.11.1",
     "oxfmt": "^0.53.0",
     "picomatch": "^4.0.4",
     "react": "^19.2.6",
