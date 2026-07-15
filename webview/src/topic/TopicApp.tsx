@@ -750,11 +750,11 @@ export default function TopicApp() {
           <Divider className="topic-divider topic-divider--reply-start" />
 
           <section className="reply">
-            <div className="reply-heading">
-              {topic.replies.length ? <h2>共 {topic.replyCount} 条回复</h2> : <h2>暂无回复</h2>}
-              <div className="reply-heading-actions">
-                {loadingReplyPage && <Spin size="small" />}
-                {!!topic.replies.length && (
+            {!!topic.replies.length && (
+              <div className="reply-heading">
+                <h2>共 {topic.replyCount} 条回复</h2>
+                <div className="reply-heading-actions">
+                  {loadingReplyPage && <Spin size="small" />}
                   <RadioGroup
                     aria-label="回复列表展示模式"
                     buttonSize="small"
@@ -777,9 +777,24 @@ export default function TopicApp() {
                       </Badge>
                     </Radio>
                   </RadioGroup>
-                )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {!topic.replies.length && (
+              <div className="reply-empty-state">
+                <Empty
+                  title="还没有人回复"
+                  description={
+                    state.canOperate
+                      ? '来聊聊你的看法，成为第一个参与讨论的人'
+                      : '登录后即可参与讨论，成为第一个回复的人'
+                  }
+                  image={<IllustrationNoContent className="reply-empty-illustration" />}
+                  darkModeImage={<IllustrationNoContentDark className="reply-empty-illustration" />}
+                />
+              </div>
+            )}
 
             {topic.replyTotalPage > 1 && (
               <Pagination

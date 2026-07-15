@@ -481,6 +481,44 @@ $panel-border: var(--v2ex-border);
   gap: 6px;
 }
 
+.reply-empty-state {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 18px 16px;
+  border: 1px dashed $panel-border;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--v2ex-widget-bg) 68%, transparent);
+  color: $muted-color;
+
+  .semi-empty {
+    max-width: 360px;
+    text-align: center;
+  }
+
+  .semi-empty-image {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  .reply-empty-illustration {
+    width: 88px;
+    height: 68px;
+  }
+
+  .semi-empty-title {
+    margin: 0 0 4px;
+    color: var(--v2ex-webview-fg);
+    line-height: 1.4;
+  }
+
+  .semi-empty-description {
+    color: inherit;
+    line-height: 1.5;
+  }
+}
+
 .reply-view-switch {
   flex: 0 0 auto;
   // 保留按钮型 Radio 的轨道与选中项两层结构
