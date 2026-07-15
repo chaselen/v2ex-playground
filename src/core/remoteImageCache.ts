@@ -89,6 +89,33 @@ export async function cacheRemoteImageFile(
 }
 
 /**
+ * 清理过期的扩展文件缓存
+ * @param cacheDirName 缓存子目录名
+ * @param ttlMs 缓存保留毫秒数
+ */
+export async function cleanupExpiredCacheFiles(cacheDirName: string, ttlMs: number) {
+  const cacheDirUri = getExtensionFileCacheDir(cacheDirName)
+  const expireBefore = Date.now() - ttlMs
+
+  // 先创建目录，避免 Cursor 在读取不存在目录时额外输出错误日志
+  await vscode.workspace.fs.createDirectory(cacheDirUri)
+  const cacheFiles = await vscode.workspace.fs.readDirectory(cacheDirUri)
+  await Promise.all(
+    cacheFiles.map(async ([fileName, fileType]) => {
+      if (fileType !== vscode.FileType.File) {
+        return
+      }
+
+      const fileUri = vscode.Uri.joinPath(cacheDirUri, fileName)
+      const stat = await vscode.workspace.fs.stat(fileUri)
+      if (stat.mtime < expireBefore) {
+        await vscode.workspace.fs.delete(fileUri)
+      }
+    })
+  )
+}
+
+/**
  * 删除扩展文件缓存目录
  * @param cacheDirName 缓存子目录名
  */

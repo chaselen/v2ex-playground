@@ -1,10 +1,45 @@
 import path from 'path'
 import vscode from 'vscode'
-import { cacheRemoteImageFile, normalizeRemoteImageSrc } from '@/core/remoteImageCache'
+import {
+  cacheRemoteImageFile,
+  cleanupExpiredCacheFiles,
+  normalizeRemoteImageSrc
+} from '@/core/remoteImageCache'
+import { logger } from '@/core/logger'
 import G from '@/global'
 
 /** 面板图标缓存目录名 */
-const panelIconCacheDirName = 'panel-icons'
+const PANEL_ICON_CACHE_DIR = 'panel-icons'
+
+/** 面板图标缓存保留天数 */
+const PANEL_ICON_CACHE_TTL_DAYS = 30
+
+/** 面板图标缓存清理周期 */
+const PANEL_ICON_CACHE_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000
+
+/**
+ * 启动面板图标缓存定期清理
+ */
+export function startPanelIconCacheCleanup() {
+  void cleanupPanelIconCache()
+  const timer = setInterval(() => {
+    void cleanupPanelIconCache()
+  }, PANEL_ICON_CACHE_CLEANUP_INTERVAL_MS)
+
+  return new vscode.Disposable(() => clearInterval(timer))
+}
+
+/** 清理过期的面板图标缓存 */
+async function cleanupPanelIconCache() {
+  try {
+    await cleanupExpiredCacheFiles(
+      PANEL_ICON_CACHE_DIR,
+      PANEL_ICON_CACHE_TTL_DAYS * 24 * 60 * 60 * 1000
+    )
+  } catch (err) {
+    logger.warn('清理面板图标缓存失败', err)
+  }
+}
 
 /**
  * 设置默认面板图标
@@ -36,7 +71,7 @@ export async function setRemotePanelIcon(panel: vscode.WebviewPanel, imageSrc?: 
 async function cacheRemotePanelIcon(imageSrc: string): Promise<vscode.Uri> {
   const cachedIcon = await cacheRemoteImageFile({
     imageSrc,
-    cacheDirName: panelIconCacheDirName
+    cacheDirName: PANEL_ICON_CACHE_DIR
   })
   return cachedIcon.uri
 }

@@ -17,6 +17,7 @@ import { initializeLogger, logger } from '@/core/logger'
 import { LoginCredentialStore } from '@/features/loginCredentialStore'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
 import { deleteExtensionFileCacheDir } from '@/core/remoteImageCache'
+import { startPanelIconCacheCleanup } from '@/features/panelIcon'
 
 /** 旧版图片预览缓存目录名 */
 const LEGACY_IMAGE_PREVIEW_CACHE_DIR = 'image-previews'
@@ -63,6 +64,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   void deleteExtensionFileCacheDir(LEGACY_IMAGE_PREVIEW_CACHE_DIR).catch(err => {
     logger.warn('清理旧版图片预览缓存失败', err)
   })
+  context.subscriptions.push(startPanelIconCacheCleanup())
   startConnectivityCheck(context)
   context.subscriptions.push(startDailySignInScheduler())
 
