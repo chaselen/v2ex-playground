@@ -121,6 +121,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 ## 数据与接口约束
 
 - 不盲猜 V2EX 返回字段、HTML 结构、请求参数或响应格式；修改前先核对现有类型、解析器、测试夹具和实际调用路径
+- V2EX HTML 解析以中文页面文案为契约前提；所有用于解析 V2EX HTML 的请求必须保留 `src/v2ex/session.ts` 中的 `Accept-Language: zh-CN,zh;q=0.9`，不得在 service 或业务模块中覆盖为其他语言
+- 使用 curl、独立 HTTP 客户端或其他绕过 `V2exSession` 的方式核对真实页面时，也必须显式携带相同的 `Accept-Language` 请求头；只有专门验证多语言响应时才可例外，不能用英文响应直接判断现有中文解析规则失效
 - 修改 V2EX 领域数据时，先更新 `src/v2ex/types.ts`，再同步对应的 `src/v2ex/services/`、`src/v2ex/parsers/`、`src/v2ex/client.ts`、共享 RPC 类型和消费方
 - 新增 V2EX 能力时，将请求和领域逻辑放入对应的 `src/v2ex/services/`，将 HTML 解析放入 `src/v2ex/parsers/`，再由 `V2exClient` 暴露，并按需从 `src/v2ex/index.ts` 导出；业务模块不直接复制请求或解析逻辑
 - HTML 解析规则变化需在对应的解析器测试或相关领域的 `src/v2ex/tests/client.*.live.test.ts` 中补充或更新覆盖；依赖真实页面结构的关键行为应同步更新或新增 `*.live.test.ts` 集成测试

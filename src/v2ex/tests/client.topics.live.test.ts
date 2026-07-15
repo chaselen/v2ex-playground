@@ -42,6 +42,7 @@ describe.sequential('V2exClient topics', () => {
     expect(detail.node).toEqual({ name: 'create', title: '分享创造' })
     expect(detail.authorName).toBe('chaselen')
     expect(detail.displayTime).toBe('2020 年 9 月 3 日')
+    expect(detail.publishedAt).toBe('2020-09-03 08:36:53')
     expect(detail.content).toContain('V2EX Playground')
     expect(detail.replyCount).toBeGreaterThanOrEqual(42)
     expect(detail.replies.length).toBeGreaterThanOrEqual(42)
@@ -49,6 +50,7 @@ describe.sequential('V2exClient topics', () => {
     expect(detail.replies[0]).toMatchObject({
       replyId: '9452335',
       userName: 'polaa',
+      repliedAt: '2020-09-03 08:41:14',
       floor: '1'
     })
     expectTopicDetail(detail)

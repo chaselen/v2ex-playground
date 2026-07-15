@@ -78,7 +78,7 @@ export interface Topic {
   /** 回复数 */
   replies: number
 
-  /** 展示时间 */
+  /** 列表展示时间，可能为中文相对时间或本地化日期，如“10 分钟前”“2026 年 7 月 15 日” */
   displayTime?: string
 
   /** 最后回复用户 */
@@ -103,9 +103,9 @@ export interface TopicDetail {
   authorName: string
   /** 作者是否为 PRO 会员 */
   isAuthorPro: boolean
-  /** 时间 */
+  /** 发帖时间展示文本，可能为中文相对时间或本地化日期 */
   displayTime: string
-  /** 完整发布时间 */
+  /** 完整发布时间，格式为 YYYY-MM-DD HH:mm:ss */
   publishedAt: string
   /** 点击次数 */
   visitCount: number
@@ -139,7 +139,7 @@ export interface TopicDetail {
  * 话题追加内容
  */
 export interface TopicAppend {
-  /** 追加时间 */
+  /** 附言时间展示文本，可能为中文相对时间或本地化日期 */
   time: string
   /** 追加内容 */
   content: string
@@ -155,8 +155,10 @@ export interface TopicReply {
   userAvatar: string
   /** 用户名 */
   userName: string
-  /** 回复时间 */
+  /** 相对回复时间，如“10 分钟前”“2141 天前” */
   time: string
+  /** 完整回复时间，格式为 YYYY-MM-DD HH:mm:ss */
+  repliedAt: string
   /** 楼层 */
   floor: string
   /** 回复内容 */
@@ -259,7 +261,7 @@ export type BalanceTransactionDirection = 'positive' | 'negative' | 'neutral'
 export interface BalanceTransaction {
   /** 流水唯一标识 */
   key: string
-  /** 时间 */
+  /** 流水时间，格式为 YYYY-MM-DD HH:mm:ss +08:00 */
   time: string
   /** 类型 */
   type: string
@@ -311,7 +313,7 @@ export interface V2exNotification {
   topicTitle?: string
   /** 话题路径 */
   topicPath?: string
-  /** 展示时间 */
+  /** 提醒展示时间，通常为中文相对时间文本 */
   time: string
   /** 消息正文 HTML */
   payloadHtml: string
@@ -337,7 +339,7 @@ export interface MemberInfo {
   bio: string
   /** 会员编号 */
   memberNumber: number
-  /** 加入时间 */
+  /** 加入时间，通常为 YYYY-MM-DD HH:mm:ss +08:00，结构化数据回退值可能为 ISO 8601 */
   joinedAt: string
   /** 是否为 PRO 会员 */
   isPro: boolean
@@ -359,7 +361,7 @@ export interface MemberReply {
   node: Node
   /** 话题作者 */
   topicAuthor: string
-  /** 展示时间 */
+  /** 回复时间，通常为 YYYY-MM-DD HH:mm:ss +08:00；原页面未提供完整时间时为展示文本 */
   time: string
   /** 摘要 HTML */
   summaryHtml: string

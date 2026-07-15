@@ -44,7 +44,7 @@ export interface WebviewTopic {
   nodeTitle?: string
   /** 回复数 */
   replies: number
-  /** 展示时间 */
+  /** 列表展示时间，可能为中文相对时间或本地化日期 */
   displayTime?: string
   /** 最后回复用户 */
   lastReplyUser?: string
@@ -98,7 +98,7 @@ export interface WebviewNotification {
   topicTitle?: string
   /** 话题路径 */
   topicPath?: string
-  /** 展示时间 */
+  /** 提醒展示时间，通常为中文相对时间文本 */
   time: string
   /** 消息正文 HTML */
   payloadHtml: string

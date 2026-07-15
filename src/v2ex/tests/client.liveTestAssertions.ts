@@ -71,8 +71,7 @@ export function expectTopicDetail(detail: TopicDetail) {
   expect(detail.authorName.length).toBeGreaterThan(0)
   expect(detail.topicIcon).toMatch(/^https?:\/\//)
   expect(detail.displayTime).toEqual(expect.any(String))
-  expect(detail.publishedAt).toEqual(expect.any(String))
-  expect(detail.publishedAt.length).toBeGreaterThan(0)
+  expect(detail.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
   expect(detail.visitCount).toEqual(expect.any(Number))
   expect(detail.visitCount).toBeGreaterThanOrEqual(0)
   expect(detail.content).toEqual(expect.any(String))
@@ -85,6 +84,11 @@ export function expectTopicDetail(detail: TopicDetail) {
   expect(detail.replyTotalPage).toEqual(expect.any(Number))
   expect(detail.replyTotalPage).toBeGreaterThanOrEqual(1)
   expect(Array.isArray(detail.replies)).toBe(true)
+  if (detail.replies.length) {
+    expect(detail.replies[0].time).toEqual(expect.any(String))
+    expect(detail.replies[0].time.length).toBeGreaterThan(0)
+    expect(detail.replies[0].repliedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+  }
 }
 
 /**

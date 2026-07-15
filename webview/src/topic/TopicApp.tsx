@@ -323,7 +323,9 @@ export default function TopicApp() {
                 {reply.userName}
               </a>
             </MemberQuickInfoPopover>
-            <span className="time">{reply.time}</span>
+            <span className="time" title={reply.repliedAt || reply.time}>
+              {reply.time}
+            </span>
             {reply.thanks > 0 && <span className="thanks">♥ {reply.thanks}</span>}
             <div className="reply-actions">
               {state.canOperate && (
@@ -718,7 +720,8 @@ export default function TopicApp() {
             </MemberQuickInfoPopover>
             {topic.isAuthorPro && <VscodeProTag />}
             <span className="time">
-              {topic.displayTime} · {topic.visitCount} 次点击
+              <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span> ·{' '}
+              {topic.visitCount} 次点击
             </span>
           </div>
 

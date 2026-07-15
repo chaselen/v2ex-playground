@@ -10,6 +10,7 @@ function reply(floor: number, userName: string, content = ''): TopicReply {
     userAvatar: '',
     userName,
     time: '',
+    repliedAt: '',
     floor: String(floor),
     content,
     thanks: 0,

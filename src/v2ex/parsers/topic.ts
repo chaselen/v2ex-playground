@@ -113,11 +113,8 @@ export function parseTopicMeta(
   topic.authorName = headerMeta.find('a[href^=/member]').text().trim()
   topic.isAuthorPro = headerMeta.find('.badges .badge.pro').length > 0
   const publishedTime = getV2exTimeSpan(headerMeta, { direct: true })
-  const publishedTimeTitle = publishedTime.attr('title')
   topic.displayTime = publishedTime.text().trim()
-  topic.publishedAt = publishedTimeTitle
-    ? dayjs(publishedTimeTitle).format('YYYY-MM-DD HH:mm:ss')
-    : topic.displayTime
+  topic.publishedAt = dayjs(publishedTime.attr('title')!).format('YYYY-MM-DD HH:mm:ss')
   topic.visitCount = Number(
     meta.find(item => /(?:views|次点击)/i.test(item))?.match(/\d+/)?.[0] || 0
   )
@@ -158,11 +155,14 @@ export function parseReplies($: cheerio.CheerioAPI): TopicReply[] {
   const replies: TopicReply[] = []
   const topicBox = getTopicReplyBox($)
   topicBox.children('div[id].cell').each((_, element) => {
+    const replyTime = getV2exTimeSpan($(element))
+
     replies.push({
       replyId: $(element).attr('id')?.split('r_')[1] || '0',
       userAvatar: $(element).find('img.avatar').attr('src') || '',
       userName: $(element).find('a.dark').html() || '',
-      time: $(element).find('span.ago').text(),
+      time: replyTime.text().trim(),
+      repliedAt: dayjs(replyTime.attr('title')!).format('YYYY-MM-DD HH:mm:ss'),
       floor: $(element).find('span.no').text(),
       content: $(element).find('.reply_content').html() || '',
       thanks: parseInt($(element).find('span.small.fade').text().trim() || '0'),

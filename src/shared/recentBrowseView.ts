@@ -16,9 +16,9 @@ export interface RecentBrowseTopic {
   nodeName: string
   /** 节点展示标题 */
   nodeTitle: string
-  /** 完整发布时间 */
+  /** 发布时间，通常为 YYYY-MM-DD HH:mm:ss；旧记录可能为 V2EX 展示文本 */
   publishedAt: string
-  /** 最近浏览时间戳 */
+  /** 最近浏览 Unix 时间戳，单位为毫秒 */
   readAt: number
 }
 
