@@ -29,6 +29,7 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
 import PageSkeleton from '@/shared/PageSkeleton'
 import { VscodeProTag } from '@/shared/SemiVscode'
+import TopicShareContextMenu from '@/shared/TopicShareContextMenu'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
 import ReplyComposer, { type ReplyComposerHandle, type ReplyComposerMode } from './ReplyComposer'
 import { replaceImageEmoticonTokens } from './emoticons'
@@ -655,7 +656,7 @@ export default function TopicApp() {
     )
   }
 
-  return (
+  const content = (
     <main className="topic-shell" ref={topicShellRef}>
       {state.status === 'loading' && <PageSkeleton variant="topic" />}
 
@@ -884,5 +885,16 @@ export default function TopicApp() {
         </div>
       )}
     </main>
+  )
+
+  return (
+    <TopicShareContextMenu
+      disabled={!topic}
+      onCopyLink={() => vscode.copyLink()}
+      onCopyTitleLink={() => vscode.copyTitleLink()}
+      onViewInBrowser={() => vscode.viewInBrowser()}
+    >
+      {content}
+    </TopicShareContextMenu>
   )
 }

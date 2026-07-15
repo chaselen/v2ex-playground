@@ -28,6 +28,12 @@ export interface TopicPanelRpcCommands
   extends WebviewContentRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
   login(): void
   refresh(): void
+  /** 复制当前话题链接 */
+  copyLink(): void
+  /** 复制当前话题标题和链接 */
+  copyTitleLink(): void
+  /** 在浏览器中打开当前话题 */
+  viewInBrowser(): void
   collect(): void
   cancelCollect(): void
   thank(): void

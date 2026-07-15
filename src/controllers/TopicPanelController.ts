@@ -12,6 +12,7 @@ import { updateRecentBrowseTopic } from '@/features/recentBrowse'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
 import { checkImgurConnectivity } from '@/features/connectivityCheck'
+import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import {
   TopicPanelRpcCommands,
@@ -248,6 +249,9 @@ export class TopicPanelController {
         await vscode.commands.executeCommand('v2ex.login')
       },
       refresh: () => this.refreshTopic(),
+      copyLink: () => copyTopicLink(this.topicId),
+      copyTitleLink: () => copyTopicTitleLink(this.topicId, this.detail.title),
+      viewInBrowser: () => viewTopicInBrowser(this.topicId),
       collect: () => this.runTopicMutation(() => G.V2ex.collectTopic(this.detail.id)),
       cancelCollect: () => this.runTopicMutation(() => G.V2ex.cancelCollectTopic(this.detail.id)),
       thank: () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)),
