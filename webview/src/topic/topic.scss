@@ -40,8 +40,8 @@ $panel-border: var(--v2ex-border);
 
 .topic-container {
   min-width: 360px;
-  max-width: 760px;
-  padding: 20px;
+  max-width: 800px;
+  padding: 24px;
   margin: 0 auto;
 
   a:hover {
@@ -52,8 +52,9 @@ $panel-border: var(--v2ex-border);
 .topic-header {
   h1 {
     margin: 0;
-    font-size: 22px;
-    line-height: 1.35;
+    font-size: 24px;
+    line-height: 1.32;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -174,6 +175,68 @@ $panel-border: var(--v2ex-border);
 
 .topic-content {
   @include topic-content-shared.base($panel-border);
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.72;
+
+  > :first-child,
+  .markdown_body > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child,
+  .markdown_body > :last-child {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin: 0 0 1em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 1.65em 0 0.65em;
+    color: var(--v2ex-webview-fg);
+    font-weight: 650;
+    line-height: 1.35;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  h1 {
+    font-size: 1.55em;
+  }
+
+  h2 {
+    padding-bottom: 0.28em;
+    border-bottom: 1px solid color-mix(in srgb, #{$panel-border} 72%, transparent);
+    font-size: 1.32em;
+  }
+
+  h3 {
+    font-size: 1.16em;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: 1em;
+  }
+
+  strong {
+    color: color-mix(in srgb, var(--v2ex-webview-fg) 94%, transparent);
+  }
+
+  a {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
 
   .image-preview-target {
     border-radius: 3px;
@@ -195,21 +258,42 @@ $panel-border: var(--v2ex-border);
   }
 
   pre {
+    margin: 1em 0;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, #{$panel-border} 78%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--v2ex-widget-bg) 88%, var(--v2ex-webview-bg));
+    font-size: 13px;
+    line-height: 1.6;
+
     > code {
       display: block;
-      padding: 8px 12px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      white-space: inherit;
+      word-break: normal;
     }
   }
 
-  blockquote {
-    margin-left: 0;
-    margin-right: 0;
-    padding: 12px;
-    border-left: 3px solid $panel-border;
-    background: var(--v2ex-widget-bg);
+  code {
+    padding: 0.12em 0.32em;
+    border: 1px solid color-mix(in srgb, #{$panel-border} 68%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--v2ex-widget-bg) 82%, transparent);
+    font-size: 0.92em;
+  }
 
-    p {
-      margin: 0;
+  blockquote {
+    margin: 1em 0;
+    padding: 10px 14px;
+    border-left: 3px solid
+      color-mix(in srgb, var(--vscode-textLink-foreground) 55%, #{$panel-border});
+    background: color-mix(in srgb, var(--v2ex-widget-bg) 72%, transparent);
+    color: color-mix(in srgb, var(--v2ex-webview-fg) 82%, transparent);
+
+    > :last-child {
+      margin-bottom: 0;
     }
   }
 
@@ -220,18 +304,46 @@ $panel-border: var(--v2ex-border);
 
   ol,
   ul {
-    padding-left: 18px;
+    margin: 0 0 1em;
+    padding-left: 1.5em;
+  }
+
+  li + li {
+    margin-top: 0.35em;
+  }
+
+  img:not(.v2ex-emoticon-image) {
+    display: block;
+    height: auto;
+    margin: 0.8em auto;
+    border-radius: 5px;
+  }
+
+  iframe,
+  video {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 1em 0;
+    border: 0;
+    border-radius: 6px;
+    aspect-ratio: 16 / 9;
   }
 
   table {
+    display: block;
     width: 100%;
-    table-layout: fixed;
+    max-width: 100%;
+    margin: 1em 0;
+    overflow-x: auto;
     border-collapse: collapse;
 
     td,
     th {
       padding: 6px 12px;
       border: 1px solid $panel-border;
+      overflow-wrap: normal;
+      word-break: normal;
     }
 
     tr:nth-child(2n) {
@@ -401,20 +513,36 @@ $panel-border: var(--v2ex-border);
 }
 
 .reply-item {
-  padding: 14px 0;
+  padding: 16px 0;
   border-bottom: 1px solid $panel-border;
 
   // 子回复 hover 时祖先也会被命中，仅显示不包含 hover 子回复的最内层操作区
-  &:hover:not(:has(.reply-item:hover)) > .reply-meta > .reply-actions .reply-action-button {
+  &:hover:not(:has(.reply-item:hover))
+    > .reply-body
+    > .reply-meta
+    > .reply-actions
+    .reply-action-button {
     visibility: visible;
   }
 }
 
+.reply > .reply-item {
+  padding-right: 10px;
+}
+
+.reply-body {
+  min-width: 0;
+}
+
+.reply-content {
+  font-size: 14px;
+  line-height: 1.66;
+}
+
 .reply-children {
-  margin-top: 10px;
+  margin: 12px -10px 0 18px;
 
   > .reply-item {
-    margin-left: 12px;
     padding: 12px 10px;
     border-bottom: 0;
     border-left: 1px solid $panel-border;
@@ -427,7 +555,7 @@ $panel-border: var(--v2ex-border);
   align-items: center;
   gap: 10px;
   min-width: 0;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 
   .time,
   .thanks {
@@ -451,6 +579,12 @@ $panel-border: var(--v2ex-border);
 
   .reply-action-button {
     visibility: hidden;
+  }
+}
+
+@media (hover: none) {
+  .reply-actions .reply-action-button {
+    visibility: visible;
   }
 }
 
@@ -860,6 +994,10 @@ $panel-border: var(--v2ex-border);
     padding: 14px;
   }
 
+  .topic-header h1 {
+    font-size: 21px;
+  }
+
   .topic-meta,
   .reply-meta,
   .topic-toolbar {
@@ -869,6 +1007,10 @@ $panel-border: var(--v2ex-border);
   .toolbar-count,
   .reply-actions {
     margin-left: 0;
+  }
+
+  .reply-children {
+    margin-left: 10px;
   }
 
   .reply-login-prompt {

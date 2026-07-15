@@ -308,69 +308,71 @@ export default function TopicApp() {
   function renderReply(reply: TopicReplyNode) {
     return (
       <div key={reply.replyId} className="reply-item">
-        <div className="reply-meta">
-          <MemberQuickInfoPopover
-            username={reply.userName}
-            loadMemberInfo={loadMemberQuickInfo}
-            openMember={openMember}
-          >
-            <a
-              className={`user ${topic?.authorName === reply.userName ? 'user--author' : ''}`}
-              href="javascript:;"
-              onClick={() => openMember(reply.userName)}
+        <div className="reply-body">
+          <div className="reply-meta">
+            <MemberQuickInfoPopover
+              username={reply.userName}
+              loadMemberInfo={loadMemberQuickInfo}
+              openMember={openMember}
             >
-              {reply.userName}
-            </a>
-          </MemberQuickInfoPopover>
-          <span className="time">{reply.time}</span>
-          {reply.thanks > 0 && <span className="thanks">♥ {reply.thanks}</span>}
-          <div className="reply-actions">
-            {state.canOperate && (
-              <>
-                {reply.thanked ? (
-                  <span className="thanked">感谢已发送</span>
-                ) : (
-                  <Popconfirm
-                    title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
-                    okText="确认"
-                    cancelText="取消"
-                    onConfirm={() => thankReply(reply.replyId)}
-                  >
-                    <span className="reply-action-popconfirm-trigger">
-                      <Tooltip content="感谢回复者">
-                        <Button
-                          aria-label="感谢回复者"
-                          className="reply-action-button"
-                          icon={<IconHeartStroked />}
-                          loading={pendingThankReplyIds.includes(reply.replyId)}
-                          size="small"
-                          theme="borderless"
-                          type="tertiary"
-                        />
-                      </Tooltip>
-                    </span>
-                  </Popconfirm>
-                )}
-                <Tooltip content="回复">
-                  <Button
-                    aria-label="回复"
-                    className="reply-action-button"
-                    icon={<IconReply />}
-                    size="small"
-                    theme="borderless"
-                    type="tertiary"
-                    onClick={() => floorReply(reply.userName, reply.floor)}
-                  />
-                </Tooltip>
-              </>
-            )}
-            <span className="floor">{reply.floor}</span>
+              <a
+                className={`user ${topic?.authorName === reply.userName ? 'user--author' : ''}`}
+                href="javascript:;"
+                onClick={() => openMember(reply.userName)}
+              >
+                {reply.userName}
+              </a>
+            </MemberQuickInfoPopover>
+            <span className="time">{reply.time}</span>
+            {reply.thanks > 0 && <span className="thanks">♥ {reply.thanks}</span>}
+            <div className="reply-actions">
+              {state.canOperate && (
+                <>
+                  {reply.thanked ? (
+                    <span className="thanked">感谢已发送</span>
+                  ) : (
+                    <Popconfirm
+                      title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
+                      okText="确认"
+                      cancelText="取消"
+                      onConfirm={() => thankReply(reply.replyId)}
+                    >
+                      <span className="reply-action-popconfirm-trigger">
+                        <Tooltip content="感谢回复者">
+                          <Button
+                            aria-label="感谢回复者"
+                            className="reply-action-button"
+                            icon={<IconHeartStroked />}
+                            loading={pendingThankReplyIds.includes(reply.replyId)}
+                            size="small"
+                            theme="borderless"
+                            type="tertiary"
+                          />
+                        </Tooltip>
+                      </span>
+                    </Popconfirm>
+                  )}
+                  <Tooltip content="回复">
+                    <Button
+                      aria-label="回复"
+                      className="reply-action-button"
+                      icon={<IconReply />}
+                      size="small"
+                      theme="borderless"
+                      type="tertiary"
+                      onClick={() => floorReply(reply.userName, reply.floor)}
+                    />
+                  </Tooltip>
+                </>
+              )}
+              <span className="floor">{reply.floor}</span>
+            </div>
           </div>
+          <div
+            className="topic-content reply-content"
+            dangerouslySetInnerHTML={{ __html: normalizeHtml(reply.content) }}
+          />
         </div>
-        <div
-          className="topic-content"
-          dangerouslySetInnerHTML={{ __html: normalizeHtml(reply.content) }}
-        />
         {replyViewMode === 'nested' && reply.children.length > 0 && (
           <div className="reply-children">{reply.children.map(child => renderReply(child))}</div>
         )}
