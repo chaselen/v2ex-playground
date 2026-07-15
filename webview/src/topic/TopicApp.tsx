@@ -31,7 +31,7 @@ import EnhancedHtmlContent from '@/shared/EnhancedHtmlContent'
 import PageSkeleton from '@/shared/PageSkeleton'
 import { VscodeProTag } from '@/shared/SemiVscode'
 import TopicShareContextMenu from '@/shared/TopicShareContextMenu'
-import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
+import { createVsCodeClient, subscribeWebviewState } from '@/shared/vscode'
 import ReplyComposer, { type ReplyComposerHandle, type ReplyComposerMode } from './ReplyComposer'
 import { replaceImageEmoticonTokens } from './emoticons'
 import { buildReplyTree, type TopicReplyNode } from './replyTree'
@@ -80,14 +80,6 @@ export default function TopicApp() {
 
   /** 当前回复页的楼中楼结构 */
   const replyTree = useMemo(() => buildReplyTree(topic?.replies || []), [topic?.replies])
-
-  /**
-   * 在浏览器中打开链接
-   * @param src 链接地址
-   */
-  function openExternal(src: string) {
-    vscode.openExternal({ path: resolveWebviewUrl(src) })
-  }
 
   /**
    * 打开用户页

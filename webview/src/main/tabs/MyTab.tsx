@@ -20,7 +20,6 @@ import type {
   MyNotificationListData,
   MyTopicListData,
   WebviewAccountOverview,
-  WebviewDailySignInData,
   WebviewNotification,
   WebviewTopic
 } from '@extension/shared/webview'

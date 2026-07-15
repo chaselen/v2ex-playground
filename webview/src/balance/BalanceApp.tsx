@@ -11,7 +11,6 @@ import PageSkeleton from '@/shared/PageSkeleton'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/shared/vscode'
 import { useLatestRequest } from '@/shared/useLatestRequest'
 import type {
-  BalanceDetail,
   BalancePanelRpcCommands,
   BalancePanelViewState,
   BalancePanelWebviewEvents,

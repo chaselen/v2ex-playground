@@ -1,4 +1,4 @@
-import type { WebviewContentRpcCommands } from '@extension/shared/webview'
+import type { WebviewNavigationRpcCommands } from '@extension/shared/webview'
 import { handleWebviewLinkClick } from './linkNavigation'
 import { isApplePlatform } from './platform'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
@@ -7,7 +7,7 @@ import { decodeCloudflareEmails } from './cloudflareEmail'
 import type { OpenImagePreview } from './ImagePreviewProvider'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
-const vscode = createVsCodeClient<WebviewContentRpcCommands>()
+const vscode = createVsCodeClient<WebviewNavigationRpcCommands>()
 
 /** 支持直接预览的图片后缀 */
 const SUPPORT_IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])
