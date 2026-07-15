@@ -67,12 +67,49 @@ describe('V2exClient authenticated topic requests', () => {
   const authTest = process.env.V2EX_COOKIE ? test : test.skip
 
   authTest('previews default reply syntax with V2EX_COOKIE', async () => {
-    await expect(client.previewReply('1\n2', 'default')).resolves.toBe('1<br />2')
+    const html = await client.previewReply(
+      ['第一行 <标签>', '', '@alice #12 https://www.v2ex.com/t/1', '**粗体**'].join('\n'),
+      'default'
+    )
+
+    expect(html).toContain('第一行 &lt;标签&gt;<br /><br />')
+    expect(html).toContain('href="/member/alice"')
+    expect(html).toContain('href="https://www.v2ex.com/t/1"')
+    expect(html).toContain('**粗体**')
   })
 
   authTest('previews markdown reply syntax with V2EX_COOKIE', async () => {
-    await expect(client.previewReply('`123`', 'markdown')).resolves.toBe(
-      '<p><code>123</code></p>\n'
+    const html = await client.previewReply(
+      [
+        '# 标题',
+        '',
+        '> 引用',
+        '',
+        '- 列表',
+        '',
+        '```ts',
+        'const value = 1',
+        '```',
+        '',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '',
+        '<img src="x" onerror="alert(1)">',
+        '<a href="javascript:alert(2)" onclick="alert(3)">危险链接</a>'
+      ].join('\n'),
+      'markdown'
     )
+
+    expect(html).toContain('<h1>标题</h1>')
+    expect(html).toContain('<blockquote>')
+    expect(html).toContain('<ul>')
+    expect(html).toContain('<code class="language-ts">')
+    expect(html).toContain('<table>')
+    expect(html).toContain('<img class="embedded_image"')
+    expect(html).toContain('<a>危险链接</a>')
+    expect(html).not.toContain('onerror')
+    expect(html).not.toContain('onclick')
+    expect(html).not.toContain('javascript:')
   })
 })

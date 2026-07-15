@@ -229,6 +229,7 @@ $panel-border: var(--v2ex-border);
     font-size: 1em;
   }
 
+  b,
   strong {
     color: color-mix(in srgb, var(--v2ex-webview-fg) 94%, transparent);
   }
@@ -313,6 +314,11 @@ $panel-border: var(--v2ex-border);
     margin-top: 0.35em;
   }
 
+  li > ol,
+  li > ul {
+    margin: 0.35em 0 0;
+  }
+
   img:not(.v2ex-emoticon-image) {
     display: block;
     height: auto;
@@ -347,8 +353,15 @@ $panel-border: var(--v2ex-border);
       word-break: normal;
     }
 
-    tr:nth-child(2n) {
-      background-color: var(--v2ex-widget-bg);
+    th {
+      background: color-mix(in srgb, var(--v2ex-widget-bg) 88%, var(--v2ex-webview-bg));
+      color: var(--v2ex-webview-fg);
+      font-weight: 600;
+      text-align: left;
+    }
+
+    tbody tr:nth-child(2n) {
+      background: color-mix(in srgb, var(--v2ex-widget-bg) 72%, transparent);
     }
   }
 
