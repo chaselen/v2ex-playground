@@ -7,6 +7,18 @@
   color: var(--vscode-progressBar-background, var(--vscode-textLink-foreground));
 }
 
+/* 图片预览使用稳定的深色遮罩，避免浅色主题下图片与页面背景混在一起 */
+.semi-image-preview {
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+/* Semi 通过内联宽高等比缩放，解除页面图片响应式规则对预览尺寸的限制 */
+.semi-image-preview-image-img {
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain;
+}
+
 /* Cursor Webview 会为原生输入节点恢复焦点轮廓，焦点边框统一由 Semi wrapper 绘制 */
 .semi-input:focus,
 .semi-input-textarea:focus {

@@ -5,7 +5,6 @@ import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
 import openTopic from '@/commands/openTopic'
-import { cleanupImagePreviewCache } from '@/features/imagePreview'
 import autoDailySignIn, { startDailySignInScheduler } from '@/features/dailySignIn'
 import {
   openRecentBrowse,
@@ -17,6 +16,10 @@ import { startConnectivityCheck } from '@/features/connectivityCheck'
 import { initializeLogger, logger } from '@/core/logger'
 import { LoginCredentialStore } from '@/features/loginCredentialStore'
 import { requestTwoFactorVerification } from '@/features/twoFactorAuth'
+import { deleteExtensionFileCacheDir } from '@/core/remoteImageCache'
+
+/** 旧版图片预览缓存目录名 */
+const LEGACY_IMAGE_PREVIEW_CACHE_DIR = 'image-previews'
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   // 初始化扩展运行时上下文
@@ -57,7 +60,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
   // 启动后台清理、网络检查与每日签到调度
-  cleanupImagePreviewCache()
+  void deleteExtensionFileCacheDir(LEGACY_IMAGE_PREVIEW_CACHE_DIR).catch(err => {
+    logger.warn('清理旧版图片预览缓存失败', err)
+  })
   startConnectivityCheck(context)
   context.subscriptions.push(startDailySignInScheduler())
 

@@ -1,5 +1,6 @@
 import { createElement, useLayoutEffect, useMemo, useRef, type HTMLAttributes } from 'react'
 import { enhanceHtmlContent, normalizeHtml } from './contentEnhancement'
+import { useImagePreview } from './ImagePreviewProvider'
 
 /** HTML 内容容器支持的标签 */
 type HtmlContentElement = 'div' | 'section'
@@ -27,6 +28,7 @@ export default function EnhancedHtmlContent({
   ...elementProps
 }: EnhancedHtmlContentProps) {
   const rootRef = useRef<HTMLElement>(null)
+  const openImagePreview = useImagePreview()
   const normalizedHtml = useMemo(
     () => normalizeHtml(html, { loadImages: showImages }),
     [html, showImages]
@@ -35,9 +37,9 @@ export default function EnhancedHtmlContent({
   useLayoutEffect(() => {
     const root = rootRef.current
     if (root) {
-      enhanceHtmlContent(root, showImages)
+      enhanceHtmlContent(root, showImages, openImagePreview)
     }
-  }, [normalizedHtml, showImages])
+  }, [normalizedHtml, openImagePreview, showImages])
 
   return createElement(as, {
     ...elementProps,

@@ -11,9 +11,7 @@ export interface WebviewNavigationRpcCommands {
 /**
  * Webview 内容增强 RPC 命令
  */
-export interface WebviewContentRpcCommands extends WebviewNavigationRpcCommands {
-  browseImage(payload: { src: string }): void
-}
+export type WebviewContentRpcCommands = WebviewNavigationRpcCommands
 
 /**
  * 有状态 Webview 的初始化 RPC 命令

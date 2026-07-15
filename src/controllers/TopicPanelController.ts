@@ -2,7 +2,6 @@ import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import type { MemberInfo } from '@/v2ex'
 import G from '@/global'
-import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
 import { uploadImage } from '@/core/imageUpload'
@@ -236,9 +235,6 @@ export class TopicPanelController {
   private createRpcHandlers(): WebviewRpcHandlers<TopicPanelRpcCommands> {
     return {
       ready: () => this.getViewState(),
-      browseImage: msg => {
-        openImagePreview(msg.src)
-      },
       openExternal: msg => {
         openExternal(msg.path)
       },

@@ -89,31 +89,14 @@ export async function cacheRemoteImageFile(
 }
 
 /**
- * 清理过期的缓存文件
+ * 删除扩展文件缓存目录
  * @param cacheDirName 缓存子目录名
- * @param ttlMs 缓存保留毫秒数
  */
-export async function cleanupExpiredCacheFiles(cacheDirName: string, ttlMs: number) {
+export async function deleteExtensionFileCacheDir(cacheDirName: string) {
   const cacheDirUri = getExtensionFileCacheDir(cacheDirName)
-  const expireBefore = Date.now() - ttlMs
 
   try {
-    // Cursor 会在 readDirectory 的 ENOENT 被调用方捕获前输出错误日志
-    await vscode.workspace.fs.createDirectory(cacheDirUri)
-    const cacheFiles = await vscode.workspace.fs.readDirectory(cacheDirUri)
-    await Promise.all(
-      cacheFiles.map(async ([fileName, fileType]) => {
-        if (fileType !== vscode.FileType.File) {
-          return
-        }
-
-        const fileUri = vscode.Uri.joinPath(cacheDirUri, fileName)
-        const stat = await vscode.workspace.fs.stat(fileUri)
-        if (stat.mtime < expireBefore) {
-          await vscode.workspace.fs.delete(fileUri)
-        }
-      })
-    )
+    await vscode.workspace.fs.delete(cacheDirUri, { recursive: true })
   } catch (err) {
     if (isFileNotFoundError(err)) {
       return

@@ -1,6 +1,5 @@
 import vscode from 'vscode'
 import G from '@/global'
-import { openImagePreview } from '@/features/imagePreview'
 import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
@@ -151,9 +150,6 @@ export class MemberPanelController {
   private createRpcHandlers(): WebviewRpcHandlers<MemberPanelRpcCommands> {
     return {
       ready: () => this.viewState,
-      browseImage: msg => {
-        openImagePreview(msg.src)
-      },
       openExternal: msg => {
         openExternal(msg.path)
       },

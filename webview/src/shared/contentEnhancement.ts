@@ -4,6 +4,7 @@ import { isApplePlatform } from './platform'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
 import { isImageEmoticonSrc, normalizeImageEmoticonSrc } from './imageEmoticons'
 import { decodeCloudflareEmails } from './cloudflareEmail'
+import type { OpenImagePreview } from './ImagePreviewProvider'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
 const vscode = createVsCodeClient<WebviewContentRpcCommands>()
@@ -144,21 +145,63 @@ function getImagePreviewTitle(action: '查看大图' | '查看图片'): string {
  * @param img 图片元素
  */
 function getImagePreviewSrc(img: HTMLImageElement): string {
-  return img.dataset.previewSrc || img.currentSrc || img.src || ''
+  const loadedSrc = img.currentSrc || (img.hasAttribute('src') ? img.src : '')
+  return normalizeImagePreviewSrc(loadedSrc || img.dataset.previewSrc || '')
+}
+
+/**
+ * 规范化图片预览地址
+ * @param src 图片地址
+ */
+function normalizeImagePreviewSrc(src: string): string {
+  try {
+    return resolveWebviewUrl(src)
+  } catch {
+    return src
+  }
+}
+
+/**
+ * 收集当前页面中可预览的图片地址
+ */
+function getImagePreviewSrcList(): string[] {
+  const srcList: string[] = []
+
+  document.querySelectorAll<HTMLElement>('.image-preview-target').forEach(element => {
+    if (element instanceof HTMLImageElement) {
+      srcList.push(getImagePreviewSrc(element))
+      return
+    }
+
+    if (element instanceof HTMLAnchorElement && !element.querySelector('img')) {
+      srcList.push(normalizeImagePreviewSrc(proxyImgurImageSrc(element.href)))
+    }
+  })
+
+  return Array.from(new Set(srcList.filter(Boolean)))
 }
 
 /**
  * 打开图片预览或原始链接
  * @param src 图片地址
  * @param event 交互事件
+ * @param openImagePreview 打开图片预览
  */
-function openImage(src: string, event: MouseEvent | KeyboardEvent) {
+function openImage(
+  src: string,
+  event: MouseEvent | KeyboardEvent,
+  openImagePreview: OpenImagePreview
+) {
   if (isOpenExternalClick(event)) {
     vscode.openExternal({ path: resolveWebviewUrl(src) })
     return
   }
 
-  vscode.browseImage({ src })
+  const normalizedSrc = normalizeImagePreviewSrc(src)
+  openImagePreview({
+    src: normalizedSrc,
+    srcList: getImagePreviewSrcList()
+  })
 }
 
 /** 图片打开行为配置 */
@@ -167,6 +210,8 @@ interface ImageOpenBindingOptions {
   action: '查看大图' | '查看图片'
   /** 获取图片预览地址 */
   getSrc: () => string
+  /** 打开图片预览 */
+  openImagePreview: OpenImagePreview
   /** 当前是否允许打开图片 */
   canOpen?: () => boolean
   /** 是否补充键盘交互 */
@@ -180,7 +225,7 @@ interface ImageOpenBindingOptions {
  */
 function bindImageOpen(
   element: HTMLElement,
-  { action, getSrc, canOpen, keyboardAccessible }: ImageOpenBindingOptions
+  { action, getSrc, openImagePreview, canOpen, keyboardAccessible }: ImageOpenBindingOptions
 ) {
   /** 执行图片打开操作 */
   function activate(event: MouseEvent | KeyboardEvent) {
@@ -191,7 +236,7 @@ function bindImageOpen(
       return
     }
 
-    openImage(getSrc(), event)
+    openImage(getSrc(), event, openImagePreview)
   }
 
   element.title = getImagePreviewTitle(action)
@@ -250,8 +295,9 @@ function applyImageDisplaySrc(img: HTMLImageElement, showImages: boolean) {
 /**
  * 给图片元素绑定预览行为
  * @param img 图片元素
+ * @param openImagePreview 打开图片预览
  */
-function bindImagePreview(img: HTMLImageElement) {
+function bindImagePreview(img: HTMLImageElement, openImagePreview: OpenImagePreview) {
   img.classList.add('image-preview-target')
   const isInsideLink = Boolean(img.closest('a'))
   if (!isInsideLink) {
@@ -264,6 +310,7 @@ function bindImagePreview(img: HTMLImageElement) {
   bindImageOpen(img, {
     action: '查看大图',
     getSrc: () => getImagePreviewSrc(img),
+    openImagePreview,
     canOpen: () => img.complete,
     keyboardAccessible: !isInsideLink
   })
@@ -272,8 +319,12 @@ function bindImagePreview(img: HTMLImageElement) {
 /**
  * 创建隐藏图片后的占位按钮
  * @param img 图片元素
+ * @param openImagePreview 打开图片预览
  */
-function createHiddenImageButton(img: HTMLImageElement): HTMLButtonElement {
+function createHiddenImageButton(
+  img: HTMLImageElement,
+  openImagePreview: OpenImagePreview
+): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'hidden-image-button'
@@ -287,7 +338,8 @@ function createHiddenImageButton(img: HTMLImageElement): HTMLButtonElement {
   `
   bindImageOpen(button, {
     action: '查看图片',
-    getSrc: () => getImagePreviewSrc(img)
+    getSrc: () => getImagePreviewSrc(img),
+    openImagePreview
   })
   return button
 }
@@ -296,8 +348,13 @@ function createHiddenImageButton(img: HTMLImageElement): HTMLButtonElement {
  * 同步图片显示状态
  * @param img 图片元素
  * @param showImages 是否显示图片
+ * @param openImagePreview 打开图片预览
  */
-function syncImageVisibility(img: HTMLImageElement, showImages: boolean) {
+function syncImageVisibility(
+  img: HTMLImageElement,
+  showImages: boolean,
+  openImagePreview: OpenImagePreview
+) {
   const placeholderId =
     img.dataset.hiddenImagePlaceholderId || `hidden-image-${++hiddenImagePlaceholderCount}`
   img.dataset.hiddenImagePlaceholderId = placeholderId
@@ -320,7 +377,7 @@ function syncImageVisibility(img: HTMLImageElement, showImages: boolean) {
     return
   }
 
-  const button = createHiddenImageButton(img)
+  const button = createHiddenImageButton(img, openImagePreview)
   button.dataset.placeholderId = placeholderId
 
   if (parentAnchor && parentAnchor.parentNode) {
@@ -334,8 +391,9 @@ function syncImageVisibility(img: HTMLImageElement, showImages: boolean) {
 /**
  * 给图片链接绑定预览行为
  * @param anchor 链接元素
+ * @param openImagePreview 打开图片预览
  */
-function bindImageLinkPreview(anchor: HTMLAnchorElement) {
+function bindImageLinkPreview(anchor: HTMLAnchorElement, openImagePreview: OpenImagePreview) {
   if (anchor.dataset.imagePreviewBound === 'true') {
     return
   }
@@ -347,7 +405,8 @@ function bindImageLinkPreview(anchor: HTMLAnchorElement) {
   anchor.classList.add('image-preview-target')
   bindImageOpen(anchor, {
     action: '查看大图',
-    getSrc: () => (image ? getImagePreviewSrc(image) : imageSrc)
+    getSrc: () => (image ? getImagePreviewSrc(image) : imageSrc),
+    openImagePreview
   })
 }
 
@@ -394,20 +453,25 @@ function enhanceCodeBlocks(root: ParentNode) {
  * 给内容区域挂载图片预览与站内跳转行为
  * @param root 根节点
  * @param showImages 是否显示图片
+ * @param openImagePreview 打开图片预览
  */
-export function enhanceHtmlContent(root: ParentNode, showImages: boolean) {
+export function enhanceHtmlContent(
+  root: ParentNode,
+  showImages: boolean,
+  openImagePreview: OpenImagePreview
+) {
   const topicImages = root.querySelectorAll<HTMLImageElement>('img')
   const topicLinks = root.querySelectorAll<HTMLAnchorElement>('a')
 
   topicImages.forEach(img => {
     applyImageDisplaySrc(img, showImages)
-    bindImagePreview(img)
-    syncImageVisibility(img, showImages)
+    bindImagePreview(img, openImagePreview)
+    syncImageVisibility(img, showImages, openImagePreview)
   })
 
   topicLinks.forEach(anchor => {
     if (isSupportImageLink(anchor)) {
-      bindImageLinkPreview(anchor)
+      bindImageLinkPreview(anchor, openImagePreview)
     }
   })
 
