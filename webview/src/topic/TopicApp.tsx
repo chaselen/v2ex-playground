@@ -759,7 +759,7 @@ export default function TopicApp() {
           )}
 
           {topic.appends.map((append, index) => (
-            <div key={`append-${index}`}>
+            <div className="topic-append" key={`append-${index}`}>
               <section className="topic-content append">
                 <h2>
                   第 {index + 1} 条附言

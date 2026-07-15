@@ -387,16 +387,20 @@ $panel-border: var(--v2ex-border);
 }
 
 .topic-divider--content-start {
-  margin: 10px 0 26px;
+  margin: 16px 0 20px;
 }
 
 .topic-divider--reply-start,
 .topic-divider--append-start {
-  margin: 26px 0 8px;
+  margin: 20px 0 14px;
 }
 
 .topic-divider--append-end {
-  margin: 16px 0;
+  margin: 14px 0;
+}
+
+.topic-append + .topic-divider--reply-start {
+  margin-top: 16px;
 }
 
 .topic-empty-content {
@@ -446,7 +450,7 @@ $panel-border: var(--v2ex-border);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
 .reply-heading-actions {
@@ -528,6 +532,11 @@ $panel-border: var(--v2ex-border);
 
 .reply > .reply-item {
   padding-right: 10px;
+}
+
+.reply-heading + .reply-item,
+.reply-pagination--top + .reply-item {
+  padding-top: 12px;
 }
 
 .reply-body {

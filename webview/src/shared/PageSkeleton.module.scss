@@ -64,13 +64,13 @@
 
 .divider {
   height: 1px;
-  margin: 26px 0;
+  margin: 20px 0 14px;
   background: var(--skeleton-divider);
 }
 
 .section-title {
   width: 140px;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 
 .reply,
@@ -83,6 +83,10 @@
 
 .reply {
   align-items: flex-start;
+}
+
+.reply-list > .reply:first-child {
+  padding-top: 12px;
 }
 
 .row {

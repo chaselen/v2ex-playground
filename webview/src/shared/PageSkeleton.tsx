@@ -252,7 +252,7 @@ function TopicRows({ rows, avatars }: { rows: number; avatars: boolean }) {
 /** 话题回复行占位 */
 function ReplyRows({ rows }: SkeletonRowsProps) {
   return (
-    <div>
+    <div className={styles['reply-list']}>
       {Array.from({ length: rows }, (_, index) => (
         <div className={styles.reply} key={index}>
           <Skeleton.Avatar size="small" />
