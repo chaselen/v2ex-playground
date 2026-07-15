@@ -2,7 +2,9 @@
 
 中文名：V2EX 游乐场
 
-上班累的时候用来放（mō）松（yú）的 VS Code 扩展。
+一款用于在 VS Code、Cursor 等编辑器中浏览 [v2ex.com](https://www.v2ex.com) 的扩展。
+
+无需离开编辑器，即可浏览话题与节点、查看回复、搜索内容、参与互动，并使用签到、收藏、提醒和账户信息等常用功能。适合想专注阅读 V2EX，也适合上班累时短暂放（mō）松（yú）。
 
 - VS Code 扩展地址：[![Marketplace](https://vsmarketplacebadges.dev/version/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground) [![Installs](https://vsmarketplacebadges.dev/installs/chaselen.v2ex-playground.svg)](https://marketplace.visualstudio.com/items?itemName=chaselen.v2ex-playground)
 - Open VSX 扩展地址：[![Open VSX](https://img.shields.io/open-vsx/v/chaselen/v2ex-playground?label=Open%20VSX)](https://open-vsx.org/extension/chaselen/v2ex-playground) [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/chaselen/v2ex-playground?label=downloads)](https://open-vsx.org/extension/chaselen/v2ex-playground)
