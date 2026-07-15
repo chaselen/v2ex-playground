@@ -41,6 +41,8 @@ interface DailySignInRecord {
   username: string
   /** 完成日期 */
   date: string
+  /** 当日签到奖励铜币数 */
+  reward?: number
 }
 
 /** 签到任务 */
@@ -113,9 +115,7 @@ export function isDailySignedInToday(): boolean {
  * @param username 签到账号用户名
  */
 function isDailySignedInTodayFor(username: string): boolean {
-  const today = getCurrentV2exDate()
-  const record = G.context.globalState.get<DailySignInRecord>(LAST_AUTO_SIGN_IN_DATE_KEY)
-  return record?.username === username && record.date === today
+  return !!getDailySignInRecordForToday(username)
 }
 
 /**
@@ -165,10 +165,12 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
     }
   }
 
-  if (isDailySignedInTodayFor(username)) {
+  const record = getDailySignInRecordForToday(username)
+  if (record?.reward !== undefined) {
     return {
       signedIn: true,
-      result: 'repetitive'
+      result: 'repetitive',
+      reward: record.reward
     }
   }
 
@@ -176,16 +178,18 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
     const status = await G.V2ex.getDailySignInStatus()
     const signedIn = status.signedIn && status.reward?.date === getCurrentV2exDate()
     if (signedIn && status.reward && G.V2ex.getAuthenticatedUsername() === username) {
-      await updateDailySignedInDate(status.reward.date, username)
+      await updateDailySignedInDate(status.reward.date, username, status.reward.reward)
     }
     return {
       signedIn,
-      result: signedIn ? 'repetitive' : undefined
+      result: signedIn ? 'repetitive' : undefined,
+      reward: signedIn ? status.reward?.reward : undefined
     }
   } catch (err) {
     logger.error('每日签到状态查询失败', err)
     return {
-      signedIn: false
+      signedIn: !!record,
+      result: record ? 'repetitive' : undefined
     }
   }
 }
@@ -302,7 +306,7 @@ async function runDailySignIn(username: string): Promise<DailySignInData> {
       rewardDate &&
       G.V2ex.getAuthenticatedUsername() === username
     ) {
-      await updateDailySignedInDate(rewardDate, username)
+      await updateDailySignedInDate(rewardDate, username, reward)
     }
     if (result === 'success') {
       logger.info('每日签到成功', { reward })
@@ -332,12 +336,24 @@ async function runDailySignIn(username: string): Promise<DailySignInData> {
  * 更新本地签到日期
  * @param date 签到日期
  * @param username 签到账号用户名
+ * @param reward 当日签到奖励铜币数
  */
-function updateDailySignedInDate(date: string, username: string): Thenable<void> {
+function updateDailySignedInDate(date: string, username: string, reward: number): Thenable<void> {
   return G.context.globalState.update(LAST_AUTO_SIGN_IN_DATE_KEY, {
     username,
-    date
+    date,
+    reward
   } satisfies DailySignInRecord)
+}
+
+/**
+ * 获取指定账号今日的签到记录
+ * @param username 登录账号用户名
+ */
+function getDailySignInRecordForToday(username: string): DailySignInRecord | undefined {
+  const today = getCurrentV2exDate()
+  const record = G.context.globalState.get<DailySignInRecord>(LAST_AUTO_SIGN_IN_DATE_KEY)
+  return record?.username === username && record.date === today ? record : undefined
 }
 
 /** 获取 V2EX 余额流水使用的 +08:00 日期 */

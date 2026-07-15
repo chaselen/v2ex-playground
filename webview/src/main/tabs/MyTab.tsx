@@ -167,6 +167,7 @@ export default function MyTab(props: MyTabProps) {
     createMyNotificationListState
   )
   const [dailySignedIn, setDailySignedIn] = useState(false)
+  const [dailySignInReward, setDailySignInReward] = useState<number>()
   const [dailySignInLoading, setDailySignInLoading] = useState(false)
   const topicRequestSeq = useRef<Record<MyContentTopicTabKey, number>>({
     topicCollection: 0,
@@ -212,6 +213,7 @@ export default function MyTab(props: MyTabProps) {
 
     if (!accountKey) {
       setDailySignedIn(false)
+      setDailySignInReward(undefined)
       setDailySignInLoading(false)
       return
     }
@@ -222,6 +224,7 @@ export default function MyTab(props: MyTabProps) {
       .then(data => {
         if (!disposed) {
           setDailySignedIn(data.signedIn)
+          setDailySignInReward(data.reward)
           setDailySignInLoading(!!data.loading)
         }
       })
@@ -266,6 +269,9 @@ export default function MyTab(props: MyTabProps) {
   useEffect(() => {
     return vscode.on('dailySignInStatusChanged', data => {
       setDailySignedIn(data.signedIn)
+      if (data.reward !== undefined) {
+        setDailySignInReward(data.reward)
+      }
       setDailySignInLoading(!!data.loading)
     })
   }, [])
@@ -284,6 +290,7 @@ export default function MyTab(props: MyTabProps) {
     })
     setNotificationList(createMyNotificationListState())
     setDailySignedIn(false)
+    setDailySignInReward(undefined)
     setDailySignInLoading(false)
   }
 
@@ -431,6 +438,7 @@ export default function MyTab(props: MyTabProps) {
     try {
       const data = await vscode.dailySignIn()
       setDailySignedIn(data.signedIn)
+      setDailySignInReward(data.reward)
       setDailySignInLoading(!!data.loading)
     } catch (err) {
       console.error(err)
@@ -817,7 +825,9 @@ export default function MyTab(props: MyTabProps) {
               disabled={dailySignedIn}
               onClick={handleDailySignIn}
             >
-              {dailySignedIn ? '今日已签到' : '签到'}
+              {dailySignedIn
+                ? `今日已签到${dailySignInReward !== undefined ? `，获得 ${dailySignInReward} 铜币` : ''}`
+                : '签到'}
             </Button>
           </div>
         </article>

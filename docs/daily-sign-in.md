@@ -173,10 +173,13 @@ Webview 调用 `dailySignIn()` 执行手动签到。手动签到不受自动签�
 interface DailySignInRecord {
   username: string
   date: string
+  reward?: number
 }
 ```
 
 `username` 来自登录会话检查时解析到的当前 V2EX 用户名，按原始大小写存储和精确比较。读取缓存时必须同时匹配用户名和当前 `+08:00` 日期，因此同一天切换账号不会复用另一个账号的签到结果。
+
+`reward` 用于让 Webview 在重新打开后仍能展示当日获得的铜币数。旧版本缓存没有该字段时，状态查询会重新请求签到页和余额流水，确认后补齐奖励缓存。
 
 旧版本保存的日期字符串或 Cookie 指纹结构不会匹配当前结构，会通过 V2EX 页面和余额流水重新确认状态。
 
@@ -219,7 +222,7 @@ Webview 首次加载时主动调用 `getDailySignInStatus()`，不能只依赖�
 }
 ```
 
-任务完成后会发送带有最终 `signedIn`、`result`、`reward` 和 `loading: false` 的状态事件。
+任务完成后会发送带有最终 `signedIn`、`result`、`reward` 和 `loading: false` 的状态事件。Webview 在已签到状态下展示“今日已签到，获得 N 铜币”；首次状态读取也会从本地记录或 V2EX 状态返回奖励数。
 
 ## 已知边界
 
