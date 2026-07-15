@@ -4,7 +4,8 @@ import { IconRefresh, IconUser } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
-import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
+import { normalizeHtml } from '@/shared/contentEnhancement'
+import EnhancedHtmlContent from '@/shared/EnhancedHtmlContent'
 import { handleWebviewLinkClick } from '@/shared/linkNavigation'
 import PageSkeleton from '@/shared/PageSkeleton'
 import { VscodeBadge, VscodeProTag, VscodeTag } from '@/shared/SemiVscode'
@@ -186,17 +187,13 @@ export default function MemberApp() {
       applyViewState
     )
 
-    enhanceHtmlContentAfterRender(true)
-
     return dispose
   }, [])
 
   useEffect(() => {
-    if (!profile) {
-      return
+    if (profile) {
+      scrollRef.current?.recalculate()
     }
-    enhanceHtmlContentAfterRender(true)
-    scrollRef.current?.recalculate()
   }, [profile])
 
   return (
@@ -495,22 +492,20 @@ function renderTopicItem(
  * @param index 序号
  */
 function renderReplyItem(reply: MemberReply, index: number) {
-  const summaryHtml = normalizeHtml(reply.summaryHtml)
-
   return (
     <article className="member-reply-item" key={`${reply.topicPath}-${index}`}>
       <header className="member-reply-meta">
-        <div
+        <EnhancedHtmlContent
           className="member-reply-summary"
+          html={reply.summaryHtml}
           onClick={event => handleContentClick(event, reply)}
-          dangerouslySetInnerHTML={{ __html: summaryHtml }}
         />
         {!!reply.time && <time>{reply.time}</time>}
       </header>
-      <div
+      <EnhancedHtmlContent
         className="topic-content member-reply-content"
+        html={reply.contentHtml}
         onClick={event => handleContentClick(event, reply)}
-        dangerouslySetInnerHTML={{ __html: normalizeHtml(reply.contentHtml) }}
       />
     </article>
   )

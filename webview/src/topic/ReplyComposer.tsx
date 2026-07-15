@@ -2,7 +2,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import { Button, Popover, Spin, TextArea, Toast, Tooltip } from '@douyinfe/semi-ui'
 import { IconEmoji, IconImageStroked } from '@douyinfe/semi-icons'
 import SimpleBar from 'simplebar-react'
-import { normalizeHtml, proxyImgurImageSrc } from '@/shared/contentEnhancement'
+import { proxyImgurImageSrc } from '@/shared/contentEnhancement'
+import EnhancedHtmlContent from '@/shared/EnhancedHtmlContent'
 import { isApplePlatform } from '@/shared/platform'
 import { imageEmoticonLinks, isImageEmoticon } from '@/shared/imageEmoticons'
 import { emoticonGroups } from './emoticons'
@@ -45,6 +46,8 @@ interface ReplyComposerProps {
   mode: ReplyComposerMode
   /** 回复预览 HTML */
   previewHtml: string
+  /** 是否显示图片 */
+  showImages: boolean
   /** 是否正在生成预览 */
   previewing: boolean
   /** 是否正在提交回复 */
@@ -100,6 +103,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     value,
     mode,
     previewHtml,
+    showImages,
     previewing,
     posting,
     onChange,
@@ -529,9 +533,10 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           {previewing ? (
             <Spin />
           ) : previewHtml ? (
-            <div
+            <EnhancedHtmlContent
               className="topic-content reply-preview-content"
-              dangerouslySetInnerHTML={{ __html: normalizeHtml(previewHtml) }}
+              html={previewHtml}
+              showImages={showImages}
             />
           ) : (
             <p className="muted">暂无预览内容</p>

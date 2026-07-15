@@ -14,6 +14,12 @@ const SUPPORT_IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
 /** 隐藏图片占位按钮 id 计数 */
 let hiddenImagePlaceholderCount = 0
 
+/** HTML 规范化选项 */
+interface NormalizeHtmlOptions {
+  /** 是否加载内容中的图片 */
+  loadImages?: boolean
+}
+
 /**
  * 获取图片在 Webview 中实际展示的地址
  * @param imageSrc 图片地址
@@ -34,15 +40,17 @@ function isImageEmoticonDisplaySrc(originalSrc: string, displaySrc: string) {
 /**
  * 规范化 html 文本，避免插值时出现 undefined
  * @param html 原始 html
+ * @param options 规范化选项
  */
-export function normalizeHtml(html?: unknown): string {
+export function normalizeHtml(html?: unknown, options: NormalizeHtmlOptions = {}): string {
   const normalizedHtml = typeof html === 'string' ? html : ''
+  const loadImages = options.loadImages !== false
   const hasImgurImage = normalizedHtml.includes('i.imgur.com')
   const hasCloudflareEmail =
     normalizedHtml.includes('data-cfemail') ||
     normalizedHtml.includes('/cdn-cgi/l/email-protection#')
 
-  if (!hasImgurImage && !hasCloudflareEmail) {
+  if (loadImages && !hasImgurImage && !hasCloudflareEmail) {
     return normalizedHtml
   }
 
@@ -50,10 +58,13 @@ export function normalizeHtml(html?: unknown): string {
   template.innerHTML = normalizedHtml
   decodeCloudflareEmails(template.content)
 
-  if (hasImgurImage) {
+  if (hasImgurImage || !loadImages) {
     template.content.querySelectorAll<HTMLImageElement>('img').forEach(img => {
       const originalSrc = img.getAttribute('data-preview-src') || img.getAttribute('src') || ''
       if (!originalSrc) {
+        if (!loadImages) {
+          img.removeAttribute('srcset')
+        }
         return
       }
 
@@ -64,14 +75,25 @@ export function normalizeHtml(html?: unknown): string {
         img.classList.add('v2ex-emoticon-image')
       }
 
-      if (proxiedSrc === originalSrc) {
+      if (!loadImages) {
+        img.dataset.previewSrc = displaySrc
+        img.removeAttribute('src')
+        img.removeAttribute('srcset')
         return
       }
 
-      // DOM 中展示代理地址，同时保留规范化后的真实图片地址
-      img.dataset.previewSrc = displaySrc
-      img.src = proxiedSrc
+      if (proxiedSrc !== originalSrc) {
+        // DOM 中展示代理地址，同时保留规范化后的真实图片地址
+        img.dataset.previewSrc = displaySrc
+        img.src = proxiedSrc
+      }
     })
+
+    if (!loadImages) {
+      template.content.querySelectorAll<HTMLSourceElement>('source[srcset]').forEach(source => {
+        source.removeAttribute('srcset')
+      })
+    }
   }
 
   return template.innerHTML
@@ -102,9 +124,9 @@ function isSupportImageLink(anchor: HTMLAnchorElement): boolean {
 
 /**
  * 判断是否使用修饰键打开原始链接
- * @param event 鼠标事件
+ * @param event 交互事件
  */
-function isOpenExternalClick(event: MouseEvent): boolean {
+function isOpenExternalClick(event: MouseEvent | KeyboardEvent): boolean {
   return isApplePlatform() ? event.metaKey || event.altKey : event.ctrlKey || event.altKey
 }
 
@@ -122,15 +144,15 @@ function getImagePreviewTitle(action: '查看大图' | '查看图片'): string {
  * @param img 图片元素
  */
 function getImagePreviewSrc(img: HTMLImageElement): string {
-  return img.currentSrc || img.src || img.dataset.previewSrc || ''
+  return img.dataset.previewSrc || img.currentSrc || img.src || ''
 }
 
 /**
  * 打开图片预览或原始链接
  * @param src 图片地址
- * @param event 鼠标事件
+ * @param event 交互事件
  */
-function openImage(src: string, event: MouseEvent) {
+function openImage(src: string, event: MouseEvent | KeyboardEvent) {
   if (isOpenExternalClick(event)) {
     vscode.openExternal({ path: resolveWebviewUrl(src) })
     return
@@ -147,6 +169,8 @@ interface ImageOpenBindingOptions {
   getSrc: () => string
   /** 当前是否允许打开图片 */
   canOpen?: () => boolean
+  /** 是否补充键盘交互 */
+  keyboardAccessible?: boolean
 }
 
 /**
@@ -154,9 +178,12 @@ interface ImageOpenBindingOptions {
  * @param element 交互元素
  * @param options 图片打开行为配置
  */
-function bindImageOpen(element: HTMLElement, { action, getSrc, canOpen }: ImageOpenBindingOptions) {
-  element.title = getImagePreviewTitle(action)
-  element.onclick = event => {
+function bindImageOpen(
+  element: HTMLElement,
+  { action, getSrc, canOpen, keyboardAccessible }: ImageOpenBindingOptions
+) {
+  /** 执行图片打开操作 */
+  function activate(event: MouseEvent | KeyboardEvent) {
     event.preventDefault()
     event.stopPropagation()
 
@@ -165,6 +192,21 @@ function bindImageOpen(element: HTMLElement, { action, getSrc, canOpen }: ImageO
     }
 
     openImage(getSrc(), event)
+  }
+
+  element.title = getImagePreviewTitle(action)
+  element.onclick = activate
+
+  if (!keyboardAccessible) {
+    return
+  }
+
+  element.onkeydown = event => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return
+    }
+
+    activate(event)
   }
 }
 
@@ -189,14 +231,20 @@ export function proxyImgurImageSrc(imageSrc: string): string {
  * 应用图片展示地址
  * @param img 图片元素
  */
-function applyImageDisplaySrc(img: HTMLImageElement) {
+function applyImageDisplaySrc(img: HTMLImageElement, showImages: boolean) {
   const originalSrc = img.dataset.previewSrc || img.currentSrc || img.src
   const displaySrc = getImageDisplaySrc(originalSrc)
   img.dataset.previewSrc = displaySrc
   if (isImageEmoticonDisplaySrc(originalSrc, displaySrc)) {
     img.classList.add('v2ex-emoticon-image')
   }
-  img.src = proxyImgurImageSrc(displaySrc)
+  if (showImages) {
+    img.src = proxyImgurImageSrc(displaySrc)
+    return
+  }
+
+  img.removeAttribute('src')
+  img.removeAttribute('srcset')
 }
 
 /**
@@ -205,10 +253,19 @@ function applyImageDisplaySrc(img: HTMLImageElement) {
  */
 function bindImagePreview(img: HTMLImageElement) {
   img.classList.add('image-preview-target')
+  const isInsideLink = Boolean(img.closest('a'))
+  if (!isInsideLink) {
+    img.role = 'button'
+    img.tabIndex = 0
+    if (!img.getAttribute('aria-label')) {
+      img.setAttribute('aria-label', img.alt ? `${img.alt}，查看大图` : '查看大图')
+    }
+  }
   bindImageOpen(img, {
     action: '查看大图',
     getSrc: () => getImagePreviewSrc(img),
-    canOpen: () => img.complete
+    canOpen: () => img.complete,
+    keyboardAccessible: !isInsideLink
   })
 }
 
@@ -245,7 +302,9 @@ function syncImageVisibility(img: HTMLImageElement, showImages: boolean) {
     img.dataset.hiddenImagePlaceholderId || `hidden-image-${++hiddenImagePlaceholderCount}`
   img.dataset.hiddenImagePlaceholderId = placeholderId
 
-  const existingButton = document.querySelector<HTMLButtonElement>(
+  const parentAnchor = img.closest('a')
+  const placeholderContainer = parentAnchor?.parentElement || img.parentElement
+  const existingButton = placeholderContainer?.querySelector<HTMLButtonElement>(
     `.hidden-image-button[data-placeholder-id="${placeholderId}"]`
   )
 
@@ -264,7 +323,6 @@ function syncImageVisibility(img: HTMLImageElement, showImages: boolean) {
   const button = createHiddenImageButton(img)
   button.dataset.placeholderId = placeholderId
 
-  const parentAnchor = img.closest('a')
   if (parentAnchor && parentAnchor.parentNode) {
     parentAnchor.insertAdjacentElement('afterend', button)
     return
@@ -282,17 +340,14 @@ function bindImageLinkPreview(anchor: HTMLAnchorElement) {
     return
   }
 
+  const image = anchor.querySelector<HTMLImageElement>('img')
   const imageSrc = proxyImgurImageSrc(anchor.href)
-
-  if (anchor.childNodes[0] && anchor.childNodes[0].nodeName === 'IMG') {
-    return
-  }
 
   anchor.dataset.imagePreviewBound = 'true'
   anchor.classList.add('image-preview-target')
   bindImageOpen(anchor, {
     action: '查看大图',
-    getSrc: () => imageSrc
+    getSrc: () => (image ? getImagePreviewSrc(image) : imageSrc)
   })
 }
 
@@ -315,11 +370,11 @@ function bindNavigationLink(anchor: HTMLAnchorElement) {
  * @param showImages 是否显示图片
  */
 export function enhanceHtmlContent(root: ParentNode, showImages: boolean) {
-  const topicImages = root.querySelectorAll<HTMLImageElement>('.topic-content img')
-  const topicLinks = root.querySelectorAll<HTMLAnchorElement>('.topic-content a')
+  const topicImages = root.querySelectorAll<HTMLImageElement>('img')
+  const topicLinks = root.querySelectorAll<HTMLAnchorElement>('a')
 
   topicImages.forEach(img => {
-    applyImageDisplaySrc(img)
+    applyImageDisplaySrc(img, showImages)
     bindImagePreview(img)
     syncImageVisibility(img, showImages)
   })
@@ -331,14 +386,4 @@ export function enhanceHtmlContent(root: ParentNode, showImages: boolean) {
   })
 
   topicLinks.forEach(bindNavigationLink)
-}
-
-/**
- * 等待 DOM 更新后增强帖子内容
- * @param showImages 是否显示图片
- */
-export function enhanceHtmlContentAfterRender(showImages: boolean) {
-  requestAnimationFrame(() => {
-    enhanceHtmlContent(document, showImages)
-  })
 }

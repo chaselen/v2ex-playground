@@ -26,7 +26,8 @@ import {
   IconUserCircleStroked
 } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
-import { enhanceHtmlContentAfterRender, normalizeHtml } from '@/shared/contentEnhancement'
+import { normalizeHtml } from '@/shared/contentEnhancement'
+import EnhancedHtmlContent from '@/shared/EnhancedHtmlContent'
 import PageSkeleton from '@/shared/PageSkeleton'
 import { VscodeProTag } from '@/shared/SemiVscode'
 import TopicShareContextMenu from '@/shared/TopicShareContextMenu'
@@ -76,9 +77,6 @@ export default function TopicApp() {
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
   const showImages = state.showImages !== false
-
-  /** 话题正文内容 */
-  const topicContentHtml = useMemo(() => normalizeHtml(topic?.content), [topic?.content])
 
   /** 当前回复页的楼中楼结构 */
   const replyTree = useMemo(() => buildReplyTree(topic?.replies || []), [topic?.replies])
@@ -370,9 +368,10 @@ export default function TopicApp() {
               <span className="floor">{reply.floor}</span>
             </div>
           </div>
-          <div
+          <EnhancedHtmlContent
             className="topic-content reply-content"
-            dangerouslySetInnerHTML={{ __html: normalizeHtml(reply.content) }}
+            html={reply.content}
+            showImages={showImages}
           />
         </div>
         {replyViewMode === 'nested' && reply.children.length > 0 && (
@@ -420,24 +419,8 @@ export default function TopicApp() {
       applyViewState
     )
 
-    enhanceHtmlContentAfterRender(showImages)
-
     return dispose
   }, [])
-
-  useEffect(() => {
-    if (!topic) {
-      return
-    }
-    enhanceHtmlContentAfterRender(showImages)
-  }, [topic, showImages, replyViewMode])
-
-  useEffect(() => {
-    if (replyComposerMode !== 'preview' || !replyPreviewHtml) {
-      return
-    }
-    enhanceHtmlContentAfterRender(showImages)
-  }, [replyComposerMode, replyPreviewHtml, showImages])
 
   useEffect(() => {
     /** 聚合话题内容中的 Imgur 图片加载错误，单个页面仅提示一次 */
@@ -728,9 +711,11 @@ export default function TopicApp() {
           <Divider className="topic-divider topic-divider--content-start" />
 
           {topic.content ? (
-            <section
+            <EnhancedHtmlContent
+              as="section"
               className="topic-content"
-              dangerouslySetInnerHTML={{ __html: topicContentHtml }}
+              html={topic.content}
+              showImages={showImages}
             />
           ) : (
             <section className="topic-empty-content">
@@ -765,7 +750,7 @@ export default function TopicApp() {
                   <span>第 {index + 1} 条附言</span>
                   {append.time && <span className="append-time">{append.time}</span>}
                 </h2>
-                <div dangerouslySetInnerHTML={{ __html: normalizeHtml(append.content) }} />
+                <EnhancedHtmlContent html={append.content} showImages={showImages} />
               </section>
             </div>
           ))}
@@ -844,6 +829,7 @@ export default function TopicApp() {
               value={replyContent}
               mode={replyComposerMode}
               previewHtml={replyPreviewHtml}
+              showImages={showImages}
               previewing={previewingReply}
               posting={postingReply}
               onChange={updateReplyContent}
