@@ -1,6 +1,5 @@
 import vscode from 'vscode'
 import path from 'path'
-import { EOL } from 'os'
 import autoDailySignIn, {
   dailySignIn,
   getDailySignInStatus,
@@ -10,6 +9,7 @@ import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
+import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
@@ -166,9 +166,9 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       login: async () => {
         await vscode.commands.executeCommand('v2ex.login')
       },
-      ctxCopyLink: msg => this._copyLink(msg.topicId),
-      ctxCopyTitleLink: msg => this._copyTitleLink(msg.topicId, msg.label),
-      ctxViewInBrowser: msg => this._viewInBrowser(msg.topicId)
+      ctxCopyLink: msg => copyTopicLink(msg.topicId),
+      ctxCopyTitleLink: msg => copyTopicTitleLink(msg.topicId, msg.label),
+      ctxViewInBrowser: msg => viewTopicInBrowser(msg.topicId)
     }
   }
 
@@ -551,33 +551,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
       lastReplyUser: topic.lastReplyUser,
       isRead: isTopicRead(topic.id)
     }
-  }
-
-  /**
-   * 复制话题链接
-   * @param topicId 话题 id
-   */
-  private _copyLink(topicId: number) {
-    const link = G.V2ex.getTopicLinkById(topicId)
-    vscode.env.clipboard.writeText(link)
-  }
-
-  /**
-   * 复制话题标题和链接
-   * @param topicId 话题 id
-   * @param label 话题标题
-   */
-  private _copyTitleLink(topicId: number, label: string) {
-    const link = G.V2ex.getTopicLinkById(topicId)
-    vscode.env.clipboard.writeText(label + EOL + link)
-  }
-
-  /**
-   * 在浏览器中打开话题
-   * @param topicId 话题 id
-   */
-  private _viewInBrowser(topicId: number) {
-    openExternal(G.V2ex.getTopicLinkById(topicId))
   }
 
   /**
