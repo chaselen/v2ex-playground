@@ -1,5 +1,6 @@
 import type { WebviewNavigationRpcCommands } from '@extension/shared/webview'
 import { createVsCodeClient } from './vscode'
+import { getV2exTopicId, isV2exHostname } from './topicLink'
 
 /** 站内链接导航使用的 VS Code 通信客户端 */
 const vscode = createVsCodeClient<WebviewNavigationRpcCommands>()
@@ -91,7 +92,7 @@ function resolveLinkNavigationTarget(
   const internalPath = url && isV2exHostname(url.hostname) ? url.pathname : ''
 
   // 只匹配 pathname，避免查询参数中的 /t/123 等文本被误判为站内链接
-  const topicId = internalPath.match(/^\/t\/(\d+)\/?$/)?.[1]
+  const topicId = getV2exTopicId(anchor.href, document.baseURI)
   if (topicId) {
     return { type: 'topic', topicId, title: title || options.topicTitle }
   }
@@ -147,20 +148,12 @@ function openLinkNavigationTarget(target: LinkNavigationTarget) {
  * 解析链接地址
  * @param href 链接地址
  */
-function resolveLinkUrl(href: string): URL | undefined {
+function resolveLinkUrl(href: string, baseUrl: string = document.baseURI): URL | undefined {
   try {
-    return href ? new URL(href, document.baseURI) : undefined
+    return href ? new URL(href, baseUrl) : undefined
   } catch {
     return undefined
   }
-}
-
-/**
- * 判断是否为 V2EX 域名
- * @param hostname 域名
- */
-function isV2exHostname(hostname: string): boolean {
-  return hostname === 'v2ex.com' || hostname.endsWith('.v2ex.com')
 }
 
 /**

@@ -6,7 +6,12 @@ import { proxyImgurImageSrc } from '@/shared/contentEnhancement'
 import EnhancedHtmlContent from '@/shared/EnhancedHtmlContent'
 import { isApplePlatform } from '@/shared/platform'
 import { imageEmoticonLinks, isImageEmoticon } from '@/shared/imageEmoticons'
-import { emoticonGroups } from './emoticons'
+import { createVsCodeClient } from '@/shared/vscode'
+import { emoticonGroups, replaceImageEmoticonTokens } from './emoticons'
+import type { TopicPanelRpcCommands } from '@extension/shared/webview'
+
+/** 回复输入组件 VS Code 通信客户端 */
+const vscode = createVsCodeClient<TopicPanelRpcCommands>()
 
 /** Imgur 支持上传的图片 MIME 类型 */
 const imgurImageMimeTypes = new Set([
@@ -30,40 +35,81 @@ const imgurStillImageMaxSize = 50 * 1024 * 1024
 const imgurAnimatedImageMaxSize = 200 * 1024 * 1024
 
 /** 回复编辑模式 */
-export type ReplyComposerMode = 'edit' | 'preview'
+type ReplyComposerMode = 'edit' | 'preview'
+
+/** 回复框拖放目标 */
+interface ReplyComposerDropTarget {
+  /** 获取回复表单 */
+  getElement(): HTMLFormElement | null
+  /** 处理拖放事件 */
+  handle(event: DragEvent): void
+  /** 清除拖放状态 */
+  reset(): void
+}
+
+/** 当前页面挂载的回复框拖放目标 */
+const replyComposerDropTargets = new Set<ReplyComposerDropTarget>()
+
+/** 全局处理回复框拖放并阻止 VS Code 接管文件 */
+function handleReplyComposerDrop(event: DragEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+  event.stopImmediatePropagation()
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'copy'
+  }
+
+  const eventTarget = event.target
+  const activeTarget = Array.from(replyComposerDropTargets).find(target => {
+    const element = target.getElement()
+    return Boolean(element && eventTarget instanceof Node && element.contains(eventTarget))
+  })
+
+  replyComposerDropTargets.forEach(target => {
+    if (target !== activeTarget) {
+      target.reset()
+    }
+  })
+  activeTarget?.handle(event)
+}
+
+/**
+ * 注册回复框拖放目标
+ * @param target 回复框拖放目标
+ */
+function registerReplyComposerDropTarget(target: ReplyComposerDropTarget) {
+  replyComposerDropTargets.add(target)
+  if (replyComposerDropTargets.size === 1) {
+    window.addEventListener('dragenter', handleReplyComposerDrop, true)
+    window.addEventListener('dragover', handleReplyComposerDrop, true)
+    window.addEventListener('drop', handleReplyComposerDrop, true)
+  }
+
+  return () => {
+    replyComposerDropTargets.delete(target)
+    if (!replyComposerDropTargets.size) {
+      window.removeEventListener('dragenter', handleReplyComposerDrop, true)
+      window.removeEventListener('dragover', handleReplyComposerDrop, true)
+      window.removeEventListener('drop', handleReplyComposerDrop, true)
+    }
+  }
+}
 
 /** 回复输入框暴露给页面层的操作 */
 export interface ReplyComposerHandle {
-  /** 聚焦文本输入框 */
-  focus(): void
+  /** 设置回复内容并聚焦 */
+  setContent(content: string): void
 }
 
 /** 回复输入组件属性 */
 interface ReplyComposerProps {
-  /** 回复内容 */
-  value: string
-  /** 当前编辑模式 */
-  mode: ReplyComposerMode
-  /** 回复预览 HTML */
-  previewHtml: string
   /** 是否显示图片 */
   showImages: boolean
-  /** 是否正在生成预览 */
-  previewing: boolean
-  /** 是否正在提交回复 */
-  posting: boolean
-  /** 更新回复内容 */
-  onChange(value: string): void
-  /** 切换编辑模式 */
-  onModeChange(mode: ReplyComposerMode): void
-  /** 预览回复内容 */
-  onPreview(): void
-  /** 提交回复 */
-  onSubmit(): void
-  /** 上传图片 */
-  onUploadImage(file: File): Promise<string>
-  /** 检测 Imgur 连通性 */
-  onCheckImgurConnectivity(target: 'image' | 'upload', refresh?: boolean): Promise<boolean>
+  /** 重置编辑状态的标识 */
+  resetKey?: string | number
+  /** 提交已处理图片表情的回复内容 */
+  onSubmit(content: string): Promise<void>
 }
 
 /**
@@ -99,27 +145,21 @@ function getImgurImageMaxSize(file: File) {
  * 话题回复输入组件
  */
 const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(function ReplyComposer(
-  {
-    value,
-    mode,
-    previewHtml,
-    showImages,
-    previewing,
-    posting,
-    onChange,
-    onModeChange,
-    onPreview,
-    onSubmit,
-    onUploadImage,
-    onCheckImgurConnectivity
-  },
+  { showImages, resetKey, onSubmit: submitContent },
   ref
 ) {
+  const [value, setValue] = useState('')
+  const [mode, setMode] = useState<ReplyComposerMode>('edit')
+  const [previewing, setPreviewing] = useState(false)
+  const [posting, setPosting] = useState(false)
+  const [previewHtml, setPreviewHtml] = useState('')
+  const [previewSource, setPreviewSource] = useState('')
   const composerRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const postingRef = useRef(posting)
   const imgurWarningShownRef = useRef(false)
   const uploadAndInsertImagesRef = useRef<(files: FileList | File[]) => void>(() => undefined)
+  const generationRef = useRef(0)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [draggingImage, setDraggingImage] = useState(false)
   const [emoticonPanelVisible, setEmoticonPanelVisible] = useState(false)
@@ -130,40 +170,137 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   postingRef.current = posting
 
   useImperativeHandle(ref, () => ({
-    focus() {
-      getTextarea()?.focus()
+    setContent(content: string) {
+      generationRef.current++
+      setValue(content)
+      setPreviewing(false)
+      setPosting(false)
+      setPreviewHtml('')
+      setMode('edit')
+      requestAnimationFrame(() => getTextarea()?.focus())
     }
   }))
 
   useEffect(() => {
+    generationRef.current++
+    reset()
+  }, [resetKey])
+
+  /** 重置编辑状态 */
+  function reset() {
+    setValue('')
+    setMode('edit')
+    setPreviewing(false)
+    setPosting(false)
+    setPreviewHtml('')
+    setPreviewSource('')
+  }
+
+  /** 更新回复内容 */
+  function updateContent(nextValue: string) {
+    if (nextValue !== value) {
+      generationRef.current++
+      setPreviewing(false)
+    }
+    setValue(nextValue)
+    if (nextValue !== previewSource) {
+      setPreviewHtml('')
+    }
+  }
+
+  /** 生成回复预览 */
+  async function previewReply() {
+    if (!value.trim()) {
+      Toast.warning('回复内容不能为空')
+      setMode('edit')
+      requestAnimationFrame(() => getTextarea()?.focus())
+      return
+    }
+
+    if (previewHtml && previewSource === value) {
+      setMode('preview')
+      return
+    }
+
+    const generation = generationRef.current
+    setMode('preview')
+    setPreviewing(true)
+    try {
+      const html = await vscode.previewReply({
+        content: replaceImageEmoticonTokens(value)
+      })
+      if (generation === generationRef.current) {
+        setPreviewHtml(html)
+        setPreviewSource(value)
+      }
+    } catch (err) {
+      if (generation === generationRef.current) {
+        Toast.error((err as Error).message || '预览失败')
+        setMode('edit')
+      }
+    } finally {
+      if (generation === generationRef.current) {
+        setPreviewing(false)
+      }
+    }
+  }
+
+  /** 提交回复 */
+  async function submitReply() {
+    const normalizedContent = replaceImageEmoticonTokens(value)
+    if (!normalizedContent) {
+      Toast.warning('回复内容不能为空')
+      requestAnimationFrame(() => getTextarea()?.focus())
+      return
+    }
+
+    const generation = generationRef.current
+    setPosting(true)
+    try {
+      await submitContent(normalizedContent)
+      if (generation === generationRef.current) {
+        reset()
+      }
+    } catch (err) {
+      if (generation === generationRef.current) {
+        Toast.error((err as Error).message || '回复失败')
+      }
+    } finally {
+      if (generation === generationRef.current) {
+        setPosting(false)
+      }
+    }
+  }
+
+  /** 上传回复图片 */
+  async function uploadImage(file: File) {
+    return vscode.uploadImage({
+      filename: file.name,
+      mimeType: file.type || 'application/octet-stream',
+      base64: await readFileAsBase64(file)
+    })
+  }
+
+  /** 检测 Imgur 连通性 */
+  function checkImgurConnectivity(target: 'image' | 'upload', refresh = false) {
+    return vscode.checkImgurConnectivity({ target, refresh })
+  }
+
+  useEffect(() => {
     /**
-     * 阻止 VS Code 接管 Webview 内拖放，并在回复框内处理图片上传
+     * 在当前回复框内处理图片上传
      * @param event 拖拽事件
      */
-    function preventWebviewDrop(event: DragEvent) {
-      const composer = composerRef.current
-      const target = event.target
-      const isComposerDrop = Boolean(
-        composer && target instanceof Node && composer.contains(target)
-      )
-
-      event.preventDefault()
-      event.stopPropagation()
-      event.stopImmediatePropagation()
-
+    function handleDrop(event: DragEvent) {
       if (postingRef.current) {
         setDraggingImage(false)
         return
       }
 
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = 'copy'
-      }
-
       if (event.type === 'drop') {
         setDraggingImage(false)
 
-        if (!isComposerDrop || !event.dataTransfer?.files.length) {
+        if (!event.dataTransfer?.files.length) {
           return
         }
 
@@ -171,26 +308,14 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         return
       }
 
-      setDraggingImage(
-        Boolean(isComposerDrop && event.dataTransfer && hasImageTransfer(event.dataTransfer))
-      )
+      setDraggingImage(Boolean(event.dataTransfer && hasImageTransfer(event.dataTransfer)))
     }
 
-    document.addEventListener('dragenter', preventWebviewDrop, true)
-    document.addEventListener('dragover', preventWebviewDrop, true)
-    document.addEventListener('drop', preventWebviewDrop, true)
-    window.addEventListener('dragenter', preventWebviewDrop, true)
-    window.addEventListener('dragover', preventWebviewDrop, true)
-    window.addEventListener('drop', preventWebviewDrop, true)
-
-    return () => {
-      document.removeEventListener('dragenter', preventWebviewDrop, true)
-      document.removeEventListener('dragover', preventWebviewDrop, true)
-      document.removeEventListener('drop', preventWebviewDrop, true)
-      window.removeEventListener('dragenter', preventWebviewDrop, true)
-      window.removeEventListener('dragover', preventWebviewDrop, true)
-      window.removeEventListener('drop', preventWebviewDrop, true)
-    }
+    return registerReplyComposerDropTarget({
+      getElement: () => composerRef.current,
+      handle: handleDrop,
+      reset: () => setDraggingImage(false)
+    })
   }, [])
 
   useEffect(() => {
@@ -223,7 +348,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    */
   async function ensureImgurAvailable(refresh: boolean) {
     try {
-      if (await onCheckImgurConnectivity('upload', refresh)) {
+      if (await checkImgurConnectivity('upload', refresh)) {
         return true
       }
     } catch {
@@ -237,7 +362,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   /** 打开表情面板时按需检查图片表情服务 */
   async function checkImgurForEmoticons() {
     try {
-      if ((await onCheckImgurConnectivity('image', false)) || imgurWarningShownRef.current) {
+      if ((await checkImgurConnectivity('image', false)) || imgurWarningShownRef.current) {
         return
       }
     } catch {
@@ -305,8 +430,8 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     const nextValue = `${before}${insertedText}${after}`
     const cursor = before.length + insertedText.length
 
-    onChange(nextValue)
-    onModeChange('edit')
+    updateContent(nextValue)
+    setMode('edit')
 
     requestAnimationFrame(() => {
       const nextTextarea = getTextarea()
@@ -398,7 +523,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
 
     setUploadingImage(true)
     try {
-      const links = await Promise.all(imageFiles.map(file => onUploadImage(file)))
+      const links = await Promise.all(imageFiles.map(file => uploadImage(file)))
       insertImageLinks(links)
       Toast.success('图片上传成功')
     } catch (err) {
@@ -462,7 +587,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     }
 
     event.preventDefault()
-    onSubmit()
+    void submitReply()
   }
 
   return (
@@ -475,7 +600,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       onSubmit={event => {
         event.preventDefault()
         if (!posting) {
-          onSubmit()
+          void submitReply()
         }
       }}
       onPaste={handlePaste}
@@ -489,7 +614,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           aria-selected={mode === 'edit'}
           className={mode === 'edit' ? 'is-active' : undefined}
           disabled={posting}
-          onClick={() => onModeChange('edit')}
+          onClick={() => setMode('edit')}
         >
           编辑
         </button>
@@ -499,7 +624,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           aria-selected={mode === 'preview'}
           className={mode === 'preview' ? 'is-active' : undefined}
           disabled={posting}
-          onClick={onPreview}
+          onClick={() => void previewReply()}
         >
           预览
         </button>
@@ -514,7 +639,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             placeholder="请尽量让自己的回复能够对别人有帮助"
             showClear
             disabled={posting || uploadingImage}
-            onChange={nextValue => onChange(String(nextValue || ''))}
+            onChange={nextValue => updateContent(String(nextValue || ''))}
           />
           <div className="reply-upload-bar">
             <button
@@ -621,3 +746,16 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
 })
 
 export default ReplyComposer
+
+/**
+ * 读取文件为 base64 内容
+ * @param file 文件对象
+ */
+function readFileAsBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || '').replace(/^data:[^,]*,/, ''))
+    reader.onerror = () => reject(reader.error || new Error('读取图片失败'))
+    reader.readAsDataURL(file)
+  })
+}

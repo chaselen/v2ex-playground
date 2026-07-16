@@ -1,5 +1,6 @@
 import { createElement, useLayoutEffect, useMemo, useRef, type HTMLAttributes } from 'react'
 import { enhanceHtmlContent, normalizeHtml } from './contentEnhancement'
+import type { OpenTopicPreview } from './contentEnhancement'
 import { useImagePreview } from './ImagePreviewProvider'
 
 /** HTML 内容容器支持的标签 */
@@ -16,6 +17,8 @@ interface EnhancedHtmlContentProps extends Omit<
   html?: unknown
   /** 是否显示并加载图片 */
   showImages?: boolean
+  /** 打开内容中的站内话题预览 */
+  onTopicPreview?: OpenTopicPreview
 }
 
 /**
@@ -25,6 +28,7 @@ export default function EnhancedHtmlContent({
   as = 'div',
   html,
   showImages = true,
+  onTopicPreview,
   ...elementProps
 }: EnhancedHtmlContentProps) {
   const rootRef = useRef<HTMLElement>(null)
@@ -37,9 +41,10 @@ export default function EnhancedHtmlContent({
   useLayoutEffect(() => {
     const root = rootRef.current
     if (root) {
-      enhanceHtmlContent(root, showImages, openImagePreview)
+      // React 重写 innerHTML 后需恢复运行时插入的按钮和事件监听
+      enhanceHtmlContent(root, showImages, openImagePreview, onTopicPreview)
     }
-  }, [normalizedHtml, openImagePreview, showImages])
+  })
 
   return createElement(as, {
     ...elementProps,

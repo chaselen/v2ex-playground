@@ -239,6 +239,33 @@ $panel-border: var(--v2ex-border);
     overflow-wrap: anywhere;
   }
 
+  .topic-preview-button {
+    appearance: none;
+    display: inline-flex;
+    min-height: 20px;
+    align-items: center;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border: 1px solid color-mix(in srgb, var(--vscode-textLink-foreground) 72%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--vscode-textLink-foreground) 12%, transparent);
+    color: var(--vscode-textLink-foreground);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    vertical-align: 0.08em;
+    cursor: pointer;
+
+    &:hover {
+      background: color-mix(in srgb, var(--vscode-textLink-foreground) 20%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+  }
+
   .image-preview-target {
     border-radius: 3px;
     transition: box-shadow 160ms ease;
@@ -396,6 +423,87 @@ $panel-border: var(--v2ex-border);
       margin-bottom: 0;
     }
   }
+}
+
+.topic-preview-modal {
+  --v2ex-webview-bg: var(--vscode-editor-background);
+  --v2ex-webview-fg: var(--vscode-editor-foreground, var(--vscode-foreground));
+  --v2ex-widget-bg: var(
+    --vscode-editorWidget-background,
+    var(--vscode-input-background, var(--v2ex-webview-bg))
+  );
+  --v2ex-input-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --v2ex-input-fg: var(--vscode-input-foreground, var(--v2ex-webview-fg));
+  --v2ex-border-base: var(
+    --vscode-panel-border,
+    var(--vscode-editorWidget-border, var(--vscode-widget-border, transparent))
+  );
+  --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-hover-bg: var(
+    --vscode-toolbar-hoverBackground,
+    var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.14))
+  );
+  color: var(--v2ex-webview-fg);
+
+  .semi-modal-content {
+    height: min(800px, calc(100vh - 48px));
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
+    border: 1px solid var(--v2ex-border);
+    background: var(--v2ex-webview-bg);
+  }
+
+  .semi-modal-header,
+  .semi-modal-footer {
+    flex: none;
+  }
+
+  .semi-modal-body-wrapper {
+    min-height: 0;
+    flex: 1 1 auto;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .semi-modal-body {
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.topic-preview-body {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+
+  > .floating-actions {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+.topic-preview-scroll {
+  height: 100%;
+  overflow: auto;
+}
+
+.topic-preview-container {
+  max-width: 800px;
+  padding: 24px;
+  margin: 0 auto;
+}
+
+.topic-preview-state {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
 }
 
 @media (prefers-reduced-motion: reduce) {

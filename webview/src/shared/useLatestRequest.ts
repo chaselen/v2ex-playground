@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 /** 最新请求句柄 */
 interface LatestRequestHandle {
@@ -17,7 +17,7 @@ export function useLatestRequest() {
   /**
    * 开始一次新请求
    */
-  function startRequest(): LatestRequestHandle {
+  const startRequest = useCallback((): LatestRequestHandle => {
     const id = requestIdRef.current + 1
     requestIdRef.current = id
 
@@ -25,7 +25,7 @@ export function useLatestRequest() {
       id,
       isLatest: () => id === requestIdRef.current
     }
-  }
+  }, [])
 
   return { startRequest }
 }

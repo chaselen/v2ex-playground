@@ -17,6 +17,7 @@ import {
   TopicPanelRpcCommands,
   TopicPanelViewState,
   TopicPanelWebviewEvents,
+  TopicActionTarget,
   WebviewRpcHandlers
 } from '@/shared/webview'
 
@@ -85,6 +86,9 @@ export class TopicPanelController {
 
   /** 用户快速信息请求缓存 */
   private readonly memberQuickInfoCache = new Map<string, Promise<MemberInfo>>()
+
+  /** 回复翻页请求序号 */
+  private replyPageRequestId = 0
 
   /** 配置变更监听 */
   private readonly configListener: vscode.Disposable
@@ -245,17 +249,19 @@ export class TopicPanelController {
         await vscode.commands.executeCommand('v2ex.login')
       },
       refresh: () => this.refreshTopic(),
-      copyLink: () => copyTopicLink(this.topicId),
-      copyTitleLink: () => copyTopicTitleLink(this.topicId, this.detail.title),
-      viewInBrowser: () => viewTopicInBrowser(this.topicId),
-      collect: () => this.runTopicMutation(() => G.V2ex.collectTopic(this.detail.id)),
-      cancelCollect: () => this.runTopicMutation(() => G.V2ex.cancelCollectTopic(this.detail.id)),
-      thank: () => this.runTopicMutation(() => G.V2ex.thankTopic(this.detail.id)),
-      postReply: msg => this.handlePostReply(msg),
+      copyTopicLink: msg => copyTopicLink(msg.topicId),
+      copyTopicTitleLink: msg => copyTopicTitleLink(msg.topicId, msg.title),
+      viewTopicInBrowser: msg => viewTopicInBrowser(msg.topicId),
+      collectTopic: msg => this.runTopicMutation(msg, topicId => G.V2ex.collectTopic(topicId)),
+      cancelCollectTopic: msg =>
+        this.runTopicMutation(msg, topicId => G.V2ex.cancelCollectTopic(topicId)),
+      thankTopic: msg => this.runTopicMutation(msg, topicId => G.V2ex.thankTopic(topicId)),
+      postTopicReply: msg => this.handlePostTopicReply(msg),
       uploadImage: msg => uploadImage(msg),
       checkImgurConnectivity: msg => checkImgurConnectivity(msg.target, msg.refresh),
       previewReply: msg => this.handlePreviewReply(msg),
-      thankReply: msg => this.handleThankReply(msg),
+      getTopicPreview: msg => this.loadTopicPreview(msg),
+      thankTopicReply: msg => this.handleThankTopicReply(msg),
       loadReplyPage: msg => this.handleLoadReplyPage(msg),
       loadMemberQuickInfo: msg => this.loadMemberQuickInfo(msg.username)
     }
@@ -282,12 +288,32 @@ export class TopicPanelController {
   }
 
   /**
-   * 统一处理会导致页面整体刷新的话题操作
-   * @param task 具体任务
+   * 执行话题操作并同步受影响的主面板
+   * @param target 操作目标
+   * @param task 话题操作
    */
-  private async runTopicMutation(task: () => Promise<unknown>) {
-    await task()
-    await this.reloadTopic(false)
+  private async runTopicMutation(
+    target: TopicActionTarget,
+    task: (topicId: number) => Promise<unknown>
+  ): Promise<TopicDetail> {
+    const topicId = normalizeTopicId(target.topicId)
+    const replyPage = normalizeReplyPage(target.replyPage)
+
+    await task(topicId)
+    const detail = await G.V2ex.getTopicDetail(topicId, replyPage)
+
+    if (topicId === this.topicId) {
+      if (replyPage === this.detail.replyCurrentPage) {
+        this.detail = detail
+        this.render(detail)
+      } else {
+        const panelDetail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
+        this.detail = panelDetail
+        this.render(panelDetail)
+      }
+    }
+
+    return detail
   }
 
   /**
@@ -337,19 +363,6 @@ export class TopicPanelController {
   }
 
   /**
-   * 处理提交回复
-   * @param message 页面消息
-   */
-  private handlePostReply(message: { content: string }) {
-    const { content } = message
-    if (!content) {
-      throw new Error('请输入回复内容')
-    }
-
-    return this.runTopicMutation(() => G.V2ex.postReply(this.topicId, content))
-  }
-
-  /**
    * 处理回复预览
    * @param message 页面消息
    */
@@ -363,24 +376,37 @@ export class TopicPanelController {
   }
 
   /**
-   * 处理感谢回复者
-   * @param message 页面消息
+   * 加载站内话题预览
+   * @param message 预览请求
    */
-  private async handleThankReply(message: { replyId: string }) {
-    const { replyId } = message
-    if (!replyId) {
-      return
+  private loadTopicPreview(message: { topicId: string | number; replyPage?: number }) {
+    const topicId = normalizeTopicId(message.topicId)
+    const replyPage = normalizeReplyPage(message.replyPage)
+    return G.V2ex.getTopicDetail(topicId, replyPage)
+  }
+
+  /**
+   * 提交话题回复
+   * @param message 回复请求
+   */
+  private handlePostTopicReply(message: TopicActionTarget & { content: string }) {
+    if (!message.content) {
+      throw new Error('请输入回复内容')
     }
 
-    const reply = this.detail.replies.find(r => r.replyId === replyId)
-    if (!reply) {
-      return
+    return this.runTopicMutation(message, topicId => G.V2ex.postReply(topicId, message.content))
+  }
+
+  /**
+   * 感谢话题回复者
+   * @param message 感谢请求
+   */
+  private handleThankTopicReply(message: TopicActionTarget & { replyId: string }) {
+    if (!message.replyId) {
+      throw new Error('缺少回复 id')
     }
 
-    await G.V2ex.thankReply(replyId)
-    reply.thanked = true
-    reply.thanks++
-    this.render(this.detail)
+    return this.runTopicMutation(message, () => G.V2ex.thankReply(message.replyId))
   }
 
   /**
@@ -390,15 +416,21 @@ export class TopicPanelController {
   private async handleLoadReplyPage(message: { replyPage: number }) {
     const replyPage = Number(message.replyPage)
     if (!Number.isFinite(replyPage)) {
-      return
+      throw new Error('回复页码无效')
     }
 
+    const requestId = ++this.replyPageRequestId
     const detail = await G.V2ex.getTopicDetail(this.topicId, replyPage)
+    if (requestId !== this.replyPageRequestId) {
+      return detail
+    }
+
     this.detail = detail
     setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
       logger.error('话题面板图标更新失败', err)
     )
     this.render(detail)
+    return detail
   }
 }
 
@@ -412,4 +444,13 @@ function normalizeTopicId(topicId: number | string): number {
     throw new Error('打开话题面板缺少必要参数')
   }
   return normalizedTopicId
+}
+
+/**
+ * 归一化回复页码
+ * @param replyPage 回复页码
+ */
+function normalizeReplyPage(replyPage?: number): number {
+  const normalizedReplyPage = Number(replyPage || 1)
+  return Number.isFinite(normalizedReplyPage) && normalizedReplyPage > 0 ? normalizedReplyPage : 1
 }

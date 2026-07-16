@@ -1,5 +1,6 @@
 import type { WebviewNavigationRpcCommands } from '@extension/shared/webview'
 import { handleWebviewLinkClick } from './linkNavigation'
+import { getV2exTopicId } from './topicLink'
 import { isApplePlatform } from './platform'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
 import { isImageEmoticonSrc, normalizeImageEmoticonSrc } from './imageEmoticons'
@@ -14,6 +15,9 @@ const SUPPORT_IMAGE_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
 
 /** 隐藏图片占位按钮 id 计数 */
 let hiddenImagePlaceholderCount = 0
+
+/** 打开站内话题预览 */
+export type OpenTopicPreview = (topicId: string) => void
 
 /** HTML 规范化选项 */
 interface NormalizeHtmlOptions {
@@ -424,6 +428,32 @@ function bindNavigationLink(anchor: HTMLAnchorElement) {
 }
 
 /**
+ * 在站内话题链接后添加预览按钮
+ * @param anchor 话题链接元素
+ * @param openTopicPreview 打开话题预览
+ */
+function appendTopicPreviewButton(anchor: HTMLAnchorElement, openTopicPreview: OpenTopicPreview) {
+  const topicId = getV2exTopicId(anchor.href, document.baseURI)
+  if (!topicId || anchor.dataset.topicPreviewBound === 'true') {
+    return
+  }
+
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'topic-preview-button'
+  button.textContent = '预览'
+  button.setAttribute('aria-label', `预览帖子：${anchor.textContent?.trim() || topicId}`)
+  button.addEventListener('click', event => {
+    event.preventDefault()
+    event.stopPropagation()
+    openTopicPreview(topicId)
+  })
+
+  anchor.dataset.topicPreviewBound = 'true'
+  anchor.insertAdjacentElement('afterend', button)
+}
+
+/**
  * 按需加载语法高亮并处理代码块
  * @param root 根节点
  */
@@ -458,7 +488,8 @@ function enhanceCodeBlocks(root: ParentNode) {
 export function enhanceHtmlContent(
   root: ParentNode,
   showImages: boolean,
-  openImagePreview: OpenImagePreview
+  openImagePreview: OpenImagePreview,
+  openTopicPreview?: OpenTopicPreview
 ) {
   const topicImages = root.querySelectorAll<HTMLImageElement>('img')
   const topicLinks = root.querySelectorAll<HTMLAnchorElement>('a')
@@ -472,6 +503,9 @@ export function enhanceHtmlContent(
   topicLinks.forEach(anchor => {
     if (isSupportImageLink(anchor)) {
       bindImageLinkPreview(anchor, openImagePreview)
+    }
+    if (openTopicPreview) {
+      appendTopicPreviewButton(anchor, openTopicPreview)
     }
   })
 
