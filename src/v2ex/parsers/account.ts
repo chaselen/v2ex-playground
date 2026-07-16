@@ -24,6 +24,7 @@ export function parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | u
   const overview: AccountOverview = {
     avatar: '',
     username: '',
+    tagline: '',
     nodeCollectionCount: 0,
     topicCollectionCount: 0,
     specialFollowingCount: 0,
@@ -40,11 +41,16 @@ export function parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | u
   }
 
   const avatar = accountBox.find('td[width="48"] img.avatar').first()
+  const memberLink = accountBox
+    .find('a[href^="/member/"]')
+    .filter((_, element) => !!$(element).text().trim())
+    .first()
+  const memberInfoCell = memberLink.closest('td')
   const activityHtml = accountBox.find('#member-activity').html() || ''
 
   overview.avatar = avatar.attr('src') || ''
-  overview.username =
-    accountBox.find('a[href^="/member/"]').first().text().trim() || avatar.attr('alt') || ''
+  overview.username = memberLink.text().trim() || avatar.attr('alt') || ''
+  overview.tagline = memberInfoCell.find('.fade').first().text().trim()
   overview.nodeCollectionCount = Number(
     accountBox.find('a[href="/my/nodes"] .bigger').first().text().trim() || 0
   )
@@ -101,6 +107,7 @@ export function isSameAccountOverview(
   return (
     overview.avatar === oldOverview.avatar &&
     overview.username === oldOverview.username &&
+    overview.tagline === oldOverview.tagline &&
     overview.nodeCollectionCount === oldOverview.nodeCollectionCount &&
     overview.topicCollectionCount === oldOverview.topicCollectionCount &&
     overview.specialFollowingCount === oldOverview.specialFollowingCount &&

@@ -745,14 +745,21 @@ export default function MyTab(props: MyTabProps) {
                 <IconUser />
               </Avatar>
             </button>
-            <button
-              type="button"
-              className={`${styles['my-link']} ${styles['my-identity']}`}
-              title={overview.username}
-              onClick={() => openMember(overview.username)}
-            >
-              {overview.username}
-            </button>
+            <div className={styles['my-identity']}>
+              <button
+                type="button"
+                className={`${styles['my-link']} ${styles['my-username']}`}
+                title={overview.username}
+                onClick={() => openMember(overview.username)}
+              >
+                {overview.username}
+              </button>
+              {!!overview.tagline && (
+                <p className={styles['my-tagline']} title={overview.tagline}>
+                  {overview.tagline}
+                </p>
+              )}
+            </div>
           </header>
 
           <div className={styles['my-stats']}>

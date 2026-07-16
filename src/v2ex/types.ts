@@ -234,6 +234,8 @@ export interface AccountOverview {
   avatar: string
   /** 用户名 */
   username: string
+  /** 用户签名 */
+  tagline: string
   /** 节点收藏数量 */
   nodeCollectionCount: number
   /** 主题收藏数量 */

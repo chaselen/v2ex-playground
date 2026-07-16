@@ -275,6 +275,7 @@ function createEmptyAccountOverview(): AccountOverview {
   return {
     avatar: '',
     username: '',
+    tagline: '',
     nodeCollectionCount: 0,
     topicCollectionCount: 0,
     specialFollowingCount: 0,

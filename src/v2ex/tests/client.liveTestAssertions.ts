@@ -98,6 +98,7 @@ export function expectTopicDetail(detail: TopicDetail) {
 export function expectAccountOverview(overview: AccountOverview) {
   expect(overview.avatar).toEqual(expect.any(String))
   expect(overview.username).toEqual(expect.any(String))
+  expect(overview.tagline).toEqual(expect.any(String))
   expect(overview.nodeCollectionCount).toEqual(expect.any(Number))
   expect(overview.topicCollectionCount).toEqual(expect.any(Number))
   expect(overview.specialFollowingCount).toEqual(expect.any(Number))
