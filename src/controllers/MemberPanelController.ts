@@ -1,11 +1,13 @@
 import vscode from 'vscode'
 import G from '@/global'
-import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
-import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
+import {
+  WebviewNavigationController,
+  type WebviewNavigationDeps
+} from '@/controllers/WebviewNavigationController'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } from '@/v2ex'
 import type {
   MemberPanelRpcCommands,
@@ -15,21 +17,12 @@ import type {
 } from '@/shared/webview'
 
 /**
- * 用户面板外部依赖
- */
-export interface MemberPanelDeps {
-  /** 打开用户面板 */
-  openMember: (member: MemberPanelInput) => void
-  /** 打开话题面板 */
-  openTopic: (topic: TopicPanelInput) => void
-  /** 打开节点主题标签 */
-  openNode: (node: NodeTabInput) => void
-}
-
-/**
  * 用户面板控制器
  */
-export class MemberPanelController implements WebviewRpcController<MemberPanelRpcCommands> {
+export class MemberPanelController
+  extends WebviewNavigationController
+  implements WebviewRpcController<MemberPanelRpcCommands>
+{
   /** 用户面板缓存 key */
   readonly key: string
 
@@ -42,9 +35,6 @@ export class MemberPanelController implements WebviewRpcController<MemberPanelRp
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>
 
-  /** 外部面板导航依赖 */
-  private readonly deps: MemberPanelDeps
-
   /** 当前用户资料，仅在扩展侧维护 */
   private profile?: MemberProfile
 
@@ -52,16 +42,16 @@ export class MemberPanelController implements WebviewRpcController<MemberPanelRp
   private viewState: MemberPanelViewState = { status: 'loading' }
 
   /**
-   * @param input 用户面板输入参数
+   * @param username 用户名
    * @param deps 外部面板导航依赖
    */
-  constructor(input: MemberPanelInput, deps: MemberPanelDeps) {
-    this.username = input.username
+  constructor(username: string, deps: WebviewNavigationDeps) {
+    super(deps)
+    this.username = username
     this.key = G.V2ex.getMemberLink(this.username)
-    this.deps = deps
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
-      title: input.label || this.username,
+      title: this.username,
       htmlEntry: 'member.html',
       enableFindWidget: true,
       useDefaultIcon: true
@@ -147,29 +137,6 @@ export class MemberPanelController implements WebviewRpcController<MemberPanelRp
   /** 获取当前视图状态 */
   rpc_ready() {
     return this.viewState
-  }
-
-  /** 打开外部链接 */
-  rpc_openExternal(path: string) {
-    openExternal(path)
-  }
-
-  /** 打开话题面板 */
-  rpc_openTopic(message: { topicId: string | number; title?: string }) {
-    this.deps.openTopic({
-      label: message.title || `/t/${message.topicId}`,
-      topicId: message.topicId
-    })
-  }
-
-  /** 打开用户面板 */
-  rpc_openMember(username: string) {
-    this.deps.openMember({ username })
-  }
-
-  /** 打开节点主题标签 */
-  rpc_openNode(message: NodeTabInput) {
-    this.deps.openNode(message)
   }
 
   /** 刷新用户资料 */

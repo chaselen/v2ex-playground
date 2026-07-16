@@ -1,11 +1,27 @@
+/** 打开话题面板参数 */
+export interface OpenTopicPayload {
+  /** 话题 id */
+  topicId: string | number
+  /** 话题标题 */
+  title?: string
+}
+
+/** 打开节点主题标签参数 */
+export interface OpenNodePayload {
+  /** 节点 name */
+  name: string
+  /** 节点展示标题 */
+  title?: string
+}
+
 /**
  * Webview 公共导航 RPC 命令
  */
 export interface WebviewNavigationRpcCommands {
   openExternal(path: string): void
-  openTopic(payload: { topicId: string | number; title?: string }): void
+  openTopic(payload: OpenTopicPayload): void
   openMember(username: string): void
-  openNode(payload: { name: string; title?: string }): void
+  openNode(payload: OpenNodePayload): void
 }
 
 /**

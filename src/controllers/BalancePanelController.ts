@@ -1,11 +1,13 @@
 import vscode from 'vscode'
 import { LoginRequiredError, type BalanceDetail } from '@/v2ex'
 import G from '@/global'
-import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
+import {
+  WebviewNavigationController,
+  type WebviewNavigationDeps
+} from '@/controllers/WebviewNavigationController'
 import type {
   BalancePanelRpcCommands,
   BalancePanelViewState,
@@ -13,30 +15,16 @@ import type {
   WebviewRpcController
 } from '@/shared/webview'
 
-/**
- * 账户余额面板外部依赖
- */
-export interface BalancePanelDeps {
-  /** 打开用户面板 */
-  openMember: (member: MemberPanelInput) => void
-  /** 打开话题面板 */
-  openTopic: (topic: TopicPanelInput) => void
-  /** 打开节点主题标签 */
-  openNode: (node: NodeTabInput) => void
-}
-
-/**
- * 账户余额面板控制器
- */
-export class BalancePanelController implements WebviewRpcController<BalancePanelRpcCommands> {
+/** 账户余额面板控制器 */
+export class BalancePanelController
+  extends WebviewNavigationController
+  implements WebviewRpcController<BalancePanelRpcCommands>
+{
   /** 账户余额面板 */
   private readonly panel: vscode.WebviewPanel
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<BalancePanelRpcCommands, BalancePanelWebviewEvents>
-
-  /** 外部面板导航依赖 */
-  private readonly deps: BalancePanelDeps
 
   /** 当前账户余额详情 */
   private detail?: BalanceDetail
@@ -47,8 +35,8 @@ export class BalancePanelController implements WebviewRpcController<BalancePanel
   /**
    * @param deps 外部面板导航依赖
    */
-  constructor(deps: BalancePanelDeps) {
-    this.deps = deps
+  constructor(deps: WebviewNavigationDeps) {
+    super(deps)
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.balance',
       title: '账户余额',
@@ -98,26 +86,6 @@ export class BalancePanelController implements WebviewRpcController<BalancePanel
   /** 获取当前视图状态 */
   rpc_ready() {
     return this.viewState
-  }
-
-  /** 打开外部链接 */
-  rpc_openExternal(path: string) {
-    openExternal(path)
-  }
-
-  /** 打开话题面板 */
-  rpc_openTopic(message: { topicId: string | number }) {
-    this.deps.openTopic({ label: `/t/${message.topicId}`, topicId: message.topicId })
-  }
-
-  /** 打开用户面板 */
-  rpc_openMember(username: string) {
-    this.deps.openMember({ username })
-  }
-
-  /** 打开节点主题标签 */
-  rpc_openNode(message: NodeTabInput) {
-    this.deps.openNode(message)
   }
 
   /** 执行登录 */

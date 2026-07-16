@@ -2,7 +2,6 @@ import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import type { MemberInfo } from '@/v2ex'
 import G from '@/global'
-import { openExternal } from '@/features/openExternal'
 import Config from '@/config'
 import { uploadImage } from '@/core/imageUpload'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
@@ -12,25 +11,23 @@ import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
 import { checkImgurConnectivity } from '@/features/connectivityCheck'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
-import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
+import {
+  WebviewNavigationController,
+  type WebviewNavigationDeps
+} from '@/controllers/WebviewNavigationController'
 import {
   TopicPanelRpcCommands,
   TopicPanelViewState,
   TopicPanelWebviewEvents,
   TopicActionTarget,
+  OpenTopicPayload,
   WebviewRpcController
 } from '@/shared/webview'
 
 /**
  * 话题面板外部依赖
  */
-export interface TopicPanelDeps {
-  /** 打开用户面板 */
-  openMember: (member: MemberPanelInput) => void
-  /** 打开话题面板 */
-  openTopic: (topic: TopicPanelInput) => void
-  /** 打开节点主题标签 */
-  openNode: (node: NodeTabInput) => void
+export interface TopicPanelDeps extends WebviewNavigationDeps {
   /** 打开标签主题面板 */
   openTag: (tag: string) => void
 }
@@ -38,7 +35,10 @@ export interface TopicPanelDeps {
 /**
  * 话题面板控制器
  */
-export class TopicPanelController implements WebviewRpcController<TopicPanelRpcCommands> {
+export class TopicPanelController
+  extends WebviewNavigationController<TopicPanelDeps>
+  implements WebviewRpcController<TopicPanelRpcCommands>
+{
   /** 话题面板缓存 key */
   readonly key: string
 
@@ -50,9 +50,6 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>
-
-  /** 外部面板导航依赖 */
-  private readonly deps: TopicPanelDeps
 
   /** 当前话题详情，仅在扩展侧维护 */
   private detail: TopicDetail = {
@@ -100,14 +97,14 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
    * @param input 话题面板输入参数
    * @param deps 外部面板导航依赖
    */
-  constructor(input: TopicPanelInput, deps: TopicPanelDeps) {
+  constructor(input: OpenTopicPayload, deps: TopicPanelDeps) {
+    super(deps)
     const topicId = normalizeTopicId(input.topicId)
     this.key = G.V2ex.getTopicLinkById(topicId)
     this.topicId = topicId
-    this.deps = deps
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
-      title: input.label,
+      title: input.title || `/t/${topicId}`,
       htmlEntry: 'topic.html',
       enableFindWidget: true,
       useDefaultIcon: true
@@ -241,29 +238,9 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
     return this.getViewState()
   }
 
-  /** 打开外部链接 */
-  rpc_openExternal(path: string) {
-    openExternal(path)
-  }
-
-  /** 打开话题面板 */
-  rpc_openTopic(message: { topicId: string | number }) {
-    this.openTopic(message.topicId)
-  }
-
-  /** 打开用户面板 */
-  rpc_openMember(username: string) {
-    this.deps.openMember({ username })
-  }
-
-  /** 打开节点主题标签 */
-  rpc_openNode(message: NodeTabInput) {
-    this.deps.openNode(message)
-  }
-
   /** 打开标签主题面板 */
   rpc_openTag(tag: string) {
-    this.deps.openTag(tag)
+    this.navigation.openTag(tag)
   }
 
   /** 执行登录 */
@@ -428,17 +405,6 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
       this.renderError(err as Error)
       throw err
     }
-  }
-
-  /**
-   * 打开扩展内另一个话题
-   * @param topicId 话题 id
-   */
-  private openTopic(topicId: string | number) {
-    this.deps.openTopic({
-      label: `/t/${topicId}`,
-      topicId
-    } satisfies TopicPanelInput)
   }
 
   /**

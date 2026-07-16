@@ -28,6 +28,8 @@ import {
   NodeListData,
   NodeTopicListData,
   NodeChildrenData,
+  OpenNodePayload,
+  OpenTopicPayload,
   WebviewDailySignInData,
   WebviewNotification,
   WebviewNode,
@@ -35,7 +37,6 @@ import {
   WebviewRpcController
 } from '@/shared/webview'
 import type { AccountOverview } from '@/v2ex'
-import type { NodeTabInput } from '@/controllers/panelTypes'
 
 /**
  * 更新视图标题并兼容不同编辑器的标题渲染方式
@@ -194,20 +195,17 @@ export default class MainViewProvider
   }
 
   /** 打开话题面板 */
-  rpc_openTopic(message: { topicId: string | number; title?: string }) {
-    openTopic({
-      topicId: message.topicId,
-      label: message.title || `/t/${message.topicId}`
-    })
+  rpc_openTopic(message: OpenTopicPayload) {
+    openTopic(message)
   }
 
   /** 打开用户面板 */
   rpc_openMember(username: string) {
-    openMember({ username })
+    openMember(username)
   }
 
   /** 打开节点主题标签 */
-  rpc_openNode(message: { name: string; title?: string }) {
+  rpc_openNode(message: OpenNodePayload) {
     return this.openNode(message)
   }
 
@@ -653,7 +651,7 @@ export default class MainViewProvider
    * 打开节点主题标签
    * @param node 节点
    */
-  async openNode(node: NodeTabInput) {
+  async openNode(node: OpenNodePayload) {
     this._pendingNode = {
       name: node.name,
       title: node.title || node.name

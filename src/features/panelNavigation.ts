@@ -5,7 +5,7 @@ import { BalancePanelController } from '@/controllers/BalancePanelController'
 import { SearchPanelController } from '@/controllers/SearchPanelController'
 import { RecentBrowsePanelController } from '@/controllers/RecentBrowsePanelController'
 import { TagPanelController } from '@/controllers/TagPanelController'
-import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
+import type { OpenNodePayload, OpenTopicPayload } from '@/shared/webview'
 import G from '@/global'
 
 /**
@@ -35,7 +35,7 @@ let searchPanel: SearchPanelController | undefined
 let recentBrowsePanel: RecentBrowsePanelController | undefined
 
 /** 打开主面板节点标签回调 */
-let openNodeTab: (node: NodeTabInput) => void = () => undefined
+let openNodeTab: (node: OpenNodePayload) => void = () => undefined
 
 /**
  * 控制器面板导航依赖
@@ -43,7 +43,7 @@ let openNodeTab: (node: NodeTabInput) => void = () => undefined
 const panelDeps = {
   openMember,
   openTopic,
-  openNode: (node: NodeTabInput) => openNodeTab(node),
+  openNode: (node: OpenNodePayload) => openNodeTab(node),
   openTag
 }
 
@@ -51,16 +51,16 @@ const panelDeps = {
  * 设置打开主面板节点标签回调
  * @param handler 打开节点标签回调
  */
-export function setOpenNodeTabHandler(handler: (node: NodeTabInput) => void) {
+export function setOpenNodeTabHandler(handler: (node: OpenNodePayload) => void) {
   openNodeTab = handler
 }
 
 /**
  * 打开用户详情页面
- * @param member 用户参数
+ * @param username 用户名
  */
-export function openMember(member: MemberPanelInput) {
-  const memberKey = G.V2ex.getMemberLink(member.username)
+export function openMember(username: string) {
+  const memberKey = G.V2ex.getMemberLink(username)
 
   // 如果控制器已经存在，则直接激活
   let controller = memberPanels[memberKey]
@@ -76,7 +76,7 @@ export function openMember(member: MemberPanelInput) {
     })
   }
 
-  controller = new MemberPanelController(member, panelDeps)
+  controller = new MemberPanelController(username, panelDeps)
   memberPanels[memberKey] = controller
   controller.onDidDispose(() => {
     delete memberPanels[memberKey]
@@ -88,7 +88,7 @@ export function openMember(member: MemberPanelInput) {
  * 打开话题详情页面
  * @param topic 话题参数
  */
-export function openTopic(topic: TopicPanelInput) {
+export function openTopic(topic: OpenTopicPayload) {
   const topicId = Number(topic.topicId)
   if (Number.isNaN(topicId)) {
     throw new Error('打开话题面板缺少必要参数')

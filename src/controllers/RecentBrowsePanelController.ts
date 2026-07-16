@@ -1,5 +1,4 @@
 import vscode from 'vscode'
-import { openExternal } from '@/features/openExternal'
 import {
   clearRecentBrowseTopics,
   deleteRecentBrowseTopic,
@@ -7,25 +6,21 @@ import {
 } from '@/features/recentBrowse'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
+import {
+  WebviewNavigationController,
+  type WebviewNavigationDeps
+} from '@/controllers/WebviewNavigationController'
 import type {
   RecentBrowsePanelRpcCommands,
   RecentBrowsePanelWebviewEvents,
   WebviewRpcController
 } from '@/shared/webview'
 
-/** 最近浏览面板外部依赖 */
-export interface RecentBrowsePanelDeps {
-  /** 打开用户面板 */
-  openMember: (member: MemberPanelInput) => void
-  /** 打开话题面板 */
-  openTopic: (topic: TopicPanelInput) => void
-  /** 打开节点主题标签 */
-  openNode: (node: NodeTabInput) => void
-}
-
 /** 最近浏览面板控制器 */
-export class RecentBrowsePanelController implements WebviewRpcController<RecentBrowsePanelRpcCommands> {
+export class RecentBrowsePanelController
+  extends WebviewNavigationController
+  implements WebviewRpcController<RecentBrowsePanelRpcCommands>
+{
   /** 最近浏览面板 */
   private readonly panel: vscode.WebviewPanel
 
@@ -35,14 +30,11 @@ export class RecentBrowsePanelController implements WebviewRpcController<RecentB
     RecentBrowsePanelWebviewEvents
   >
 
-  /** 外部面板导航依赖 */
-  private readonly deps: RecentBrowsePanelDeps
-
   /**
    * @param deps 外部面板导航依赖
    */
-  constructor(deps: RecentBrowsePanelDeps) {
-    this.deps = deps
+  constructor(deps: WebviewNavigationDeps) {
+    super(deps)
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.recentBrowse',
       title: '最近浏览',
@@ -90,28 +82,5 @@ export class RecentBrowsePanelController implements WebviewRpcController<RecentB
   async rpc_clearRecentBrowseTopics() {
     await clearRecentBrowseTopics()
     return getRecentBrowseTopics()
-  }
-
-  /** 打开外部链接 */
-  rpc_openExternal(path: string) {
-    openExternal(path)
-  }
-
-  /** 打开话题面板 */
-  rpc_openTopic(message: { topicId: string | number; title?: string }) {
-    this.deps.openTopic({
-      label: message.title || `/t/${message.topicId}`,
-      topicId: message.topicId
-    })
-  }
-
-  /** 打开用户面板 */
-  rpc_openMember(username: string) {
-    this.deps.openMember({ username })
-  }
-
-  /** 打开节点主题标签 */
-  rpc_openNode(message: NodeTabInput) {
-    this.deps.openNode(message)
   }
 }

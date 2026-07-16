@@ -1,10 +1,12 @@
 import vscode from 'vscode'
 import G from '@/global'
 import { logger } from '@/core/logger'
-import { openExternal } from '@/features/openExternal'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
+import {
+  WebviewNavigationController,
+  type WebviewNavigationDeps
+} from '@/controllers/WebviewNavigationController'
 import type {
   TagPanelRpcCommands,
   TagPanelViewState,
@@ -12,18 +14,11 @@ import type {
   WebviewRpcController
 } from '@/shared/webview'
 
-/** 标签主题面板外部依赖 */
-export interface TagPanelDeps {
-  /** 打开用户面板 */
-  openMember: (member: MemberPanelInput) => void
-  /** 打开话题面板 */
-  openTopic: (topic: TopicPanelInput) => void
-  /** 打开节点主题标签 */
-  openNode: (node: NodeTabInput) => void
-}
-
 /** 标签主题面板控制器 */
-export class TagPanelController implements WebviewRpcController<TagPanelRpcCommands> {
+export class TagPanelController
+  extends WebviewNavigationController
+  implements WebviewRpcController<TagPanelRpcCommands>
+{
   /** 标签面板缓存 key */
   readonly key: string
 
@@ -36,9 +31,6 @@ export class TagPanelController implements WebviewRpcController<TagPanelRpcComma
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<TagPanelRpcCommands, TagPanelWebviewEvents>
 
-  /** 外部面板导航依赖 */
-  private readonly deps: TagPanelDeps
-
   /** 当前视图状态 */
   private viewState: TagPanelViewState = { status: 'loading' }
 
@@ -46,10 +38,10 @@ export class TagPanelController implements WebviewRpcController<TagPanelRpcComma
    * @param tag 标签名称
    * @param deps 外部面板导航依赖
    */
-  constructor(tag: string, deps: TagPanelDeps) {
+  constructor(tag: string, deps: WebviewNavigationDeps) {
+    super(deps)
     this.tag = normalizeTag(tag)
     this.key = G.V2ex.getTagLink(this.tag)
-    this.deps = deps
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
       title: this.tag,
@@ -96,29 +88,6 @@ export class TagPanelController implements WebviewRpcController<TagPanelRpcComma
   /** 刷新标签主题列表 */
   rpc_refresh() {
     return this.reload()
-  }
-
-  /** 打开外部链接 */
-  rpc_openExternal(path: string) {
-    openExternal(path)
-  }
-
-  /** 打开话题面板 */
-  rpc_openTopic(message: { topicId: string | number; title?: string }) {
-    this.deps.openTopic({
-      label: message.title || `/t/${message.topicId}`,
-      topicId: message.topicId
-    })
-  }
-
-  /** 打开用户面板 */
-  rpc_openMember(username: string) {
-    this.deps.openMember({ username })
-  }
-
-  /** 打开节点主题标签 */
-  rpc_openNode(message: NodeTabInput) {
-    this.deps.openNode(message)
   }
 
   /** 加载标签主题并同步页面状态 */

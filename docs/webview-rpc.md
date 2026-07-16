@@ -88,6 +88,8 @@ class ExampleController implements WebviewRpcController<ExampleRpcCommands> {
 }
 ```
 
+组合了 `WebviewNavigationRpcCommands` 的 Panel Controller 继承 `WebviewNavigationController`，复用 `rpc_openExternal`、`rpc_openTopic`、`rpc_openMember` 和 `rpc_openNode`。页面专属导航仍由对应 Controller 实现；具有自身状态逻辑的 Provider 不强制继承该基类。
+
 `WebviewRpcController` 在编译阶段检查：
 
 - 契约中的每个命令都有对应的 `rpc_<command>` 方法
