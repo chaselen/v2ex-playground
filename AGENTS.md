@@ -20,10 +20,12 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - `docs/` — 关键功能的实现说明、设计取舍和边界条件
 - `webview/` — React + Vite + Semi Design Webview 源码
   - `main.html` / `topic.html` / `member.html` / `balance.html` / `search.html` / `recent-browse.html` / `two-factor.html` — 生产 Webview 的 Vite 多页面入口
-  - `theme.html` / `src/theme/` — Semi 与 VS Code 主题适配回归页
-  - `src/main/` — 主面板 WebviewView
-  - `src/topic/` / `src/member/` / `src/balance/` / `src/search/` / `src/recentBrowse/` / `src/twoFactor/` — 各 Webview Panel 页面
-  - `src/shared/` — Webview 侧 RPC 封装、链接导航、公共样式和内容增强逻辑
+  - `theme.html` / `src/views/theme/` — Semi 与 VS Code 主题适配回归页
+  - `src/views/` — 主面板及各 Webview Panel 页面
+  - `src/components/` — 跨页面复用的 Webview UI 组件
+  - `src/core/` — Webview 侧 RPC 封装、链接导航和内容增强等无界面基础能力
+  - `src/hooks/` — 跨页面复用的 React Hooks
+  - `src/styles/` — 全局样式入口、主题映射和跨页面 SCSS mixin
 - `html/` — Vite 构建后的 Webview 运行时资源，不手工编辑
 - `out/` — esbuild 生成的扩展产物，不手工编辑
 
@@ -91,7 +93,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 
 ## Webview RPC 与状态同步
 
-- Webview 通过 `webview/src/shared/vscode.ts` 中的 Proxy RPC 客户端封装 `acquireVsCodeApi().postMessage`，业务侧使用 `vscode.command(payload)` 调用扩展能力，使用 `vscode.on(event, handler)` 订阅扩展事件
+- Webview 通过 `webview/src/core/vscode.ts` 中的 Proxy RPC 客户端封装 `acquireVsCodeApi().postMessage`，业务侧使用 `vscode.command(payload)` 调用扩展能力，使用 `vscode.on(event, handler)` 订阅扩展事件
 - 扩展侧通过 `src/core/WebviewRpcBridge.ts` 接收 RPC；Controller 或 Provider 实现 `WebviewRpcController<Commands>`，并使用 `rpc_<command>` 方法处理请求，通过 `rpc.post(event, payload)` 向 Webview 发送事件
 - RPC 契约使用函数签名定义，集中在 `src/shared/*View.ts` 和 `src/shared/webviewRpc.ts`
 - 只有 `rpc_` 前缀的方法可以由 Webview 调用；Panel 生命周期方法使用不带该前缀的常规方法名
@@ -100,17 +102,17 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 
 ## Webview 样式与主题
 
-- Webview 样式使用 SCSS；`webview/src/shared/styles.scss` 只加载公共样式和基础全局规则，VS Code 到 Semi 的主题 token 映射集中在 `webview/src/shared/_vscode-semi-theme.scss`
-- 跨页面共享样式优先通过不直接生成选择器的 SCSS mixin 复用，由页面样式使用 `@use` 和 `@include` 按需引入；话题与用户内容的公共富文本样式集中在 `webview/src/shared/_topic-content.scss`，不要将 `.topic-content` 直接加入全局样式
-- 主面板 CSS Modules 的省略文本、空状态和加载状态等重复模式集中在 `webview/src/main/components/_mixins.scss`；新增同类样式时优先复用 mixin，保持最终类名由各 CSS Module 管理
-- Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)，样式优先使用官方 Theme Color CSS 变量（`var(--vscode-*)`）；Semi 组件应优先通过 `webview/src/shared/_vscode-semi-theme.scss` 中的 [Design Token](https://semi.design/zh-CN/basic/tokens) 映射适配
-- 无法通过 Semi Design Token 表达且跨页面通用的兼容样式集中在 `webview/src/shared/_semi-overrides.scss`；页面内的 Semi 布局微调应限定在页面或业务容器下，不新增无作用域的全局 `.semi-*` 覆盖
-- Tooltip、Popover、Popconfirm 等浮层使用 Semi 默认 Portal 并挂载到 `document.body`；暗色/高对比主题适配优先使用 token，跨页面通用的全局浮层兼容覆盖写入 `webview/src/shared/_semi-overrides.scss`；页面专属的 Portal 覆盖可保留在页面样式中，但必须通过页面独有的内容类或浮层类精确限定
-- 常规语义状态优先直接使用 Semi `Badge` 和 `Tag`；只有需要统一采用 VS Code Badge Theme Color 或中性标签配色时，才使用 `webview/src/shared/SemiVscode.tsx` 中的 `VscodeBadge` 和 `VscodeTag`
+- Webview 样式使用 SCSS；`webview/src/styles/index.scss` 只加载公共样式和基础全局规则，VS Code 到 Semi 的主题 token 映射集中在 `webview/src/styles/_vscode-semi-theme.scss`
+- 跨页面共享样式优先通过不直接生成选择器的 SCSS mixin 复用，由页面样式使用 `@use` 和 `@include` 按需引入；话题与用户内容的公共富文本样式集中在 `webview/src/styles/_topic-content.scss`，不要将 `.topic-content` 直接加入全局样式
+- 主面板 CSS Modules 的省略文本、空状态和加载状态等重复模式集中在 `webview/src/views/main/components/_mixins.scss`；新增同类样式时优先复用 mixin，保持最终类名由各 CSS Module 管理
+- Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)，样式优先使用官方 Theme Color CSS 变量（`var(--vscode-*)`）；Semi 组件应优先通过 `webview/src/styles/_vscode-semi-theme.scss` 中的 [Design Token](https://semi.design/zh-CN/basic/tokens) 映射适配
+- 无法通过 Semi Design Token 表达且跨页面通用的兼容样式集中在 `webview/src/styles/_semi-overrides.scss`；页面内的 Semi 布局微调应限定在页面或业务容器下，不新增无作用域的全局 `.semi-*` 覆盖
+- Tooltip、Popover、Popconfirm 等浮层使用 Semi 默认 Portal 并挂载到 `document.body`；暗色/高对比主题适配优先使用 token，跨页面通用的全局浮层兼容覆盖写入 `webview/src/styles/_semi-overrides.scss`；页面专属的 Portal 覆盖可保留在页面样式中，但必须通过页面独有的内容类或浮层类精确限定
+- 常规语义状态优先直接使用 Semi `Badge` 和 `Tag`；只有需要统一采用 VS Code Badge Theme Color 或中性标签配色时，才使用 `webview/src/components/SemiVscode.tsx` 中的 `VscodeBadge` 和 `VscodeTag`
 
 ## Webview 加载与交互
 
-- Webview 首次打开且尚无可展示内容时，整页或整块内容加载优先复用 `webview/src/shared/PageSkeleton.tsx` 中基于 Semi `Skeleton` 的结构化骨架，不使用居中的 `Spin` 作为整页 loading；新增页面应为 `PageSkeleton` 增加与真实页面信息层级对应的变体，使标题、头像、工具区、列表或表格等占位结构尽量贴近加载完成后的布局
+- Webview 首次打开且尚无可展示内容时，整页或整块内容加载优先复用 `webview/src/components/PageSkeleton.tsx` 中基于 Semi `Skeleton` 的结构化骨架，不使用居中的 `Spin` 作为整页 loading；新增页面应为 `PageSkeleton` 增加与真实页面信息层级对应的变体，使标题、头像、工具区、列表或表格等占位结构尽量贴近加载完成后的布局
 - 骨架屏必须与真实页面复用或严格对齐容器的最大宽度、外层级、内外间距和响应式断点，尤其避免共享骨架的通用 padding 在窄侧边栏下覆盖页面变体；骨架分割线和边框使用 Semi fill token 同色系，保留 `prefers-reduced-motion` 和加载状态无障碍语义。已有内容上的刷新、分页、标签切换、上传和按钮提交等局部加载继续使用 Semi `Spin` 或组件自身的 `loading` 属性
 - Tooltip、Popover、Popconfirm 都会劫持子元素事件，互相组合时不要直接嵌套；按 Semi 官方 Tooltip 文档，在中间加一层真实 DOM 元素（如 `span`），例如 `Popconfirm > span > Tooltip > Button`
 
@@ -118,8 +120,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 
 - 话题页、用户页、“我的”消息等 V2EX HTML 内容使用 Semi Design 外层组件；通过 `dangerouslySetInnerHTML` 渲染的内容统一复用共享链接导航和内容增强逻辑
 - 普通业务按钮打开外部链接前使用 `resolveWebviewUrl()` 基于 `document.baseURI` 解析为绝对地址，HTML 内容中的链接交由 `handleWebviewLinkClick()` 统一识别和分发，扩展侧统一复用 `src/features/openExternal.ts`
-- HTML 内容中的话题、用户、节点和外部链接统一由 `webview/src/shared/linkNavigation.ts` 识别与分发；页面只传入必要的标题或话题 fallback，不在页面内重复路径正则、URL 解码或 RPC 分支
-- 内容增强逻辑在 `webview/src/shared/contentEnhancement.ts`，负责 HTML 标准化、图片预览、隐藏图片占位，并复用共享链接导航处理内容链接
+- HTML 内容中的话题、用户、节点和外部链接统一由 `webview/src/core/linkNavigation.ts` 识别与分发；页面只传入必要的标题或话题 fallback，不在页面内重复路径正则、URL 解码或 RPC 分支
+- 内容增强逻辑在 `webview/src/core/contentEnhancement.ts`，负责 HTML 标准化、图片预览、隐藏图片占位，并复用共享链接导航处理内容链接
 
 ## Webview 手动验证
 

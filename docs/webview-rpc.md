@@ -7,7 +7,7 @@
 - `src/shared/*View.ts`：各页面的命令、事件和状态契约
 - `src/shared/webviewRpc.ts`：请求、响应和类型推导等公共定义
 - `src/core/WebviewRpcBridge.ts`：扩展侧请求分发、响应和事件发送
-- `webview/src/shared/vscode.ts`：Webview 侧类型化客户端、超时和事件订阅
+- `webview/src/core/vscode.ts`：Webview 侧类型化客户端、超时和事件订阅
 
 业务代码必须通过共享契约和上述封装通信，不直接调用 `postMessage` 传递业务消息。
 

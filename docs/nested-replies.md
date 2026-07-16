@@ -15,9 +15,9 @@ V2EX 帖子页面返回的是按楼层排列的回复列表。回复数据包含
 
 ## 代码位置
 
-- 算法实现：`webview/src/topic/replyTree.ts`
-- 页面渲染与模式切换：`webview/src/topic/TopicApp.tsx`
-- 嵌套回复样式：`webview/src/topic/topic.scss`
+- 算法实现：`webview/src/views/topic/replyTree.ts`
+- 页面渲染与模式切换：`webview/src/views/topic/TopicApp.tsx`
+- 嵌套回复样式：`webview/src/views/topic/topic.scss`
 
 ## 输入与输出
 

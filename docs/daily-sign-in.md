@@ -12,7 +12,7 @@
 - 余额解析测试：`src/v2ex/parsers/balance.test.ts`
 - 扩展激活入口：`src/extension.ts`
 - 主视图自动签到入口：`src/providers/MainViewProvider.ts`
-- Webview 手动签到和状态展示：`webview/src/main/tabs/MyTab.tsx`
+- Webview 手动签到和状态展示：`webview/src/views/main/tabs/MyTab.tsx`
 
 ## 数据来源
 

@@ -12,7 +12,7 @@
 
 ## 共享视图
 
-`webview/src/topic/TopicDetailView.tsx` 是完整话题内容和交互的唯一入口，普通话题页与预览弹窗都使用该组件。它直接渲染标题、正文、附言、评论树和分页，并组合主题工具栏、收藏、感谢、回复操作和悬浮按钮。`ReplyComposer.tsx` 自行管理回复编辑、预览、上传、提交和重置状态。
+`webview/src/views/topic/TopicDetailView.tsx` 是完整话题内容和交互的唯一入口，普通话题页与预览弹窗都使用该组件。它直接渲染标题、正文、附言、评论树和分页，并组合主题工具栏、收藏、感谢、回复操作和悬浮按钮。`ReplyComposer.tsx` 自行管理回复编辑、预览、上传、提交和重置状态。
 
 不要在 `TopicApp.tsx` 或 `TopicPreviewModal.tsx` 中复制话题详情结构或操作按钮。
 
@@ -41,6 +41,6 @@
 
 ## 链接识别
 
-站内话题链接识别集中在 `webview/src/shared/topicLink.ts`。只接受 `v2ex.com` 及其子域名下的 `/t/<数字 id>` 路径，允许查询参数和评论锚点。内容增强只负责添加按钮和转发目标话题 id，不直接加载话题数据。
+站内话题链接识别集中在 `webview/src/core/topicLink.ts`。只接受 `v2ex.com` 及其子域名下的 `/t/<数字 id>` 路径，允许查询参数和评论锚点。内容增强只负责添加按钮和转发目标话题 id，不直接加载话题数据。
 
 预览按钮和站内链接导航属于 `dangerouslySetInnerHTML` 渲染完成后的运行时 DOM 增强。`EnhancedHtmlContent` 必须在每次 React 提交后幂等同步这些增强，避免父组件重渲染重写 HTML 后丢失按钮或事件监听。

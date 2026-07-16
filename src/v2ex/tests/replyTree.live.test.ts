@@ -1,6 +1,6 @@
 import { load } from 'cheerio/slim'
 import { describe, expect, it } from 'vitest'
-import { buildReplyTree, type TopicReplyNode } from '../../../webview/src/topic/replyTree'
+import { buildReplyTree, type TopicReplyNode } from '../../../webview/src/views/topic/replyTree'
 import { V2exClient } from '../client'
 import type { TopicReply } from '../types'
 
