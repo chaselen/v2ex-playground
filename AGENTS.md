@@ -74,6 +74,11 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 发布前或打包前运行 `npm test`、`npm run check` 和 `npm run build`
 - 手动验证按改动范围覆盖登录、两步验证、节点刷新、话题打开、用户打开、搜索、最近浏览、设置项和 Webview 行为
 
+## URI 与文件系统
+
+- VS Code API 返回的 URI 不保证使用 `file:` scheme；路径拼接优先使用 `Uri.joinPath()`，文件读写优先使用 `workspace.fs`，不要在远程或虚拟 URI 上使用 `fsPath`
+- `Uri.joinPath(context.globalStorageUri, ...)` 可能生成 `vscode-userdata:` URI；`workspace.fs` 可以正常读写该 URI，但 `WebviewPanel.iconPath` 无法正确显示它。将全局缓存图片设置为面板图标时，使用 `workspace.fs.readFile()` 读取内容并转换为 base64 `data:` URI，不要通过 `fsPath` 强制转换为 `file:` URI
+
 ## Webview 架构
 
 - Webview 使用 React + Vite 多页面工程，源码在 `webview/`，产物在 `html/`

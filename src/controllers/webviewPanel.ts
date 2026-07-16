@@ -1,8 +1,8 @@
-import path from 'path'
-import vscode from 'vscode'
+import vscode, { Uri } from 'vscode'
 import G from '@/global'
 import { setDefaultPanelIcon } from '@/features/panelIcon'
 import { renderWebviewHtml } from '@/core/webviewHtml'
+import { logger } from '@/core/logger'
 
 /** 面板标题最大长度 */
 const defaultPanelTitleMaxLength = 15
@@ -56,22 +56,22 @@ export function createV2exWebviewPanel(options: V2exWebviewPanelOptions): vscode
       retainContextWhenHidden: options.retainContextWhenHidden ?? true,
       enableFindWidget: options.enableFindWidget,
       localResourceRoots: [
-        vscode.Uri.file(path.join(G.context.extensionPath, 'html')),
-        vscode.Uri.file(path.join(G.context.extensionPath, 'resources'))
+        Uri.joinPath(G.context.extensionUri, 'html'),
+        Uri.joinPath(G.context.extensionUri, 'resources')
       ]
     }
   )
 
-  panel.webview.html = renderWebviewHtml(panel.webview, options.htmlEntry)
+  void renderWebviewHtml(panel.webview, options.htmlEntry)
+    .then(html => {
+      panel.webview.html = html
+    })
+    .catch(err => logger.error('Webview 页面加载失败', err, { htmlEntry: options.htmlEntry }))
 
   if (options.resourceIcon) {
     panel.iconPath = {
-      light: vscode.Uri.file(
-        path.join(G.context.extensionPath, `resources/light/${options.resourceIcon}`)
-      ),
-      dark: vscode.Uri.file(
-        path.join(G.context.extensionPath, `resources/dark/${options.resourceIcon}`)
-      )
+      light: Uri.joinPath(G.context.extensionUri, 'resources', 'light', options.resourceIcon),
+      dark: Uri.joinPath(G.context.extensionUri, 'resources', 'dark', options.resourceIcon)
     }
   } else if (options.useDefaultIcon) {
     setDefaultPanelIcon(panel)

@@ -1,6 +1,4 @@
-import { readFileSync } from 'fs'
-import path from 'path'
-import vscode from 'vscode'
+import vscode, { Uri } from 'vscode'
 import G from '@/global'
 
 /**
@@ -8,10 +6,13 @@ import G from '@/global'
  * @param webview VS Code Webview
  * @param filename HTML 文件名
  */
-export function renderWebviewHtml(webview: vscode.Webview, filename: string): string {
-  const htmlDir = path.join(G.context.extensionPath, 'html')
-  const htmlPath = path.join(htmlDir, filename)
-  const source = readFileSync(htmlPath, 'utf-8')
+export async function renderWebviewHtml(
+  webview: vscode.Webview,
+  filename: string
+): Promise<string> {
+  const htmlDirUri = Uri.joinPath(G.context.extensionUri, 'html')
+  const htmlUri = Uri.joinPath(htmlDirUri, filename)
+  const source = new TextDecoder().decode(await vscode.workspace.fs.readFile(htmlUri))
 
   return source.replace(/\b(src|href)="([^"]+)"/g, (match, attr: string, rawUrl: string) => {
     if (!isLocalAssetUrl(rawUrl)) {
@@ -19,7 +20,7 @@ export function renderWebviewHtml(webview: vscode.Webview, filename: string): st
     }
 
     const assetPath = rawUrl.replace(/^\.?\//, '')
-    const uri = webview.asWebviewUri(vscode.Uri.file(path.join(htmlDir, assetPath)))
+    const uri = webview.asWebviewUri(Uri.joinPath(htmlDirUri, assetPath))
     return `${attr}="${uri.toString()}"`
   })
 }

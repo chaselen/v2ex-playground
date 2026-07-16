@@ -1,7 +1,6 @@
 import crypto from 'node:crypto'
-import path from 'node:path'
 import { fileTypeFromBuffer } from 'file-type'
-import vscode from 'vscode'
+import vscode, { Uri } from 'vscode'
 import http from '@/core/http'
 import G from '@/global'
 
@@ -20,7 +19,7 @@ interface CacheRemoteImageFileOptions {
 /** 已缓存的远程图片 */
 interface CachedRemoteImageFile {
   /** 缓存文件地址 */
-  uri: vscode.Uri
+  uri: Uri
   /** 是否命中已有缓存 */
   cached: boolean
 }
@@ -30,7 +29,7 @@ interface CachedRemoteImageFile {
  * @param cacheDirName 缓存子目录名
  */
 export function getExtensionFileCacheDir(cacheDirName: string) {
-  return vscode.Uri.file(path.join(G.context.globalStorageUri.fsPath, cacheDirName))
+  return Uri.joinPath(G.context.globalStorageUri, cacheDirName)
 }
 
 /**
@@ -83,7 +82,7 @@ export async function cacheRemoteImageFile(
     throw new Error(`不是有效的图片类型：${fileType.mime}`)
   }
 
-  const imageUri = vscode.Uri.joinPath(cacheDirUri, `${cacheKey}.${fileType.ext}`)
+  const imageUri = Uri.joinPath(cacheDirUri, `${cacheKey}.${fileType.ext}`)
   await vscode.workspace.fs.writeFile(imageUri, imageBuffer)
   return { uri: imageUri, cached: false }
 }
@@ -106,7 +105,7 @@ export async function cleanupExpiredCacheFiles(cacheDirName: string, ttlMs: numb
         return
       }
 
-      const fileUri = vscode.Uri.joinPath(cacheDirUri, fileName)
+      const fileUri = Uri.joinPath(cacheDirUri, fileName)
       const stat = await vscode.workspace.fs.stat(fileUri)
       if (stat.mtime < expireBefore) {
         await vscode.workspace.fs.delete(fileUri)
@@ -138,13 +137,13 @@ export async function deleteExtensionFileCacheDir(cacheDirName: string) {
  * @param cacheDirUri 缓存目录
  * @param cacheKey 缓存 key
  */
-async function findCachedImageFile(cacheDirUri: vscode.Uri, cacheKey: string) {
+async function findCachedImageFile(cacheDirUri: Uri, cacheKey: string) {
   try {
     const entries = await vscode.workspace.fs.readDirectory(cacheDirUri)
     const cachedFile = entries.find(([fileName, fileType]) => {
       return fileType === vscode.FileType.File && fileName.startsWith(`${cacheKey}.`)
     })
-    return cachedFile ? vscode.Uri.joinPath(cacheDirUri, cachedFile[0]) : undefined
+    return cachedFile ? Uri.joinPath(cacheDirUri, cachedFile[0]) : undefined
   } catch (err) {
     if (isFileNotFoundError(err)) {
       return undefined

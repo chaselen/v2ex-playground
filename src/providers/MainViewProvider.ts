@@ -1,5 +1,4 @@
-import vscode from 'vscode'
-import path from 'path'
+import vscode, { Uri } from 'vscode'
 import autoDailySignIn, {
   dailySignIn,
   getDailySignInStatus,
@@ -69,16 +68,16 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
   /** Webview 恢复可见时的自动签到任务 */
   private _visibleAutoSignInPromise?: Promise<void>
 
-  resolveWebviewView(webviewView: vscode.WebviewView): void {
+  async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
     this._view = webviewView
     this._syncUnreadNoticeBadge(this._badgeUnreadNoticeCount)
 
     webviewView.webview.options = {
       enableScripts: true,
-      localResourceRoots: [vscode.Uri.file(path.join(G.context.extensionPath, 'html'))]
+      localResourceRoots: [Uri.joinPath(G.context.extensionUri, 'html')]
     }
 
-    webviewView.webview.html = this._getHtml(webviewView.webview)
+    webviewView.webview.html = await renderWebviewHtml(webviewView.webview, 'main.html')
 
     this._rpc = new WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>(
       webviewView.webview,
@@ -121,13 +120,6 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
         this._visibleAutoSignInPromise = undefined
       }
     })
-  }
-
-  /**
-   * 渲染 Webview 页面
-   */
-  private _getHtml(webview: vscode.Webview): string {
-    return renderWebviewHtml(webview, 'main.html')
   }
 
   /**

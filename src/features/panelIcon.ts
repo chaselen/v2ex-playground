@@ -1,5 +1,5 @@
-import path from 'path'
-import vscode from 'vscode'
+import { fileTypeFromBuffer } from 'file-type'
+import vscode, { Uri } from 'vscode'
 import {
   cacheRemoteImageFile,
   cleanupExpiredCacheFiles,
@@ -46,7 +46,7 @@ async function cleanupPanelIconCache() {
  * @param panel Webview 面板
  */
 export function setDefaultPanelIcon(panel: vscode.WebviewPanel) {
-  panel.iconPath = vscode.Uri.file(path.join(G.context.extensionPath, 'resources/favicon.png'))
+  panel.iconPath = Uri.joinPath(G.context.extensionUri, 'resources', 'favicon.png')
 }
 
 /**
@@ -61,14 +61,28 @@ export async function setRemotePanelIcon(panel: vscode.WebviewPanel, imageSrc?: 
   }
 
   const iconUri = await cacheRemotePanelIcon(normalizedImageSrc)
-  panel.iconPath = iconUri
+  panel.iconPath = await createPanelIconDataUri(iconUri)
+}
+
+/**
+ * 将缓存图片转换为面板图标 data URI
+ * @param cacheUri 缓存文件 URI
+ */
+async function createPanelIconDataUri(cacheUri: Uri): Promise<Uri> {
+  const imageBuffer = Buffer.from(await vscode.workspace.fs.readFile(cacheUri))
+  const fileType = await fileTypeFromBuffer(imageBuffer)
+  if (!fileType?.mime.startsWith('image/')) {
+    throw new Error('缓存文件不是有效的图片类型')
+  }
+
+  return Uri.parse(`data:${fileType.mime};base64,${imageBuffer.toString('base64')}`)
 }
 
 /**
  * 缓存远程面板图标
  * @param imageSrc 远程图片地址
  */
-async function cacheRemotePanelIcon(imageSrc: string): Promise<vscode.Uri> {
+async function cacheRemotePanelIcon(imageSrc: string): Promise<Uri> {
   const cachedIcon = await cacheRemoteImageFile({
     imageSrc,
     cacheDirName: PANEL_ICON_CACHE_DIR

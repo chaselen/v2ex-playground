@@ -1,4 +1,4 @@
-import vscode from 'vscode'
+import vscode, { Uri } from 'vscode'
 
 /**
  * 在浏览器中打开 HTTP(S) 链接
@@ -23,5 +23,5 @@ export function openExternal(link?: string) {
     return
   }
 
-  return vscode.env.openExternal(vscode.Uri.parse(url.toString()))
+  return vscode.env.openExternal(Uri.parse(url.toString()))
 }
