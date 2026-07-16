@@ -75,6 +75,9 @@ export interface Topic {
   /** 节点 */
   node: Node
 
+  /** 作者名称 */
+  authorName?: string
+
   /** 回复数 */
   replies: number
 
@@ -95,6 +98,8 @@ export interface TopicDetail {
   title: string
   /** 节点 */
   node: Node
+  /** 标签 */
+  tags: string[]
   /** 作者头像 */
   authorAvatar: string
   /** 话题图标地址 */
@@ -191,6 +196,18 @@ export interface NodeTopicList {
   node: Node
   /** 总页数 */
   totalPage: number
+  /** 主题总数 */
+  totalCount: number
+  /** 主题列表 */
+  list: Topic[]
+}
+
+/**
+ * 标签主题列表
+ */
+export interface TagTopicList {
+  /** 标签名称 */
+  tag: string
   /** 主题总数 */
   totalCount: number
   /** 主题列表 */

@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio/slim'
 import dayjs from 'dayjs'
 import { getV2exTimeSpan, type CheerioSelection } from './common'
-import type { Node, Topic, TopicDetail, TopicReply } from '../types'
+import type { Node, TagTopicList, Topic, TopicDetail, TopicReply } from '../types'
 
 /**
  * 从链接中提取主题id
@@ -43,6 +43,7 @@ export function parseTopicListCells(
     const countElement = $(cell).find('.count_livid, .count_orange')
     const topicInfo = $(cell).find('.topic_info')
     const hasLastReply = /Lastly replied by|最后回复/.test(topicInfo.text())
+    const memberLinks = topicInfo.find('strong a[href^="/member/"]')
 
     list.push({
       id: topicId,
@@ -53,15 +54,29 @@ export function parseTopicListCells(
             name: nodeHref.split('go/')[1] || '',
             title: nodeElement.text().trim()
           },
+      authorName: memberLinks.first().text().trim(),
       replies: Number(countElement.text().trim()) || 0,
       displayTime: getV2exTimeSpan(topicInfo).text().trim(),
-      lastReplyUser: hasLastReply
-        ? topicInfo.find('strong a[href^="/member/"]').last().text().trim()
-        : ''
+      lastReplyUser: hasLastReply ? memberLinks.last().text().trim() : ''
     })
   })
 
   return list
+}
+
+/**
+ * 解析标签主题列表
+ * @param $ cheerio 实例
+ * @param tag 标签名称
+ */
+export function parseTagTopicList($: cheerio.CheerioAPI, tag: string): TagTopicList {
+  const list = parseTopicListCells($, $('#Main > .box').eq(0).children('.cell.item'))
+
+  return {
+    tag,
+    totalCount: list.length,
+    list
+  }
 }
 
 /**
@@ -82,6 +97,7 @@ export function parseTopicMeta(
       name: '',
       title: ''
     },
+    tags: [],
     authorAvatar: '',
     topicIcon: '',
     authorName: '',
@@ -105,6 +121,12 @@ export function parseTopicMeta(
   const node = $('.header a[href^=/go/]')
   topic.node.name = node.attr('href')?.split('go/')[1] || ''
   topic.node.title = node.text().trim()
+  topic.tags = getTopicReplyBox($)
+    .children('.cell')
+    .first()
+    .find('a.tag[href^="/tag/"]')
+    .map((_, element) => $(element).text().trim())
+    .get()
   const topicIcon = $('head link[rel~="icon"]').first().attr('href')
   topic.topicIcon = topicIcon ? new URL(topicIcon, baseUrl).toString() : ''
   topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''

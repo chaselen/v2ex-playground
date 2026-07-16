@@ -21,6 +21,7 @@ import {
   IconHeartStroked,
   IconLikeHeart,
   IconLockStroked,
+  IconPriceTag,
   IconRefresh,
   IconReply,
   IconUserCircleStroked
@@ -524,6 +525,22 @@ export default function TopicDetailView({
             <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span> ·{' '}
             {topic.visitCount} 次点击
           </span>
+          {!!topic.tags.length && (
+            <div className="topic-tags" aria-label="帖子标签">
+              {topic.tags.map(tag => (
+                <Button
+                  className="topic-tag"
+                  icon={<IconPriceTag className="topic-tag-icon" />}
+                  key={tag}
+                  size="small"
+                  type="tertiary"
+                  onClick={() => void controller.openTag(tag)}
+                >
+                  {tag}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
 
         <Divider className="topic-divider topic-divider--content-start" />

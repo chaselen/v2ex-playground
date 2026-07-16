@@ -54,6 +54,8 @@ export interface TopicDetailController {
   loadMemberQuickInfo(username: string): Promise<MemberInfo>
   /** 打开当前话题节点 */
   openNode(): Promise<void>
+  /** 打开标签主题面板 */
+  openTag(tag: string): Promise<void>
 }
 
 /**
@@ -133,7 +135,8 @@ export default function useTopicDetailController(
       loadReplyPage: replyPage => applyViewResult(() => loadReplyPage(replyPage)),
       openMember: username => vscode.openMember({ username }),
       loadMemberQuickInfo: username => vscode.loadMemberQuickInfo({ username }),
-      openNode: () => vscode.openNode(topic.node)
+      openNode: () => vscode.openNode(topic.node),
+      openTag: tag => vscode.openTag(tag)
     }
   }, [topic, showImages, canOperate, onTopicChange, refresh, loadReplyPage, startRequest])
 }

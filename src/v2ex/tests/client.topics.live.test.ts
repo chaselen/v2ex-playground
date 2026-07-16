@@ -34,12 +34,23 @@ describe.sequential('V2exClient topics', () => {
     expect(result.list[0].node).toEqual(result.node)
   })
 
+  test('gets topics by tag', async () => {
+    const result = await client.getTopicListByTag('分词')
+
+    expect(result.tag).toBe('分词')
+    expect(result.totalCount).toBe(result.list.length)
+    expect(result.totalCount).toBeGreaterThan(0)
+    expectTopic(result.list[0])
+    expect(result.list[0].authorName).toEqual(expect.any(String))
+  })
+
   test('gets topic detail from a known public topic', async () => {
     const detail = await client.getTopicDetail(703733)
 
     expect(detail.id).toBe(703733)
     expect(detail.title).toBe('写了一个 VSCode 上可以逛 V2EX 的插件')
     expect(detail.node).toEqual({ name: 'create', title: '分享创造' })
+    expect(detail.tags).toEqual(expect.any(Array))
     expect(detail.authorName).toBe('chaselen')
     expect(detail.displayTime).toBe('2020 年 9 月 3 日')
     expect(detail.publishedAt).toBe('2020-09-03 08:36:53')
@@ -60,6 +71,12 @@ describe.sequential('V2exClient topics', () => {
     const detail = await client.getTopicDetail(443648)
 
     expect(detail.isAuthorPro).toBe(true)
+  })
+
+  test('gets tags from a known public topic', async () => {
+    const detail = await client.getTopicDetail(101091)
+
+    expect(detail.tags).toEqual(['分词', '结果', '库算'])
   })
 })
 

@@ -25,6 +25,7 @@ import type {
   OnlineCountChangedHandler,
   SoV2exSearchParams,
   SoV2exSearchResult,
+  TagTopicList,
   Topic,
   TopicDetail,
   TwoFactorRequiredHandler,
@@ -284,6 +285,22 @@ export class V2exClient {
    */
   getTopicListByTab(tab: string): Promise<Topic[]> {
     return this.topics.getListByTab(tab)
+  }
+
+  /**
+   * 获取标签页链接
+   * @param tag 标签名称
+   */
+  getTagLink(tag: string): string {
+    return this.topics.getTagLink(tag)
+  }
+
+  /**
+   * 根据标签获取话题列表
+   * @param tag 标签名称
+   */
+  getTopicListByTag(tag: string): Promise<TagTopicList> {
+    return this.topics.getListByTag(tag)
   }
 
   /**

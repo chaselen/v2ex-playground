@@ -60,6 +60,7 @@ $panel-border: var(--v2ex-border);
 
 .topic-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -93,6 +94,24 @@ $panel-border: var(--v2ex-border);
 
 .topic-node-tag {
   flex: 0 0 auto;
+}
+
+.topic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.topic-tag {
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.topic-tag-icon {
+  font-size: 12px;
 }
 
 .member-quick-trigger {

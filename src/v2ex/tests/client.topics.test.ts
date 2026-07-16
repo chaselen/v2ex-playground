@@ -10,5 +10,6 @@ describe('V2exClient topic links', () => {
     expect(client.getTopicIdByLink('/t/1136705#reply50')).toBe(1136705)
     expect(client.getTopicIdByLink('https://www.v2ex.com/t/703733#reply12')).toBe(703733)
     expect(client.getTopicIdByLink('/go/v2ex')).toBeUndefined()
+    expect(client.getTagLink('VS Code')).toBe('https://www.v2ex.com/tag/VS%20Code')
   })
 })

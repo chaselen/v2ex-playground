@@ -4,6 +4,7 @@ import { TopicPanelController } from '@/controllers/TopicPanelController'
 import { BalancePanelController } from '@/controllers/BalancePanelController'
 import { SearchPanelController } from '@/controllers/SearchPanelController'
 import { RecentBrowsePanelController } from '@/controllers/RecentBrowsePanelController'
+import { TagPanelController } from '@/controllers/TagPanelController'
 import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controllers/panelTypes'
 import G from '@/global'
 
@@ -20,6 +21,9 @@ const memberPanels: Record<string, MemberPanelController> = {}
  * value：控制器
  */
 const topicPanels: Record<string, TopicPanelController> = {}
+
+/** 标签页面控制器 */
+const tagPanels: Record<string, TagPanelController> = {}
 
 /** 账户余额页面控制器 */
 let balancePanel: BalancePanelController | undefined
@@ -39,7 +43,8 @@ let openNodeTab: (node: NodeTabInput) => void = () => undefined
 const panelDeps = {
   openMember,
   openTopic,
-  openNode: (node: NodeTabInput) => openNodeTab(node)
+  openNode: (node: NodeTabInput) => openNodeTab(node),
+  openTag
 }
 
 /**
@@ -111,6 +116,37 @@ export function openTopic(topic: TopicPanelInput) {
     delete topicPanels[topicKey]
   })
   controller.load()
+}
+
+/**
+ * 打开标签主题页面
+ * @param tag 标签名称
+ */
+export function openTag(tag: string) {
+  const tagName = tag.trim()
+  if (!tagName) {
+    throw new Error('打开标签面板缺少必要参数')
+  }
+
+  const tagKey = G.V2ex.getTagLink(tagName)
+  let controller = tagPanels[tagKey]
+  if (controller) {
+    controller.reveal()
+    return
+  }
+
+  if (!Config.openInNewTab()) {
+    Object.values(tagPanels).forEach(tagPanel => {
+      tagPanel.dispose()
+    })
+  }
+
+  controller = new TagPanelController(tagName, panelDeps)
+  tagPanels[tagKey] = controller
+  controller.onDidDispose(() => {
+    delete tagPanels[tagKey]
+  })
+  controller.load().catch(() => undefined)
 }
 
 /**

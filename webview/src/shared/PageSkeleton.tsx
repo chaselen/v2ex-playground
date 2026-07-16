@@ -7,6 +7,7 @@ type PageSkeletonVariant =
   | 'member'
   | 'balance'
   | 'search'
+  | 'tag-topics'
   | 'recent'
   | 'node-topics'
   | 'node-tree'
@@ -49,6 +50,8 @@ function renderPlaceholder(variant: PageSkeletonVariant, rows: number): ReactNod
       return <BalancePlaceholder rows={rows} />
     case 'search':
       return <SearchPlaceholder rows={rows} />
+    case 'tag-topics':
+      return <TagTopicsPlaceholder rows={rows} />
     case 'recent':
       return <RecentPlaceholder rows={rows} />
     case 'node-topics':
@@ -76,6 +79,10 @@ function TopicPlaceholder() {
         <Skeleton.Button className={styles.tag} />
         <Skeleton.Title className={styles.author} />
         <Skeleton.Paragraph rows={1} className={styles.time} />
+        <div className={styles['topic-tags']}>
+          <Skeleton.Button />
+          <Skeleton.Button />
+        </div>
       </div>
       <Skeleton.Paragraph rows={5} />
       <div className={styles.divider} />
@@ -151,6 +158,23 @@ function SearchPlaceholder({ rows }: SkeletonRowsProps) {
           <Skeleton.Paragraph rows={2} />
         </div>
       ))}
+    </div>
+  )
+}
+
+/** 标签标题、主题计数和列表占位 */
+function TagTopicsPlaceholder({ rows }: SkeletonRowsProps) {
+  return (
+    <div>
+      <div className={styles['tag-header']}>
+        <div>
+          <Skeleton.Paragraph rows={1} className={styles.eyebrow} />
+          <Skeleton.Title className={styles['tag-title']} />
+          <Skeleton.Paragraph rows={1} className={styles.summary} />
+        </div>
+        <Skeleton.Button />
+      </div>
+      <TopicRows rows={rows} avatars={false} />
     </div>
   )
 }

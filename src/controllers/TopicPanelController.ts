@@ -31,6 +31,8 @@ export interface TopicPanelDeps {
   openTopic: (topic: TopicPanelInput) => void
   /** 打开节点主题标签 */
   openNode: (node: NodeTabInput) => void
+  /** 打开标签主题面板 */
+  openTag: (tag: string) => void
 }
 
 /**
@@ -60,6 +62,7 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
       name: '',
       title: ''
     },
+    tags: [],
     authorAvatar: '',
     topicIcon: '',
     authorName: '',
@@ -256,6 +259,11 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
   /** 打开节点主题标签 */
   rpc_openNode(message: NodeTabInput) {
     this.deps.openNode(message)
+  }
+
+  /** 打开标签主题面板 */
+  rpc_openTag(tag: string) {
+    this.deps.openTag(tag)
   }
 
   /** 执行登录 */

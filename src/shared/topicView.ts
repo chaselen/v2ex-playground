@@ -34,6 +34,8 @@ export interface TopicPanelViewState {
  */
 export interface TopicPanelRpcCommands
   extends WebviewNavigationRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
+  /** 打开标签主题面板 */
+  openTag(tag: string): void
   login(): void
   refresh(): void
   /** 复制话题链接 */

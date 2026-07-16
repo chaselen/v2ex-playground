@@ -67,6 +67,7 @@ export function expectTopicDetail(detail: TopicDetail) {
   expect(detail.title).toEqual(expect.any(String))
   expect(detail.title.length).toBeGreaterThan(0)
   expectNode(detail.node)
+  expect(Array.isArray(detail.tags)).toBe(true)
   expect(detail.authorName).toEqual(expect.any(String))
   expect(detail.authorName.length).toBeGreaterThan(0)
   expect(detail.topicIcon).toMatch(/^https?:\/\//)

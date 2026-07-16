@@ -12,6 +12,7 @@ type ResourcePanelIcon =
   | 'panelBalance.svg'
   | 'panelRecentBrowse.svg'
   | 'panelSearch.svg'
+  | 'panelTag.svg'
   | 'panelTwoFactor.svg'
 
 /** V2EX Webview 面板创建选项 */

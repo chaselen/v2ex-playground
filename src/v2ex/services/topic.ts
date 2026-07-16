@@ -2,11 +2,12 @@ import * as cheerio from 'cheerio/slim'
 import { parsePagerTotalPage } from '../parsers/common'
 import {
   parseReplies,
+  parseTagTopicList,
   parseTopicIdByLink,
   parseTopicListCells,
   parseTopicMeta
 } from '../parsers/topic'
-import type { ThankResponse, Topic, TopicDetail } from '../types'
+import type { TagTopicList, ThankResponse, Topic, TopicDetail } from '../types'
 import type { V2exSession } from '../session'
 
 /** V2EX 话题领域服务 */
@@ -22,6 +23,11 @@ export class TopicService {
     return `${this.baseUrl}/t/${topicId}`
   }
 
+  /** 根据标签名称获取标签页链接 */
+  getTagLink(tag: string): string {
+    return `${this.baseUrl}/tag/${encodeURIComponent(normalizeTag(tag))}`
+  }
+
   /** 从链接中提取话题 id */
   getIdByLink(topicLink: string): number | undefined {
     return parseTopicIdByLink(topicLink)
@@ -32,6 +38,16 @@ export class TopicService {
     const { data: html } = await this.session.get<string>(`/?tab=${tab}`)
     const $ = cheerio.load(html)
     return parseTopicListCells($, $('#Main > .box').eq(0).children('.cell.item'))
+  }
+
+  /** 根据标签获取话题列表 */
+  async getListByTag(tag: string): Promise<TagTopicList> {
+    const normalizedTag = normalizeTag(tag)
+    const { data: html } = await this.session.get<string>(
+      `/tag/${encodeURIComponent(normalizedTag)}`
+    )
+    const $ = cheerio.load(html)
+    return parseTagTopicList($, normalizedTag)
   }
 
   /** 获取话题详情 */
@@ -105,4 +121,13 @@ export class TopicService {
 /** 归一化页码 */
 function normalizePage(page?: number): number {
   return Number.isFinite(page) ? Math.max(1, Math.floor(Number(page))) : 1
+}
+
+/** 归一化标签名称 */
+function normalizeTag(tag: string): string {
+  const normalizedTag = tag.trim()
+  if (!normalizedTag) {
+    throw new Error('标签名称不能为空')
+  }
+  return normalizedTag
 }
