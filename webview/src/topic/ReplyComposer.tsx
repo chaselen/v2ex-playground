@@ -517,12 +517,12 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       return
     }
 
-    if (!(await ensureImgurAvailable(true))) {
-      return
-    }
-
     setUploadingImage(true)
     try {
+      if (!(await ensureImgurAvailable(true))) {
+        return
+      }
+
       const links = await Promise.all(imageFiles.map(file => uploadImage(file)))
       insertImageLinks(links)
       Toast.success('图片上传成功')
