@@ -101,88 +101,6 @@ $panel-border: var(--v2ex-border);
   overflow: hidden;
 }
 
-.member-topic-item {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 8px;
-  align-items: stretch;
-  min-height: 58px;
-  padding: 10px 12px;
-  border: 0;
-  border-bottom: 1px solid $panel-border;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-
-  &:last-child {
-    border-bottom: 0;
-  }
-}
-
-.member-topic-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-
-  .semi-badge {
-    flex: none;
-  }
-}
-
-.member-topic-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--v2ex-link-fg);
-  font-weight: 600;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  text-decoration: none;
-  white-space: nowrap;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: 1px solid var(--v2ex-focus-border);
-    outline-offset: 1px;
-  }
-}
-
-.member-topic-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  min-width: 0;
-  color: $muted-color;
-  font-size: 12px;
-  line-height: 1.4;
-
-  a {
-    color: var(--v2ex-link-fg);
-    cursor: pointer;
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
-.member-topic-count {
-  flex: none;
-  min-width: 22px;
-}
-
-.member-topic-node {
-  cursor: pointer;
-}
-
 .member-reply-item {
   border-bottom: 1px solid $panel-border;
 
@@ -281,10 +199,6 @@ $panel-border: var(--v2ex-border);
   .member-profile > .semi-button {
     grid-column: 1 / -1;
     justify-self: flex-start;
-  }
-
-  .member-topic-title {
-    white-space: normal;
   }
 
   .member-reply-meta {

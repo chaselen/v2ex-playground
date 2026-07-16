@@ -1,3 +1,5 @@
+@use '../shared/topic-list-item' as topic-list-item;
+
 $muted-color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
 $panel-border: var(--v2ex-border);
 
@@ -132,28 +134,31 @@ $panel-border: var(--v2ex-border);
   }
 }
 
-.search-result-title {
-  display: inline;
-  color: var(--v2ex-link-fg);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.45;
+.search-result-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
 
-  &:hover {
-    text-decoration: underline;
+  .semi-badge {
+    flex: none;
   }
 }
 
+.search-result-title {
+  @include topic-list-item.title;
+
+  flex: 1;
+  min-width: 0;
+}
+
 .search-result-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  @include topic-list-item.meta;
+
   margin-top: 7px;
-  color: $muted-color;
-  font-size: 12px;
 
   a {
-    color: var(--v2ex-link-fg);
+    @include topic-list-item.meta-link;
   }
 }
 

@@ -1,3 +1,5 @@
+@use '../shared/topic-list-item' as topic-list-item;
+
 $panel-border: var(--v2ex-border);
 
 .recent-scroll {
@@ -146,34 +148,15 @@ $panel-border: var(--v2ex-border);
 }
 
 .recent-topic-title {
+  @include topic-list-item.title;
+
   overflow: hidden;
-  color: var(--v2ex-link-fg);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
   text-overflow: ellipsis;
-  text-decoration: none;
   white-space: nowrap;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: 1px solid var(--v2ex-focus-border);
-    outline-offset: 1px;
-  }
 }
 
 .recent-topic-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
-  color: var(--vscode-descriptionForeground);
-  font-size: 12px;
-  line-height: 1.35;
+  @include topic-list-item.meta;
 
   > span,
   time {
@@ -186,22 +169,13 @@ $panel-border: var(--v2ex-border);
 }
 
 .recent-topic-author {
+  @include topic-list-item.meta-link;
+
   overflow: hidden;
   min-width: 0;
   max-width: 42%;
-  color: var(--v2ex-link-fg);
   text-overflow: ellipsis;
-  text-decoration: none;
   white-space: nowrap;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: 1px solid var(--v2ex-focus-border);
-    outline-offset: 1px;
-  }
 }
 
 .recent-topic-node {

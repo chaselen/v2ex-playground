@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/shared/PageSkeleton'
+import { VscodeBadge } from '@/shared/SemiVscode'
 import { createVsCodeClient } from '@/shared/vscode'
 import type {
   SearchPanelRpcCommands,
@@ -349,23 +350,25 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
 
   return (
     <Card className="search-result-card" headerLine={false}>
-      <a
-        className="search-result-title"
-        href={`/t/${source.id}`}
-        onClick={event => {
-          event.preventDefault()
-          event.stopPropagation()
-          openTopic()
-        }}
-      >
-        {renderHighlight(title)}
-      </a>
+      <div className="search-result-title-row">
+        <a
+          className="search-result-title"
+          href={`/t/${source.id}`}
+          onClick={event => {
+            event.preventDefault()
+            event.stopPropagation()
+            openTopic()
+          }}
+        >
+          {renderHighlight(title)}
+        </a>
+        {source.replies > 0 && <VscodeBadge count={source.replies} overflowCount={99} />}
+      </div>
       <div className="search-result-meta">
         <a href={`/member/${source.member}`} onClick={openMember}>
           @{source.member}
         </a>
         <span>{dayjs(source.created).format('YYYY-MM-DD HH:mm')}</span>
-        <span>{source.replies} 条回复</span>
       </div>
       {excerpt && <p className="search-result-excerpt">{renderHighlight(excerpt)}</p>}
     </Card>

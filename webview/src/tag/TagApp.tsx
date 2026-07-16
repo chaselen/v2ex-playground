@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Banner, Button, Card, Empty } from '@douyinfe/semi-ui'
+import { useEffect, useRef, useState } from 'react'
+import { Banner, Button, Empty } from '@douyinfe/semi-ui'
 import { IconRefresh } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/shared/PageSkeleton'
-import { VscodeBadge } from '@/shared/SemiVscode'
+import TopicListItem from '@/shared/TopicListItem'
 import { createVsCodeClient, subscribeWebviewState } from '@/shared/vscode'
 import type { Topic } from '@extension/v2ex/types'
 import type {
@@ -49,18 +49,16 @@ export default function TagApp() {
   }
 
   /** 打开作者 */
-  function openMember(event: MouseEvent, username?: string) {
-    event.stopPropagation()
+  function openMember(username?: string) {
     if (username) {
       vscode.openMember(username)
     }
   }
 
   /** 打开节点 */
-  function openNode(event: MouseEvent, topic: Topic) {
-    event.stopPropagation()
-    if (topic.node.name) {
-      vscode.openNode(topic.node)
+  function openNode(node: Topic['node']) {
+    if (node.name) {
+      vscode.openNode(node)
     }
   }
 
@@ -100,39 +98,15 @@ export default function TagApp() {
             {data.list.length ? (
               <section className="tag-topic-list" aria-label={`${data.tag} 主题`}>
                 {data.list.map(topic => (
-                  <Card key={topic.id} className="tag-topic-card" bodyStyle={{ padding: 14 }}>
-                    <div className="tag-topic-title-row">
-                      <button type="button" onClick={() => openTopic(topic)}>
-                        {topic.title}
-                      </button>
-                      {topic.replies > 0 && (
-                        <VscodeBadge count={topic.replies} overflowCount={99} />
-                      )}
-                    </div>
-                    <div className="tag-topic-meta">
-                      {topic.node.title && (
-                        <Button
-                          className="tag-topic-node"
-                          size="small"
-                          type="tertiary"
-                          onClick={event => openNode(event, topic)}
-                        >
-                          {topic.node.title}
-                        </Button>
-                      )}
-                      {topic.authorName && (
-                        <button
-                          type="button"
-                          className="tag-topic-member"
-                          onClick={event => openMember(event, topic.authorName)}
-                        >
-                          {topic.authorName}
-                        </button>
-                      )}
-                      {topic.displayTime && <span>{topic.displayTime}</span>}
-                      {topic.lastReplyUser && <span>最后回复来自 {topic.lastReplyUser}</span>}
-                    </div>
-                  </Card>
+                  <TopicListItem
+                    key={topic.id}
+                    topic={topic}
+                    appearance="card"
+                    showAuthor
+                    onOpenTopic={openTopic}
+                    onOpenMember={openMember}
+                    onOpenNode={openNode}
+                  />
                 ))}
               </section>
             ) : (

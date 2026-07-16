@@ -1,0 +1,86 @@
+@use './topic-list-item' as topic-list-item;
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  color: inherit;
+  text-align: left;
+}
+
+.row {
+  min-height: 58px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--v2ex-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.card {
+  background: var(--v2ex-widget-bg);
+
+  :global(.semi-card-body) {
+    padding: 14px;
+  }
+}
+
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+
+  :global(.semi-badge) {
+    flex: none;
+  }
+}
+
+.title {
+  @include topic-list-item.title;
+
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.row .title {
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.meta {
+  @include topic-list-item.meta;
+}
+
+.meta-button {
+  @include topic-list-item.text-button;
+}
+
+.node {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .row .title {
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+}

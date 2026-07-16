@@ -1,0 +1,55 @@
+/** 主题列表标题 */
+@mixin title {
+  color: var(--v2ex-link-fg);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 1px;
+  }
+}
+
+/** 主题列表元信息 */
+@mixin meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/** 主题列表元信息链接 */
+@mixin meta-link {
+  color: var(--v2ex-link-fg);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 1px;
+  }
+}
+
+/** 主题列表文本按钮 */
+@mixin text-button {
+  @include meta-link;
+
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}

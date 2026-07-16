@@ -61,65 +61,6 @@ $panel-border: var(--v2ex-border);
   margin-top: 14px;
 }
 
-.tag-topic-card {
-  background: var(--v2ex-widget-bg);
-}
-
-.tag-topic-title-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-
-  > button {
-    flex: 1;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--v2ex-link-fg);
-    cursor: pointer;
-    font: inherit;
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.45;
-    text-align: left;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  .semi-badge {
-    flex: none;
-  }
-}
-
-.tag-topic-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  color: $muted-color;
-  font-size: 12px;
-}
-
-.tag-topic-node {
-  cursor: pointer;
-}
-
-.tag-topic-member {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--v2ex-link-fg);
-  cursor: pointer;
-  font: inherit;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
 .tag-state,
 .tag-empty {
   max-width: 760px;
