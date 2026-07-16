@@ -236,7 +236,9 @@ export default function MemberApp() {
                 {!!profile.member.memberNumber && (
                   <VscodeTag>第 {profile.member.memberNumber} 号会员</VscodeTag>
                 )}
-                {!!profile.member.joinedAt && <span>加入于 {profile.member.joinedAt}</span>}
+                {!!profile.member.joinedAt && (
+                  <span title={profile.member.joinedAt}>加入于 {profile.member.joinedAt}</span>
+                )}
               </div>
               {!!profile.member.activityRank && (
                 <div className="member-rank">活跃度排名 {profile.member.activityRank}</div>
@@ -455,7 +457,7 @@ function renderReplyItem(reply: MemberReply, index: number) {
           html={reply.summaryHtml}
           onClick={event => handleContentClick(event, reply)}
         />
-        {!!reply.time && <time>{reply.time}</time>}
+        {!!reply.time && <time title={reply.time}>{reply.time}</time>}
       </header>
       <EnhancedHtmlContent
         className="topic-content member-reply-content"

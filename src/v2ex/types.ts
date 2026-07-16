@@ -84,6 +84,9 @@ export interface Topic {
   /** 列表展示时间，可能为中文相对时间或本地化日期，如“10 分钟前”“2026 年 7 月 15 日” */
   displayTime?: string
 
+  /** 完整发布时间，格式为 YYYY-MM-DD HH:mm:ss */
+  publishedAt?: string
+
   /** 最后回复用户 */
   lastReplyUser?: string
 }

@@ -107,6 +107,7 @@ describe('topic tag parsing', () => {
           authorName: 'author',
           replies: 2,
           displayTime: '1 小时前',
+          publishedAt: '2026-07-15 08:58:03',
           lastReplyUser: 'replier'
         }
       ]

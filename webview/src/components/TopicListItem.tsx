@@ -59,7 +59,9 @@ export default function TopicListItem(props: TopicListItemProps) {
         {showAuthor && !!topic.authorName && (
           <MemberButton username={topic.authorName} onOpenMember={onOpenMember} />
         )}
-        {!!topic.displayTime && <span>{topic.displayTime}</span>}
+        {!!topic.displayTime && (
+          <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span>
+        )}
         {!!topic.lastReplyUser && (
           <span>
             最后回复来自 <MemberButton username={topic.lastReplyUser} onOpenMember={onOpenMember} />

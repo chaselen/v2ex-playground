@@ -215,7 +215,9 @@ export default function RecentBrowseApp() {
         </span>
         <span className="recent-topic-end">
           {!!topic.publishedAt && (
-            <time className="recent-topic-published">{topic.publishedAt}</time>
+            <time className="recent-topic-published" title={topic.publishedAt}>
+              {topic.publishedAt}
+            </time>
           )}
           <Popconfirm
             title="删除这条浏览记录？"
@@ -265,7 +267,7 @@ export default function RecentBrowseApp() {
                 <VscodeTag size="small">{nodeTitle}</VscodeTag>
               </span>
             )}
-            <time className="recent-topic-read-time">
+            <time className="recent-topic-read-time" title={formatReadTime(topic.readAt)}>
               <IconHistory />
               <span>{formatReadTime(topic.readAt)}</span>
             </time>

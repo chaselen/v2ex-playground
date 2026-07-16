@@ -330,6 +330,7 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
   const { source } = hit
   const title = hit.highlight?.title?.[0] || source.title
   const excerpt = getHitExcerpt(hit)
+  const createdAt = dayjs(source.created).format('YYYY-MM-DD HH:mm:ss')
 
   /**
    * 打开话题
@@ -368,7 +369,7 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
         <a href={`/member/${source.member}`} onClick={openMember}>
           @{source.member}
         </a>
-        <span>{dayjs(source.created).format('YYYY-MM-DD HH:mm')}</span>
+        <time title={createdAt}>{dayjs(source.created).format('YYYY-MM-DD HH:mm')}</time>
       </div>
       {excerpt && <p className="search-result-excerpt">{renderHighlight(excerpt)}</p>}
     </Card>

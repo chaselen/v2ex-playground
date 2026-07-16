@@ -37,14 +37,16 @@
 
   :global(.semi-badge) {
     flex: none;
+    margin-left: auto;
   }
 }
 
 .title {
   @include topic-list-item.title;
 
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   padding: 0;
   overflow: hidden;
   border: 0;

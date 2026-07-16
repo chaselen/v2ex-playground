@@ -42,8 +42,10 @@ export function parseTopicListCells(
     // 在/my/topics页面中，自己的帖子回复数元素名为.count_orange
     const countElement = $(cell).find('.count_livid, .count_orange')
     const topicInfo = $(cell).find('.topic_info')
+    const publishedTime = getV2exTimeSpan(topicInfo)
     const hasLastReply = /Lastly replied by|最后回复/.test(topicInfo.text())
     const memberLinks = topicInfo.find('strong a[href^="/member/"]')
+    const publishedAt = publishedTime.attr('title')
 
     list.push({
       id: topicId,
@@ -56,7 +58,8 @@ export function parseTopicListCells(
           },
       authorName: memberLinks.first().text().trim(),
       replies: Number(countElement.text().trim()) || 0,
-      displayTime: getV2exTimeSpan(topicInfo).text().trim(),
+      displayTime: publishedTime.text().trim(),
+      publishedAt: publishedAt ? dayjs(publishedAt).format('YYYY-MM-DD HH:mm:ss') : undefined,
       lastReplyUser: hasLastReply ? memberLinks.last().text().trim() : ''
     })
   })
