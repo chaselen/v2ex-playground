@@ -28,6 +28,7 @@ import {
 } from '@douyinfe/semi-icons'
 import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
+import NodeButton from '@/components/NodeButton'
 import { VscodeProTag } from '@/components/SemiVscode'
 import ReplyComposer, { type ReplyComposerHandle } from './ReplyComposer'
 import MemberQuickInfoPopover from './MemberQuickInfoPopover'
@@ -511,14 +512,9 @@ export default function TopicDetailView({
         </header>
 
         <div className="topic-meta">
-          <Button
-            className="topic-node-tag"
-            size="small"
-            type="tertiary"
-            onClick={() => void controller.openNode()}
-          >
+          <NodeButton className="topic-node-tag" onClick={() => void controller.openNode()}>
             {topic.node.title}
-          </Button>
+          </NodeButton>
           {renderMemberLink(topic.authorName, false, true)}
           {topic.isAuthorPro && <VscodeProTag />}
           <span className="time">

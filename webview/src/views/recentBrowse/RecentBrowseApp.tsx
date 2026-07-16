@@ -5,8 +5,8 @@ import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi
 import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
+import NodeButton from '@/components/NodeButton'
 import PageSkeleton from '@/components/PageSkeleton'
-import { VscodeTag } from '@/components/SemiVscode'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
   RecentBrowseListData,
@@ -258,14 +258,9 @@ export default function RecentBrowseApp() {
               </a>
             )}
             {!!nodeTitle && (
-              <span
-                className="recent-topic-node"
-                role="button"
-                tabIndex={-1}
-                onClick={event => openNode(event, topic)}
-              >
-                <VscodeTag size="small">{nodeTitle}</VscodeTag>
-              </span>
+              <NodeButton className="recent-topic-node" onClick={event => openNode(event, topic)}>
+                {nodeTitle}
+              </NodeButton>
             )}
             <time className="recent-topic-read-time" title={formatReadTime(topic.readAt)}>
               <IconHistory />

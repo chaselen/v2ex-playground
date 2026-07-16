@@ -1,6 +1,7 @@
 import { Card } from '@douyinfe/semi-ui'
 import type { Node, Topic } from '@extension/v2ex/types'
-import { VscodeBadge, VscodeTag } from '@/components/SemiVscode'
+import NodeButton from '@/components/NodeButton'
+import { VscodeBadge } from '@/components/SemiVscode'
 import styles from './TopicListItem.module.scss'
 
 interface TopicListItemProps {
@@ -47,14 +48,13 @@ export default function TopicListItem(props: TopicListItemProps) {
       </div>
       <div className={styles.meta}>
         {!!topic.node.title && (
-          <button
-            type="button"
+          <NodeButton
             className={styles.node}
             aria-label={`打开节点：${topic.node.title}`}
             onClick={() => onOpenNode(topic.node)}
           >
-            <VscodeTag size="small">{topic.node.title}</VscodeTag>
-          </button>
+            {topic.node.title}
+          </NodeButton>
         )}
         {showAuthor && !!topic.authorName && (
           <MemberButton username={topic.authorName} onOpenMember={onOpenMember} />

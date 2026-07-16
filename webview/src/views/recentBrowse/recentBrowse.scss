@@ -181,7 +181,7 @@ $panel-border: var(--v2ex-border);
 }
 
 .recent-topic-node {
-  cursor: pointer;
+  flex: none;
 }
 
 .recent-topic-read-time {

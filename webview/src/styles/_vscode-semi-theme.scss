@@ -162,15 +162,9 @@ body {
   --v2ex-shadow-floating: 0 4px 14px var(--v2ex-widget-shadow-color);
 
   /* 标签色：Semi Tag 会在下方做类级别兜底覆盖 */
-  --v2ex-tag-bg: var(
-    --vscode-list-inactiveSelectionBackground,
-    var(
-      --vscode-editor-inactiveSelectionBackground,
-      var(--vscode-sideBarSectionHeader-background, rgba(127, 127, 127, 0.16))
-    )
-  );
+  --v2ex-tag-bg: var(--v2ex-light-button-bg);
   --v2ex-tag-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
-  --v2ex-tag-hover-bg: var(--vscode-list-hoverBackground, var(--v2ex-hover-bg));
+  --v2ex-tag-hover-bg: var(--v2ex-light-button-hover-bg);
   --v2ex-tag-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-tag-fg));
 
   /* Semi 品牌色 token */

@@ -73,10 +73,7 @@
 }
 
 .node {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 520px) {
