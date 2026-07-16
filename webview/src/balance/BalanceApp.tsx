@@ -93,7 +93,7 @@ export default function BalanceApp() {
     const request = startRequest()
     setLoadingPage(true)
     try {
-      const nextDetail = await vscode.loadPage({ page })
+      const nextDetail = await vscode.loadPage(page)
       if (!request.isLatest()) {
         return
       }
@@ -184,11 +184,7 @@ export default function BalanceApp() {
               <Button
                 size="small"
                 theme="light"
-                onClick={() =>
-                  vscode.openExternal({
-                    path: resolveWebviewUrl('/balance/add')
-                  })
-                }
+                onClick={() => vscode.openExternal(resolveWebviewUrl('/balance/add'))}
               >
                 充值
               </Button>
@@ -196,11 +192,7 @@ export default function BalanceApp() {
                 size="small"
                 theme="borderless"
                 icon={<IconHelpCircle />}
-                onClick={() =>
-                  vscode.openExternal({
-                    path: resolveWebviewUrl('/help/currency')
-                  })
-                }
+                onClick={() => vscode.openExternal(resolveWebviewUrl('/help/currency'))}
               >
                 余额说明
               </Button>

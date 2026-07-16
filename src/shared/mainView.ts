@@ -269,12 +269,12 @@ export interface MainViewRpcCommands extends WebviewNavigationRpcCommands {
     tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
     page?: number
   }): MyTopicListData
-  getMyNotifications(payload: { page?: number }): MyNotificationListData
+  getMyNotifications(page?: number): MyNotificationListData
   getDailySignInStatus(): WebviewDailySignInData
   dailySignIn(): WebviewDailySignInData
   addNode(): NodeListData
-  removeNode(payload: { nodeName: string }): NodeListData
-  cancelCollectNode(payload: { nodeName: string }): void
+  removeNode(nodeName: string): NodeListData
+  cancelCollectNode(nodeName: string): void
   openBalance(): void
   search(): void
   login(): void

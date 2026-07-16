@@ -134,13 +134,13 @@ function openLinkNavigationTarget(target: LinkNavigationTarget) {
       vscode.openTopic({ topicId: target.topicId, title: target.title })
       return
     case 'member':
-      vscode.openMember({ username: target.username })
+      vscode.openMember(target.username)
       return
     case 'node':
       vscode.openNode({ name: target.name, title: target.title })
       return
     case 'external':
-      vscode.openExternal({ path: target.path })
+      vscode.openExternal(target.path)
   }
 }
 

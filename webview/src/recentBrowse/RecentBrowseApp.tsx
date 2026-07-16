@@ -161,7 +161,7 @@ export default function RecentBrowseApp() {
       return
     }
 
-    vscode.openMember({ username: authorName })
+    vscode.openMember(authorName)
   }
 
   /**

@@ -57,7 +57,7 @@ export default function TopicApp() {
   }, [])
 
   /** 加载主面板回复页 */
-  const loadReplyPage = useCallback((replyPage: number) => vscode.loadReplyPage({ replyPage }), [])
+  const loadReplyPage = useCallback((replyPage: number) => vscode.loadReplyPage(replyPage), [])
 
   const topicController = useTopicDetailController({
     topic,
@@ -178,11 +178,11 @@ export default function TopicApp() {
     <>
       <TopicShareContextMenu
         disabled={!topic}
-        onCopyLink={() => topic && vscode.copyTopicLink({ topicId: topic.id })}
+        onCopyLink={() => topic && vscode.copyTopicLink(topic.id)}
         onCopyTitleLink={() =>
           topic && vscode.copyTopicTitleLink({ topicId: topic.id, title: topic.title })
         }
-        onViewInBrowser={() => topic && vscode.viewTopicInBrowser({ topicId: topic.id })}
+        onViewInBrowser={() => topic && vscode.viewTopicInBrowser(topic.id)}
       >
         {content}
       </TopicShareContextMenu>

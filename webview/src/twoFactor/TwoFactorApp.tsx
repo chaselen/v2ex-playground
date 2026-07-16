@@ -46,7 +46,7 @@ export default function TwoFactorApp() {
 
     setSubmitting(true)
     try {
-      await vscode.verify({ code: normalizedCode })
+      await vscode.verify(normalizedCode)
     } catch (err) {
       setError((err as Error).message || '验证失败，请重新输入验证码')
     } finally {

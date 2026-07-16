@@ -164,8 +164,8 @@ export default class MainViewProvider
   }
 
   /** 获取我的提醒 */
-  rpc_getMyNotifications(message: { page?: number }) {
-    return this._handleGetMyNotifications(message.page)
+  rpc_getMyNotifications(page?: number) {
+    return this._handleGetMyNotifications(page)
   }
 
   /** 获取每日签到状态 */
@@ -184,13 +184,13 @@ export default class MainViewProvider
   }
 
   /** 删除自定义节点 */
-  rpc_removeNode(message: { nodeName: string }) {
-    return this._handleRemoveNode(message.nodeName)
+  rpc_removeNode(nodeName: string) {
+    return this._handleRemoveNode(nodeName)
   }
 
   /** 取消收藏节点 */
-  rpc_cancelCollectNode(message: { nodeName: string }) {
-    return this._handleCancelCollectNode(message.nodeName)
+  rpc_cancelCollectNode(nodeName: string) {
+    return this._handleCancelCollectNode(nodeName)
   }
 
   /** 打开话题面板 */
@@ -202,8 +202,8 @@ export default class MainViewProvider
   }
 
   /** 打开用户面板 */
-  rpc_openMember(message: { username: string }) {
-    openMember({ username: message.username })
+  rpc_openMember(username: string) {
+    openMember({ username })
   }
 
   /** 打开节点主题标签 */
@@ -217,8 +217,8 @@ export default class MainViewProvider
   }
 
   /** 打开外部链接 */
-  rpc_openExternal(message: { path: string }) {
-    openExternal(message.path)
+  rpc_openExternal(path: string) {
+    openExternal(path)
   }
 
   /** 打开搜索面板 */

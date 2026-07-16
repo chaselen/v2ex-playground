@@ -139,7 +139,7 @@ function createMyNotificationListState(): MyNotificationListState {
  * @param path 目标路径
  */
 function openExternal(path: string) {
-  vscode.openExternal({ path: resolveWebviewUrl(path) })
+  vscode.openExternal(resolveWebviewUrl(path))
 }
 
 /**
@@ -147,7 +147,7 @@ function openExternal(path: string) {
  * @param username 用户名
  */
 function openMember(username: string) {
-  vscode.openMember({ username })
+  vscode.openMember(username)
 }
 
 /**
@@ -365,7 +365,7 @@ export default function MyTab(props: MyTabProps) {
     }))
 
     try {
-      const data = await vscode.getMyNotifications({ page })
+      const data = await vscode.getMyNotifications(page)
       if (notificationRequestSeq.current === requestSeq) {
         onMyNotificationsLoaded(data)
       }

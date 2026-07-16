@@ -52,7 +52,7 @@ export default function TagApp() {
   function openMember(event: MouseEvent, username?: string) {
     event.stopPropagation()
     if (username) {
-      vscode.openMember({ username })
+      vscode.openMember(username)
     }
   }
 

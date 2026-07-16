@@ -187,7 +187,7 @@ export function useNodeTreeTabs() {
    */
   async function removeNode(nodeName: string) {
     try {
-      const data = await vscode.removeNode({ nodeName })
+      const data = await vscode.removeNode(nodeName)
       onCustomNodesUpdated(data)
     } catch (err) {
       console.error(err)
@@ -200,7 +200,7 @@ export function useNodeTreeTabs() {
    */
   async function cancelCollectNode(nodeName: string) {
     try {
-      await vscode.cancelCollectNode({ nodeName })
+      await vscode.cancelCollectNode(nodeName)
       setTabs(current => ({
         ...current,
         collection: current.collection.filter(node => node.name !== nodeName)

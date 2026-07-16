@@ -39,11 +39,11 @@ export interface TopicPanelRpcCommands
   login(): void
   refresh(): void
   /** 复制话题链接 */
-  copyTopicLink(payload: { topicId: string | number }): void
+  copyTopicLink(topicId: string | number): void
   /** 复制话题标题和链接 */
   copyTopicTitleLink(payload: { topicId: string | number; title: string }): void
   /** 在浏览器中打开话题 */
-  viewTopicInBrowser(payload: { topicId: string | number }): void
+  viewTopicInBrowser(topicId: string | number): void
   /** 收藏话题并返回最新详情 */
   collectTopic(payload: TopicActionTarget): TopicDetail
   /** 取消收藏话题并返回最新详情 */
@@ -57,15 +57,15 @@ export interface TopicPanelRpcCommands
   /** 检测 Imgur 连通性 */
   checkImgurConnectivity(payload: { target: 'image' | 'upload'; refresh?: boolean }): boolean
   /** 预览回复内容 */
-  previewReply(payload: { content: string }): string
+  previewReply(content: string): string
   /** 加载站内话题预览 */
   getTopicPreview(payload: { topicId: string | number; replyPage?: number }): TopicDetail
   /** 感谢回复者并返回最新详情 */
   thankTopicReply(payload: TopicActionTarget & { replyId: string }): TopicDetail
   /** 加载当前话题回复页并返回最新详情 */
-  loadReplyPage(payload: { replyPage: number }): TopicDetail
+  loadReplyPage(replyPage: number): TopicDetail
   /** 加载用户快速信息 */
-  loadMemberQuickInfo(payload: { username: string }): MemberInfo
+  loadMemberQuickInfo(username: string): MemberInfo
 }
 
 /**

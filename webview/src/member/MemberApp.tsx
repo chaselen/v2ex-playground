@@ -163,7 +163,7 @@ export default function MemberApp() {
    * @param username 用户名
    */
   function openMember(username: string) {
-    vscode.openMember({ username })
+    vscode.openMember(username)
   }
 
   useEffect(() => {

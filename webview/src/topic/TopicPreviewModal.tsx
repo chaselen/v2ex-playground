@@ -164,7 +164,7 @@ export default function TopicPreviewModal({
   /** 复制预览话题链接 */
   function copyPreviewLink() {
     if (topicId) {
-      void vscode.copyTopicLink({ topicId })
+      void vscode.copyTopicLink(topicId)
     }
   }
 
@@ -178,7 +178,7 @@ export default function TopicPreviewModal({
   /** 在浏览器中打开预览话题 */
   function viewPreviewInBrowser() {
     if (topicId) {
-      void vscode.viewTopicInBrowser({ topicId })
+      void vscode.viewTopicInBrowser(topicId)
     }
   }
 

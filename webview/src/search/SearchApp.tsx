@@ -344,7 +344,7 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
   function openMember(event: MouseEvent) {
     event.preventDefault()
     event.stopPropagation()
-    vscode.openMember({ username: source.member })
+    vscode.openMember(source.member)
   }
 
   return (

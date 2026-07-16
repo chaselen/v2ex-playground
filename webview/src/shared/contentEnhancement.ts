@@ -197,7 +197,7 @@ function openImage(
   openImagePreview: OpenImagePreview
 ) {
   if (isOpenExternalClick(event)) {
-    vscode.openExternal({ path: resolveWebviewUrl(src) })
+    vscode.openExternal(resolveWebviewUrl(src))
     return
   }
 

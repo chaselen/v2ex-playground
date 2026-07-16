@@ -242,8 +242,8 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
   }
 
   /** 打开外部链接 */
-  rpc_openExternal(message: { path: string }) {
-    openExternal(message.path)
+  rpc_openExternal(path: string) {
+    openExternal(path)
   }
 
   /** 打开话题面板 */
@@ -252,8 +252,8 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
   }
 
   /** 打开用户面板 */
-  rpc_openMember(message: { username: string }) {
-    this.deps.openMember({ username: message.username })
+  rpc_openMember(username: string) {
+    this.deps.openMember({ username })
   }
 
   /** 打开节点主题标签 */
@@ -277,8 +277,8 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
   }
 
   /** 复制话题链接 */
-  rpc_copyTopicLink(message: { topicId: string | number }) {
-    copyTopicLink(message.topicId)
+  rpc_copyTopicLink(topicId: string | number) {
+    copyTopicLink(topicId)
   }
 
   /** 复制话题标题和链接 */
@@ -287,8 +287,8 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
   }
 
   /** 在浏览器中打开话题 */
-  rpc_viewTopicInBrowser(message: { topicId: string | number }) {
-    viewTopicInBrowser(message.topicId)
+  rpc_viewTopicInBrowser(topicId: string | number) {
+    viewTopicInBrowser(topicId)
   }
 
   /** 收藏话题 */
@@ -322,8 +322,8 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
   }
 
   /** 预览回复内容 */
-  rpc_previewReply(message: { content: string }) {
-    return this.handlePreviewReply(message)
+  rpc_previewReply(content: string) {
+    return this.handlePreviewReply(content)
   }
 
   /** 加载站内话题预览 */
@@ -337,13 +337,13 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
   }
 
   /** 加载话题回复页 */
-  rpc_loadReplyPage(message: { replyPage: number }) {
-    return this.handleLoadReplyPage(message)
+  rpc_loadReplyPage(replyPage: number) {
+    return this.handleLoadReplyPage(replyPage)
   }
 
   /** 加载用户快速信息 */
-  rpc_loadMemberQuickInfo(message: { username: string }) {
-    return this.loadMemberQuickInfo(message.username)
+  rpc_loadMemberQuickInfo(username: string) {
+    return this.loadMemberQuickInfo(username)
   }
 
   /**
@@ -443,10 +443,9 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
 
   /**
    * 处理回复预览
-   * @param message 页面消息
+   * @param content 回复内容
    */
-  private handlePreviewReply(message: { content: string }) {
-    const { content } = message
+  private handlePreviewReply(content: string) {
     if (!content.trim()) {
       throw new Error('请输入回复内容')
     }
@@ -490,10 +489,10 @@ export class TopicPanelController implements WebviewRpcController<TopicPanelRpcC
 
   /**
    * 处理回复翻页
-   * @param message 页面消息
+   * @param replyPage 回复页码
    */
-  private async handleLoadReplyPage(message: { replyPage: number }) {
-    const replyPage = Number(message.replyPage)
+  private async handleLoadReplyPage(replyPage: number) {
+    replyPage = Number(replyPage)
     if (!Number.isFinite(replyPage)) {
       throw new Error('回复页码无效')
     }

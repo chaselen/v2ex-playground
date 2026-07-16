@@ -133,8 +133,8 @@ export default function useTopicDetailController(
           })
         ),
       loadReplyPage: replyPage => applyViewResult(() => loadReplyPage(replyPage)),
-      openMember: username => vscode.openMember({ username }),
-      loadMemberQuickInfo: username => vscode.loadMemberQuickInfo({ username }),
+      openMember: username => vscode.openMember(username),
+      loadMemberQuickInfo: username => vscode.loadMemberQuickInfo(username),
       openNode: () => vscode.openNode(topic.node),
       openTag: tag => vscode.openTag(tag)
     }

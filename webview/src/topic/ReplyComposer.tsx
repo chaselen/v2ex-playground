@@ -226,9 +226,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     setMode('preview')
     setPreviewing(true)
     try {
-      const html = await vscode.previewReply({
-        content: replaceImageEmoticonTokens(value)
-      })
+      const html = await vscode.previewReply(replaceImageEmoticonTokens(value))
       if (generation === generationRef.current) {
         setPreviewHtml(html)
         setPreviewSource(value)

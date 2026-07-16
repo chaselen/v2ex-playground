@@ -50,7 +50,8 @@ Webview 根据 `requestId` 完成原 Promise。成功响应解析为返回值，
 ```ts
 export interface ExampleRpcCommands {
   ready(): ExampleViewState
-  refresh(payload: { force?: boolean }): ExampleViewState
+  refresh(force?: boolean): ExampleViewState
+  loadPage(payload: { page: number; pageSize?: number }): ExamplePageData
 }
 
 export interface ExampleWebviewEvents {
@@ -63,7 +64,8 @@ export interface ExampleWebviewEvents {
 契约遵循以下约定：
 
 - 命令名使用清晰的动词或动宾结构
-- 新增带参数的命令优先使用单个对象参数，便于后续增加可选字段
+- 命令只有一个语义值时直接传递对应类型，不为字段额外包裹对象
+- 命令包含多个独立字段时使用单个对象参数，避免位置参数难以辨认
 - 契约返回值描述业务数据，不需要显式声明为 `Promise`
 - 共享参数和返回值复用已有领域类型，避免扩展侧与 Webview 重复定义
 - 页面通用命令通过 `WebviewNavigationRpcCommands`、`WebviewStateRpcCommands<State>` 等公共接口组合
@@ -80,8 +82,8 @@ class ExampleController implements WebviewRpcController<ExampleRpcCommands> {
     return this.viewState
   }
 
-  async rpc_refresh(payload: { force?: boolean }) {
-    return this.reload(payload.force)
+  async rpc_refresh(force?: boolean) {
+    return this.reload(force)
   }
 }
 ```
@@ -114,7 +116,7 @@ const vscode = createVsCodeClient<ExampleRpcCommands, ExampleWebviewEvents>()
 
 ```ts
 const state = await vscode.ready()
-await vscode.refresh({ force: true })
+await vscode.refresh(true)
 ```
 
 订阅事件时必须保存并调用返回的取消订阅函数：

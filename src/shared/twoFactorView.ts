@@ -2,7 +2,7 @@
  * 两步验证面板 Webview RPC 命令
  */
 export interface TwoFactorPanelRpcCommands {
-  verify(payload: { code: string }): void
+  verify(code: string): void
   cancel(): void
 }
 

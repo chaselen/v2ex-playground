@@ -25,7 +25,7 @@ export interface BalancePanelRpcCommands
   extends WebviewNavigationRpcCommands, WebviewStateRpcCommands<BalancePanelViewState> {
   login(): void
   refresh(): void
-  loadPage(payload: { page: number }): BalanceDetail
+  loadPage(page: number): BalanceDetail
 }
 
 /**

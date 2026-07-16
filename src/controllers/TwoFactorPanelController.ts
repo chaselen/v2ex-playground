@@ -75,8 +75,8 @@ export class TwoFactorPanelController implements WebviewRpcController<TwoFactorP
   }
 
   /** 提交两步验证码 */
-  async rpc_verify(payload: { code: string }) {
-    await this.options.verify(payload.code)
+  async rpc_verify(code: string) {
+    await this.options.verify(code)
     vscode.window.showInformationMessage('V2EX 两步验证成功')
     this.resolve(true)
     this.panel.dispose()

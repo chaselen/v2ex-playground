@@ -99,8 +99,8 @@ export class TagPanelController implements WebviewRpcController<TagPanelRpcComma
   }
 
   /** 打开外部链接 */
-  rpc_openExternal(message: { path: string }) {
-    openExternal(message.path)
+  rpc_openExternal(path: string) {
+    openExternal(path)
   }
 
   /** 打开话题面板 */
@@ -112,8 +112,8 @@ export class TagPanelController implements WebviewRpcController<TagPanelRpcComma
   }
 
   /** 打开用户面板 */
-  rpc_openMember(message: { username: string }) {
-    this.deps.openMember({ username: message.username })
+  rpc_openMember(username: string) {
+    this.deps.openMember({ username })
   }
 
   /** 打开节点主题标签 */

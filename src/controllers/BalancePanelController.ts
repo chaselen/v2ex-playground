@@ -101,8 +101,8 @@ export class BalancePanelController implements WebviewRpcController<BalancePanel
   }
 
   /** 打开外部链接 */
-  rpc_openExternal(message: { path: string }) {
-    openExternal(message.path)
+  rpc_openExternal(path: string) {
+    openExternal(path)
   }
 
   /** 打开话题面板 */
@@ -111,8 +111,8 @@ export class BalancePanelController implements WebviewRpcController<BalancePanel
   }
 
   /** 打开用户面板 */
-  rpc_openMember(message: { username: string }) {
-    this.deps.openMember({ username: message.username })
+  rpc_openMember(username: string) {
+    this.deps.openMember({ username })
   }
 
   /** 打开节点主题标签 */
@@ -134,8 +134,8 @@ export class BalancePanelController implements WebviewRpcController<BalancePanel
   }
 
   /** 加载指定流水页 */
-  rpc_loadPage(message: { page: number }) {
-    return this.loadPage(message.page)
+  rpc_loadPage(page: number) {
+    return this.loadPage(page)
   }
 
   /**
