@@ -18,7 +18,7 @@ import {
   TopicPanelViewState,
   TopicPanelWebviewEvents,
   TopicActionTarget,
-  WebviewRpcHandlers
+  WebviewRpcController
 } from '@/shared/webview'
 
 /**
@@ -36,7 +36,7 @@ export interface TopicPanelDeps {
 /**
  * 话题面板控制器
  */
-export class TopicPanelController {
+export class TopicPanelController implements WebviewRpcController<TopicPanelRpcCommands> {
   /** 话题面板缓存 key */
   readonly key: string
 
@@ -111,7 +111,7 @@ export class TopicPanelController {
     })
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
       this.panel.webview,
-      this.createRpcHandlers()
+      this
     )
     this.configListener = vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('v2ex.browse.showImagesInTopic')) {
@@ -233,38 +233,109 @@ export class TopicPanelController {
     }
   }
 
-  /**
-   * 注册 Webview RPC 处理器
-   */
-  private createRpcHandlers(): WebviewRpcHandlers<TopicPanelRpcCommands> {
-    return {
-      ready: () => this.getViewState(),
-      openExternal: msg => {
-        openExternal(msg.path)
-      },
-      openTopic: msg => this.openTopic(msg.topicId),
-      openMember: msg => this.deps.openMember({ username: msg.username }),
-      openNode: msg => this.deps.openNode(msg),
-      login: async () => {
-        await vscode.commands.executeCommand('v2ex.login')
-      },
-      refresh: () => this.refreshTopic(),
-      copyTopicLink: msg => copyTopicLink(msg.topicId),
-      copyTopicTitleLink: msg => copyTopicTitleLink(msg.topicId, msg.title),
-      viewTopicInBrowser: msg => viewTopicInBrowser(msg.topicId),
-      collectTopic: msg => this.runTopicMutation(msg, topicId => G.V2ex.collectTopic(topicId)),
-      cancelCollectTopic: msg =>
-        this.runTopicMutation(msg, topicId => G.V2ex.cancelCollectTopic(topicId)),
-      thankTopic: msg => this.runTopicMutation(msg, topicId => G.V2ex.thankTopic(topicId)),
-      postTopicReply: msg => this.handlePostTopicReply(msg),
-      uploadImage: msg => uploadImage(msg),
-      checkImgurConnectivity: msg => checkImgurConnectivity(msg.target, msg.refresh),
-      previewReply: msg => this.handlePreviewReply(msg),
-      getTopicPreview: msg => this.loadTopicPreview(msg),
-      thankTopicReply: msg => this.handleThankTopicReply(msg),
-      loadReplyPage: msg => this.handleLoadReplyPage(msg),
-      loadMemberQuickInfo: msg => this.loadMemberQuickInfo(msg.username)
-    }
+  /** 获取当前视图状态 */
+  rpc_ready() {
+    return this.getViewState()
+  }
+
+  /** 打开外部链接 */
+  rpc_openExternal(message: { path: string }) {
+    openExternal(message.path)
+  }
+
+  /** 打开话题面板 */
+  rpc_openTopic(message: { topicId: string | number }) {
+    this.openTopic(message.topicId)
+  }
+
+  /** 打开用户面板 */
+  rpc_openMember(message: { username: string }) {
+    this.deps.openMember({ username: message.username })
+  }
+
+  /** 打开节点主题标签 */
+  rpc_openNode(message: NodeTabInput) {
+    this.deps.openNode(message)
+  }
+
+  /** 执行登录 */
+  async rpc_login() {
+    await vscode.commands.executeCommand('v2ex.login')
+  }
+
+  /** 刷新话题 */
+  rpc_refresh() {
+    return this.refreshTopic()
+  }
+
+  /** 复制话题链接 */
+  rpc_copyTopicLink(message: { topicId: string | number }) {
+    copyTopicLink(message.topicId)
+  }
+
+  /** 复制话题标题和链接 */
+  rpc_copyTopicTitleLink(message: { topicId: string | number; title: string }) {
+    copyTopicTitleLink(message.topicId, message.title)
+  }
+
+  /** 在浏览器中打开话题 */
+  rpc_viewTopicInBrowser(message: { topicId: string | number }) {
+    viewTopicInBrowser(message.topicId)
+  }
+
+  /** 收藏话题 */
+  rpc_collectTopic(target: TopicActionTarget) {
+    return this.runTopicMutation(target, topicId => G.V2ex.collectTopic(topicId))
+  }
+
+  /** 取消收藏话题 */
+  rpc_cancelCollectTopic(target: TopicActionTarget) {
+    return this.runTopicMutation(target, topicId => G.V2ex.cancelCollectTopic(topicId))
+  }
+
+  /** 感谢话题创建者 */
+  rpc_thankTopic(target: TopicActionTarget) {
+    return this.runTopicMutation(target, topicId => G.V2ex.thankTopic(topicId))
+  }
+
+  /** 提交话题回复 */
+  rpc_postTopicReply(message: TopicActionTarget & { content: string }) {
+    return this.handlePostTopicReply(message)
+  }
+
+  /** 上传回复图片 */
+  rpc_uploadImage(message: { filename: string; mimeType: string; base64: string }) {
+    return uploadImage(message)
+  }
+
+  /** 检测 Imgur 连通性 */
+  rpc_checkImgurConnectivity(message: { target: 'image' | 'upload'; refresh?: boolean }) {
+    return checkImgurConnectivity(message.target, message.refresh)
+  }
+
+  /** 预览回复内容 */
+  rpc_previewReply(message: { content: string }) {
+    return this.handlePreviewReply(message)
+  }
+
+  /** 加载站内话题预览 */
+  rpc_getTopicPreview(message: { topicId: string | number; replyPage?: number }) {
+    return this.loadTopicPreview(message)
+  }
+
+  /** 感谢话题回复者 */
+  rpc_thankTopicReply(message: TopicActionTarget & { replyId: string }) {
+    return this.handleThankTopicReply(message)
+  }
+
+  /** 加载话题回复页 */
+  rpc_loadReplyPage(message: { replyPage: number }) {
+    return this.handleLoadReplyPage(message)
+  }
+
+  /** 加载用户快速信息 */
+  rpc_loadMemberQuickInfo(message: { username: string }) {
+    return this.loadMemberQuickInfo(message.username)
   }
 
   /**

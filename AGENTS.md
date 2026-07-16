@@ -35,6 +35,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - [话题测试样本](docs/test-topics.md) — 按空状态、富文本、代码块、附言、分页和回复树分类的公开测试帖子
 - [内容预览 HTML 契约](docs/reply-preview-html.md) — 原生与 Markdown 预览接口的真实 HTML 输出、过滤规则和渲染约束
 - [站内帖子预览](docs/topic-preview.md) — 站内链接预览按钮、统一话题视图、状态隔离和写操作约束
+- [Webview RPC 通信](docs/webview-rpc.md) — 消息协议、约定式控制器、事件推送和安全边界
 - 修改上述文档涉及的代码逻辑时，必须同步更新对应文档；新增需要长期维护的关键实现规则或设计取舍时，应在 `docs/` 中补充文档，并在此处添加引用
 
 ## 开发命令
@@ -91,8 +92,9 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 ## Webview RPC 与状态同步
 
 - Webview 通过 `webview/src/shared/vscode.ts` 中的 Proxy RPC 客户端封装 `acquireVsCodeApi().postMessage`，业务侧使用 `vscode.command(payload)` 调用扩展能力，使用 `vscode.on(event, handler)` 订阅扩展事件
-- 扩展侧通过 `src/core/WebviewRpcBridge.ts` 接收 RPC；创建桥接器时传入完整且类型安全的处理器映射，通过 `rpc.post(event, payload)` 向 Webview 发送事件
+- 扩展侧通过 `src/core/WebviewRpcBridge.ts` 接收 RPC；Controller 或 Provider 实现 `WebviewRpcController<Commands>`，并使用 `rpc_<command>` 方法处理请求，通过 `rpc.post(event, payload)` 向 Webview 发送事件
 - RPC 契约使用函数签名定义，集中在 `src/shared/*View.ts` 和 `src/shared/webviewRpc.ts`
+- 只有 `rpc_` 前缀的方法可以由 Webview 调用；Panel 生命周期方法使用不带该前缀的常规方法名
 - 新增或修改 RPC 命令、事件、请求参数或响应字段时，先更新 `src/shared/` 中的契约，再同步扩展侧处理器和 Webview 调用方；不要绕过 Proxy 客户端直接调用 `postMessage`
 - 有状态的 Webview 初始化不能依赖扩展侧在面板创建后单向发送一次状态事件；Cursor 中缓存命中、脚本启动或 Webview 上下文重建的时序可能与 VS Code 不同，事件可能早于 React 监听注册而丢失。此类页面应由扩展侧保存最新状态，RPC 契约复用 `WebviewStateRpcCommands<State>` 提供 `ready()` 状态读取，并在 Webview 端复用 `subscribeWebviewState()` 先注册事件监听、再主动读取当前状态；状态事件仅用于后续增量同步
 

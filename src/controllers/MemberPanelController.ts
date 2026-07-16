@@ -11,7 +11,7 @@ import type {
   MemberPanelRpcCommands,
   MemberPanelViewState,
   MemberPanelWebviewEvents,
-  WebviewRpcHandlers
+  WebviewRpcController
 } from '@/shared/webview'
 
 /**
@@ -29,7 +29,7 @@ export interface MemberPanelDeps {
 /**
  * 用户面板控制器
  */
-export class MemberPanelController {
+export class MemberPanelController implements WebviewRpcController<MemberPanelRpcCommands> {
   /** 用户面板缓存 key */
   readonly key: string
 
@@ -68,7 +68,7 @@ export class MemberPanelController {
     })
     this.rpc = new WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>(
       this.panel.webview,
-      this.createRpcHandlers()
+      this
     )
     this.panel.onDidDispose(() => {
       this.rpc.dispose()
@@ -144,26 +144,47 @@ export class MemberPanelController {
     })
   }
 
-  /**
-   * 注册 Webview RPC 处理器
-   */
-  private createRpcHandlers(): WebviewRpcHandlers<MemberPanelRpcCommands> {
-    return {
-      ready: () => this.viewState,
-      openExternal: msg => {
-        openExternal(msg.path)
-      },
-      openTopic: msg =>
-        this.deps.openTopic({
-          label: msg.title || `/t/${msg.topicId}`,
-          topicId: msg.topicId
-        }),
-      openMember: msg => this.deps.openMember({ username: msg.username }),
-      openNode: msg => this.deps.openNode(msg),
-      refresh: () => this.refreshMember(),
-      loadMemberTab: msg => this.loadMemberContent(msg.tab, msg.page),
-      loadMemberPage: msg => this.loadMemberContent(msg.tab, msg.page)
-    }
+  /** 获取当前视图状态 */
+  rpc_ready() {
+    return this.viewState
+  }
+
+  /** 打开外部链接 */
+  rpc_openExternal(message: { path: string }) {
+    openExternal(message.path)
+  }
+
+  /** 打开话题面板 */
+  rpc_openTopic(message: { topicId: string | number; title?: string }) {
+    this.deps.openTopic({
+      label: message.title || `/t/${message.topicId}`,
+      topicId: message.topicId
+    })
+  }
+
+  /** 打开用户面板 */
+  rpc_openMember(message: { username: string }) {
+    this.deps.openMember({ username: message.username })
+  }
+
+  /** 打开节点主题标签 */
+  rpc_openNode(message: NodeTabInput) {
+    this.deps.openNode(message)
+  }
+
+  /** 刷新用户资料 */
+  rpc_refresh() {
+    return this.refreshMember()
+  }
+
+  /** 加载用户标签内容 */
+  rpc_loadMemberTab(message: { tab: MemberContentTabKey; page?: number }) {
+    return this.loadMemberContent(message.tab, message.page)
+  }
+
+  /** 加载用户内容页 */
+  rpc_loadMemberPage(message: { tab: MemberContentTabKey; page?: number }) {
+    return this.loadMemberContent(message.tab, message.page)
   }
 
   /**

@@ -2,9 +2,10 @@ import vscode from 'vscode'
 import { logger } from '@/core/logger'
 import {
   WEBVIEW_RESPONSE_COMMAND,
+  WEBVIEW_RPC_METHOD_PREFIX,
   WebviewEventKey,
   WebviewEventPayload,
-  WebviewRpcHandlers,
+  WebviewRpcController,
   WebviewRequestMessage
 } from '@/shared/webview'
 
@@ -19,11 +20,11 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
 
   /**
    * @param webview VS Code Webview
-   * @param handlers RPC 处理器映射
+   * @param controller RPC 控制器
    */
   constructor(
     private readonly webview: vscode.Webview,
-    private readonly handlers: WebviewRpcHandlers<Commands>
+    private readonly controller: WebviewRpcController<Commands>
   ) {
     this.listener = webview.onDidReceiveMessage((message: WebviewRequestMessage) => {
       this.handleMessage(message)
@@ -87,13 +88,12 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
    * @param message Webview 消息
    */
   private dispatchRequest(message: WebviewRequestMessage) {
-    const handler = (this.handlers as unknown as Record<string, AnyWebviewRpcHandler>)[
-      message.command
-    ]
-    if (!handler) {
+    const methodName = `${WEBVIEW_RPC_METHOD_PREFIX}${message.command}`
+    const handler = (this.controller as unknown as Record<string, AnyWebviewRpcHandler>)[methodName]
+    if (typeof handler !== 'function') {
       throw new Error(`未注册 Webview RPC 处理器: ${message.command}`)
     }
-    return handler(...message.args)
+    return handler.apply(this.controller, message.args)
   }
 
   /**

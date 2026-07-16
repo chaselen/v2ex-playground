@@ -32,7 +32,7 @@ import {
   WebviewNotification,
   WebviewNode,
   WebviewTopic,
-  WebviewRpcHandlers
+  WebviewRpcController
 } from '@/shared/webview'
 import type { AccountOverview } from '@/v2ex'
 import type { NodeTabInput } from '@/controllers/panelTypes'
@@ -53,7 +53,9 @@ function updateViewTitle(view: vscode.WebviewView, detail?: string): void {
   view.title = `${titlePrefix}${detail}`
 }
 
-export default class MainViewProvider implements vscode.WebviewViewProvider {
+export default class MainViewProvider
+  implements vscode.WebviewViewProvider, WebviewRpcController<MainViewRpcCommands>
+{
   private _view?: vscode.WebviewView
   private _rpc?: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>
   private _webviewReady = false
@@ -81,7 +83,7 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
 
     this._rpc = new WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>(
       webviewView.webview,
-      this._createRpcHandlers()
+      this
     )
     this._accountOverviewChangedDisposable?.dispose()
     this._accountOverviewChangedDisposable = G.V2ex.onAccountOverviewChanged(
@@ -122,45 +124,126 @@ export default class MainViewProvider implements vscode.WebviewViewProvider {
     })
   }
 
-  /**
-   * 创建 Webview RPC 处理器
-   */
-  private _createRpcHandlers(): WebviewRpcHandlers<MainViewRpcCommands> {
-    return {
-      ready: () => {
-        this._webviewReady = true
-        return this._getInitData()
-      },
-      refreshCollectionNodes: () => this._handleRefreshCollectionNodes(),
-      refreshMyOverview: () => this._handleRefreshMyOverview(),
-      expandNode: msg => this._handleExpandNode(msg.tab, msg.itemKey, msg.page),
-      refreshNode: msg => this._handleRefreshNode(msg.tab, msg.itemKey, msg.page),
-      getNodeTopics: msg => this._handleGetNodeTopics(msg.nodeName, msg.page),
-      getMyTopics: msg => this._handleGetMyTopics(msg.tab, msg.page),
-      getMyNotifications: msg => this._handleGetMyNotifications(msg.page),
-      getDailySignInStatus: () => this._handleGetDailySignInStatus(),
-      dailySignIn: () => this._handleDailySignIn(),
-      addNode: () => this._handleAddNode(),
-      removeNode: msg => this._handleRemoveNode(msg.nodeName),
-      cancelCollectNode: msg => this._handleCancelCollectNode(msg.nodeName),
-      openTopic: msg =>
-        openTopic({ topicId: msg.topicId, label: msg.title || `/t/${msg.topicId}` }),
-      openMember: msg => openMember({ username: msg.username }),
-      openNode: msg => this.openNode(msg),
-      openBalance: () => openBalance(),
-      openExternal: msg => {
-        openExternal(msg.path)
-      },
-      search: async () => {
-        await vscode.commands.executeCommand('v2ex.search')
-      },
-      login: async () => {
-        await vscode.commands.executeCommand('v2ex.login')
-      },
-      ctxCopyLink: msg => copyTopicLink(msg.topicId),
-      ctxCopyTitleLink: msg => copyTopicTitleLink(msg.topicId, msg.label),
-      ctxViewInBrowser: msg => viewTopicInBrowser(msg.topicId)
-    }
+  /** 获取主视图初始化数据 */
+  rpc_ready() {
+    this._webviewReady = true
+    return this._getInitData()
+  }
+
+  /** 刷新收藏节点 */
+  rpc_refreshCollectionNodes() {
+    return this._handleRefreshCollectionNodes()
+  }
+
+  /** 刷新账户概览 */
+  rpc_refreshMyOverview() {
+    return this._handleRefreshMyOverview()
+  }
+
+  /** 展开节点 */
+  rpc_expandNode(message: { tab: MainTabKey; itemKey: string; page?: number }) {
+    return this._handleExpandNode(message.tab, message.itemKey, message.page)
+  }
+
+  /** 刷新节点 */
+  rpc_refreshNode(message: { tab: MainTabKey; itemKey: string; page?: number }) {
+    return this._handleRefreshNode(message.tab, message.itemKey, message.page)
+  }
+
+  /** 获取节点话题 */
+  rpc_getNodeTopics(message: { nodeName: string; page?: number }) {
+    return this._handleGetNodeTopics(message.nodeName, message.page)
+  }
+
+  /** 获取我的主题 */
+  rpc_getMyTopics(message: {
+    tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
+    page?: number
+  }) {
+    return this._handleGetMyTopics(message.tab, message.page)
+  }
+
+  /** 获取我的提醒 */
+  rpc_getMyNotifications(message: { page?: number }) {
+    return this._handleGetMyNotifications(message.page)
+  }
+
+  /** 获取每日签到状态 */
+  rpc_getDailySignInStatus() {
+    return this._handleGetDailySignInStatus()
+  }
+
+  /** 执行每日签到 */
+  rpc_dailySignIn() {
+    return this._handleDailySignIn()
+  }
+
+  /** 添加自定义节点 */
+  rpc_addNode() {
+    return this._handleAddNode()
+  }
+
+  /** 删除自定义节点 */
+  rpc_removeNode(message: { nodeName: string }) {
+    return this._handleRemoveNode(message.nodeName)
+  }
+
+  /** 取消收藏节点 */
+  rpc_cancelCollectNode(message: { nodeName: string }) {
+    return this._handleCancelCollectNode(message.nodeName)
+  }
+
+  /** 打开话题面板 */
+  rpc_openTopic(message: { topicId: string | number; title?: string }) {
+    openTopic({
+      topicId: message.topicId,
+      label: message.title || `/t/${message.topicId}`
+    })
+  }
+
+  /** 打开用户面板 */
+  rpc_openMember(message: { username: string }) {
+    openMember({ username: message.username })
+  }
+
+  /** 打开节点主题标签 */
+  rpc_openNode(message: { name: string; title?: string }) {
+    return this.openNode(message)
+  }
+
+  /** 打开账户余额面板 */
+  rpc_openBalance() {
+    openBalance()
+  }
+
+  /** 打开外部链接 */
+  rpc_openExternal(message: { path: string }) {
+    openExternal(message.path)
+  }
+
+  /** 打开搜索面板 */
+  async rpc_search() {
+    await vscode.commands.executeCommand('v2ex.search')
+  }
+
+  /** 执行登录 */
+  async rpc_login() {
+    await vscode.commands.executeCommand('v2ex.login')
+  }
+
+  /** 复制话题链接 */
+  rpc_ctxCopyLink(message: { topicId: number; label: string }) {
+    copyTopicLink(message.topicId)
+  }
+
+  /** 复制话题标题和链接 */
+  rpc_ctxCopyTitleLink(message: { topicId: number; label: string }) {
+    copyTopicTitleLink(message.topicId, message.label)
+  }
+
+  /** 在浏览器中打开话题 */
+  rpc_ctxViewInBrowser(message: { topicId: number; label: string }) {
+    viewTopicInBrowser(message.topicId)
   }
 
   /**

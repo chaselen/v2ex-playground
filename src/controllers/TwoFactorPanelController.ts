@@ -4,7 +4,7 @@ import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type {
   TwoFactorPanelRpcCommands,
   TwoFactorPanelWebviewEvents,
-  WebviewRpcHandlers
+  WebviewRpcController
 } from '@/shared/webview'
 
 /** 两步验证完成回调 */
@@ -17,7 +17,7 @@ export interface TwoFactorPanelControllerOptions {
 }
 
 /** 两步验证面板控制器 */
-export class TwoFactorPanelController {
+export class TwoFactorPanelController implements WebviewRpcController<TwoFactorPanelRpcCommands> {
   /** 两步验证面板 */
   private readonly panel: vscode.WebviewPanel
 
@@ -49,7 +49,7 @@ export class TwoFactorPanelController {
     })
     this.rpc = new WebviewRpcBridge<TwoFactorPanelRpcCommands, TwoFactorPanelWebviewEvents>(
       this.panel.webview,
-      this.createRpcHandlers()
+      this
     )
     this.panel.onDidDispose(() => {
       this.rpc.dispose()
@@ -74,22 +74,18 @@ export class TwoFactorPanelController {
     return this.verified
   }
 
-  /**
-   * 创建 Webview RPC 处理器
-   */
-  private createRpcHandlers(): WebviewRpcHandlers<TwoFactorPanelRpcCommands> {
-    return {
-      verify: async payload => {
-        await this.options.verify(payload.code)
-        vscode.window.showInformationMessage('V2EX 两步验证成功')
-        this.resolve(true)
-        this.panel.dispose()
-      },
-      cancel: () => {
-        this.resolve(false)
-        this.panel.dispose()
-      }
-    }
+  /** 提交两步验证码 */
+  async rpc_verify(payload: { code: string }) {
+    await this.options.verify(payload.code)
+    vscode.window.showInformationMessage('V2EX 两步验证成功')
+    this.resolve(true)
+    this.panel.dispose()
+  }
+
+  /** 取消两步验证 */
+  rpc_cancel() {
+    this.resolve(false)
+    this.panel.dispose()
   }
 
   /**

@@ -10,7 +10,7 @@ import type {
   BalancePanelRpcCommands,
   BalancePanelViewState,
   BalancePanelWebviewEvents,
-  WebviewRpcHandlers
+  WebviewRpcController
 } from '@/shared/webview'
 
 /**
@@ -28,7 +28,7 @@ export interface BalancePanelDeps {
 /**
  * 账户余额面板控制器
  */
-export class BalancePanelController {
+export class BalancePanelController implements WebviewRpcController<BalancePanelRpcCommands> {
   /** 账户余额面板 */
   private readonly panel: vscode.WebviewPanel
 
@@ -58,7 +58,7 @@ export class BalancePanelController {
     })
     this.rpc = new WebviewRpcBridge<BalancePanelRpcCommands, BalancePanelWebviewEvents>(
       this.panel.webview,
-      this.createRpcHandlers()
+      this
     )
     this.panel.onDidDispose(() => this.rpc.dispose())
   }
@@ -95,27 +95,47 @@ export class BalancePanelController {
     this.refresh().catch(err => logger.error('账户余额登录态刷新失败', err))
   }
 
-  /**
-   * 注册 Webview RPC 处理器
-   */
-  private createRpcHandlers(): WebviewRpcHandlers<BalancePanelRpcCommands> {
-    return {
-      ready: () => this.viewState,
-      openExternal: msg => {
-        openExternal(msg.path)
-      },
-      openTopic: msg => this.deps.openTopic({ label: `/t/${msg.topicId}`, topicId: msg.topicId }),
-      openMember: msg => this.deps.openMember({ username: msg.username }),
-      openNode: msg => this.deps.openNode(msg),
-      login: async () => {
-        await vscode.commands.executeCommand('v2ex.login')
-        if (G.V2ex.isAuthenticated()) {
-          await this.reload(true)
-        }
-      },
-      refresh: () => this.refresh(),
-      loadPage: msg => this.loadPage(msg.page)
+  /** 获取当前视图状态 */
+  rpc_ready() {
+    return this.viewState
+  }
+
+  /** 打开外部链接 */
+  rpc_openExternal(message: { path: string }) {
+    openExternal(message.path)
+  }
+
+  /** 打开话题面板 */
+  rpc_openTopic(message: { topicId: string | number }) {
+    this.deps.openTopic({ label: `/t/${message.topicId}`, topicId: message.topicId })
+  }
+
+  /** 打开用户面板 */
+  rpc_openMember(message: { username: string }) {
+    this.deps.openMember({ username: message.username })
+  }
+
+  /** 打开节点主题标签 */
+  rpc_openNode(message: NodeTabInput) {
+    this.deps.openNode(message)
+  }
+
+  /** 执行登录 */
+  async rpc_login() {
+    await vscode.commands.executeCommand('v2ex.login')
+    if (G.V2ex.isAuthenticated()) {
+      await this.reload(true)
     }
+  }
+
+  /** 刷新账户余额 */
+  rpc_refresh() {
+    return this.refresh()
+  }
+
+  /** 加载指定流水页 */
+  rpc_loadPage(message: { page: number }) {
+    return this.loadPage(message.page)
   }
 
   /**

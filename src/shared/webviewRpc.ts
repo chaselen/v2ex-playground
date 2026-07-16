@@ -63,9 +63,17 @@ export type WebviewRpcHandler<Commands, Command extends WebviewRpcCommandKey<Com
   ...args: WebviewRpcArgs<Commands, Command>
 ) => Promise<WebviewRpcResponse<Commands, Command>> | WebviewRpcResponse<Commands, Command>
 
-/** Webview RPC 消息处理器映射 */
-export type WebviewRpcHandlers<Commands> = {
-  [Command in WebviewRpcCommandKey<Commands>]: WebviewRpcHandler<Commands, Command>
+/** Webview RPC 控制器方法前缀 */
+export const WEBVIEW_RPC_METHOD_PREFIX = 'rpc_'
+
+/**
+ * 使用约定式方法名实现 Webview RPC 的控制器
+ */
+export type WebviewRpcController<Commands> = {
+  [Command in WebviewRpcCommandKey<Commands> as `${typeof WEBVIEW_RPC_METHOD_PREFIX}${Command}`]: WebviewRpcHandler<
+    Commands,
+    Command
+  >
 }
 
 /** Webview RPC 客户端 */

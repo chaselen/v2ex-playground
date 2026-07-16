@@ -7,7 +7,8 @@ import type { MemberPanelInput, NodeTabInput, TopicPanelInput } from '@/controll
 import type {
   SearchPanelRpcCommands,
   SearchPanelWebviewEvents,
-  WebviewRpcHandlers
+  WebviewRpcController,
+  SoV2exSearchParams
 } from '@/shared/webview'
 
 /** 搜索面板外部依赖 */
@@ -21,17 +22,21 @@ export interface SearchPanelDeps {
 }
 
 /** 搜索面板控制器 */
-export class SearchPanelController {
+export class SearchPanelController implements WebviewRpcController<SearchPanelRpcCommands> {
   /** 搜索面板 */
   private readonly panel: vscode.WebviewPanel
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<SearchPanelRpcCommands, SearchPanelWebviewEvents>
 
+  /** 外部面板导航依赖 */
+  private readonly deps: SearchPanelDeps
+
   /**
    * @param deps 外部面板导航依赖
    */
   constructor(deps: SearchPanelDeps) {
+    this.deps = deps
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.search',
       title: '搜索',
@@ -41,7 +46,7 @@ export class SearchPanelController {
     })
     this.rpc = new WebviewRpcBridge<SearchPanelRpcCommands, SearchPanelWebviewEvents>(
       this.panel.webview,
-      this.createRpcHandlers(deps)
+      this
     )
     this.panel.onDidDispose(() => this.rpc.dispose())
   }
@@ -59,23 +64,31 @@ export class SearchPanelController {
     this.panel.onDidDispose(listener)
   }
 
-  /**
-   * 创建 Webview RPC 处理器
-   * @param deps 外部面板导航依赖
-   */
-  private createRpcHandlers(deps: SearchPanelDeps): WebviewRpcHandlers<SearchPanelRpcCommands> {
-    return {
-      search: params => G.V2ex.search(params),
-      openExternal: msg => {
-        openExternal(msg.path)
-      },
-      openTopic: msg =>
-        deps.openTopic({
-          label: msg.title || `/t/${msg.topicId}`,
-          topicId: msg.topicId
-        }),
-      openMember: msg => deps.openMember({ username: msg.username }),
-      openNode: msg => deps.openNode(msg)
-    }
+  /** 执行站内搜索 */
+  rpc_search(params: SoV2exSearchParams) {
+    return G.V2ex.search(params)
+  }
+
+  /** 打开外部链接 */
+  rpc_openExternal(message: { path: string }) {
+    openExternal(message.path)
+  }
+
+  /** 打开话题面板 */
+  rpc_openTopic(message: { topicId: string | number; title?: string }) {
+    this.deps.openTopic({
+      label: message.title || `/t/${message.topicId}`,
+      topicId: message.topicId
+    })
+  }
+
+  /** 打开用户面板 */
+  rpc_openMember(message: { username: string }) {
+    this.deps.openMember({ username: message.username })
+  }
+
+  /** 打开节点主题标签 */
+  rpc_openNode(message: NodeTabInput) {
+    this.deps.openNode(message)
   }
 }
