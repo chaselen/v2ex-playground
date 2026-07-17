@@ -3,7 +3,11 @@ import { handleWebviewLinkClick } from './linkNavigation'
 import { getV2exTopicId } from './topicLink'
 import { isApplePlatform } from './platform'
 import { createVsCodeClient, resolveWebviewUrl } from './vscode'
-import { isImageEmoticonSrc, normalizeImageEmoticonSrc } from './imageEmoticons'
+import {
+  detectCompactImageEmoticon,
+  isImageEmoticonSrc,
+  normalizeImageEmoticonSrc
+} from './imageEmoticons'
 import { decodeCloudflareEmails } from './cloudflareEmail'
 import type { OpenImagePreview } from '@/components/ImagePreviewProvider'
 
@@ -496,6 +500,9 @@ export function enhanceHtmlContent(
 
   topicImages.forEach(img => {
     applyImageDisplaySrc(img, showImages)
+    if (showImages) {
+      detectCompactImageEmoticon(img)
+    }
     bindImagePreview(img, openImagePreview)
     syncImageVisibility(img, showImages, openImagePreview)
   })

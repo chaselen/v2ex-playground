@@ -196,6 +196,12 @@ const imageEmoticonHdSrcMap = new Map<string, string>(
   Object.values(imageEmoticonSources).map(({ ld, hd }) => [ld, hd])
 )
 
+/** 自动识别的图片表情最大边长 */
+const compactImageEmoticonMaxSize = 32
+
+/** 自动识别的图片表情最大宽高比 */
+const compactImageEmoticonMaxAspectRatio = 1.5
+
 /**
  * 判断是否为图片表情 token
  * @param value 表情文本
@@ -227,4 +233,50 @@ export function normalizeImageEmoticonSrc(src: string) {
   } catch {
     return imageEmoticonHdSrcMap.get(src) || src
   }
+}
+
+/**
+ * 判断图片尺寸是否符合内联图片表情特征
+ * @param width 图片自然宽度
+ * @param height 图片自然高度
+ */
+export function isCompactImageEmoticonSize(width: number, height: number): boolean {
+  if (
+    width <= 0 ||
+    height <= 0 ||
+    width > compactImageEmoticonMaxSize ||
+    height > compactImageEmoticonMaxSize
+  ) {
+    return false
+  }
+
+  return Math.max(width, height) / Math.min(width, height) <= compactImageEmoticonMaxAspectRatio
+}
+
+/**
+ * 在图片加载完成后识别未收录的小尺寸图片表情
+ * @param img 图片元素
+ */
+export function detectCompactImageEmoticon(img: HTMLImageElement) {
+  if (img.classList.contains('v2ex-emoticon-image')) {
+    return
+  }
+
+  const detect = () => {
+    if (isCompactImageEmoticonSize(img.naturalWidth, img.naturalHeight)) {
+      img.classList.add('v2ex-emoticon-image')
+    }
+  }
+
+  if (img.complete) {
+    detect()
+    return
+  }
+
+  if (img.dataset.compactImageEmoticonDetectionBound === 'true') {
+    return
+  }
+
+  img.dataset.compactImageEmoticonDetectionBound = 'true'
+  img.addEventListener('load', detect, { once: true })
 }
