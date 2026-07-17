@@ -5,9 +5,9 @@ import { logger } from '@/core/logger'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
 import {
-  WebviewNavigationController,
+  WebviewCommonController,
   type WebviewNavigationDeps
-} from '@/controllers/WebviewNavigationController'
+} from '@/controllers/WebviewCommonController'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } from '@/v2ex'
 import type {
   MemberPanelRpcCommands,
@@ -20,7 +20,7 @@ import type {
  * 用户面板控制器
  */
 export class MemberPanelController
-  extends WebviewNavigationController
+  extends WebviewCommonController
   implements WebviewRpcController<MemberPanelRpcCommands>
 {
   /** 用户面板缓存 key */

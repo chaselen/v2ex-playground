@@ -1,5 +1,5 @@
 import type { TagTopicList } from '../v2ex/types'
-import type { WebviewNavigationRpcCommands, WebviewStateRpcCommands } from './commonView'
+import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 
 /** 标签主题面板状态 */
 export interface TagPanelViewState {
@@ -13,7 +13,7 @@ export interface TagPanelViewState {
 
 /** 标签主题面板 Webview RPC 命令 */
 export interface TagPanelRpcCommands
-  extends WebviewNavigationRpcCommands, WebviewStateRpcCommands<TagPanelViewState> {
+  extends WebviewCommonRpcCommands, WebviewStateRpcCommands<TagPanelViewState> {
   /** 刷新标签主题列表 */
   refresh(): void
 }

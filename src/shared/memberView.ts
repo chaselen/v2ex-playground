@@ -1,5 +1,5 @@
 import type { MemberContentTabKey, MemberProfile } from '../v2ex/types'
-import type { WebviewNavigationRpcCommands, WebviewStateRpcCommands } from './commonView'
+import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 export type { MemberContentTabKey, MemberProfile, MemberReply } from '../v2ex/types'
 
 /**
@@ -20,7 +20,7 @@ export interface MemberPanelViewState {
  * 用户面板 Webview RPC 命令
  */
 export interface MemberPanelRpcCommands
-  extends WebviewNavigationRpcCommands, WebviewStateRpcCommands<MemberPanelViewState> {
+  extends WebviewCommonRpcCommands, WebviewStateRpcCommands<MemberPanelViewState> {
   refresh(): void
   loadMemberTab(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile
   loadMemberPage(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile

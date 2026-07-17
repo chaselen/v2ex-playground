@@ -1,5 +1,5 @@
 import type { MemberInfo, TopicDetail } from '../v2ex/types'
-import type { WebviewNavigationRpcCommands, WebviewStateRpcCommands } from './commonView'
+import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 export type { MemberInfo } from '../v2ex/types'
 
 /** 话题操作目标 */
@@ -33,7 +33,7 @@ export interface TopicPanelViewState {
  * 话题面板 Webview RPC 命令
  */
 export interface TopicPanelRpcCommands
-  extends WebviewNavigationRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
+  extends WebviewCommonRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
   /** 打开标签主题面板 */
   openTag(tag: string): void
   login(): void

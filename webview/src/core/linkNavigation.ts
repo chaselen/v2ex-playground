@@ -1,9 +1,9 @@
-import type { WebviewNavigationRpcCommands } from '@extension/shared/webview'
+import type { WebviewCommonRpcCommands } from '@extension/shared/webview'
 import { createVsCodeClient } from './vscode'
 import { getV2exTopicId, isV2exHostname } from './topicLink'
 
 /** 站内链接导航使用的 VS Code 通信客户端 */
-const vscode = createVsCodeClient<WebviewNavigationRpcCommands>()
+const vscode = createVsCodeClient<WebviewCommonRpcCommands>()
 
 /** 可用于处理链接点击的事件 */
 interface LinkClickEvent {

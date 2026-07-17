@@ -1,5 +1,5 @@
 import type { SoV2exSearchParams, SoV2exSearchResult } from '../v2ex/types'
-import type { WebviewNavigationRpcCommands } from './commonView'
+import type { WebviewCommonRpcCommands } from './commonView'
 export type {
   SoV2exHit,
   SoV2exHighlight,
@@ -12,7 +12,7 @@ export type {
 } from '../v2ex/types'
 
 /** 搜索面板 Webview RPC 命令 */
-export interface SearchPanelRpcCommands extends WebviewNavigationRpcCommands {
+export interface SearchPanelRpcCommands extends WebviewCommonRpcCommands {
   search(params: SoV2exSearchParams): SoV2exSearchResult
 }
 

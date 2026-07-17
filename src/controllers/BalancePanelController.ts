@@ -5,9 +5,9 @@ import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import {
-  WebviewNavigationController,
+  WebviewCommonController,
   type WebviewNavigationDeps
-} from '@/controllers/WebviewNavigationController'
+} from '@/controllers/WebviewCommonController'
 import type {
   BalancePanelRpcCommands,
   BalancePanelViewState,
@@ -17,7 +17,7 @@ import type {
 
 /** 账户余额面板控制器 */
 export class BalancePanelController
-  extends WebviewNavigationController
+  extends WebviewCommonController
   implements WebviewRpcController<BalancePanelRpcCommands>
 {
   /** 账户余额面板 */

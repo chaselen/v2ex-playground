@@ -1,8 +1,9 @@
 import { openExternal } from '@/features/openExternal'
+import { downloadImage } from '@/features/imageDownload'
 import type {
   OpenNodePayload,
   OpenTopicPayload,
-  WebviewNavigationRpcCommands,
+  WebviewCommonRpcCommands,
   WebviewRpcController
 } from '@/shared/webview'
 
@@ -16,10 +17,10 @@ export interface WebviewNavigationDeps {
   openNode: (node: OpenNodePayload) => void
 }
 
-/** 提供 Webview 公共导航 RPC 的控制器 */
-export abstract class WebviewNavigationController<
+/** 提供 Webview 公共 RPC 的控制器 */
+export abstract class WebviewCommonController<
   Deps extends WebviewNavigationDeps = WebviewNavigationDeps
-> implements WebviewRpcController<WebviewNavigationRpcCommands> {
+> implements WebviewRpcController<WebviewCommonRpcCommands> {
   /**
    * @param navigation Webview 公共导航依赖
    */
@@ -43,5 +44,10 @@ export abstract class WebviewNavigationController<
   /** 打开节点主题标签 */
   rpc_openNode(payload: OpenNodePayload) {
     this.navigation.openNode(payload)
+  }
+
+  /** 下载远程图片 */
+  rpc_downloadImage(imageSrc: string) {
+    void downloadImage(imageSrc)
   }
 }

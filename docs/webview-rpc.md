@@ -68,7 +68,7 @@ export interface ExampleWebviewEvents {
 - 命令包含多个独立字段时使用单个对象参数，避免位置参数难以辨认
 - 契约返回值描述业务数据，不需要显式声明为 `Promise`
 - 共享参数和返回值复用已有领域类型，避免扩展侧与 Webview 重复定义
-- 页面通用命令通过 `WebviewNavigationRpcCommands`、`WebviewStateRpcCommands<State>` 等公共接口组合
+- 页面通用命令通过 `WebviewCommonRpcCommands`、`WebviewStateRpcCommands<State>` 等公共接口组合
 
 `WebviewRpcClient<Commands>` 会将契约中的所有命令转换为异步客户端方法，因此 `void` 命令在 Webview 侧也是 `Promise<void>`，其他返回值会自动使用 `Awaited` 展开。
 
@@ -88,7 +88,9 @@ class ExampleController implements WebviewRpcController<ExampleRpcCommands> {
 }
 ```
 
-组合了 `WebviewNavigationRpcCommands` 的 Panel Controller 继承 `WebviewNavigationController`，复用 `rpc_openExternal`、`rpc_openTopic`、`rpc_openMember` 和 `rpc_openNode`。页面专属导航仍由对应 Controller 实现；具有自身状态逻辑的 Provider 不强制继承该基类。
+Panel Controller 继承 `WebviewCommonController`，复用 `rpc_openExternal`、`rpc_openTopic`、`rpc_openMember`、`rpc_openNode` 和 `rpc_downloadImage`。该基类实现 `WebviewCommonRpcCommands`，页面专属导航仍由对应 Controller 实现；具有自身状态逻辑的 Provider 不强制继承该基类，但需要自行实现同一公共契约。
+
+话题页和用户页组合 `WebviewCommonRpcCommands`，图片预览的下载动作通过 `rpc_downloadImage` 交给扩展侧完成。Webview 不直接请求远程图片 Blob，避免跨域限制；扩展侧负责校验图片类型、显示保存对话框，并通过 `workspace.fs` 写入用户选择的 URI。首次保存不假设系统下载目录，保存成功后记录用户选择目录的 URI，后续下载在该目录预填文件名。
 
 `WebviewRpcController` 在编译阶段检查：
 

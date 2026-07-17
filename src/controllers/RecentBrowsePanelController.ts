@@ -7,9 +7,9 @@ import {
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import {
-  WebviewNavigationController,
+  WebviewCommonController,
   type WebviewNavigationDeps
-} from '@/controllers/WebviewNavigationController'
+} from '@/controllers/WebviewCommonController'
 import type {
   RecentBrowsePanelRpcCommands,
   RecentBrowsePanelWebviewEvents,
@@ -18,7 +18,7 @@ import type {
 
 /** 最近浏览面板控制器 */
 export class RecentBrowsePanelController
-  extends WebviewNavigationController
+  extends WebviewCommonController
   implements WebviewRpcController<RecentBrowsePanelRpcCommands>
 {
   /** 最近浏览面板 */

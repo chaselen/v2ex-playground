@@ -15,13 +15,15 @@ export interface OpenNodePayload {
 }
 
 /**
- * Webview 公共导航 RPC 命令
+ * Webview 公共 RPC 命令
  */
-export interface WebviewNavigationRpcCommands {
+export interface WebviewCommonRpcCommands {
   openExternal(path: string): void
   openTopic(payload: OpenTopicPayload): void
   openMember(username: string): void
   openNode(payload: OpenNodePayload): void
+  /** 下载远程图片 */
+  downloadImage(imageSrc: string): void
 }
 
 /**

@@ -4,9 +4,9 @@ import { logger } from '@/core/logger'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import {
-  WebviewNavigationController,
+  WebviewCommonController,
   type WebviewNavigationDeps
-} from '@/controllers/WebviewNavigationController'
+} from '@/controllers/WebviewCommonController'
 import type {
   TagPanelRpcCommands,
   TagPanelViewState,
@@ -16,7 +16,7 @@ import type {
 
 /** 标签主题面板控制器 */
 export class TagPanelController
-  extends WebviewNavigationController
+  extends WebviewCommonController
   implements WebviewRpcController<TagPanelRpcCommands>
 {
   /** 标签面板缓存 key */

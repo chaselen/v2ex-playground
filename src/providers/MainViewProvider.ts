@@ -8,6 +8,7 @@ import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
 import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
+import { downloadImage } from '@/features/imageDownload'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
@@ -217,6 +218,11 @@ export default class MainViewProvider
   /** 打开外部链接 */
   rpc_openExternal(path: string) {
     openExternal(path)
+  }
+
+  /** 下载远程图片 */
+  rpc_downloadImage(imageSrc: string) {
+    void downloadImage(imageSrc)
   }
 
   /** 打开搜索面板 */

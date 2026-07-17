@@ -3,9 +3,9 @@ import G from '@/global'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import {
-  WebviewNavigationController,
+  WebviewCommonController,
   type WebviewNavigationDeps
-} from '@/controllers/WebviewNavigationController'
+} from '@/controllers/WebviewCommonController'
 import type {
   SearchPanelRpcCommands,
   SearchPanelWebviewEvents,
@@ -15,7 +15,7 @@ import type {
 
 /** 搜索面板控制器 */
 export class SearchPanelController
-  extends WebviewNavigationController
+  extends WebviewCommonController
   implements WebviewRpcController<SearchPanelRpcCommands>
 {
   /** 搜索面板 */

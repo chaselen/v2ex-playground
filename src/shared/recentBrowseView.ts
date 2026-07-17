@@ -1,4 +1,4 @@
-import type { WebviewNavigationRpcCommands } from './commonView'
+import type { WebviewCommonRpcCommands } from './commonView'
 
 /**
  * 最近浏览话题
@@ -39,7 +39,7 @@ export interface RecentBrowseListData {
 /**
  * 最近浏览面板 Webview RPC 命令
  */
-export interface RecentBrowsePanelRpcCommands extends WebviewNavigationRpcCommands {
+export interface RecentBrowsePanelRpcCommands extends WebviewCommonRpcCommands {
   getRecentBrowseTopics(payload: {
     page?: number
     pageSize?: number

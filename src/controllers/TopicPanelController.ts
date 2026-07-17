@@ -12,9 +12,9 @@ import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewP
 import { checkImgurConnectivity } from '@/features/connectivityCheck'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import {
-  WebviewNavigationController,
+  WebviewCommonController,
   type WebviewNavigationDeps
-} from '@/controllers/WebviewNavigationController'
+} from '@/controllers/WebviewCommonController'
 import {
   TopicPanelRpcCommands,
   TopicPanelViewState,
@@ -36,7 +36,7 @@ export interface TopicPanelDeps extends WebviewNavigationDeps {
  * 话题面板控制器
  */
 export class TopicPanelController
-  extends WebviewNavigationController<TopicPanelDeps>
+  extends WebviewCommonController<TopicPanelDeps>
   implements WebviewRpcController<TopicPanelRpcCommands>
 {
   /** 话题面板缓存 key */

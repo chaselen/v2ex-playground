@@ -1,4 +1,4 @@
-import type { WebviewNavigationRpcCommands } from './commonView'
+import type { WebviewCommonRpcCommands } from './commonView'
 
 /**
  * Webview 节点项
@@ -258,7 +258,7 @@ export interface TopicReadData {
 /**
  * 主面板 Webview RPC 命令
  */
-export interface MainViewRpcCommands extends WebviewNavigationRpcCommands {
+export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
   ready(): InitData
   refreshCollectionNodes(): NodeListData
   refreshMyOverview(): MyOverviewRefreshData
