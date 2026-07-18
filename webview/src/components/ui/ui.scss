@@ -691,6 +691,16 @@
   background: transparent;
   font: inherit;
   cursor: pointer;
+  isolation: isolate;
+
+  &::before {
+    position: absolute;
+    z-index: -1;
+    inset: 5px 2px;
+    border-radius: 5px;
+    background: transparent;
+    content: '';
+  }
 
   &::after {
     position: absolute;
@@ -704,6 +714,9 @@
 
   &:hover {
     color: var(--v2ex-webview-fg);
+  }
+
+  &:hover:not([data-state='active'])::before {
     background: var(--v2ex-hover-bg);
   }
 

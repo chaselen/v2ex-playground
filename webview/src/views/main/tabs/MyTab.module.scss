@@ -299,6 +299,7 @@
     font-size: var(--v2ex-main-font-size);
     font-weight: 500;
 
+    &::before,
     &::after {
       display: none;
     }
