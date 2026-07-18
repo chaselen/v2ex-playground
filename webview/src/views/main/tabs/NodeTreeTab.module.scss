@@ -1,5 +1,7 @@
 @use '../components/mixins';
 
+$node-child-indent: 18px;
+
 .node-tree-layout {
   display: flex;
   flex: 1;
@@ -41,7 +43,6 @@
 
 .node-children {
   min-width: 0;
-  padding-left: 18px;
 }
 
 .tree-item {
@@ -72,18 +73,18 @@
 }
 
 .tree-item--topic {
-  padding-left: 4px;
+  padding-left: $node-child-indent + 4px;
 }
 
 .tree-item--pagination {
   min-height: 30px;
-  padding: 2px 8px 4px 4px;
+  padding: 2px 8px 4px ($node-child-indent + 4px);
 }
 
 .tree-item--loading,
 .tree-item--error,
 .tree-item--empty {
-  padding-inline: 8px;
+  padding: 0 8px 0 ($node-child-indent + 8px);
   @include mixins.ellipsis;
 }
 
@@ -186,6 +187,8 @@
 }
 
 .tree-footer {
+  display: flex;
+  justify-content: flex-end;
   flex: none;
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);
@@ -193,5 +196,5 @@
 }
 
 .add-node-button {
-  width: 100%;
+  min-width: 96px;
 }
