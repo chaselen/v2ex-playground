@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Banner, Button, Empty, Pagination, Table } from '@douyinfe/semi-ui'
-import { IconHelpCircle, IconRefresh } from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { useEffect, useRef, useState } from 'react'
+import { CircleHelp, Inbox, RefreshCw } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import CurrencyBalance from '@/components/CurrencyBalance'
+import { Alert, Button, Empty, Pagination, Spinner } from '@/components/ui'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import PageSkeleton from '@/components/PageSkeleton'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
@@ -13,15 +12,11 @@ import { useLatestRequest } from '@/hooks/useLatestRequest'
 import type {
   BalancePanelRpcCommands,
   BalancePanelViewState,
-  BalancePanelWebviewEvents,
-  BalanceTransaction
+  BalancePanelWebviewEvents
 } from '@extension/shared/webview'
 
 /** 账户余额面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<BalancePanelRpcCommands, BalancePanelWebviewEvents>()
-
-/** V2EX 余额页固定流水条数 */
-const balancePageSize = 20
 
 /**
  * 账户余额页面应用
@@ -32,51 +27,6 @@ export default function BalanceApp() {
   const scrollRef = useRef<SimpleBarCore | null>(null)
   const { startRequest } = useLatestRequest()
   const detail = state.detail
-
-  const columns = useMemo(
-    () => [
-      {
-        title: '时间',
-        dataIndex: 'time',
-        width: 190,
-        render: (time: string) => <span className="balance-time">{time}</span>
-      },
-      {
-        title: '类型',
-        dataIndex: 'type',
-        width: 130
-      },
-      {
-        title: '数额',
-        dataIndex: 'amount',
-        width: 90,
-        align: 'right' as const,
-        render: (amount: string, transaction: BalanceTransaction) => (
-          <strong className={`balance-amount balance-amount--${transaction.direction}`}>
-            {amount}
-          </strong>
-        )
-      },
-      {
-        title: '余额',
-        dataIndex: 'balance',
-        width: 110,
-        align: 'right' as const
-      },
-      {
-        title: '描述',
-        dataIndex: 'descriptionHtml',
-        render: (html: string) => (
-          <div
-            className="topic-content balance-description"
-            onClick={handleWebviewLinkClick}
-            dangerouslySetInnerHTML={{ __html: normalizeHtml(html) }}
-          />
-        )
-      }
-    ],
-    []
-  )
 
   /**
    * 刷新当前页
@@ -118,15 +68,19 @@ export default function BalanceApp() {
     }
 
     return (
-      <Pagination
-        className={`balance-pagination balance-pagination--${position}`}
-        currentPage={detail.page}
-        pageSize={balancePageSize}
-        total={detail.totalPage * balancePageSize}
-        showQuickJumper
-        showTotal
-        onPageChange={loadPage}
-      />
+      <div className={`balance-pagination balance-pagination--${position}`}>
+        <span className="balance-pagination-summary">
+          第 {detail.page} 页，共 {detail.totalPage} 页
+        </span>
+        <Pagination
+          className="balance-pagination-control"
+          page={detail.page}
+          totalPages={detail.totalPage}
+          disabled={loadingPage}
+          showQuickJumper
+          onPageChange={loadPage}
+        />
+      </div>
     )
   }
 
@@ -150,15 +104,15 @@ export default function BalanceApp() {
 
       {state.status === 'error' && (
         <div className="balance-state">
-          <Banner type="danger" title="加载失败" description={state.message || '未知错误'} />
+          <Alert variant="danger" title="加载失败" description={state.message || '未知错误'} />
           <div className="balance-state-actions">
             {state.showLogin && (
-              <Button size="small" theme="solid" onClick={() => vscode.login()}>
+              <Button size="small" variant="primary" onClick={() => vscode.login()}>
                 登录
               </Button>
             )}
             {state.showRefresh && (
-              <Button size="small" theme="light" icon={<IconRefresh />} onClick={refresh}>
+              <Button size="small" icon={<RefreshCw aria-hidden="true" />} onClick={refresh}>
                 刷新页面
               </Button>
             )}
@@ -183,23 +137,22 @@ export default function BalanceApp() {
             <div className="balance-actions">
               <Button
                 size="small"
-                theme="light"
                 onClick={() => vscode.openExternal(resolveWebviewUrl('/balance/add'))}
               >
                 充值
               </Button>
               <Button
                 size="small"
-                theme="borderless"
-                icon={<IconHelpCircle />}
+                variant="ghost"
+                icon={<CircleHelp aria-hidden="true" />}
                 onClick={() => vscode.openExternal(resolveWebviewUrl('/help/currency'))}
               >
                 余额说明
               </Button>
               <Button
                 size="small"
-                theme="borderless"
-                icon={<IconRefresh />}
+                variant="ghost"
+                icon={<RefreshCw aria-hidden="true" />}
                 loading={loadingPage}
                 aria-label="刷新页面"
                 onClick={refresh}
@@ -209,21 +162,78 @@ export default function BalanceApp() {
 
           <section className="balance-ledger">
             {renderPagination('top')}
-            <Table
-              className="balance-table"
-              rowKey="key"
-              columns={columns}
-              dataSource={detail.transactions}
-              pagination={false}
-              loading={loadingPage}
-              empty={
-                <Empty
-                  image={<IllustrationNoContent />}
-                  darkModeImage={<IllustrationNoContentDark />}
-                  title="暂无账户流水"
-                />
-              }
-            />
+            <div className="balance-table-region" aria-busy={loadingPage}>
+              {loadingPage && (
+                <div className="balance-table-loading">
+                  <Spinner aria-label="正在加载账户流水" />
+                  <span>正在加载</span>
+                </div>
+              )}
+              <div className="balance-table-scroller">
+                <table className="balance-table">
+                  <caption className="balance-table-caption">账户流水</caption>
+                  <colgroup>
+                    <col className="balance-table-time-column" />
+                    <col className="balance-table-type-column" />
+                    <col className="balance-table-amount-column" />
+                    <col className="balance-table-balance-column" />
+                    <col />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th scope="col">时间</th>
+                      <th scope="col">类型</th>
+                      <th className="balance-table-number" scope="col">
+                        数额
+                      </th>
+                      <th className="balance-table-number" scope="col">
+                        余额
+                      </th>
+                      <th scope="col">描述</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.transactions.length ? (
+                      detail.transactions.map(transaction => (
+                        <tr key={transaction.key}>
+                          <td>
+                            <span className="balance-time">{transaction.time}</span>
+                          </td>
+                          <td>{transaction.type}</td>
+                          <td className="balance-table-number">
+                            <strong
+                              className={`balance-amount balance-amount--${transaction.direction}`}
+                            >
+                              {transaction.amount}
+                            </strong>
+                          </td>
+                          <td className="balance-table-number">{transaction.balance}</td>
+                          <td>
+                            <div
+                              className="topic-content balance-description"
+                              onClick={handleWebviewLinkClick}
+                              dangerouslySetInnerHTML={{
+                                __html: normalizeHtml(transaction.descriptionHtml)
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="balance-table-empty" colSpan={5}>
+                          <Empty
+                            className="balance-table-empty-state"
+                            icon={<Inbox aria-hidden="true" />}
+                            title="暂无账户流水"
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
             {renderPagination('bottom')}
           </section>
         </article>

@@ -1,4 +1,4 @@
-import { Skeleton } from '@douyinfe/semi-ui'
+import { Skeleton } from '@/components/ui'
 import type { ReactNode } from 'react'
 import styles from './PageSkeleton.module.scss'
 
@@ -28,14 +28,15 @@ interface SkeletonRowsProps {
 /** Webview 首次加载时使用的页面结构化骨架 */
 export default function PageSkeleton({ variant, rows = 5 }: PageSkeletonProps) {
   return (
-    <div
+    <Skeleton
+      active
       className={`${styles.skeleton} ${styles[variant]}`}
       role="status"
       aria-busy="true"
       aria-label="加载中"
     >
-      <Skeleton active placeholder={renderPlaceholder(variant, rows)} loading />
-    </div>
+      {renderPlaceholder(variant, rows)}
+    </Skeleton>
   )
 }
 

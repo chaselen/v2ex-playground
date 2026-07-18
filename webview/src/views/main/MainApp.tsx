@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Button, Tabs, Toast } from '@douyinfe/semi-ui'
-import { IconClose, IconRefresh } from '@douyinfe/semi-icons'
+import { RefreshCw, X } from 'lucide-react'
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
   InitData,
@@ -300,29 +300,9 @@ export default function MainApp() {
   return (
     <main className="main-container" onContextMenu={event => event.preventDefault()}>
       <Tabs
-        activeKey={activeTab}
-        tabPosition="top"
-        type="line"
-        size="medium"
-        collapsible="auto"
-        lazyRender
+        value={activeTab}
         className="main-tabs"
-        contentStyle={{ height: '100%', minHeight: 0, overflow: 'hidden' }}
-        tabBarExtraContent={
-          <Button
-            className="main-tab-refresh"
-            theme="borderless"
-            type="tertiary"
-            size="small"
-            icon={<IconRefresh />}
-            loading={activeTabRefreshing}
-            disabled={!canRefreshActiveTab}
-            title={`刷新${activeTabLabel}`}
-            aria-label={`刷新${activeTabLabel}`}
-            onClick={refreshActiveTab}
-          />
-        }
-        onChange={value => {
+        onValueChange={value => {
           const tab = value as WebviewMainTabKey
           setActiveTab(tab)
           if (tab !== 'node') {
@@ -330,47 +310,27 @@ export default function MainApp() {
           }
         }}
       >
-        <Tabs.TabPane itemKey="explore" tab={tabLabels.explore}>
-          <NodeTreeTab tab="explore" nodes={nodeTreeTabs.tabs.explore} {...nodeTreeTabProps} />
-        </Tabs.TabPane>
-        <Tabs.TabPane itemKey="custom" tab={tabLabels.custom}>
-          <NodeTreeTab
-            tab="custom"
-            nodes={nodeTreeTabs.tabs.custom}
-            loading={initializing}
-            onAddNode={nodeTreeTabs.addNode}
-            {...nodeTreeTabProps}
-          />
-        </Tabs.TabPane>
-        <Tabs.TabPane itemKey="collection" tab={tabLabels.collection}>
-          <NodeTreeTab
-            tab="collection"
-            nodes={nodeTreeTabs.tabs.collection}
-            error={nodeTreeTabs.tabErrors.collection}
-            loading={collectionTabLoading}
-            onCancelCollectNode={nodeTreeTabs.cancelCollectNode}
-            onRetryTab={() => refreshTab('collection', contentRetryOptions)}
-            {...nodeTreeTabProps}
-          />
-        </Tabs.TabPane>
-        <Tabs.TabPane itemKey="my" tab={tabLabels.my}>
-          <MyTab
-            ref={myTabRef}
-            loading={myOverviewLoading}
-            loggedIn={loggedIn}
-            overview={accountOverview}
-            overviewError={accountOverviewError}
-            onRetryOverview={() => refreshTab('my', contentRetryOptions)}
-            onOpenNodeCollection={() => {
-              lastFixedTab.current = 'collection'
-              setActiveTab('collection')
-            }}
-          />
-        </Tabs.TabPane>
-        {nodeTopicTab.nodeTab && (
-          <Tabs.TabPane
-            itemKey="node"
-            tab={
+        <TabsList
+          extra={
+            <Button
+              className="main-tab-refresh"
+              variant="ghost"
+              size="small"
+              icon={<RefreshCw aria-hidden="true" />}
+              loading={activeTabRefreshing}
+              disabled={!canRefreshActiveTab}
+              title={`刷新${activeTabLabel}`}
+              aria-label={`刷新${activeTabLabel}`}
+              onClick={refreshActiveTab}
+            />
+          }
+        >
+          <TabsTrigger value="explore">{tabLabels.explore}</TabsTrigger>
+          <TabsTrigger value="custom">{tabLabels.custom}</TabsTrigger>
+          <TabsTrigger value="collection">{tabLabels.collection}</TabsTrigger>
+          <TabsTrigger value="my">{tabLabels.my}</TabsTrigger>
+          {nodeTopicTab.nodeTab && (
+            <TabsTrigger value="node" className="node-tab-trigger">
               <span className="node-tab-label">
                 <span className="node-tab-title" title={nodeTopicTab.nodeTab.title}>
                   {getNodeTabTitle(nodeTopicTab.nodeTab.title)}
@@ -386,16 +346,56 @@ export default function MainApp() {
                     closeNodeTab()
                   }}
                 >
-                  <IconClose />
+                  <X aria-hidden="true" />
                 </button>
               </span>
-            }
-          >
+            </TabsTrigger>
+          )}
+        </TabsList>
+        <TabsContent value="explore">
+          <NodeTreeTab tab="explore" nodes={nodeTreeTabs.tabs.explore} {...nodeTreeTabProps} />
+        </TabsContent>
+        <TabsContent value="custom">
+          <NodeTreeTab
+            tab="custom"
+            nodes={nodeTreeTabs.tabs.custom}
+            loading={initializing}
+            onAddNode={nodeTreeTabs.addNode}
+            {...nodeTreeTabProps}
+          />
+        </TabsContent>
+        <TabsContent value="collection">
+          <NodeTreeTab
+            tab="collection"
+            nodes={nodeTreeTabs.tabs.collection}
+            error={nodeTreeTabs.tabErrors.collection}
+            loading={collectionTabLoading}
+            onCancelCollectNode={nodeTreeTabs.cancelCollectNode}
+            onRetryTab={() => refreshTab('collection', contentRetryOptions)}
+            {...nodeTreeTabProps}
+          />
+        </TabsContent>
+        <TabsContent value="my">
+          <MyTab
+            ref={myTabRef}
+            loading={myOverviewLoading}
+            loggedIn={loggedIn}
+            overview={accountOverview}
+            overviewError={accountOverviewError}
+            onRetryOverview={() => refreshTab('my', contentRetryOptions)}
+            onOpenNodeCollection={() => {
+              lastFixedTab.current = 'collection'
+              setActiveTab('collection')
+            }}
+          />
+        </TabsContent>
+        {nodeTopicTab.nodeTab && (
+          <TabsContent value="node">
             <NodeTopicTab
               node={nodeTopicTab.nodeTab}
               onPageChange={page => nodeTopicTab.requestNodeTopics(nodeTopicTab.nodeTab!, page)}
             />
-          </Tabs.TabPane>
+          </TabsContent>
         )}
       </Tabs>
     </main>

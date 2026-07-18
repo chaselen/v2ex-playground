@@ -7,11 +7,21 @@
   min-width: 0;
   width: 100%;
   padding-right: 8px;
+  border: 0;
+  outline: none;
+  color: inherit;
+  background: transparent;
+  text-align: left;
   cursor: pointer;
 
-  :global(.semi-badge) {
-    flex: none;
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
   }
+}
+
+.badge {
+  flex: none;
 }
 
 .topic-title {
@@ -25,7 +35,7 @@
     color: var(--vscode-descriptionForeground);
   }
 
-  :global(.semi-badge) {
+  .badge {
     opacity: 0.72;
   }
 }

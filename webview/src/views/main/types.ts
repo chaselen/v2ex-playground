@@ -42,7 +42,7 @@ export type TreeItemType = 'node' | 'topic' | 'pagination' | 'loading' | 'error'
 export type ContextMenuAction = 'copyLink' | 'copyTitleLink' | 'viewInBrowser'
 
 /**
- * Semi 树项
+ * 节点树渲染项
  */
 export interface TreeItem {
   key: string

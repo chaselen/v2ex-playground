@@ -94,8 +94,10 @@
 
 .my-help-icon {
   flex: none;
+  width: 14px;
+  height: 14px;
   color: var(--vscode-icon-foreground, var(--vscode-descriptionForeground));
-  font-size: 14px;
+  stroke-width: 1.8;
 }
 
 .my-stats {
@@ -163,11 +165,20 @@
   flex: 1;
   min-width: 0;
 
-  :global(.semi-progress-line) {
-    margin: 0;
+  :global(.v2ex-progress__track) {
+    height: 6px;
+    background: color-mix(
+      in srgb,
+      var(--vscode-charts-orange, var(--v2ex-warning-fg)) 18%,
+      var(--v2ex-widget-bg)
+    );
   }
 
-  :global(.semi-progress-line-text) {
+  :global(.v2ex-progress__indicator) {
+    background: var(--vscode-charts-orange, var(--v2ex-warning-fg));
+  }
+
+  :global(.v2ex-progress__label) {
     min-width: 34px;
     color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
     font-size: 14px;
@@ -188,20 +199,20 @@
   min-width: 0;
   padding: 0 12px 10px;
 
-  :global(.semi-button) {
+  :global(.v2ex-button) {
     max-width: 100%;
     border-radius: 6px;
     font-weight: 600;
   }
 }
 
-.my-daily-sign-in-done:global(.semi-button-disabled) {
+.my-daily-sign-in-done:disabled {
   border-color: transparent;
   background: transparent;
   color: color-mix(in srgb, var(--v2ex-success-fg) 72%, var(--v2ex-main-content-fg));
   opacity: 1;
 
-  :global(.semi-button-content-left) {
+  :global(.v2ex-button__icon) {
     color: color-mix(in srgb, var(--v2ex-success-fg) 86%, var(--v2ex-main-content-fg));
   }
 }
@@ -250,8 +261,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border-radius: 4px;
   color: var(--vscode-icon-foreground, var(--vscode-descriptionForeground));
@@ -267,50 +278,50 @@
 }
 
 .my-content-tabs {
-  &:global(.semi-tabs) {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  :global(.semi-tabs-bar) {
-    margin: 0;
-    padding: 0;
+  :global(.v2ex-tabs__bar) {
     border: 0;
     background: transparent;
   }
 
-  :global(.semi-tabs-tab) {
+  :global(.v2ex-tabs__list) {
+    flex: none;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--vscode-contrastBorder, transparent);
+    border-radius: 8px;
+    background: var(--v2ex-light-button-bg);
+  }
+
+  :global(.v2ex-tabs__trigger) {
     min-width: 0;
-    margin: 0 6px 0 0;
-    color: var(--v2ex-webview-fg);
-  }
-
-  :global(.semi-tabs-tab-button) {
-    border-color: var(--v2ex-border);
-    border-radius: 6px;
-    background: var(--v2ex-widget-bg);
-    color: var(--v2ex-webview-fg);
+    min-height: 28px;
+    padding: 3px 10px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--v2ex-muted-fg);
     font-size: var(--v2ex-main-font-size);
+    font-weight: 500;
+
+    &::after {
+      display: none;
+    }
+
+    &:hover {
+      background: var(--v2ex-light-button-hover-bg);
+      color: var(--v2ex-webview-fg);
+    }
+
+    &[data-state='active'],
+    &[data-state='active']:hover {
+      background: var(--v2ex-primary-button-bg);
+      color: var(--v2ex-primary-button-fg);
+      box-shadow: 0 1px 2px var(--v2ex-widget-shadow-color);
+    }
   }
 
-  :global(.semi-tabs-tab-button:hover) {
-    background: color-mix(in srgb, var(--v2ex-primary-button-bg) 8%, var(--v2ex-webview-bg));
-    color: var(--v2ex-webview-fg);
-  }
-
-  :global(.semi-tabs-tab-button.semi-tabs-tab-active),
-  :global(.semi-tabs-tab-button.semi-tabs-tab-active:hover) {
-    border-color: var(--v2ex-primary-button-bg);
-    background: color-mix(in srgb, var(--v2ex-primary-button-bg) 24%, var(--v2ex-webview-bg));
-    color: var(--v2ex-active-fg);
-  }
-
-  :global(.semi-tabs-content) {
+  :global(.v2ex-tabs__content) {
     padding: 8px 0 0;
-  }
-
-  :global(.semi-tabs-pane) {
     min-height: 0;
   }
 }
@@ -320,10 +331,6 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-
-  :global(.semi-badge) {
-    flex: none;
-  }
 }
 
 .my-message-badge-count {
@@ -337,7 +344,7 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
-  box-shadow: 0 0 0 1px var(--v2ex-webview-bg);
+  box-shadow: 0 0 0 1px var(--v2ex-widget-bg);
 }
 
 .my-topic-list {
@@ -475,15 +482,15 @@
   color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
   text-align: center;
 
-  :global(.semi-empty-title) {
+  :global(.v2ex-empty__title) {
     color: var(--v2ex-main-content-fg);
   }
 
-  :global(.semi-empty-description) {
+  :global(.v2ex-empty__description) {
     color: inherit;
   }
 
-  :global(.semi-button) {
+  :global(.v2ex-button) {
     margin-top: 10px;
   }
 }
@@ -542,11 +549,7 @@
     height: 15px;
   }
 
-  .my-content-tabs :global(.semi-tabs-tab) {
-    margin-right: 4px;
-  }
-
-  .my-content-tabs :global(.semi-tabs-tab-button) {
+  .my-content-tabs :global(.v2ex-tabs__trigger) {
     padding-right: 8px;
     padding-left: 8px;
   }

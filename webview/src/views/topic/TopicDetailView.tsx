@@ -1,35 +1,33 @@
-import { useId, useMemo, useRef, useState, type RefObject } from 'react'
+import { useMemo, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  ArrowDown,
+  ArrowUp,
+  Bookmark,
+  BookmarkPlus,
+  CircleUserRound,
+  Heart,
+  Inbox,
+  Lock,
+  RefreshCw,
+  Reply,
+  Tag
+} from 'lucide-react'
+import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
+import NodeButton from '@/components/NodeButton'
+import ProTag from '@/components/ProTag'
 import {
   Badge,
   Button,
-  Divider,
+  ConfirmPopover,
   Empty,
   Pagination,
-  Popconfirm,
-  Radio,
   RadioGroup,
-  Spin,
-  Toast,
-  Tooltip
-} from '@douyinfe/semi-ui'
-import {
-  IconArrowDown,
-  IconArrowUp,
-  IconBookmark,
-  IconBookmarkAddStroked,
-  IconHeartStroked,
-  IconLikeHeart,
-  IconLockStroked,
-  IconPriceTag,
-  IconRefresh,
-  IconReply,
-  IconUserCircleStroked
-} from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
-import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
-import NodeButton from '@/components/NodeButton'
-import { VscodeProTag } from '@/components/SemiVscode'
+  RadioGroupItem,
+  Spinner,
+  Tooltip,
+  Toast
+} from '@/components/ui'
 import ReplyComposer, { type ReplyComposerHandle } from './ReplyComposer'
 import MemberQuickInfoPopover from './MemberQuickInfoPopover'
 import { buildReplyTree, type TopicReplyNode } from './replyTree'
@@ -91,7 +89,6 @@ export default function TopicDetailView({
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>(initialReplyViewMode)
   const replyComposerRef = useRef<ReplyComposerHandle>(null)
-  const replyViewModeName = useId()
   const replyTree = useMemo(() => buildReplyTree(topic.replies), [topic.replies])
   const replies =
     replyViewMode === 'nested'
@@ -100,25 +97,23 @@ export default function TopicDetailView({
   const floatingActions = showFloatingActions ? (
     <div className="floating-actions" aria-label="话题快捷操作">
       {renderTopicActionButtons('floating')}
-      <Tooltip content="滚动到顶部" position="left">
+      <Tooltip content="滚动到顶部" side="left">
         <Button
           aria-label="滚动到顶部"
           className="floating-action-button"
-          icon={<IconArrowUp />}
+          icon={<ArrowUp aria-hidden="true" />}
           size="large"
-          theme="solid"
-          type="tertiary"
+          variant="ghost"
           onClick={scrollToTop}
         />
       </Tooltip>
-      <Tooltip content="滚动到底部" position="left">
+      <Tooltip content="滚动到底部" side="left">
         <Button
           aria-label="滚动到底部"
           className="floating-action-button"
-          icon={<IconArrowDown />}
+          icon={<ArrowDown aria-hidden="true" />}
           size="large"
-          theme="solid"
-          type="tertiary"
+          variant="ghost"
           onClick={scrollToBottom}
         />
       </Tooltip>
@@ -280,11 +275,14 @@ export default function TopicDetailView({
     return (
       <>
         {reply.thanked ? (
-          <span className="thanked">感谢已发送</span>
+          <span className="thanked">
+            <Heart aria-hidden="true" fill="currentColor" />
+            感谢已发送
+          </span>
         ) : (
-          <Popconfirm
+          <ConfirmPopover
             title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
-            okText="确认"
+            confirmText="确认"
             cancelText="取消"
             onConfirm={() => thankReply(reply.replyId)}
           >
@@ -293,25 +291,23 @@ export default function TopicDetailView({
                 <Button
                   aria-label="感谢回复者"
                   className="reply-action-button"
-                  icon={<IconHeartStroked />}
+                  icon={<Heart aria-hidden="true" />}
                   loading={pendingThankReplyIds.includes(reply.replyId)}
                   size="small"
-                  theme="borderless"
-                  type="tertiary"
+                  variant="ghost"
                 />
               </Tooltip>
             </span>
-          </Popconfirm>
+          </ConfirmPopover>
         )}
         {showReplyComposer && (
           <Tooltip content="回复">
             <Button
               aria-label="回复"
               className="reply-action-button"
-              icon={<IconReply />}
+              icon={<Reply aria-hidden="true" />}
               size="small"
-              theme="borderless"
-              type="tertiary"
+              variant="ghost"
               onClick={() => floorReply(reply)}
             />
           </Tooltip>
@@ -324,17 +320,14 @@ export default function TopicDetailView({
   function renderTopicActionButtons(variant: 'toolbar' | 'floating') {
     const isFloating = variant === 'floating'
     const buttonSize = isFloating ? 'large' : 'small'
-    const buttonTheme = isFloating ? 'solid' : 'light'
-    const buttonType = isFloating ? 'tertiary' : 'secondary'
     const refreshButton = (
       <Button
         aria-label="刷新页面"
         className={isFloating ? 'floating-action-button' : undefined}
-        icon={isFloating ? <IconRefresh /> : undefined}
+        icon={isFloating ? <RefreshCw aria-hidden="true" /> : undefined}
         loading={refreshing}
         size={buttonSize}
-        theme={buttonTheme}
-        type={buttonType}
+        variant={isFloating ? 'ghost' : 'secondary'}
         onClick={() => void requestTopicAction(refreshTopic, setRefreshing)}
       >
         {isFloating ? null : '刷新页面'}
@@ -344,7 +337,7 @@ export default function TopicDetailView({
     return (
       <>
         {isFloating ? (
-          <Tooltip content="刷新页面" position="left">
+          <Tooltip content="刷新页面" side="left">
             {refreshButton}
           </Tooltip>
         ) : (
@@ -355,15 +348,14 @@ export default function TopicDetailView({
           <>
             {!topic.isCollected ? (
               isFloating ? (
-                <Tooltip content="加入收藏" position="left">
+                <Tooltip content="加入收藏" side="left">
                   <Button
                     aria-label="加入收藏"
                     className="floating-action-button"
-                    icon={<IconBookmarkAddStroked />}
+                    icon={<BookmarkPlus aria-hidden="true" />}
                     loading={collecting}
                     size={buttonSize}
-                    theme={buttonTheme}
-                    type={buttonType}
+                    variant="ghost"
                     onClick={() => void requestTopicAction(collectTopic, setCollecting)}
                   />
                 </Tooltip>
@@ -372,23 +364,21 @@ export default function TopicDetailView({
                   aria-label="加入收藏"
                   loading={collecting}
                   size={buttonSize}
-                  theme={buttonTheme}
-                  type={buttonType}
+                  variant="secondary"
                   onClick={() => void requestTopicAction(collectTopic, setCollecting)}
                 >
                   加入收藏
                 </Button>
               )
             ) : isFloating ? (
-              <Tooltip content="取消收藏" position="left">
+              <Tooltip content="取消收藏" side="left">
                 <Button
                   aria-label="取消收藏"
                   className="floating-action-button is-active"
-                  icon={<IconBookmark />}
+                  icon={<Bookmark aria-hidden="true" fill="currentColor" />}
                   loading={cancelingCollect}
                   size={buttonSize}
-                  theme={buttonTheme}
-                  type={buttonType}
+                  variant="ghost"
                   onClick={() => void requestTopicAction(cancelCollectTopic, setCancelingCollect)}
                 />
               </Tooltip>
@@ -397,8 +387,7 @@ export default function TopicDetailView({
                 aria-label="取消收藏"
                 loading={cancelingCollect}
                 size={buttonSize}
-                theme={buttonTheme}
-                type={buttonType}
+                variant="secondary"
                 onClick={() => void requestTopicAction(cancelCollectTopic, setCancelingCollect)}
               >
                 取消收藏
@@ -406,23 +395,22 @@ export default function TopicDetailView({
             )}
 
             {topic.canThank && !topic.isThanked && (
-              <Popconfirm
+              <ConfirmPopover
                 title="你确定要向本主题创建者发送谢意？"
-                okText="确认"
+                confirmText="确认"
                 cancelText="取消"
                 onConfirm={() => requestTopicAction(thankTopic, setThankingTopic)}
               >
                 <span className={isFloating ? 'floating-action-popconfirm-trigger' : undefined}>
                   {isFloating ? (
-                    <Tooltip content="感谢主题创建者" position="left">
+                    <Tooltip content="感谢主题创建者" side="left">
                       <Button
                         aria-label="感谢主题创建者"
                         className="floating-action-button"
-                        icon={<IconHeartStroked />}
+                        icon={<Heart aria-hidden="true" />}
                         loading={thankingTopic}
                         size={buttonSize}
-                        theme={buttonTheme}
-                        type={buttonType}
+                        variant="ghost"
                       />
                     </Tooltip>
                   ) : (
@@ -430,32 +418,33 @@ export default function TopicDetailView({
                       aria-label="感谢主题创建者"
                       loading={thankingTopic}
                       size={buttonSize}
-                      theme={buttonTheme}
-                      type={buttonType}
+                      variant="secondary"
                     >
                       感谢
                     </Button>
                   )}
                 </span>
-              </Popconfirm>
+              </ConfirmPopover>
             )}
 
             {topic.canThank &&
               topic.isThanked &&
               (isFloating ? (
-                <Tooltip content="感谢已发送" position="left">
+                <Tooltip content="感谢已发送" side="left">
                   <Button
                     aria-label="感谢已发送"
                     className="floating-action-button is-active"
                     disabled
-                    icon={<IconLikeHeart />}
+                    icon={<Heart aria-hidden="true" fill="currentColor" />}
                     size="large"
-                    theme="solid"
-                    type="tertiary"
+                    variant="ghost"
                   />
                 </Tooltip>
               ) : (
-                <span className="toolbar-text">感谢已发送</span>
+                <span className="topic-action-status">
+                  <Heart aria-hidden="true" fill="currentColor" />
+                  感谢已发送
+                </span>
               ))}
           </>
         )}
@@ -468,7 +457,7 @@ export default function TopicDetailView({
     return (
       <section className="reply-login-prompt" aria-label="登录后回复">
         <div className="reply-login-icon">
-          <IconLockStroked />
+          <Lock aria-hidden="true" />
         </div>
         <div className="reply-login-content">
           <h2>登录后参与回复</h2>
@@ -476,10 +465,9 @@ export default function TopicDetailView({
         </div>
         <div className="reply-login-actions">
           <Button
-            icon={<IconUserCircleStroked />}
+            icon={<CircleUserRound aria-hidden="true" />}
             size="small"
-            theme="solid"
-            type="primary"
+            variant="primary"
             onClick={() =>
               void requestTopicAction(
                 () => controller.login(),
@@ -490,11 +478,10 @@ export default function TopicDetailView({
             登录 V2EX
           </Button>
           <Button
-            icon={<IconRefresh />}
+            icon={<RefreshCw aria-hidden="true" />}
             loading={refreshing}
             size="small"
-            theme="light"
-            type="tertiary"
+            variant="secondary"
             onClick={() => void requestTopicAction(refreshTopic, setRefreshing)}
           >
             刷新
@@ -516,7 +503,7 @@ export default function TopicDetailView({
             {topic.node.title}
           </NodeButton>
           {renderMemberLink(topic.authorName, false, true)}
-          {topic.isAuthorPro && <VscodeProTag />}
+          {topic.isAuthorPro && <ProTag />}
           <span className="time">
             <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span> ·{' '}
             {topic.visitCount} 次点击
@@ -526,10 +513,10 @@ export default function TopicDetailView({
               {topic.tags.map(tag => (
                 <Button
                   className="topic-tag"
-                  icon={<IconPriceTag className="topic-tag-icon" />}
+                  icon={<Tag className="topic-tag-icon" aria-hidden="true" />}
                   key={tag}
                   size="small"
-                  type="tertiary"
+                  variant="subtle"
                   onClick={() => void controller.openTag(tag)}
                 >
                   {tag}
@@ -539,7 +526,7 @@ export default function TopicDetailView({
           )}
         </div>
 
-        <Divider className="topic-divider topic-divider--content-start" />
+        <hr className="topic-divider topic-divider--content-start" />
 
         {topic.content ? (
           <EnhancedHtmlContent
@@ -554,8 +541,7 @@ export default function TopicDetailView({
             <Empty
               title="正文无内容"
               description="这个话题没有填写正文，可以直接查看回复"
-              image={<IllustrationNoContent className="topic-empty-illustration" />}
-              darkModeImage={<IllustrationNoContentDark className="topic-empty-illustration" />}
+              icon={<Inbox aria-hidden="true" />}
             />
           </section>
         )}
@@ -571,9 +557,7 @@ export default function TopicDetailView({
           </div>
         )}
 
-        {!!topic.appends.length && (
-          <Divider className="topic-divider topic-divider--append-start" />
-        )}
+        {!!topic.appends.length && <hr className="topic-divider topic-divider--append-start" />}
 
         {topic.appends.map((append, index) => (
           <div className="topic-append" key={`append-${index}`}>
@@ -591,36 +575,28 @@ export default function TopicDetailView({
           </div>
         ))}
 
-        <Divider className="topic-divider topic-divider--reply-start" />
+        <hr className="topic-divider topic-divider--reply-start" />
 
         <section className="reply">
           {!!topic.replies.length && (
             <div className="reply-heading">
               <h2>共 {topic.replyCount} 条回复</h2>
               <div className="reply-heading-actions">
-                {loadingReplyPage && <Spin size="small" />}
+                {loadingReplyPage && (
+                  <Spinner className="reply-loading-spinner" aria-label="加载回复" />
+                )}
                 {showReplyViewSwitch && (
                   <RadioGroup
                     aria-label="回复列表展示模式"
-                    buttonSize="small"
                     className="reply-view-switch"
-                    name={replyViewModeName}
-                    type="button"
                     value={replyViewMode}
-                    onChange={event => setReplyViewMode(event.target.value as ReplyViewMode)}
+                    onValueChange={value => setReplyViewMode(value as ReplyViewMode)}
                   >
-                    <Radio value="flat">普通列表</Radio>
-                    <Radio value="nested">
-                      <Badge
-                        count="BETA"
-                        countClassName="reply-view-beta"
-                        position="rightTop"
-                        theme="solid"
-                        type="danger"
-                      >
-                        <span className="reply-view-nested-label">楼中楼</span>
-                      </Badge>
-                    </Radio>
+                    <RadioGroupItem value="flat" label="普通列表" />
+                    <div className="reply-view-nested-option">
+                      <RadioGroupItem value="nested" label="楼中楼" />
+                      <Badge count="BETA" countClassName="reply-view-beta" />
+                    </div>
                   </RadioGroup>
                 )}
               </div>
@@ -636,8 +612,7 @@ export default function TopicDetailView({
                     ? '来聊聊你的看法，成为第一个参与讨论的人'
                     : '登录后即可参与讨论，成为第一个回复的人'
                 }
-                image={<IllustrationNoContent className="reply-empty-illustration" />}
-                darkModeImage={<IllustrationNoContentDark className="reply-empty-illustration" />}
+                icon={<Inbox aria-hidden="true" />}
               />
             </div>
           )}
@@ -645,13 +620,11 @@ export default function TopicDetailView({
           {topic.replyTotalPage > 1 && (
             <Pagination
               className="reply-pagination reply-pagination--top"
-              currentPage={topic.replyCurrentPage}
+              page={topic.replyCurrentPage}
               disabled={loadingReplyPage}
               hideOnSinglePage
-              pageSize={1}
               showQuickJumper
-              showTotal
-              total={topic.replyTotalPage}
+              totalPages={topic.replyTotalPage}
               onPageChange={page => void loadReplyPage(page)}
             />
           )}
@@ -661,13 +634,11 @@ export default function TopicDetailView({
           {topic.replyTotalPage > 1 && (
             <Pagination
               className="reply-pagination reply-pagination--bottom"
-              currentPage={topic.replyCurrentPage}
+              page={topic.replyCurrentPage}
               disabled={loadingReplyPage}
               hideOnSinglePage
-              pageSize={1}
               showQuickJumper
-              showTotal
-              total={topic.replyTotalPage}
+              totalPages={topic.replyTotalPage}
               onPageChange={page => void loadReplyPage(page)}
             />
           )}

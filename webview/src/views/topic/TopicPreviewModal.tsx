@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Banner, Button, Modal, Toast } from '@douyinfe/semi-ui'
-import { IconRefresh } from '@douyinfe/semi-icons'
+import { RefreshCw } from 'lucide-react'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicShareContextMenu from '@/components/TopicShareContextMenu'
+import { Alert, Button, Dialog, Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import useTopicDetailController from './useTopicDetailController'
@@ -183,18 +183,24 @@ export default function TopicPreviewModal({
   }
 
   return (
-    <Modal
-      centered
+    <Dialog
       className="topic-preview-modal"
-      cancelText="关闭"
-      maskClosable={false}
-      maskStyle={{ backgroundColor: 'rgba(22, 22, 26, 0.6)' }}
-      okText="进入主题"
+      closeOnOverlayClick={false}
+      footer={
+        <>
+          <Button onClick={onClose}>关闭</Button>
+          <Button variant="primary" onClick={openFullTopic}>
+            进入主题
+          </Button>
+        </>
+      }
+      open={Boolean(topicId)}
       title="帖子预览"
-      visible={Boolean(topicId)}
-      width="min(1040px, calc(100vw - 48px))"
-      onCancel={onClose}
-      onOk={openFullTopic}
+      onOpenChange={open => {
+        if (!open) {
+          onClose()
+        }
+      }}
     >
       <TopicShareContextMenu
         disabled={!topicId || !topic || refreshing}
@@ -208,8 +214,8 @@ export default function TopicPreviewModal({
 
             {state.status === 'error' && !refreshing && (
               <div className="topic-preview-state">
-                <Banner type="danger" description={state.message} />
-                <Button icon={<IconRefresh />} theme="light" onClick={() => void loadTopic()}>
+                <Alert variant="danger" title="加载失败" description={state.message} />
+                <Button icon={<RefreshCw aria-hidden="true" />} onClick={() => void loadTopic()}>
                   重新加载
                 </Button>
               </div>
@@ -227,6 +233,6 @@ export default function TopicPreviewModal({
           </div>
         </div>
       </TopicShareContextMenu>
-    </Modal>
+    </Dialog>
   )
 }

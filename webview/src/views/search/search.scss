@@ -27,34 +27,6 @@ $panel-border: var(--v2ex-border);
   border: 1px solid $panel-border;
   border-radius: 8px;
   background: var(--v2ex-webview-bg);
-
-  .semi-input-wrapper,
-  .semi-select,
-  .semi-datepicker {
-    border: 1px solid var(--v2ex-control-border);
-    background: var(--v2ex-input-bg);
-  }
-
-  .semi-input-wrapper:hover,
-  .semi-select:hover,
-  .semi-datepicker:hover {
-    border-color: var(--v2ex-focus-border);
-  }
-
-  .semi-input-wrapper-focus,
-  .semi-select-focus,
-  .semi-datepicker:focus-within {
-    border-color: var(--v2ex-focus-border);
-    box-shadow: none;
-  }
-
-  .semi-datepicker {
-    .semi-input-wrapper-focus,
-    .semi-datepicker-range-input-wrapper-active {
-      border-color: transparent;
-      box-shadow: none;
-    }
-  }
 }
 
 .search-primary-controls {
@@ -70,20 +42,45 @@ $panel-border: var(--v2ex-border);
 
 .search-advanced {
   margin-top: 8px;
+}
 
-  .semi-collapse-item {
-    border-bottom: 0;
+.search-advanced-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.search-advanced-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px;
+  border: 0;
+  outline: none;
+  color: var(--v2ex-webview-fg);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+
+  > svg {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--v2ex-motion-fast);
   }
 
-  .semi-collapse-header {
-    padding: 8px 0 0;
-    background: transparent;
+  &[data-state='open'] > svg {
+    transform: rotate(90deg);
   }
 
-  .semi-collapse-content {
-    padding: 12px 0 0;
-    background: transparent;
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
   }
+}
+
+.search-advanced .v2ex-collapsible__content {
+  padding-top: 12px;
 }
 
 .search-filter-grid {
@@ -99,11 +96,13 @@ $panel-border: var(--v2ex-border);
     color: $muted-color;
     font-size: 12px;
   }
+}
 
-  .semi-select,
-  .semi-datepicker {
-    width: 100%;
-  }
+.search-date-range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
 }
 
 .search-results {
@@ -127,11 +126,10 @@ $panel-border: var(--v2ex-border);
 }
 
 .search-result-card {
+  padding: 14px;
+  border: 1px solid $panel-border;
+  border-radius: 8px;
   background: var(--v2ex-widget-bg);
-
-  .semi-card-body {
-    padding: 14px;
-  }
 }
 
 .search-result-title-row {
@@ -140,7 +138,7 @@ $panel-border: var(--v2ex-border);
   gap: 8px;
   min-width: 0;
 
-  .semi-badge {
+  .v2ex-badge {
     flex: none;
     margin-left: auto;
   }
@@ -194,7 +192,7 @@ $panel-border: var(--v2ex-border);
   padding: 48px 20px;
   margin: 0 auto;
 
-  > .semi-button {
+  > .v2ex-button {
     margin-top: 12px;
   }
 }

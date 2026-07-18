@@ -1,4 +1,4 @@
-import { Pagination } from '@douyinfe/semi-ui'
+import { Pagination } from '@/components/ui'
 import styles from './MainPagination.module.scss'
 
 interface MainPaginationProps {
@@ -26,12 +26,10 @@ export default function MainPagination(props: MainPaginationProps) {
   return (
     <div className={styles['main-pagination']}>
       <Pagination
-        size="small"
-        pageSize={1}
-        total={totalPage}
-        currentPage={currentPage}
+        compact
+        page={currentPage}
+        totalPages={totalPage}
         disabled={disabled}
-        hoverShowPageSelect
         onPageChange={onPageChange}
       />
       {showTotalCount && (

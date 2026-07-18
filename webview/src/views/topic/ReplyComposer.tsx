@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { Button, Popover, Spin, TextArea, Toast, Tooltip } from '@douyinfe/semi-ui'
-import { IconEmoji, IconImageStroked } from '@douyinfe/semi-icons'
+import { Image, Smile } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
+import { Button, Popover, Spinner, Textarea, Toast, Tooltip } from '@/components/ui'
 import { proxyImgurImageSrc } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { isApplePlatform } from '@/core/platform'
@@ -630,15 +630,15 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
 
       {mode === 'edit' ? (
         <div className={`reply-editor-frame ${draggingImage ? 'is-dragging' : ''}`}>
-          <TextArea
+          <Textarea
             value={value}
-            maxCount={10000}
-            autosize={{ minRows: 5, maxRows: 12 }}
+            maxLength={10000}
+            rows={5}
             placeholder="请尽量让自己的回复能够对别人有帮助"
-            showClear
             disabled={posting || uploadingImage}
-            onChange={nextValue => updateContent(String(nextValue || ''))}
+            onChange={event => updateContent(event.currentTarget.value)}
           />
+          <span className="reply-character-count">{value.length} / 10000</span>
           <div className="reply-upload-bar">
             <button
               type="button"
@@ -648,13 +648,13 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             >
               {uploadingImage ? '正在上传图片...' : '选择、粘贴、拖放上传图片'}
             </button>
-            {uploadingImage && <Spin size="small" />}
+            {uploadingImage && <Spinner aria-label="上传图片" />}
           </div>
         </div>
       ) : (
         <div className="reply-preview-panel">
           {previewing ? (
-            <Spin />
+            <Spinner aria-label="生成回复预览" />
           ) : previewHtml ? (
             <EnhancedHtmlContent
               className="topic-content reply-preview-content"
@@ -669,13 +669,13 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
 
       <div className="reply-submit-row">
         <Popover
-          trigger="click"
-          position="topRight"
+          side="top"
+          align="end"
           showArrow
-          visible={!emoticonDisabled && emoticonPanelVisible}
+          open={!emoticonDisabled && emoticonPanelVisible}
           content={renderEmoticonPanel()}
-          contentClassName="reply-emoticon-popover"
-          onVisibleChange={visible => {
+          className="reply-emoticon-popover"
+          onOpenChange={visible => {
             if (!emoticonDisabled) {
               setEmoticonPanelVisible(visible)
               if (visible) {
@@ -689,10 +689,9 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
               <Button
                 aria-label="插入表情"
                 className="reply-extra-button"
-                icon={<IconEmoji />}
+                icon={<Smile aria-hidden="true" />}
                 size="small"
-                theme="light"
-                type="tertiary"
+                variant="ghost"
                 disabled={emoticonDisabled}
               />
             </Tooltip>
@@ -702,10 +701,9 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           <Button
             aria-label="上传图片"
             className="reply-extra-button"
-            icon={<IconImageStroked />}
+            icon={<Image aria-hidden="true" />}
             size="small"
-            theme="light"
-            type="tertiary"
+            variant="ghost"
             disabled={posting || uploadingImage}
             loading={uploadingImage}
             onClick={selectImage}
@@ -713,9 +711,8 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         </Tooltip>
         <Button
           className="submit"
-          theme="solid"
-          type="primary"
-          htmlType="submit"
+          variant="primary"
+          type="submit"
           loading={posting}
           disabled={posting || uploadingImage}
         >

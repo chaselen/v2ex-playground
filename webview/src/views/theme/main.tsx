@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import '@douyinfe/semi-ui/react19-adapter'
+import { ToastViewport } from '@/components/ui'
 import '../../styles/index.scss'
 import './theme.scss'
 import ThemePreviewApp from './ThemePreviewApp'
@@ -8,5 +8,6 @@ import ThemePreviewApp from './ThemePreviewApp'
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
     <ThemePreviewApp />
+    <ToastViewport />
   </StrictMode>
 )

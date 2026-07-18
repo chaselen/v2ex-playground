@@ -56,9 +56,10 @@
 }
 
 .two-factor-error-icon {
+  width: 18px;
+  height: 18px;
   margin-top: 2px;
   color: var(--v2ex-danger-fg);
-  font-size: 18px;
 }
 
 .two-factor-error-content {
@@ -97,19 +98,16 @@
     color: var(--vscode-foreground);
     background: var(--vscode-toolbar-hoverBackground);
   }
-}
 
-.two-factor-input {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  gap: 8px;
-}
+  &:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 1px;
+  }
 
-.two-factor-input--error {
-  outline: 1px solid var(--vscode-inputValidation-errorBorder);
-  outline-offset: 3px;
-  border-radius: 4px;
+  > svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 .two-factor-actions {
@@ -127,7 +125,7 @@
   .two-factor-actions {
     justify-content: stretch;
 
-    .semi-button {
+    > .v2ex-button {
       flex: 1;
     }
   }

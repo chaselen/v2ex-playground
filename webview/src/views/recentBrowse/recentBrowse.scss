@@ -32,18 +32,8 @@ $panel-border: var(--v2ex-border);
 }
 
 .recent-search-input {
+  width: 100%;
   max-width: 420px;
-  border: 1px solid var(--v2ex-control-border);
-  background: var(--v2ex-input-bg);
-
-  &:hover,
-  &.semi-input-wrapper-focus {
-    border-color: var(--v2ex-focus-border);
-  }
-
-  &.semi-input-wrapper-focus {
-    box-shadow: none;
-  }
 }
 
 .recent-count {
@@ -189,9 +179,10 @@ $panel-border: var(--v2ex-border);
   align-items: center;
   gap: 4px;
 
-  .semi-icon {
+  svg {
     flex: none;
-    font-size: 13px;
+    width: 13px;
+    height: 13px;
   }
 }
 

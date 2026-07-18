@@ -30,61 +30,70 @@
 
 .node-tree {
   flex: 1;
+  padding-block: 2px;
   color: var(--v2ex-webview-fg);
   user-select: none;
+}
 
-  :global(.semi-tree) {
-    background: transparent;
-    color: inherit;
+.node-group {
+  min-width: 0;
+}
+
+.node-children {
+  min-width: 0;
+  padding-left: 18px;
+}
+
+.tree-item {
+  display: flex;
+  min-width: 0;
+  min-height: 26px;
+  align-items: center;
+  color: var(--v2ex-webview-fg);
+  outline: none;
+
+  &:hover {
+    color: var(--v2ex-hover-fg);
+    background: var(--v2ex-hover-bg);
   }
 
-  :global(.semi-tree-wrapper),
-  :global(.semi-tree-option-list) {
-    min-width: 0;
-    background: transparent;
-  }
-
-  :global(.semi-tree-option) {
-    min-height: 26px;
-    color: var(--v2ex-webview-fg);
-    background: transparent;
-    outline-color: var(--v2ex-focus-border);
-
-    &:hover {
-      background: var(--v2ex-hover-bg);
-      color: var(--v2ex-hover-fg);
-    }
-  }
-
-  :global(.semi-tree-option-selected),
-  :global(.semi-tree-option-selected:hover),
-  :global(.semi-tree-option-on) {
-    background: var(--v2ex-active-bg);
+  &[aria-selected='true'] {
     color: var(--v2ex-active-fg);
+    background: var(--v2ex-active-bg);
   }
+}
 
-  :global(.semi-tree-option-label) {
-    min-width: 0;
-  }
+.tree-item--node:hover .node-actions {
+  opacity: 1;
+}
 
-  :global(.semi-tree-option-label-text) {
-    display: block;
-    min-width: 0;
-    width: 100%;
-  }
+.tree-item--node {
+  min-height: 32px;
+}
 
-  :global(.semi-tree-option-expand-icon),
-  :global(.semi-tree-option-empty-icon) {
-    color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
-  }
+.tree-item--topic {
+  padding-left: 4px;
+}
 
-  :global(.semi-tree-option-empty-icon) {
-    width: 0;
-  }
+.tree-item--pagination {
+  min-height: 30px;
+  padding: 2px 8px 4px 4px;
+}
 
-  :global(.semi-tree-option:hover) .node-actions {
-    opacity: 1;
-  }
+.tree-item--loading,
+.tree-item--error,
+.tree-item--empty {
+  padding-inline: 8px;
+  @include mixins.ellipsis;
+}
+
+.tree-item--loading,
+.tree-item--empty {
+  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+}
+
+.tree-item--error {
+  color: var(--v2ex-danger-fg);
 }
 
 .node-tree-panel,
@@ -96,48 +105,50 @@
   }
 }
 
-.tree-row {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  width: 100%;
-}
-
-.tree-row--empty {
-  min-height: 18px;
-}
-
-.tree-row--pagination {
-  min-height: 30px;
-}
-
 .node-label {
+  min-width: 0;
   color: var(--v2ex-main-content-fg);
   @include mixins.ellipsis;
 }
 
-.empty-text,
-.loading-text,
-.error-text {
-  @include mixins.ellipsis;
-}
-
-.loading-text {
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
-}
-
-.error-text {
-  color: var(--vscode-errorForeground, #f14c4c);
-}
-
-.node-pagination {
-  width: 100%;
-  min-width: 0;
-  padding: 2px 0 4px;
+.tree-item--pagination {
   --v2ex-main-pagination-hover-bg: var(
     --vscode-toolbar-hoverBackground,
-    var(--vscode-button-secondaryHoverBackground, var(--semi-color-fill-1))
+    var(--vscode-button-secondaryHoverBackground, var(--v2ex-hover-bg))
   );
+}
+
+.node-toggle {
+  display: flex;
+  min-width: 0;
+  min-height: 32px;
+  flex: 1;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 0;
+  outline: none;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
+  }
+
+  > svg {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    transition: transform var(--v2ex-motion-fast);
+  }
+}
+
+.node-chevron--expanded {
+  transform: rotate(90deg);
 }
 
 .node-actions {
@@ -167,4 +178,8 @@
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);
   background: var(--v2ex-webview-bg);
+}
+
+.add-node-button {
+  width: 100%;
 }

@@ -1,17 +1,28 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Avatar, Banner, Button, Empty, Pagination, Spin, Tabs } from '@douyinfe/semi-ui'
-import { IconRefresh, IconUser } from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { Inbox, RefreshCw, UserRound } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import PageSkeleton from '@/components/PageSkeleton'
-import { VscodeProTag, VscodeTag } from '@/components/SemiVscode'
+import ProTag from '@/components/ProTag'
 import TopicListItem from '@/components/TopicListItem'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import { useLatestRequest } from '@/hooks/useLatestRequest'
+import {
+  Alert,
+  Avatar,
+  Button,
+  Empty,
+  Pagination,
+  Spinner,
+  Tag,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui'
 import type {
   MemberContentTabKey,
   MemberPanelRpcCommands,
@@ -200,14 +211,14 @@ export default function MemberApp() {
 
       {state.status === 'error' && (
         <div className="member-state">
-          <Banner
-            type="danger"
+          <Alert
+            variant="danger"
             title="加载失败"
             description={<div dangerouslySetInnerHTML={{ __html: normalizeHtml(state.message) }} />}
           />
           {state.showRefresh && (
             <div className="member-state-actions">
-              <Button size="small" theme="light" icon={<IconRefresh />} onClick={refreshMember}>
+              <Button size="small" icon={<RefreshCw aria-hidden="true" />} onClick={refreshMember}>
                 刷新页面
               </Button>
             </div>
@@ -223,9 +234,8 @@ export default function MemberApp() {
               shape="square"
               src={profile.member.avatar}
               alt={profile.member.username}
-            >
-              <IconUser />
-            </Avatar>
+              fallback={<UserRound aria-hidden="true" />}
+            ></Avatar>
             <div className="member-profile-main">
               <h1>{profile.member.username}</h1>
               {!!profile.member.tagline && (
@@ -234,7 +244,7 @@ export default function MemberApp() {
               {!!profile.member.bio && <p className="member-bio">{profile.member.bio}</p>}
               <div className="member-meta">
                 {!!profile.member.memberNumber && (
-                  <VscodeTag>第 {profile.member.memberNumber} 号会员</VscodeTag>
+                  <Tag>第 {profile.member.memberNumber} 号会员</Tag>
                 )}
                 {!!profile.member.joinedAt && (
                   <span title={profile.member.joinedAt}>加入于 {profile.member.joinedAt}</span>
@@ -245,29 +255,37 @@ export default function MemberApp() {
               )}
               {profile.member.isPro && (
                 <div className="member-pro">
-                  <VscodeProTag />
+                  <ProTag />
                   <span>PRO 会员</span>
                 </div>
               )}
             </div>
             <Button
               size="small"
-              theme="borderless"
-              icon={<IconRefresh />}
+              variant="ghost"
+              icon={<RefreshCw aria-hidden="true" />}
+              aria-label="刷新用户页"
               onClick={refreshMember}
             />
           </header>
 
           <section className="member-content">
             <Tabs
-              activeKey={activeTab}
+              value={activeTab}
               className="member-tabs"
-              onChange={value =>
+              onValueChange={value =>
                 changeTab(value as MemberContentTabKey).catch(err => console.error(err))
               }
             >
+              <TabsList>
+                {memberTabs.map(tab => (
+                  <TabsTrigger value={tab.key} key={tab.key}>
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
               {memberTabs.map(tab => (
-                <Tabs.TabPane itemKey={tab.key} tab={tab.label} key={tab.key}>
+                <TabsContent value={tab.key} key={tab.key}>
                   {tab.key === activeTab
                     ? renderContent(
                         profile,
@@ -278,7 +296,7 @@ export default function MemberApp() {
                         openMember
                       )
                     : null}
-                </Tabs.TabPane>
+                </TabsContent>
               ))}
             </Tabs>
           </section>
@@ -319,7 +337,7 @@ function renderContent(
   if (loading && content.tab !== activeTab) {
     return (
       <div className="member-content-state">
-        <Spin size="middle" />
+        <Spinner aria-label="加载用户内容" />
       </div>
     )
   }
@@ -354,8 +372,7 @@ function renderTopics(
         <Empty
           title={content.hidden ? '主题列表已隐藏' : '暂无主题'}
           description={content.hidden ? content.message : undefined}
-          image={<IllustrationNoContent className="member-empty-illustration" />}
-          darkModeImage={<IllustrationNoContentDark className="member-empty-illustration" />}
+          icon={<Inbox aria-hidden="true" />}
         />
       </div>
     )
@@ -391,11 +408,7 @@ function renderReplies(profile: MemberProfile, loading: boolean, loadPage: (page
   if (!content.replies.length) {
     return (
       <div className="member-content-state">
-        <Empty
-          title="暂无回复"
-          image={<IllustrationNoContent className="member-empty-illustration" />}
-          darkModeImage={<IllustrationNoContentDark className="member-empty-illustration" />}
-        />
+        <Empty title="暂无回复" icon={<Inbox aria-hidden="true" />} />
       </div>
     )
   }
@@ -431,12 +444,11 @@ function renderMemberPagination(
         总条数：{content.totalCount.toLocaleString('en-US')}
       </span>
       <Pagination
-        currentPage={content.page}
+        page={content.page}
         disabled={loading}
         hideOnSinglePage
-        pageSize={1}
         showQuickJumper
-        total={content.totalPage}
+        totalPages={content.totalPage}
         onPageChange={loadPage}
       />
     </div>

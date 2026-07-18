@@ -22,11 +22,10 @@
 }
 
 .card {
-  background: var(--v2ex-widget-bg);
-
-  :global(.semi-card-body) {
-    padding: 14px;
-  }
+  padding: 14px;
+  border: 1px solid var(--vscode-widget-border, var(--v2ex-border));
+  border-radius: var(--v2ex-radius-md);
+  background: var(--vscode-editorWidget-background, var(--v2ex-widget-bg));
 }
 
 .title-row {
@@ -34,11 +33,11 @@
   align-items: flex-start;
   gap: 8px;
   min-width: 0;
+}
 
-  :global(.semi-badge) {
-    flex: none;
-    margin-left: auto;
-  }
+.badge {
+  flex: none;
+  margin-left: auto;
 }
 
 .title {

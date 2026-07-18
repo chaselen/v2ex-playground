@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './BalanceApp'
-import '@douyinfe/semi-ui/react19-adapter'
 import 'simplebar-react/dist/simplebar.min.css'
 import '../../styles/index.scss'
 import './balance.scss'

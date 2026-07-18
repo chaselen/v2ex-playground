@@ -1,7 +1,6 @@
-import { Card } from '@douyinfe/semi-ui'
 import type { Node, Topic } from '@extension/v2ex/types'
 import NodeButton from '@/components/NodeButton'
-import { VscodeBadge } from '@/components/SemiVscode'
+import { Badge } from '@/components/ui'
 import styles from './TopicListItem.module.scss'
 
 interface TopicListItemProps {
@@ -33,8 +32,16 @@ export default function TopicListItem(props: TopicListItemProps) {
     onOpenNode
   } = props
 
-  const content = (
-    <article className={`${styles.item} ${appearance === 'row' ? styles.row : ''}`}>
+  const itemClassName = [
+    styles.item,
+    appearance === 'row' ? styles.row : '',
+    appearance === 'card' ? styles.card : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <article className={itemClassName}>
       <div className={styles['title-row']}>
         <button
           type="button"
@@ -44,7 +51,9 @@ export default function TopicListItem(props: TopicListItemProps) {
         >
           {topic.title}
         </button>
-        {topic.replies > 0 && <VscodeBadge count={topic.replies} overflowCount={99} />}
+        {topic.replies > 0 && (
+          <Badge count={topic.replies} overflowCount={99} countClassName={styles.badge} />
+        )}
       </div>
       <div className={styles.meta}>
         {!!topic.node.title && (
@@ -70,12 +79,6 @@ export default function TopicListItem(props: TopicListItemProps) {
       </div>
     </article>
   )
-
-  if (appearance === 'card') {
-    return <Card className={styles.card}>{content}</Card>
-  }
-
-  return content
 }
 
 /**

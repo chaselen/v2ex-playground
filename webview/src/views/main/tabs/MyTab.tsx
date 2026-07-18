@@ -1,13 +1,22 @@
 import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type Ref } from 'react'
-import { Avatar, Button, Empty, Progress, Spin, Tabs } from '@douyinfe/semi-ui'
-import { IconGiftStroked, IconHelpCircle, IconTickCircle, IconUser } from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { CircleCheck, CircleHelp, Gift, Inbox, UserRound } from 'lucide-react'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import CurrencyBalance from '@/components/CurrencyBalance'
-import { VscodeBadge } from '@/components/SemiVscode'
 import SimpleBar from 'simplebar-react'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import PageSkeleton from '@/components/PageSkeleton'
+import {
+  Avatar,
+  Badge,
+  Button,
+  Empty,
+  Progress,
+  Spinner,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
@@ -497,14 +506,13 @@ export default function MyTab(props: MyTabProps) {
           onClick={() => openMember(notification.username)}
         >
           <Avatar
-            size="extra-extra-small"
+            size="small"
             shape="square"
             src={notification.avatar}
             alt={notification.username}
             className={styles['my-notification-avatar']}
-          >
-            <IconUser />
-          </Avatar>
+            fallback={<UserRound aria-hidden="true" />}
+          />
         </button>
         <div
           className={styles['my-notification-body']}
@@ -543,7 +551,7 @@ export default function MyTab(props: MyTabProps) {
     if (state.loading && !state.topics.length) {
       return (
         <div className={styles['my-content-state']}>
-          <Spin size="middle" />
+          <Spinner aria-label="加载主题列表" />
         </div>
       )
     }
@@ -551,12 +559,7 @@ export default function MyTab(props: MyTabProps) {
     if (state.error) {
       return (
         <div className={styles['my-content-state']}>
-          <Empty
-            title="加载失败"
-            description={state.error}
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title="加载失败" description={state.error} icon={<Inbox aria-hidden="true" />} />
           <Button
             size="small"
             loading={state.loading}
@@ -571,11 +574,7 @@ export default function MyTab(props: MyTabProps) {
     if (!state.topics.length) {
       return (
         <div className={styles['my-content-state']}>
-          <Empty
-            title={emptyTitle}
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title={emptyTitle} icon={<Inbox aria-hidden="true" />} />
         </div>
       )
     }
@@ -608,7 +607,7 @@ export default function MyTab(props: MyTabProps) {
     if (state.loading && !state.notifications.length) {
       return (
         <div className={styles['my-content-state']}>
-          <Spin size="middle" />
+          <Spinner aria-label="加载消息" />
         </div>
       )
     }
@@ -616,12 +615,7 @@ export default function MyTab(props: MyTabProps) {
     if (state.error) {
       return (
         <div className={styles['my-content-state']}>
-          <Empty
-            title="加载失败"
-            description={state.error}
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title="加载失败" description={state.error} icon={<Inbox aria-hidden="true" />} />
           <Button
             size="small"
             loading={state.loading}
@@ -636,11 +630,7 @@ export default function MyTab(props: MyTabProps) {
     if (!state.notifications.length) {
       return (
         <div className={styles['my-content-state']}>
-          <Empty
-            title="暂无消息"
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title="暂无消息" icon={<Inbox aria-hidden="true" />} />
         </div>
       )
     }
@@ -693,12 +683,7 @@ export default function MyTab(props: MyTabProps) {
     return (
       <SimpleBar className={styles['my-panel']} autoHide={false}>
         <div className={`${styles['my-panel-content']} ${styles['empty-panel']}`}>
-          <Empty
-            title="加载失败"
-            description={overviewError}
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title="加载失败" description={overviewError} icon={<Inbox aria-hidden="true" />} />
           <Button size="small" loading={loading} onClick={onRetryOverview}>
             重试
           </Button>
@@ -711,11 +696,7 @@ export default function MyTab(props: MyTabProps) {
     return (
       <SimpleBar className={styles['my-panel']} autoHide={false}>
         <div className={`${styles['my-panel-content']} ${styles['empty-panel']}`}>
-          <Empty
-            title="暂无账户概览"
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title="暂无账户概览" icon={<Inbox aria-hidden="true" />} />
         </div>
       </SimpleBar>
     )
@@ -741,9 +722,8 @@ export default function MyTab(props: MyTabProps) {
                 src={overview.avatar}
                 alt={overview.username}
                 className={styles['my-avatar']}
-              >
-                <IconUser />
-              </Avatar>
+                fallback={<UserRound aria-hidden="true" />}
+              />
             </button>
             <div className={styles['my-identity']}>
               <button
@@ -778,12 +758,7 @@ export default function MyTab(props: MyTabProps) {
 
           <div className={styles['my-activity']}>
             <Progress
-              percent={activityPercent}
-              showInfo
-              format={() => `${overview.activityPercent}%`}
-              stroke="#f59e0b"
-              orbitStroke="color-mix(in srgb, #f59e0b 18%, var(--v2ex-widget-bg))"
-              style={{ height: 6 }}
+              value={activityPercent}
               className={styles['my-activity-progress']}
               aria-label="活跃度"
             />
@@ -816,17 +791,18 @@ export default function MyTab(props: MyTabProps) {
               aria-label="余额说明"
               onClick={() => openExternal('/help/currency')}
             >
-              <IconHelpCircle className={styles['my-help-icon']} />
+              <CircleHelp className={styles['my-help-icon']} aria-hidden="true" />
             </button>
           </footer>
 
           <div className={styles['my-daily-sign-in']}>
             <Button
-              theme={dailySignedIn ? 'light' : 'solid'}
-              type={dailySignedIn ? 'tertiary' : 'primary'}
+              variant={dailySignedIn ? 'ghost' : 'primary'}
               size="small"
               className={dailySignedIn ? styles['my-daily-sign-in-done'] : undefined}
-              icon={dailySignedIn ? <IconTickCircle /> : <IconGiftStroked />}
+              icon={
+                dailySignedIn ? <CircleCheck aria-hidden="true" /> : <Gift aria-hidden="true" />
+              }
               loading={dailySignInLoading}
               disabled={dailySignedIn}
               onClick={handleDailySignIn}
@@ -840,35 +816,33 @@ export default function MyTab(props: MyTabProps) {
 
         <section className={styles['my-content']}>
           <Tabs
-            activeKey={activeContentTab}
-            type="button"
-            size="small"
+            value={activeContentTab}
             className={styles['my-content-tabs']}
-            onChange={value => changeContentTab(value as MyContentTabKey)}
+            onValueChange={value => changeContentTab(value as MyContentTabKey)}
           >
-            <Tabs.TabPane itemKey="topicCollection" tab="主题收藏">
-              {renderMyTopicList('topicCollection', '暂无收藏主题')}
-            </Tabs.TabPane>
-            <Tabs.TabPane itemKey="specialFollowing" tab="特别关注">
-              {renderMyTopicList('specialFollowing', '暂无特别关注')}
-            </Tabs.TabPane>
-            <Tabs.TabPane
-              itemKey="messages"
-              tab={
+            <TabsList>
+              <TabsTrigger value="topicCollection">主题收藏</TabsTrigger>
+              <TabsTrigger value="specialFollowing">特别关注</TabsTrigger>
+              <TabsTrigger value="messages">
                 <span className={styles['my-message-tab']}>
                   <span>消息</span>
                   {!!overview.unreadNoticeCount && (
-                    <VscodeBadge
+                    <Badge
                       count={overview.unreadNoticeCount}
                       overflowCount={99}
                       countClassName={styles['my-message-badge-count']}
                     />
                   )}
                 </span>
-              }
-            >
-              {renderMessages()}
-            </Tabs.TabPane>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="topicCollection">
+              {renderMyTopicList('topicCollection', '暂无收藏主题')}
+            </TabsContent>
+            <TabsContent value="specialFollowing">
+              {renderMyTopicList('specialFollowing', '暂无特别关注')}
+            </TabsContent>
+            <TabsContent value="messages">{renderMessages()}</TabsContent>
           </Tabs>
         </section>
       </div>

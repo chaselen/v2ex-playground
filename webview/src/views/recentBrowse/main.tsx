@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import '@douyinfe/semi-ui/react19-adapter'
+import { ToastViewport } from '@/components/ui'
 import 'simplebar-react/dist/simplebar.min.css'
 import '../../styles/index.scss'
 import './recentBrowse.scss'
@@ -9,5 +9,6 @@ import App from './RecentBrowseApp'
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
     <App />
+    <ToastViewport />
   </StrictMode>
 )

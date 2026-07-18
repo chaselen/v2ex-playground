@@ -1,7 +1,7 @@
+import { AlertCircle, CircleCheck, X } from 'lucide-react'
 import type { SubmitEvent } from 'react'
 import { useState } from 'react'
-import { Button, PinCode } from '@douyinfe/semi-ui'
-import { IconAlertCircle, IconClose, IconTickCircle } from '@douyinfe/semi-icons'
+import { Button, OtpInput } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
   TwoFactorPanelRpcCommands,
@@ -77,7 +77,7 @@ export default function TwoFactorApp() {
 
         {error && (
           <section className="two-factor-error" role="alert">
-            <IconAlertCircle className="two-factor-error-icon" aria-hidden />
+            <AlertCircle className="two-factor-error-icon" aria-hidden="true" />
             <div className="two-factor-error-content">
               <div className="two-factor-error-title">验证失败</div>
               <div className="two-factor-error-description">{error}</div>
@@ -88,37 +88,34 @@ export default function TwoFactorApp() {
               aria-label="关闭错误提示"
               onClick={() => setError('')}
             >
-              <IconClose />
+              <X aria-hidden="true" />
             </button>
           </section>
         )}
 
-        <PinCode
-          className={`two-factor-input${error ? ' two-factor-input--error' : ''}`}
-          count={twoFactorCodeLength}
+        <OtpInput
+          className="two-factor-input"
+          length={twoFactorCodeLength}
           disabled={submitting}
-          format="number"
-          size="large"
+          invalid={Boolean(error)}
           value={code}
-          onChange={updateCode}
+          onValueChange={updateCode}
           onComplete={value => submitCode(value)}
         />
 
         <div className="two-factor-actions">
           <Button
-            type="danger"
-            theme="borderless"
-            icon={<IconClose />}
+            variant="danger"
+            icon={<X aria-hidden="true" />}
             disabled={submitting}
             onClick={() => vscode.cancel()}
           >
             取消
           </Button>
           <Button
-            type="primary"
-            theme="solid"
-            htmlType="submit"
-            icon={<IconTickCircle />}
+            type="submit"
+            variant="primary"
+            icon={<CircleCheck aria-hidden="true" />}
             loading={submitting}
             disabled={!canSubmit}
           >

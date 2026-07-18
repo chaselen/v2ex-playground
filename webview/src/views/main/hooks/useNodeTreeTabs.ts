@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { Toast } from '@douyinfe/semi-ui'
+import { Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import {
   EXPLORE_NODES,

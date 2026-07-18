@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Banner, Button, Empty } from '@douyinfe/semi-ui'
-import { IconRefresh } from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { Inbox, RefreshCw } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicListItem from '@/components/TopicListItem'
+import { Alert, Button, Empty } from '@/components/ui'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import type { Topic } from '@extension/v2ex/types'
 import type {
@@ -77,9 +76,8 @@ export default function TagApp() {
               </div>
               <Button
                 aria-label="刷新标签主题"
-                icon={<IconRefresh />}
-                theme="light"
-                type="tertiary"
+                icon={<RefreshCw aria-hidden="true" />}
+                variant="ghost"
                 onClick={() => void refresh()}
               >
                 刷新
@@ -87,9 +85,9 @@ export default function TagApp() {
             </header>
 
             {state.status === 'error' && (
-              <Banner
+              <Alert
                 className="tag-error"
-                type="danger"
+                variant="danger"
                 title="刷新失败"
                 description={state.message}
               />
@@ -112,8 +110,7 @@ export default function TagApp() {
             ) : (
               <Empty
                 className="tag-empty"
-                image={<IllustrationNoContent />}
-                darkModeImage={<IllustrationNoContentDark />}
+                icon={<Inbox />}
                 title="暂无相关主题"
                 description="这个标签下暂时没有可展示的主题"
               />
@@ -123,11 +120,11 @@ export default function TagApp() {
 
         {!loading && state.status === 'error' && !data && (
           <div className="tag-state">
-            <Banner type="danger" title="加载失败" description={state.message} />
+            <Alert variant="danger" title="加载失败" description={state.message} />
             <Button
-              icon={<IconRefresh />}
+              className="tag-retry"
+              icon={<RefreshCw aria-hidden="true" />}
               size="small"
-              theme="light"
               onClick={() => void refresh()}
             >
               重试

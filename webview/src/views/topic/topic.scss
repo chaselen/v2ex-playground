@@ -94,6 +94,7 @@ $panel-border: var(--v2ex-border);
 
 .topic-node-tag {
   flex: 0 0 auto;
+  font-weight: 600;
 }
 
 .topic-tags {
@@ -108,10 +109,20 @@ $panel-border: var(--v2ex-border);
 .topic-tag {
   cursor: pointer;
   font-size: 12px;
+
+  .v2ex-button__icon,
+  .v2ex-button__icon > svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .v2ex-button__label {
+    line-height: 1.25;
+  }
 }
 
 .topic-tag-icon {
-  font-size: 12px;
+  stroke-width: 1.8;
 }
 
 .member-quick-trigger {
@@ -190,6 +201,10 @@ $panel-border: var(--v2ex-border);
 .member-quick-state--error {
   flex-direction: column;
   text-align: center;
+}
+
+.member-quick-open {
+  width: 100%;
 }
 
 .topic-content {
@@ -445,6 +460,10 @@ $panel-border: var(--v2ex-border);
 }
 
 .topic-preview-modal {
+  width: min(1040px, calc(100vw - 48px));
+  height: min(800px, calc(100vh - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
   --v2ex-webview-bg: var(--vscode-editor-background);
   --v2ex-webview-fg: var(--vscode-editor-foreground, var(--vscode-foreground));
   --v2ex-widget-bg: var(
@@ -464,31 +483,11 @@ $panel-border: var(--v2ex-border);
   );
   color: var(--v2ex-webview-fg);
 
-  .semi-modal-content {
-    height: min(800px, calc(100vh - 48px));
-    max-height: calc(100vh - 48px);
-    overflow: hidden;
-    border: 1px solid var(--v2ex-border);
-    background: var(--v2ex-webview-bg);
-  }
-
-  .semi-modal-header,
-  .semi-modal-footer {
-    flex: none;
-  }
-
-  .semi-modal-body-wrapper {
-    min-height: 0;
-    flex: 1 1 auto;
-    margin: 0;
-    overflow: hidden;
-  }
-
-  .semi-modal-body {
+  .v2ex-dialog__body {
     height: 100%;
     min-height: 0;
-    margin: 0;
     padding: 0;
+    overflow: hidden;
   }
 }
 
@@ -532,6 +531,9 @@ $panel-border: var(--v2ex-border);
 }
 
 .topic-divider {
+  height: 1px;
+  border: 0;
+  background: $panel-border;
   opacity: 1;
 }
 
@@ -561,29 +563,24 @@ $panel-border: var(--v2ex-border);
   background: color-mix(in srgb, var(--v2ex-widget-bg) 68%, transparent);
   color: $muted-color;
 
-  .semi-empty {
+  .v2ex-empty {
     max-width: 280px;
     text-align: center;
   }
 
-  .semi-empty-image {
+  .v2ex-empty__icon {
     display: flex;
     justify-content: center;
     margin-bottom: 8px;
   }
 
-  .topic-empty-illustration {
-    width: 104px;
-    height: 104px;
-  }
-
-  .semi-empty-title {
+  .v2ex-empty__title {
     margin: 0 0 6px;
     color: var(--v2ex-webview-fg);
     line-height: 1.4;
   }
 
-  .semi-empty-description {
+  .v2ex-empty__description {
     color: inherit;
     line-height: 1.5;
   }
@@ -618,29 +615,24 @@ $panel-border: var(--v2ex-border);
   background: color-mix(in srgb, var(--v2ex-widget-bg) 68%, transparent);
   color: $muted-color;
 
-  .semi-empty {
+  .v2ex-empty {
     max-width: 360px;
     text-align: center;
   }
 
-  .semi-empty-image {
+  .v2ex-empty__icon {
     display: flex;
     justify-content: center;
     margin-bottom: 4px;
   }
 
-  .reply-empty-illustration {
-    width: 88px;
-    height: 68px;
-  }
-
-  .semi-empty-title {
+  .v2ex-empty__title {
     margin: 0 0 4px;
     color: var(--v2ex-webview-fg);
     line-height: 1.4;
   }
 
-  .semi-empty-description {
+  .v2ex-empty__description {
     color: inherit;
     line-height: 1.5;
   }
@@ -648,17 +640,18 @@ $panel-border: var(--v2ex-border);
 
 .reply-view-switch {
   flex: 0 0 auto;
-  // 保留按钮型 Radio 的轨道与选中项两层结构
-  --semi-color-fill-0: color-mix(in srgb, var(--v2ex-webview-fg) 8%, transparent);
-  --semi-color-bg-3: var(--v2ex-webview-bg);
+  gap: 8px;
 }
 
-.reply-view-nested-label {
-  display: inline-block;
-  padding-right: 13px;
+.reply-view-nested-option {
+  position: relative;
+  display: inline-flex;
 }
 
 .reply-view-beta {
+  position: absolute;
+  top: -6px;
+  right: -10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -667,8 +660,7 @@ $panel-border: var(--v2ex-border);
   padding: 0 4px;
   font-size: 9px;
   line-height: 1;
-  transform: translate(45%, -58%);
-  transform-origin: right top;
+  transform: none;
 }
 
 .reply-pagination {
@@ -693,10 +685,33 @@ $panel-border: var(--v2ex-border);
   margin-top: 18px;
 }
 
-.toolbar-text,
 .toolbar-count,
 .muted {
   color: $muted-color;
+}
+
+.topic-action-status,
+.thanked {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid
+    var(--vscode-contrastBorder, color-mix(in srgb, var(--v2ex-success-fg) 38%, transparent));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--v2ex-success-fg) 12%, transparent);
+  color: color-mix(in srgb, var(--v2ex-success-fg) 64%, var(--v2ex-webview-fg));
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+
+  > svg {
+    width: 12px;
+    height: 12px;
+    flex: none;
+    stroke-width: 1.8;
+  }
 }
 
 .toolbar-count {
@@ -757,10 +772,6 @@ $panel-border: var(--v2ex-border);
   .thanks {
     color: $muted-color;
   }
-}
-
-.thanked {
-  color: $muted-color;
 }
 
 .reply-actions {
@@ -915,10 +926,24 @@ $panel-border: var(--v2ex-border);
     border-color: var(--v2ex-focus-border);
   }
 
-  .semi-input-textarea-wrapper {
+  .v2ex-textarea {
+    min-height: 126px;
     border: 0;
     border-radius: 3px 3px 0 0;
     background: transparent;
+    resize: vertical;
+
+    &:focus-visible {
+      box-shadow: none;
+    }
+  }
+
+  .reply-character-count {
+    display: block;
+    padding: 0 10px 5px;
+    color: var(--v2ex-muted-fg);
+    font-size: 11px;
+    text-align: right;
   }
 
   .reply-upload-bar {
@@ -956,7 +981,7 @@ $panel-border: var(--v2ex-border);
     min-height: 130px;
     padding: 4px 0 0;
 
-    .semi-spin {
+    .v2ex-spinner {
       display: flex;
       min-height: 110px;
       align-items: center;
@@ -982,7 +1007,7 @@ $panel-border: var(--v2ex-border);
     gap: 8px;
     margin-top: 10px;
 
-    .semi-button {
+    .v2ex-button {
       height: 32px;
       min-height: 32px;
       padding-top: 0;
@@ -995,7 +1020,7 @@ $panel-border: var(--v2ex-border);
       gap: 8px;
       min-width: max-content;
 
-      .semi-button-content {
+      .v2ex-button__label {
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -1017,7 +1042,7 @@ $panel-border: var(--v2ex-border);
       white-space: nowrap;
     }
 
-    .semi-button-disabled kbd {
+    .v2ex-button:disabled kbd {
       border-color: var(--v2ex-border);
       background: color-mix(in srgb, var(--v2ex-widget-bg) 92%, var(--v2ex-webview-fg));
       color: var(--v2ex-webview-fg);
@@ -1037,7 +1062,7 @@ $panel-border: var(--v2ex-border);
       background: color-mix(in srgb, var(--v2ex-widget-bg) 78%, var(--v2ex-webview-fg));
     }
 
-    &.semi-button-disabled {
+    &:disabled {
       background: color-mix(in srgb, var(--v2ex-widget-bg) 92%, var(--v2ex-webview-fg));
       opacity: 0.68;
     }
@@ -1048,7 +1073,7 @@ $panel-border: var(--v2ex-border);
   }
 }
 
-.semi-popover-wrapper:has(.reply-emoticon-popover) {
+.reply-emoticon-popover {
   width: fit-content;
   max-width: calc(100vw - 40px);
   padding: 0;
@@ -1056,20 +1081,6 @@ $panel-border: var(--v2ex-border);
   border-radius: 6px;
   background: var(--v2ex-widget-bg);
   box-shadow: var(--v2ex-shadow-elevated);
-
-  .semi-popover-icon-arrow path:nth-child(1) {
-    fill: var(--v2ex-border);
-  }
-
-  .semi-popover-icon-arrow path:nth-child(2) {
-    fill: var(--v2ex-widget-bg);
-  }
-}
-
-.reply-emoticon-popover {
-  width: auto;
-  padding: 0;
-  background: transparent;
 }
 
 .reply-emoticon-panel {
@@ -1173,14 +1184,16 @@ $panel-border: var(--v2ex-border);
 
   &.is-active {
     border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 65%, #{$panel-border});
+    background: color-mix(in srgb, var(--vscode-textLink-foreground) 10%, var(--v2ex-widget-bg));
     color: var(--vscode-textLink-foreground);
   }
 
-  &.semi-button-disabled,
-  &.semi-button-disabled:hover {
-    background: var(--v2ex-widget-bg);
-    color: color-mix(in srgb, var(--vscode-textLink-foreground) 72%, transparent);
-    opacity: 0.78;
+  &:disabled,
+  &:disabled:hover {
+    border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 65%, #{$panel-border});
+    background: color-mix(in srgb, var(--vscode-textLink-foreground) 10%, var(--v2ex-widget-bg));
+    color: var(--vscode-textLink-foreground);
+    opacity: 1;
   }
 }
 

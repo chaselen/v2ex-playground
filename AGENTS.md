@@ -18,9 +18,9 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - `src/shared/` — 扩展侧与 Webview 共享的 RPC 契约和类型
 - `src/config.ts` / `src/global.ts` — 配置读取和扩展运行时全局状态
 - `docs/` — 关键功能的实现说明、设计取舍和边界条件
-- `webview/` — React + Vite + Semi Design Webview 源码
+- `webview/` — React + Vite + Radix Primitives Webview 源码
   - `main.html` / `topic.html` / `member.html` / `balance.html` / `search.html` / `recent-browse.html` / `two-factor.html` — 生产 Webview 的 Vite 多页面入口
-  - `theme.html` / `src/views/theme/` — Semi 与 VS Code 主题适配回归页
+  - `theme.html` / `src/views/theme/` — Webview 组件与 VS Code 主题适配回归页
   - `src/views/` — 主面板及各 Webview Panel 页面
   - `src/components/` — 跨页面复用的 Webview UI 组件
   - `src/core/` — Webview 侧 RPC 封装、链接导航和内容增强等无界面基础能力
@@ -38,6 +38,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - [内容预览 HTML 契约](docs/reply-preview-html.md) — 原生与 Markdown 预览接口的真实 HTML 输出、过滤规则和渲染约束
 - [站内帖子预览](docs/topic-preview.md) — 站内链接预览按钮、统一话题视图、状态隔离和写操作约束
 - [Webview RPC 通信](docs/webview-rpc.md) — 消息协议、约定式控制器、事件推送和安全边界
+- [Webview UI 与主题](docs/webview-ui.md) — Radix 原语、Lucide 图标、VS Code 语义变量和组件扩展约束
 - 修改上述文档涉及的代码逻辑时，必须同步更新对应文档；新增需要长期维护的关键实现规则或设计取舍时，应在 `docs/` 中补充文档，并在此处添加引用
 
 ## 开发命令
@@ -50,6 +51,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - `npm run check:extension:watch` — 持续检查扩展侧 TypeScript 类型
 - `npm run check:webview` — 使用 TypeScript 检查 Webview 类型
 - `npm run check:webview:watch` — 持续检查 Webview TypeScript 类型
+- `npm run preview:theme` — 启动 Webview 主题回归页并在浏览器中打开
 - `npm test` — 运行 `src/**/*.test.ts` 下的 Vitest 测试；包含会真实访问 V2EX、SoV2EX 等外部服务的 `*.live.test.ts` 集成测试
 - `npm test -- <test-files>` — 运行指定的 Vitest 测试文件；开发阶段优先根据改动范围选择直接相关的测试
 - `npm run format -- <changed-files>` — 使用 oxfmt 增量格式化
@@ -86,10 +88,9 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 ## Webview 架构
 
 - Webview 使用 React + Vite 多页面工程，源码在 `webview/`，产物在 `html/`
-- UI 统一使用 Semi Design，优先复用现有共享组件和交互模式
+- UI 交互行为统一使用 Radix Primitives，图标使用 Lucide；业务页面优先复用 `webview/src/components/ui/` 中的主题化组件
 - Webview HTML 入口使用 `https://www.v2ex.com/` 作为 `<base>`；扩展侧使用 `src/core/webviewHtml.ts` 读取 Vite 输出 HTML，并将本地 `src` / `href` 转换为 `webview.asWebviewUri(...)`
-- React 19 下使用 Semi Design 时，所有 Webview 入口必须在引入 Semi 组件前引入 `@douyinfe/semi-ui/react19-adapter`，否则 Toast、Modal 等静态渲染能力可能报 `createRoot is not available`
-- Vite 使用 `@douyinfe/semi-vite-plugin` 并开启 `cssLayer`，确保项目兼容覆盖稳定优先于 Semi 组件样式
+- 不直接在业务页面拼装重复的 Radix 样式；新增通用控件时先在 `webview/src/components/ui/` 封装语义、无障碍和主题行为
 
 ## Webview RPC 与状态同步
 
@@ -102,30 +103,29 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 
 ## Webview 样式与主题
 
-- Webview 样式使用 SCSS；`webview/src/styles/index.scss` 只加载公共样式和基础全局规则，VS Code 到 Semi 的主题 token 映射集中在 `webview/src/styles/_vscode-semi-theme.scss`
+- Webview 样式使用 SCSS；`webview/src/styles/index.scss` 只加载公共样式和基础全局规则，VS Code Theme Color 到项目语义变量的映射集中在 `webview/src/styles/_vscode-theme.scss`
 - 跨页面共享样式优先通过不直接生成选择器的 SCSS mixin 复用，由页面样式使用 `@use` 和 `@include` 按需引入；话题与用户内容的公共富文本样式集中在 `webview/src/styles/_topic-content.scss`，不要将 `.topic-content` 直接加入全局样式
 - 主面板 CSS Modules 的省略文本、空状态和加载状态等重复模式集中在 `webview/src/views/main/components/_mixins.scss`；新增同类样式时优先复用 mixin，保持最终类名由各 CSS Module 管理
-- Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)，样式优先使用官方 Theme Color CSS 变量（`var(--vscode-*)`）；Semi 组件应优先通过 `webview/src/styles/_vscode-semi-theme.scss` 中的 [Design Token](https://semi.design/zh-CN/basic/tokens) 映射适配
-- 无法通过 Semi Design Token 表达且跨页面通用的兼容样式集中在 `webview/src/styles/_semi-overrides.scss`；页面内的 Semi 布局微调应限定在页面或业务容器下，不新增无作用域的全局 `.semi-*` 覆盖
-- Tooltip、Popover、Popconfirm 等浮层使用 Semi 默认 Portal 并挂载到 `document.body`；暗色/高对比主题适配优先使用 token，跨页面通用的全局浮层兼容覆盖写入 `webview/src/styles/_semi-overrides.scss`；页面专属的 Portal 覆盖可保留在页面样式中，但必须通过页面独有的内容类或浮层类精确限定
-- 常规语义状态优先直接使用 Semi `Badge` 和 `Tag`；只有需要统一采用 VS Code Badge Theme Color 或中性标签配色时，才使用 `webview/src/components/SemiVscode.tsx` 中的 `VscodeBadge` 和 `VscodeTag`
+- Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)，组件颜色优先使用 `--v2ex-*` 语义变量，只有页面独有语义才直接读取 `var(--vscode-*)`
+- Tooltip、Popover、ConfirmPopover、DropdownMenu、Dialog 等浮层使用 Radix Portal 挂载到 `document.body`；颜色、边框、焦点和阴影由 `webview/src/components/ui/ui.scss` 统一处理，高对比主题必须依赖 `--vscode-contrastBorder` / `--vscode-contrastActiveBorder`
+- 常规语义状态复用 `Badge`、`Tag`、`Alert` 和 `Empty`；不要在业务页面重新实现同类主题映射
 
 ## Webview 加载与交互
 
-- Webview 首次打开且尚无可展示内容时，整页或整块内容加载优先复用 `webview/src/components/PageSkeleton.tsx` 中基于 Semi `Skeleton` 的结构化骨架，不使用居中的 `Spin` 作为整页 loading；新增页面应为 `PageSkeleton` 增加与真实页面信息层级对应的变体，使标题、头像、工具区、列表或表格等占位结构尽量贴近加载完成后的布局
-- 骨架屏必须与真实页面复用或严格对齐容器的最大宽度、外层级、内外间距和响应式断点，尤其避免共享骨架的通用 padding 在窄侧边栏下覆盖页面变体；骨架分割线和边框使用 Semi fill token 同色系，保留 `prefers-reduced-motion` 和加载状态无障碍语义。已有内容上的刷新、分页、标签切换、上传和按钮提交等局部加载继续使用 Semi `Spin` 或组件自身的 `loading` 属性
-- Tooltip、Popover、Popconfirm 都会劫持子元素事件，互相组合时不要直接嵌套；按 Semi 官方 Tooltip 文档，在中间加一层真实 DOM 元素（如 `span`），例如 `Popconfirm > span > Tooltip > Button`
+- Webview 首次打开且尚无可展示内容时，整页或整块内容加载优先复用 `webview/src/components/PageSkeleton.tsx` 中的结构化骨架，不使用居中的 `Spinner` 作为整页 loading；新增页面应为 `PageSkeleton` 增加与真实页面信息层级对应的变体，使标题、头像、工具区、列表或表格等占位结构尽量贴近加载完成后的布局
+- 骨架屏必须与真实页面复用或严格对齐容器的最大宽度、外层级、内外间距和响应式断点，尤其避免共享骨架的通用 padding 在窄侧边栏下覆盖页面变体；骨架分割线和边框使用 `--v2ex-*` 语义变量，保留 `prefers-reduced-motion` 和加载状态无障碍语义。已有内容上的刷新、分页、标签切换、上传和按钮提交等局部加载继续使用 `Spinner` 或组件自身的 `loading` 属性
+- Tooltip、Popover、ConfirmPopover 组合时在中间保留真实 DOM 元素（如 `span`），避免多个 Radix `asChild` 触发器竞争同一个子节点
 
 ## Webview 内容与导航
 
-- 话题页、用户页、“我的”消息等 V2EX HTML 内容使用 Semi Design 外层组件；通过 `dangerouslySetInnerHTML` 渲染的内容统一复用共享链接导航和内容增强逻辑
+- 话题页、用户页、“我的”消息等 V2EX HTML 内容使用共享主题化组件作为外层；通过 `dangerouslySetInnerHTML` 渲染的内容统一复用共享链接导航和内容增强逻辑
 - 普通业务按钮打开外部链接前使用 `resolveWebviewUrl()` 基于 `document.baseURI` 解析为绝对地址，HTML 内容中的链接交由 `handleWebviewLinkClick()` 统一识别和分发，扩展侧统一复用 `src/features/openExternal.ts`
 - HTML 内容中的话题、用户、节点和外部链接统一由 `webview/src/core/linkNavigation.ts` 识别与分发；页面只传入必要的标题或话题 fallback，不在页面内重复路径正则、URL 解码或 RPC 分支
 - 内容增强逻辑在 `webview/src/core/contentEnhancement.ts`，负责 HTML 标准化、图片预览、隐藏图片占位，并复用共享链接导航处理内容链接
 
 ## Webview 手动验证
 
-- 修改主题 token、Semi 兼容覆盖或公共组件适配时，使用 `webview/theme.html` 回归检查亮色、暗色和高对比主题
+- 修改主题变量、公共组件或 Radix 浮层适配时，运行 `npm run preview:theme`，在 `webview/theme.html` 回归检查亮色、暗色、高对比和高对比亮色主题
 - 修改有状态 Webview 的初始化、状态同步或面板复用逻辑时，在 VS Code 和 Cursor 中手动验证首次打开、重复打开以及面板隐藏后恢复，确认页面不会因初始化事件丢失而停留在加载状态
 - 新增或修改整页骨架屏时，对照加载完成后的真实页面手动验证容器宽度、外间距、内容层级和窄侧边栏响应式布局，并覆盖亮色、暗色和高对比主题；同时确认刷新、分页等已有内容上的局部 loading 不会错误切换为整页骨架
 - 修改共享链接导航或 HTML 内容增强逻辑时，手动验证话题、用户、节点、外部链接和图片预览，确认一次点击只触发一种打开行为

@@ -1,24 +1,23 @@
 import { Fragment, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
-import {
-  Banner,
-  Button,
-  Card,
-  Collapse,
-  DatePicker,
-  Empty,
-  Input,
-  Pagination,
-  Select,
-  Spin
-} from '@douyinfe/semi-ui'
-import { IconRefresh, IconSearch } from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { ChevronRight, Inbox, RefreshCw, Search } from 'lucide-react'
 import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
-import { VscodeBadge } from '@/components/SemiVscode'
 import { createVsCodeClient } from '@/core/vscode'
+import {
+  Alert,
+  Badge,
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Empty,
+  Input,
+  Pagination,
+  Select,
+  Spinner
+} from '@/components/ui'
 import type {
   SearchPanelRpcCommands,
   SearchPanelWebviewEvents,
@@ -46,7 +45,8 @@ interface SearchFilters {
   operator: SoV2exOperator
   username: string
   node: string
-  dateRange?: Date[]
+  dateStart: string
+  dateEnd: string
 }
 
 /** 搜索页面状态 */
@@ -62,7 +62,9 @@ const initialFilters: SearchFilters = {
   sort: 'relevance',
   operator: 'or',
   username: '',
-  node: ''
+  node: '',
+  dateStart: '',
+  dateEnd: ''
 }
 
 /** 搜索页面应用 */
@@ -140,28 +142,32 @@ export default function SearchApp() {
               ref={inputRef}
               className="search-query"
               value={filters.q}
-              prefix={<IconSearch />}
+              prefix={<Search aria-hidden="true" />}
               placeholder="搜索 V2EX 主题"
-              showClear
-              composition
+              clearable
               disabled={loading}
-              onChange={value => updateFilter('q', value)}
-              onEnterPress={() => search(1)}
+              onValueChange={value => updateFilter('q', value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter') {
+                  void search(1)
+                }
+              }}
             />
             <Select
+              aria-label="搜索排序"
               className="search-sort"
               value={filters.sort}
               disabled={loading}
-              optionList={[
+              options={[
                 { value: 'relevance', label: '相关度' },
                 { value: 'newest', label: '最新发布' },
                 { value: 'oldest', label: '最早发布' }
               ]}
-              onChange={value => updateFilter('sort', value as SearchSortOption)}
+              onValueChange={value => updateFilter('sort', value as SearchSortOption)}
             />
             <Button
-              theme="solid"
-              icon={<IconSearch />}
+              variant="primary"
+              icon={<Search aria-hidden="true" />}
               loading={loading}
               disabled={!filters.q.trim()}
               onClick={() => search(1)}
@@ -170,35 +176,37 @@ export default function SearchApp() {
             </Button>
           </div>
 
-          <Collapse className="search-advanced" keepDOM>
-            <Collapse.Panel
-              itemKey="advanced"
-              header="高级筛选"
-              extra={
-                <Button
-                  size="small"
-                  theme="borderless"
-                  disabled={loading}
-                  onClick={event => {
-                    event.stopPropagation()
-                    resetAdvancedFilters()
-                  }}
-                >
-                  重置
-                </Button>
-              }
-            >
+          <Collapsible className="search-advanced">
+            <div className="search-advanced-header">
+              <CollapsibleTrigger className="search-advanced-trigger">
+                <ChevronRight aria-hidden="true" />
+                高级筛选
+              </CollapsibleTrigger>
+              <Button
+                size="small"
+                variant="ghost"
+                disabled={loading}
+                onClick={event => {
+                  event.stopPropagation()
+                  resetAdvancedFilters()
+                }}
+              >
+                重置
+              </Button>
+            </div>
+            <CollapsibleContent>
               <div className="search-filter-grid">
                 <label>
                   <span>关键词关系</span>
                   <Select
+                    aria-label="关键词关系"
                     value={filters.operator}
                     disabled={loading}
-                    optionList={[
+                    options={[
                       { value: 'or', label: '包含任意关键词' },
                       { value: 'and', label: '包含全部关键词' }
                     ]}
-                    onChange={value => updateFilter('operator', value as SoV2exOperator)}
+                    onValueChange={value => updateFilter('operator', value as SoV2exOperator)}
                   />
                 </label>
                 <label>
@@ -206,10 +214,14 @@ export default function SearchApp() {
                   <Input
                     value={filters.username}
                     placeholder="完全匹配用户名"
-                    showClear
+                    clearable
                     disabled={loading}
-                    onChange={value => updateFilter('username', value)}
-                    onEnterPress={() => search(1)}
+                    onValueChange={value => updateFilter('username', value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter') {
+                        void search(1)
+                      }
+                    }}
                   />
                 </label>
                 <label>
@@ -217,39 +229,45 @@ export default function SearchApp() {
                   <Input
                     value={filters.node}
                     placeholder="如 qna,-jobs"
-                    showClear
+                    clearable
                     disabled={loading}
-                    onChange={value => updateFilter('node', value)}
-                    onEnterPress={() => search(1)}
+                    onValueChange={value => updateFilter('node', value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter') {
+                        void search(1)
+                      }
+                    }}
                   />
                 </label>
                 <label>
                   <span>发帖日期</span>
-                  <DatePicker
-                    type="dateRange"
-                    value={filters.dateRange}
-                    placeholder={['开始日期', '结束日期']}
-                    disabled={loading}
-                    onChange={date =>
-                      updateFilter(
-                        'dateRange',
-                        Array.isArray(date) && date.every(item => item instanceof Date)
-                          ? date
-                          : undefined
-                      )
-                    }
-                  />
+                  <div className="search-date-range">
+                    <Input
+                      type="date"
+                      aria-label="开始日期"
+                      disabled={loading}
+                      value={filters.dateStart}
+                      onValueChange={value => updateFilter('dateStart', value)}
+                    />
+                    <span aria-hidden="true">~</span>
+                    <Input
+                      type="date"
+                      aria-label="结束日期"
+                      disabled={loading}
+                      value={filters.dateEnd}
+                      onValueChange={value => updateFilter('dateEnd', value)}
+                    />
+                  </div>
                 </label>
               </div>
-            </Collapse.Panel>
-          </Collapse>
+            </CollapsibleContent>
+          </Collapsible>
         </header>
 
         {state.status === 'initial' && (
           <Empty
             className="search-state"
-            image={<IllustrationNoContent />}
-            darkModeImage={<IllustrationNoContentDark />}
+            icon={<Inbox aria-hidden="true" />}
             title="搜索 V2EX 主题"
             description="输入关键词后开始搜索，结果由 SoV2EX 提供"
           />
@@ -257,11 +275,10 @@ export default function SearchApp() {
 
         {state.status === 'error' && (
           <div className="search-state">
-            <Banner type="danger" title="搜索失败" description={state.message} />
+            <Alert variant="danger" title="搜索失败" description={state.message} />
             <Button
               size="small"
-              theme="light"
-              icon={<IconRefresh />}
+              icon={<RefreshCw aria-hidden="true" />}
               onClick={() => search(currentPage)}
             >
               重试
@@ -276,7 +293,7 @@ export default function SearchApp() {
                 找到 {result.total.toLocaleString()} 个主题，耗时 {result.took} ms
               </span>
               {result.timedOut && (
-                <Banner type="warning" description="搜索请求超时，结果可能不完整" />
+                <Alert variant="warning" title="搜索请求超时" description="结果可能不完整" />
               )}
             </div>
 
@@ -289,11 +306,9 @@ export default function SearchApp() {
                 </div>
                 <Pagination
                   className="search-pagination"
-                  currentPage={currentPage}
-                  pageSize={searchPageSize}
-                  total={result.total}
+                  page={currentPage}
+                  totalPages={Math.max(1, Math.ceil(result.total / searchPageSize))}
                   showQuickJumper
-                  showTotal
                   disabled={loading}
                   onPageChange={page => search(page)}
                 />
@@ -301,8 +316,7 @@ export default function SearchApp() {
             ) : (
               <Empty
                 className="search-state"
-                image={<IllustrationNoContent />}
-                darkModeImage={<IllustrationNoContentDark />}
+                icon={<Inbox aria-hidden="true" />}
                 title="没有找到相关主题"
                 description="尝试更换关键词或减少筛选条件"
               />
@@ -310,7 +324,7 @@ export default function SearchApp() {
 
             {loading && (
               <div className="search-loading-mask">
-                <Spin size="middle" />
+                <Spinner aria-label="搜索中" />
               </div>
             )}
           </section>
@@ -350,7 +364,7 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
   }
 
   return (
-    <Card className="search-result-card" headerLine={false}>
+    <article className="search-result-card">
       <div className="search-result-title-row">
         <a
           className="search-result-title"
@@ -363,7 +377,7 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
         >
           {renderHighlight(title)}
         </a>
-        {source.replies > 0 && <VscodeBadge count={source.replies} overflowCount={99} />}
+        {source.replies > 0 && <Badge count={source.replies} overflowCount={99} />}
       </div>
       <div className="search-result-meta">
         <a href={`/member/${source.member}`} onClick={openMember}>
@@ -372,7 +386,7 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
         <time title={createdAt}>{dayjs(source.created).format('YYYY-MM-DD HH:mm')}</time>
       </div>
       {excerpt && <p className="search-result-excerpt">{renderHighlight(excerpt)}</p>}
-    </Card>
+    </article>
   )
 }
 
@@ -400,9 +414,11 @@ function createSearchParams(filters: SearchFilters, page: number): SoV2exSearchP
   if (node) {
     params.node = node
   }
-  if (filters.dateRange?.length === 2) {
-    params.gte = dayjs(filters.dateRange[0]).startOf('day').unix()
-    params.lte = dayjs(filters.dateRange[1]).endOf('day').unix()
+  if (filters.dateStart) {
+    params.gte = dayjs(filters.dateStart).startOf('day').unix()
+  }
+  if (filters.dateEnd) {
+    params.lte = dayjs(filters.dateEnd).endOf('day').unix()
   }
 
   return params

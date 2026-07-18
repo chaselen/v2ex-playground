@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Banner, Button, Toast } from '@douyinfe/semi-ui'
+import { Alert, Button, Toast } from '@/components/ui'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicShareContextMenu from '@/components/TopicShareContextMenu'
@@ -140,8 +140,9 @@ export default function TopicApp() {
 
       {state.status === 'error' && (
         <div className="state-panel">
-          <Banner
-            type="danger"
+          <Alert
+            variant="danger"
+            title="加载失败"
             description={
               <div
                 className="state-message"
@@ -151,12 +152,12 @@ export default function TopicApp() {
           />
           <div className="state-actions">
             {state.showLogin && (
-              <Button size="small" type="primary" onClick={() => vscode.login()}>
+              <Button size="small" variant="primary" onClick={() => vscode.login()}>
                 登录
               </Button>
             )}
             {state.showRefresh && (
-              <Button size="small" theme="light" onClick={() => vscode.refresh()}>
+              <Button size="small" onClick={() => vscode.refresh()}>
                 刷新页面
               </Button>
             )}

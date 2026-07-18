@@ -1,5 +1,8 @@
 .skeleton {
-  --skeleton-divider: color-mix(in srgb, var(--semi-color-fill-1) 70%, var(--semi-color-fill-0));
+  --skeleton-divider: var(
+    --vscode-widget-border,
+    color-mix(in srgb, var(--v2ex-webview-fg, var(--vscode-foreground)) 12%, transparent)
+  );
   width: min(100%, 760px);
   padding: 20px;
   margin: 0 auto;
@@ -407,15 +410,5 @@
 @media (min-width: 521px) and (max-width: 640px) {
   .balance {
     padding: 12px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-avatar),
-  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-image),
-  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-title),
-  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-button),
-  .skeleton :global(.semi-skeleton-active) :global(.semi-skeleton-paragraph) li {
-    animation: none;
   }
 }

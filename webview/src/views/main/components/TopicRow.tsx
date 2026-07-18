@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
-import { VscodeBadge } from '@/components/SemiVscode'
 import TopicShareContextMenu from '@/components/TopicShareContextMenu'
+import { Badge } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import styles from './TopicRow.module.scss'
 
@@ -68,7 +68,9 @@ export default function TopicRow(props: TopicRowProps) {
   const content = (
     <>
       <span className={styles['topic-title']}>{title}</span>
-      {!!replies && replies > 0 && <VscodeBadge count={replies} overflowCount={99} />}
+      {!!replies && replies > 0 && (
+        <Badge count={replies} overflowCount={99} countClassName={styles.badge} />
+      )}
     </>
   )
   const rowClassName = [styles['topic-row'], isRead ? styles['topic-row--read'] : '', className]

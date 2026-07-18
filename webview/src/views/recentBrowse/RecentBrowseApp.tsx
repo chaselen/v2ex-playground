@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Avatar, Button, Empty, Input, Pagination, Popconfirm, Toast } from '@douyinfe/semi-ui'
-import { IconDelete, IconHistory, IconRefresh, IconSearch, IconUser } from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { History, Inbox, RefreshCw, Search, Trash2, UserRound } from 'lucide-react'
 import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import NodeButton from '@/components/NodeButton'
 import PageSkeleton from '@/components/PageSkeleton'
+import { Avatar, Button, ConfirmPopover, Empty, Input, Pagination, Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
   RecentBrowseListData,
@@ -209,9 +208,8 @@ export default function RecentBrowseApp() {
             src={topic.authorAvatar}
             alt={authorName || '作者'}
             className="recent-topic-avatar"
-          >
-            <IconUser />
-          </Avatar>
+            fallback={<UserRound aria-hidden="true" />}
+          />
         </span>
         <span className="recent-topic-end">
           {!!topic.publishedAt && (
@@ -219,29 +217,25 @@ export default function RecentBrowseApp() {
               {topic.publishedAt}
             </time>
           )}
-          <Popconfirm
+          <ConfirmPopover
             title="删除这条浏览记录？"
-            content="删除后不可恢复"
-            okText="删除"
-            okType="danger"
-            cancelText="取消"
+            description="删除后不可恢复"
+            confirmText="删除"
+            danger
             disabled={clearing || deletingTopicId !== undefined}
             onConfirm={() => deleteRecentBrowse(topic.topicId)}
           >
-            <span className="recent-topic-delete-trigger">
-              <Button
-                size="small"
-                theme="borderless"
-                type="tertiary"
-                icon={<IconDelete />}
-                loading={deletingTopicId === topic.topicId}
-                disabled={clearing || deletingTopicId !== undefined}
-                aria-label={`删除浏览记录：${title}`}
-                title="删除浏览记录"
-                className="recent-topic-delete"
-              />
-            </span>
-          </Popconfirm>
+            <Button
+              size="small"
+              variant="ghost"
+              icon={<Trash2 aria-hidden="true" />}
+              loading={deletingTopicId === topic.topicId}
+              disabled={clearing || deletingTopicId !== undefined}
+              aria-label={`删除浏览记录：${title}`}
+              title="删除浏览记录"
+              className="recent-topic-delete"
+            />
+          </ConfirmPopover>
         </span>
         <span className="recent-topic-body">
           <a className="recent-topic-title" href="javascript:;" onClick={() => openTopic(topic)}>
@@ -263,7 +257,7 @@ export default function RecentBrowseApp() {
               </NodeButton>
             )}
             <time className="recent-topic-read-time" title={formatReadTime(topic.readAt)}>
-              <IconHistory />
+              <History aria-hidden="true" />
               <span>{formatReadTime(topic.readAt)}</span>
             </time>
           </span>
@@ -280,17 +274,16 @@ export default function RecentBrowseApp() {
             <Input
               className="recent-search-input"
               value={query}
-              prefix={<IconSearch />}
+              prefix={<Search aria-hidden="true" />}
               placeholder="搜索标题、作者或节点"
-              showClear
-              composition
+              clearable
               disabled={clearing || deletingTopicId !== undefined}
-              onChange={updateQuery}
-              onEnterPress={searchRecentBrowse}
+              onValueChange={updateQuery}
+              onEnter={searchRecentBrowse}
             />
             <Button
-              theme="solid"
-              icon={<IconSearch />}
+              variant="primary"
+              icon={<Search aria-hidden="true" />}
               loading={loading}
               disabled={!query.trim() || clearing || deletingTopicId !== undefined}
               onClick={searchRecentBrowse}
@@ -299,33 +292,28 @@ export default function RecentBrowseApp() {
             </Button>
           </div>
           <div className="recent-toolbar-actions">
-            <Popconfirm
+            <ConfirmPopover
               title="清空最近浏览？"
-              content="清空后不可恢复"
-              okText="清空"
-              okType="danger"
-              cancelText="取消"
+              description="清空后不可恢复"
+              confirmText="清空"
+              danger
               disabled={!data?.totalCount || loading || clearing || deletingTopicId !== undefined}
               onConfirm={clearRecentBrowse}
             >
-              <span>
-                <Button
-                  size="small"
-                  theme="borderless"
-                  type="tertiary"
-                  icon={<IconDelete />}
-                  loading={clearing}
-                  disabled={!data?.totalCount || loading || deletingTopicId !== undefined}
-                  aria-label="清空最近浏览"
-                  title="清空最近浏览"
-                />
-              </span>
-            </Popconfirm>
+              <Button
+                size="small"
+                variant="ghost"
+                icon={<Trash2 aria-hidden="true" />}
+                loading={clearing}
+                disabled={!data?.totalCount || loading || deletingTopicId !== undefined}
+                aria-label="清空最近浏览"
+                title="清空最近浏览"
+              />
+            </ConfirmPopover>
             <Button
               size="small"
-              theme="borderless"
-              type="tertiary"
-              icon={<IconRefresh />}
+              variant="ghost"
+              icon={<RefreshCw aria-hidden="true" />}
               loading={loading}
               disabled={clearing || deletingTopicId !== undefined}
               aria-label="刷新"
@@ -337,12 +325,7 @@ export default function RecentBrowseApp() {
 
         {state.status === 'error' && !data && (
           <div className="recent-state">
-            <Empty
-              title="加载失败"
-              description={state.message}
-              image={<IllustrationNoContent />}
-              darkModeImage={<IllustrationNoContentDark />}
-            />
+            <Empty icon={<Inbox />} title="加载失败" description={state.message} />
             <Button size="small" loading={loading} onClick={() => loadRecentBrowse(1)}>
               重试
             </Button>
@@ -354,10 +337,9 @@ export default function RecentBrowseApp() {
         {data && !data.topics.length && (
           <div className="recent-state">
             <Empty
+              icon={<Inbox />}
               title={activeQuery ? '未找到匹配的浏览记录' : '暂无最近浏览'}
               description={activeQuery ? `没有与“${activeQuery}”相关的标题、作者或节点` : undefined}
-              image={<IllustrationNoContent />}
-              darkModeImage={<IllustrationNoContentDark />}
             />
           </div>
         )}
@@ -374,12 +356,11 @@ export default function RecentBrowseApp() {
                   总条数：{data.totalCount.toLocaleString('en-US')}
                 </span>
                 <Pagination
-                  currentPage={data.page}
+                  page={data.page}
+                  totalPages={data.totalPage}
                   disabled={loading}
                   hideOnSinglePage
-                  pageSize={1}
                   showQuickJumper
-                  total={data.totalPage}
                   onPageChange={page => loadRecentBrowse(page)}
                 />
               </footer>

@@ -6,9 +6,9 @@ $link-active-color: var(
   var(--vscode-textLink-foreground, var(--vscode-foreground))
 );
 
-@use './vscode-semi-theme';
-@use './semi-overrides';
+@use './vscode-theme';
 @use './simplebar';
+@use '../components/ui/ui';
 
 *,
 *::before,

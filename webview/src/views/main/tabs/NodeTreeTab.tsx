@@ -1,21 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { MouseEvent } from 'react'
-import { Button, Empty, Popconfirm, Tree } from '@douyinfe/semi-ui'
-import type { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree'
-import { IconDelete, IconPlus, IconRefresh } from '@douyinfe/semi-icons'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { ChevronRight, Inbox, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
-import type { MainViewRpcCommands } from '@extension/shared/webview'
-import { createVsCodeClient } from '@/core/vscode'
 import PageSkeleton from '@/components/PageSkeleton'
+import { Button, ConfirmPopover, Empty } from '@/components/ui'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
 import type { MainTabKey, NodeItem, TreeItem } from '@/views/main/types'
 import styles from './NodeTreeTab.module.scss'
-
-/** 主面板 VS Code 通信客户端 */
-const vscode = createVsCodeClient<MainViewRpcCommands>()
 
 interface NodeTreeTabProps {
   /** 标签 key */
@@ -51,6 +43,13 @@ const emptyTexts: Record<MainTabKey, string> = {
   collection: '还没有收藏的节点'
 }
 
+/** 主面板节点树无障碍名称 */
+const treeLabels: Record<MainTabKey, string> = {
+  explore: '首页节点列表',
+  custom: '自定义节点列表',
+  collection: '收藏节点列表'
+}
+
 /**
  * 创建节点子项
  * @param tab 标签 key
@@ -58,25 +57,11 @@ const emptyTexts: Record<MainTabKey, string> = {
  */
 function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   if (node.loading && node.children === null) {
-    return [
-      {
-        key: `loading:${node.name}`,
-        label: '加载中',
-        type: 'loading',
-        isLeaf: true
-      }
-    ]
+    return [{ key: `loading:${node.name}`, label: '加载中', type: 'loading', isLeaf: true }]
   }
 
   if (node.children === null) {
-    return [
-      {
-        key: `placeholder:${node.name}`,
-        label: '',
-        type: 'empty',
-        isLeaf: true
-      }
-    ]
+    return [{ key: `placeholder:${node.name}`, label: '', type: 'empty', isLeaf: true }]
   }
 
   if (node.error && !node.children.length) {
@@ -91,14 +76,7 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
   }
 
   if (!node.children.length) {
-    return [
-      {
-        key: `empty:${node.name}`,
-        label: '暂无话题',
-        type: 'empty',
-        isLeaf: true
-      }
-    ]
+    return [{ key: `empty:${node.name}`, label: '暂无话题', type: 'empty', isLeaf: true }]
   }
 
   const topicItems: TreeItem[] = node.children.map(topic => ({
@@ -154,27 +132,12 @@ function createNodeTreeItem(tab: MainTabKey, node: NodeItem): TreeItem {
   }
 }
 
-/**
- * 读取 Semi 树节点扩展数据
- * @param data Semi 树节点
- */
-function getTreeItem(data?: TreeNodeData): TreeItem {
-  return data as TreeItem
-}
-
-/**
- * 获取节点树项 key
- * @param itemKey 列表项 key
- */
+/** 获取节点树项 key */
 function getNodeKey(itemKey: string): string {
   return `node:${itemKey}`
 }
 
-/**
- * 从话题树项 key 中读取节点 key
- * @param topicKey 话题树项 key
- * @param tab 标签 key
- */
+/** 从话题树项 key 中读取节点 key */
 function getNodeKeyFromTopicKey(topicKey: string, tab: MainTabKey): string | undefined {
   const prefix = `topic:${tab}:`
   if (!topicKey.startsWith(prefix)) {
@@ -185,10 +148,7 @@ function getNodeKeyFromTopicKey(topicKey: string, tab: MainTabKey): string | und
   return itemKey ? getNodeKey(itemKey) : undefined
 }
 
-/**
- * 固定节点标签页
- * @param props 组件参数
- */
+/** 固定节点标签页 */
 export default function NodeTreeTab(props: NodeTreeTabProps) {
   const {
     tab,
@@ -206,17 +166,11 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
   } = props
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
   const [selectedTopicKey, setSelectedTopicKey] = useState<string>()
-
-  /** 树组件数据 */
   const treeData = useMemo(() => nodes.map(node => createNodeTreeItem(tab, node)), [nodes, tab])
-
-  /** 是否显示登录提示 */
   const showLoginPrompt = tab === 'collection' && !loggedIn
 
   useEffect(() => {
-    // 当前节点 key 集合
     const nodeKeys = new Set(nodes.map(node => getNodeKey(node.name)))
-
     setExpandedKeys(current => {
       const next = current.filter(key => nodeKeys.has(key))
       return next.length === current.length ? current : next
@@ -232,241 +186,174 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     }
   }, [nodes, selectedTopicKey, tab])
 
-  /**
-   * 刷新节点
-   * @param data 树项
-   */
-  function refreshNode(data: TreeItem) {
-    if (!data.itemKey || data.loading) {
-      return
-    }
-    onRefreshNode(tab, data.itemKey)
-  }
-
-  /**
-   * 删除自定义节点
-   * @param data 树项
-   */
-  function removeNode(data: TreeItem) {
-    if (!data.itemKey) {
-      return
-    }
-    onRemoveNode(data.itemKey)
-  }
-
-  /**
-   * 取消收藏节点
-   * @param data 树项
-   */
-  function cancelCollectNode(data: TreeItem): Promise<void> | undefined {
-    if (!data.itemKey) {
-      return
-    }
-    return onCancelCollectNode?.(data.itemKey)
-  }
-
-  /**
-   * 阻止树节点默认点击
-   * @param event 鼠标事件
-   */
   function stopTreeClick(event: MouseEvent<HTMLElement>) {
     event.stopPropagation()
   }
 
-  /**
-   * 渲染节点操作区
-   * @param data 树项
-   */
+  function toggleNode(data: TreeItem) {
+    const expanded = expandedKeys.includes(data.key)
+    setExpandedKeys(current =>
+      expanded ? current.filter(key => key !== data.key) : [...current, data.key]
+    )
+
+    if (expanded || !data.itemKey) {
+      return
+    }
+
+    const node = nodes.find(item => item.name === data.itemKey)
+    if (node && !node.loading && node.children === null) {
+      onExpandNode(tab, node.name)
+    }
+  }
+
   function renderNodeActions(data: TreeItem) {
     return (
       <div className={styles['node-actions']} onClick={stopTreeClick}>
         {tab === 'custom' && (
           <Button
-            theme="borderless"
-            type="tertiary"
+            variant="ghost"
             size="small"
-            icon={<IconDelete />}
+            icon={<Trash2 aria-hidden="true" />}
             title="删除"
             aria-label="删除"
-            onClick={() => removeNode(data)}
+            onClick={() => data.itemKey && onRemoveNode(data.itemKey)}
           />
         )}
         {tab === 'collection' && (
-          <Popconfirm
+          <ConfirmPopover
             title={`确定取消收藏“${data.label}”节点？`}
-            content="取消后该节点将从收藏节点列表中移除"
-            okText="取消收藏"
-            okType="danger"
+            description="取消后该节点将从收藏节点列表中移除"
+            confirmText="取消收藏"
             cancelText="保留"
-            cancelButtonProps={{ autoFocus: true }}
-            onConfirm={() => cancelCollectNode(data)}
+            danger
+            onConfirm={() => (data.itemKey ? onCancelCollectNode?.(data.itemKey) : undefined)}
           >
             <span>
               <Button
-                theme="borderless"
-                type="tertiary"
+                variant="ghost"
                 size="small"
-                icon={<IconDelete />}
+                icon={<Trash2 aria-hidden="true" />}
                 title="取消收藏"
                 aria-label="取消收藏"
               />
             </span>
-          </Popconfirm>
+          </ConfirmPopover>
         )}
         <Button
-          theme="borderless"
-          type="tertiary"
+          variant="ghost"
           size="small"
-          icon={<IconRefresh />}
+          icon={<RefreshCw aria-hidden="true" />}
           loading={data.loading}
           title="刷新"
           aria-label="刷新"
           disabled={data.loading}
-          onClick={() => refreshNode(data)}
+          onClick={() => data.itemKey && onRefreshNode(tab, data.itemKey)}
         />
       </div>
     )
   }
 
-  /**
-   * 渲染话题行
-   * @param data 树项
-   */
-  function renderTopicRow(data: TreeItem) {
-    const topicTitle = data.title || data.label
+  function renderTreeItem(data: TreeItem) {
+    if (data.type === 'topic') {
+      const title = data.title || data.label
+      return (
+        <div
+          role="treeitem"
+          aria-selected={selectedTopicKey === data.key}
+          className={`${styles['tree-item']} ${styles['tree-item--topic']}`}
+          onClickCapture={() => setSelectedTopicKey(data.key)}
+          key={data.key}
+        >
+          <TopicRow
+            as="button"
+            topicId={data.topicId!}
+            title={title}
+            replies={data.replies}
+            isRead={data.isRead}
+          />
+        </div>
+      )
+    }
 
-    return (
-      <TopicRow
-        topicId={data.topicId!}
-        title={topicTitle}
-        replies={data.replies}
-        isRead={data.isRead}
-        openOnClick={false}
-      />
-    )
-  }
-
-  /**
-   * 渲染节点分页
-   * @param data 树项
-   */
-  function renderPaginationRow(data: TreeItem) {
-    if (!data.itemKey || !data.page || !data.totalPage) {
-      return null
+    if (data.type === 'pagination' && data.itemKey && data.page && data.totalPage) {
+      return (
+        <div
+          role="treeitem"
+          className={`${styles['tree-item']} ${styles['tree-item--pagination']}`}
+          onClick={stopTreeClick}
+          onMouseDown={stopTreeClick}
+          key={data.key}
+        >
+          <MainPagination
+            currentPage={data.page}
+            totalPage={data.totalPage}
+            totalCount={data.totalCount}
+            disabled={data.loading}
+            onPageChange={page => {
+              if (page !== data.page) {
+                onPageChange(tab, data.itemKey!, page)
+              }
+            }}
+          />
+        </div>
+      )
     }
 
     return (
       <div
-        className={styles['node-pagination']}
-        onClick={stopTreeClick}
-        onMouseDown={stopTreeClick}
+        role="treeitem"
+        className={`${styles['tree-item']} ${styles[`tree-item--${data.type}`]}`}
+        key={data.key}
       >
-        <MainPagination
-          currentPage={data.page}
-          totalPage={data.totalPage}
-          totalCount={data.totalCount}
-          disabled={data.loading}
-          onPageChange={page => {
-            if (page !== data.page) {
-              onPageChange(tab, data.itemKey!, page)
-            }
-          }}
-        />
+        <span>{data.label}</span>
       </div>
     )
   }
 
-  /**
-   * 渲染树节点标签
-   * @param label 节点标签
-   * @param treeNode Semi 树节点
-   */
-  function renderLabel(label?: React.ReactNode, treeNode?: TreeNodeData) {
-    const data = getTreeItem(treeNode)
-
+  function renderTree() {
     return (
-      <div className={`${styles['tree-row']} ${styles[`tree-row--${data.type}`] || ''}`}>
-        {data.type === 'topic' && renderTopicRow(data)}
-        {data.type === 'loading' && <span className={styles['loading-text']}>{label}</span>}
-        {data.type === 'error' && <span className={styles['error-text']}>{label}</span>}
-        {data.type === 'empty' && <span className={styles['empty-text']}>{label}</span>}
-        {data.type === 'pagination' && renderPaginationRow(data)}
-        {data.type === 'node' && (
-          <>
-            <span className={styles['node-label']}>{label}</span>
-            {renderNodeActions(data)}
-          </>
-        )}
+      <div className={styles['node-tree']} role="tree" aria-label={treeLabels[tab]}>
+        {treeData.map(data => {
+          const expanded = expandedKeys.includes(data.key)
+          return (
+            <div className={styles['node-group']} key={data.key}>
+              <div
+                role="treeitem"
+                aria-expanded={expanded}
+                className={`${styles['tree-item']} ${styles['tree-item--node']}`}
+              >
+                <button
+                  type="button"
+                  className={styles['node-toggle']}
+                  onClick={() => toggleNode(data)}
+                >
+                  <ChevronRight
+                    className={expanded ? styles['node-chevron--expanded'] : undefined}
+                    aria-hidden="true"
+                  />
+                  <span className={styles['node-label']}>{data.label}</span>
+                </button>
+                {renderNodeActions(data)}
+              </div>
+              {expanded && (
+                <div role="group" className={styles['node-children']}>
+                  {data.children?.map(renderTreeItem)}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     )
   }
 
-  /**
-   * 处理树展开
-   * @param nextExpandedKeys 展开的节点
-   * @param context 展开上下文
-   */
-  function handleExpand(
-    nextExpandedKeys: string[],
-    context: { node: TreeNodeData; expanded: boolean }
-  ) {
-    setExpandedKeys(nextExpandedKeys)
-    const data = getTreeItem(context.node)
-    if (!context.expanded || data.type !== 'node' || !data.itemKey) {
-      return
-    }
-
-    const node = nodes.find(item => item.name === data.itemKey)
-    if (!node || node.loading || node.children !== null) {
-      return
-    }
-
-    onExpandNode(tab, node.name)
-  }
-
-  /**
-   * 处理树选中
-   * @param selectedKey 选中节点 key
-   * @param selected 是否选中
-   * @param selectedNode 选中节点
-   */
-  function handleSelect(selectedKey: string, selected: boolean, selectedNode: TreeNodeData) {
-    const data = getTreeItem(selectedNode)
-    if (data.type !== 'topic' || !data.topicId) {
-      return
-    }
-
-    if (selected) {
-      setSelectedTopicKey(selectedKey)
-    }
-
-    vscode.openTopic({
-      topicId: data.topicId,
-      title: data.title || data.label
-    })
-  }
-
-  /** 渲染节点树主体内容 */
   function renderContent() {
     if (loading) {
       return <PageSkeleton variant="node-tree" rows={7} />
     }
 
     if (nodes.length) {
-      return (
-        <Tree
-          expandedKeys={expandedKeys}
-          value={selectedTopicKey}
-          treeData={treeData}
-          blockNode
-          motion={false}
-          expandAction="click"
-          className={styles['node-tree']}
-          renderLabel={renderLabel}
-          onExpand={handleExpand}
-          onSelect={handleSelect}
-        />
-      )
+      return renderTree()
     }
 
     if (showLoginPrompt) {
@@ -476,12 +363,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     if (error) {
       return (
         <div className={styles['empty-panel']}>
-          <Empty
-            title="加载失败"
-            description={error}
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title="加载失败" description={error} icon={<Inbox aria-hidden="true" />} />
           <Button size="small" loading={loading} onClick={onRetryTab}>
             重试
           </Button>
@@ -491,11 +373,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
 
     return (
       <div className={styles['empty-panel']}>
-        <Empty
-          title={emptyTexts[tab]}
-          image={<IllustrationNoContent className={styles['empty-illustration']} />}
-          darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-        />
+        <Empty title={emptyTexts[tab]} icon={<Inbox aria-hidden="true" />} />
       </div>
     )
   }
@@ -508,11 +386,10 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
       {!loading && tab === 'custom' && (
         <div className={styles['tree-footer']}>
           <Button
-            block
-            type="primary"
-            theme="solid"
+            className={styles['add-node-button']}
+            variant="primary"
             size="small"
-            icon={<IconPlus />}
+            icon={<Plus aria-hidden="true" />}
             onClick={onAddNode}
           >
             添加节点

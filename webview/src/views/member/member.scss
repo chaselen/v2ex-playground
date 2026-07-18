@@ -89,7 +89,7 @@ $panel-border: var(--v2ex-border);
 }
 
 .member-tabs {
-  .semi-tabs-bar {
+  .v2ex-tabs__bar {
     margin-bottom: 10px;
   }
 }
@@ -196,7 +196,7 @@ $panel-border: var(--v2ex-border);
     grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .member-profile > .semi-button {
+  .member-profile > .v2ex-button {
     grid-column: 1 / -1;
     justify-self: flex-start;
   }

@@ -1,6 +1,6 @@
-import { Button, Empty } from '@douyinfe/semi-ui'
-import { IllustrationNoAccess, IllustrationNoAccessDark } from '@douyinfe/semi-illustrations'
+import { LogIn } from 'lucide-react'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
+import { Button, Empty } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import styles from './LoginPrompt.module.scss'
 
@@ -20,12 +20,8 @@ function login() {
 export default function LoginPrompt() {
   return (
     <div className={styles['empty-panel']}>
-      <Empty
-        title="还未登录，请先登录"
-        image={<IllustrationNoAccess className={styles['empty-illustration']} />}
-        darkModeImage={<IllustrationNoAccessDark className={styles['empty-illustration']} />}
-      >
-        <Button size="small" type="primary" theme="solid" onClick={login}>
+      <Empty title="还未登录，请先登录" icon={<LogIn />}>
+        <Button size="small" variant="primary" onClick={login}>
           登录
         </Button>
       </Empty>

@@ -1,8 +1,8 @@
-import { Empty } from '@douyinfe/semi-ui'
-import { IllustrationNoContent, IllustrationNoContentDark } from '@douyinfe/semi-illustrations'
+import { Inbox } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type { NodeTopicTabState } from '@/views/main/types'
 import PageSkeleton from '@/components/PageSkeleton'
+import { Empty } from '@/components/ui'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
 import styles from './NodeTopicTab.module.scss'
@@ -29,11 +29,7 @@ export default function NodeTopicTab(props: NodeTopicTabProps) {
         <div className={`${styles['panel-state']} ${styles['error-text']}`}>{node.error}</div>
       ) : !node.topics.length ? (
         <div className={styles['panel-state']}>
-          <Empty
-            title="暂无话题"
-            image={<IllustrationNoContent className={styles['empty-illustration']} />}
-            darkModeImage={<IllustrationNoContentDark className={styles['empty-illustration']} />}
-          />
+          <Empty title="暂无话题" icon={<Inbox />} />
         </div>
       ) : (
         <div className={styles['topic-list']}>
