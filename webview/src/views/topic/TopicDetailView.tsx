@@ -96,7 +96,7 @@ export default function TopicDetailView({
   const floatingActions = showFloatingActions ? (
     <div className="floating-actions" aria-label="话题快捷操作">
       {renderTopicActionButtons('floating')}
-      <Tooltip content="滚动到顶部" side="left">
+      <Tooltip className="floating-action-tooltip" content="滚动到顶部" side="left">
         <Button
           aria-label="滚动到顶部"
           className="floating-action-button"
@@ -106,7 +106,7 @@ export default function TopicDetailView({
           onClick={scrollToTop}
         />
       </Tooltip>
-      <Tooltip content="滚动到底部" side="left">
+      <Tooltip className="floating-action-tooltip" content="滚动到底部" side="left">
         <Button
           aria-label="滚动到底部"
           className="floating-action-button"
@@ -336,7 +336,7 @@ export default function TopicDetailView({
     return (
       <>
         {isFloating ? (
-          <Tooltip content="刷新页面" side="left">
+          <Tooltip className="floating-action-tooltip" content="刷新页面" side="left">
             {refreshButton}
           </Tooltip>
         ) : (
@@ -347,7 +347,7 @@ export default function TopicDetailView({
           <>
             {!topic.isCollected ? (
               isFloating ? (
-                <Tooltip content="加入收藏" side="left">
+                <Tooltip className="floating-action-tooltip" content="加入收藏" side="left">
                   <Button
                     aria-label="加入收藏"
                     className="floating-action-button"
@@ -370,7 +370,7 @@ export default function TopicDetailView({
                 </Button>
               )
             ) : isFloating ? (
-              <Tooltip content="取消收藏" side="left">
+              <Tooltip className="floating-action-tooltip" content="取消收藏" side="left">
                 <Button
                   aria-label="取消收藏"
                   className="floating-action-button is-active"
@@ -402,7 +402,11 @@ export default function TopicDetailView({
               >
                 <span className={isFloating ? 'floating-action-popconfirm-trigger' : undefined}>
                   {isFloating ? (
-                    <Tooltip content="感谢主题创建者" side="left">
+                    <Tooltip
+                      className="floating-action-tooltip"
+                      content="感谢主题创建者"
+                      side="left"
+                    >
                       <Button
                         aria-label="感谢主题创建者"
                         className="floating-action-button"
@@ -429,7 +433,7 @@ export default function TopicDetailView({
             {topic.canThank &&
               topic.isThanked &&
               (isFloating ? (
-                <Tooltip content="感谢已发送" side="left">
+                <Tooltip className="floating-action-tooltip" content="感谢已发送" side="left">
                   <Button
                     aria-label="感谢已发送"
                     className="floating-action-button is-active"

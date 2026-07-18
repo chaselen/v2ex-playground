@@ -1150,6 +1150,10 @@ $panel-border: var(--v2ex-border);
   gap: 8px;
 }
 
+.floating-action-tooltip {
+  font-size: 13px;
+}
+
 .floating-action-popconfirm-trigger {
   display: inline-flex;
 }
