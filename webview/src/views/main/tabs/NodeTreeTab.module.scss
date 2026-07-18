@@ -154,11 +154,23 @@
 .node-actions {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 0;
   margin-left: auto;
-  margin-right: 8px;
+  margin-right: 6px;
   opacity: 0;
   transition: opacity 0.12s ease;
+
+  :global(.v2ex-button) {
+    width: 24px;
+    padding: 3px;
+  }
+
+  :global(.v2ex-button__icon),
+  :global(.v2ex-button__spinner),
+  :global(.v2ex-button__icon > svg) {
+    width: 14px;
+    height: 14px;
+  }
 
   &:focus-within {
     opacity: 1;
