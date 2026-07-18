@@ -251,6 +251,7 @@ export function ImagePreview({
           >
             {currentSrc && (
               <img
+                key={currentSrc}
                 ref={imageRef}
                 className="v2ex-image-preview__image"
                 src={currentSrc}
