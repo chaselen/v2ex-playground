@@ -1129,6 +1129,36 @@
   background: var(--vscode-menu-background, var(--v2ex-overlay-bg));
 }
 
+.v2ex-context-menu--compact {
+  min-width: 128px;
+}
+
+.v2ex-context-menu--comfortable {
+  padding: 6px;
+
+  .v2ex-menu__item {
+    gap: 6px;
+    min-height: 30px;
+    padding: 5px 10px 5px 6px;
+  }
+
+  .v2ex-menu__separator {
+    margin: 5px 6px;
+  }
+}
+
+.v2ex-context-menu__icon {
+  display: inline-flex;
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+
+.v2ex-context-menu__icon > svg {
+  width: 100%;
+  height: 100%;
+}
+
 .v2ex-menu__item {
   display: flex;
   align-items: center;
@@ -1408,11 +1438,11 @@
   user-select: none;
 }
 
-.v2ex-image-preview__stage.is-zoomed .v2ex-image-preview__image {
+.v2ex-image-preview__stage--zoomed .v2ex-image-preview__image {
   cursor: grab;
 }
 
-.v2ex-image-preview__stage.is-dragging .v2ex-image-preview__image {
+.v2ex-image-preview__stage--dragging .v2ex-image-preview__image {
   cursor: grabbing;
   transition: none;
 }
@@ -1683,7 +1713,12 @@
   .v2ex-collapsible__content,
   .v2ex-dialog__overlay,
   .v2ex-dialog,
+  .v2ex-image-preview__overlay,
   .v2ex-toast {
     animation: none;
+  }
+
+  .v2ex-image-preview__image {
+    transition: none;
   }
 }

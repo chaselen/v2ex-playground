@@ -94,6 +94,7 @@ export default function TopicRow(props: TopicRowProps) {
 
   return (
     <TopicShareContextMenu
+      compact
       onCopyLink={() => postContextMenuCommand('copyLink')}
       onCopyTitleLink={() => postContextMenuCommand('copyTitleLink')}
       onViewInBrowser={() => postContextMenuCommand('viewInBrowser')}
