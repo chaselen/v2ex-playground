@@ -1274,7 +1274,7 @@
   position: fixed;
   z-index: 1300;
   inset: 0;
-  background: color-mix(in srgb, var(--v2ex-mask-bg) 88%, #000);
+  background: rgb(0 0 0 / 88%);
   animation: v2ex-overlay-fade-in var(--v2ex-motion-normal) ease-out;
 }
 
@@ -1288,11 +1288,12 @@
 
 .v2ex-image-preview__stage {
   position: absolute;
-  inset: 48px 72px 68px;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  touch-action: none;
 }
 
 .v2ex-image-preview__image {
@@ -1304,14 +1305,45 @@
   user-select: none;
 }
 
+.v2ex-image-preview__stage.is-zoomed .v2ex-image-preview__image {
+  cursor: grab;
+}
+
+.v2ex-image-preview__stage.is-dragging .v2ex-image-preview__image {
+  cursor: grabbing;
+  transition: none;
+}
+
 .v2ex-image-preview__close,
 .v2ex-image-preview__previous,
 .v2ex-image-preview__next,
 .v2ex-image-preview__toolbar {
-  border-color: var(--vscode-contrastBorder, var(--v2ex-border));
-  color: var(--v2ex-widget-fg);
-  background: var(--v2ex-overlay-bg);
+  z-index: 1;
+  border-color: var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
+  color: #fff;
+  background: rgb(0 0 0 / 72%);
   box-shadow: var(--v2ex-shadow-floating);
+}
+
+.v2ex-image-preview__close,
+.v2ex-image-preview__previous,
+.v2ex-image-preview__next,
+.v2ex-image-preview__toolbar .v2ex-button {
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    color: #fff;
+    background: rgb(255 255 255 / 18%);
+  }
+
+  &:active:not(:disabled) {
+    color: #fff;
+    background: rgb(255 255 255 / 26%);
+  }
+
+  &:disabled {
+    color: rgb(255 255 255 / 42%);
+  }
 }
 
 .v2ex-image-preview__close {
@@ -1346,7 +1378,7 @@
   gap: 3px;
   max-width: calc(100vw - 28px);
   padding: 5px 7px;
-  border: 1px solid var(--vscode-contrastBorder, var(--v2ex-border));
+  border: 1px solid var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
   border-radius: var(--v2ex-radius-md);
   transform: translateX(-50%);
 }
@@ -1355,7 +1387,7 @@
 .v2ex-image-preview__scale {
   flex: none;
   min-width: 42px;
-  color: var(--v2ex-muted-fg);
+  color: rgb(255 255 255 / 78%);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -1365,7 +1397,7 @@
   width: 1px;
   height: 18px;
   margin: 0 3px;
-  background: var(--v2ex-border);
+  background: rgb(255 255 255 / 28%);
 }
 
 @media (max-width: 420px) {

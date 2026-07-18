@@ -4,7 +4,7 @@ import {
   Download,
   RotateCcw,
   RotateCw,
-  Scan,
+  Shrink,
   X,
   ZoomIn,
   ZoomOut
@@ -14,8 +14,11 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
   type KeyboardEvent,
+  type PointerEvent,
   type ReactNode,
   type WheelEvent
 } from 'react'
@@ -45,6 +48,25 @@ interface ImagePreviewState {
   currentIndex: number
 }
 
+/** 图片平移位置 */
+interface ImagePosition {
+  x: number
+  y: number
+}
+
+/** 图片拖拽起始状态 */
+interface ImageDragState {
+  pointerId: number
+  startX: number
+  startY: number
+  originX: number
+  originY: number
+  maxX: number
+  maxY: number
+}
+
+const INITIAL_POSITION: ImagePosition = { x: 0, y: 0 }
+
 /** 页面图片预览上下文 */
 const ImagePreviewContext = createContext<OpenImagePreview>(() => {})
 
@@ -59,6 +81,10 @@ export default function ImagePreviewProvider({ children }: ImagePreviewProviderP
   const [preview, setPreview] = useState<ImagePreviewState | null>(null)
   const [scale, setScale] = useState(1)
   const [rotation, setRotation] = useState(0)
+  const [position, setPosition] = useState<ImagePosition>(INITIAL_POSITION)
+  const [isDragging, setIsDragging] = useState(false)
+  const imageRef = useRef<HTMLImageElement>(null)
+  const dragRef = useRef<ImageDragState | null>(null)
   const openImagePreview = useCallback(({ src, srcList }: ImagePreviewRequest) => {
     const normalizedSrcList = Array.from(
       new Set(srcList.includes(src) ? srcList : [src, ...srcList])
@@ -69,15 +95,25 @@ export default function ImagePreviewProvider({ children }: ImagePreviewProviderP
     })
     setScale(1)
     setRotation(0)
+    setPosition(INITIAL_POSITION)
   }, [])
 
   const currentSrc = preview?.srcList[preview.currentIndex]
   const imageCount = preview?.srcList.length ?? 0
 
+  useEffect(() => {
+    if (scale <= 1) {
+      setPosition(INITIAL_POSITION)
+    }
+  }, [scale])
+
   /** 重置图片变换 */
   function resetTransform() {
     setScale(1)
     setRotation(0)
+    setPosition(INITIAL_POSITION)
+    dragRef.current = null
+    setIsDragging(false)
   }
 
   /** 切换图片 */
@@ -122,6 +158,59 @@ export default function ImagePreviewProvider({ children }: ImagePreviewProviderP
   function handleWheel(event: WheelEvent<HTMLDivElement>) {
     event.preventDefault()
     zoom(event.deltaY < 0 ? 0.25 : -0.25)
+  }
+
+  /** 图片超出预览区域时开始拖拽 */
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    const imageRect = imageRef.current?.getBoundingClientRect()
+    const stageRect = event.currentTarget.getBoundingClientRect()
+    const canDrag =
+      imageRect &&
+      (imageRect.width > stageRect.width + 1 || imageRect.height > stageRect.height + 1)
+
+    if (event.button !== 0 || !canDrag) {
+      return
+    }
+
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: position.x,
+      originY: position.y,
+      maxX: Math.max(0, (imageRect.width - stageRect.width) / 2),
+      maxY: Math.max(0, (imageRect.height - stageRect.height) / 2)
+    }
+    setIsDragging(true)
+  }
+
+  /** 拖拽平移超出预览区域的图片 */
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return
+    }
+
+    event.preventDefault()
+    setPosition({
+      x: Math.min(drag.maxX, Math.max(-drag.maxX, drag.originX + event.clientX - drag.startX)),
+      y: Math.min(drag.maxY, Math.max(-drag.maxY, drag.originY + event.clientY - drag.startY))
+    })
+  }
+
+  /** 结束图片拖拽 */
+  function handlePointerEnd(event: PointerEvent<HTMLDivElement>) {
+    if (dragRef.current?.pointerId !== event.pointerId) {
+      return
+    }
+
+    dragRef.current = null
+    setIsDragging(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
   }
 
   return (
@@ -173,15 +262,23 @@ export default function ImagePreviewProvider({ children }: ImagePreviewProviderP
               </>
             )}
 
-            <div className="v2ex-image-preview__stage" onWheel={handleWheel}>
+            <div
+              className={`v2ex-image-preview__stage${scale > 1 ? ' is-zoomed' : ''}${isDragging ? ' is-dragging' : ''}`}
+              onWheel={handleWheel}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerEnd}
+              onPointerCancel={handlePointerEnd}
+            >
               {currentSrc && (
                 <img
+                  ref={imageRef}
                   className="v2ex-image-preview__image"
                   src={currentSrc}
                   alt={`预览图片 ${preview.currentIndex + 1}`}
                   draggable={false}
                   style={{
-                    transform: `scale(${scale}) rotate(${rotation}deg)`
+                    transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`
                   }}
                 />
               )}
@@ -228,7 +325,7 @@ export default function ImagePreviewProvider({ children }: ImagePreviewProviderP
               <Button
                 size="small"
                 variant="ghost"
-                icon={<Scan aria-hidden="true" />}
+                icon={<Shrink aria-hidden="true" />}
                 aria-label="重置图片"
                 onClick={resetTransform}
               />
