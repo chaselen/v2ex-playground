@@ -30,12 +30,17 @@ const mocks = vi.hoisted(() => {
     showInformationMessage: vi.fn(),
     showSaveDialog: vi.fn(),
     showWarningMessage: vi.fn(),
+    uriFile: vi.fn(),
     uriJoinPath: vi.fn(),
     uriParse: vi.fn(),
     withProgress: vi.fn((_options, task) => task({}, token)),
     writeFile: vi.fn()
   }
 })
+
+vi.mock('node:os', () => ({
+  homedir: () => '/home/test'
+}))
 
 vi.mock('file-type', () => ({
   fileTypeFromBuffer: mocks.fileTypeFromBuffer
@@ -63,6 +68,7 @@ vi.mock('vscode', () => ({
     }
   },
   Uri: {
+    file: mocks.uriFile,
     joinPath: mocks.uriJoinPath,
     parse: mocks.uriParse
   }
@@ -103,6 +109,7 @@ describe('downloadImage', () => {
     mocks.httpGet.mockResolvedValue({ data: new Uint8Array([1, 2, 3]) })
     mocks.showInformationMessage.mockResolvedValue(undefined)
     mocks.showSaveDialog.mockResolvedValue(mocks.destination)
+    mocks.uriFile.mockImplementation(path => ({ path }))
     mocks.uriJoinPath.mockReturnValue(mocks.savedDirectory)
     mocks.uriParse.mockImplementation(value => ({ value }))
   })
@@ -119,13 +126,15 @@ describe('downloadImage', () => {
         signal: expect.any(AbortSignal)
       })
     )
+    expect(mocks.uriFile).toHaveBeenCalledWith('/home/test')
+    expect(mocks.uriJoinPath).toHaveBeenCalledWith({ path: '/home/test' }, 'avatar.png')
     expect(mocks.showSaveDialog).toHaveBeenCalledWith(
       expect.objectContaining({
+        defaultUri: mocks.savedDirectory,
         filters: { 图片: ['png'] },
         saveLabel: '保存图片'
       })
     )
-    expect(mocks.showSaveDialog.mock.calls[0][0]).not.toHaveProperty('defaultUri')
     expect(mocks.globalStateUpdate).toHaveBeenCalledWith(
       'v2ex.imageDownload.lastDirectory',
       'file:///tmp'

@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { fileTypeFromBuffer } from 'file-type'
 import vscode, { Uri } from 'vscode'
 import http from '@/core/http'
@@ -68,17 +69,14 @@ export async function downloadImage(imageSrc: string) {
 }
 
 /**
- * 使用上次保存目录生成默认文件 URI
+ * 使用上次保存目录或用户目录生成默认文件 URI
  * @param filename 建议文件名
  */
 function getDefaultSaveUri(filename: string) {
-  const directory = G.context.globalState.get<string>(LAST_IMAGE_DOWNLOAD_DIRECTORY_KEY)
-  if (!directory) {
-    return undefined
-  }
-
   try {
-    return Uri.joinPath(Uri.parse(directory), filename)
+    const savedDirectory = G.context.globalState.get<string>(LAST_IMAGE_DOWNLOAD_DIRECTORY_KEY)
+    const directory = savedDirectory ? Uri.parse(savedDirectory) : Uri.file(homedir())
+    return Uri.joinPath(directory, filename)
   } catch {
     return undefined
   }
