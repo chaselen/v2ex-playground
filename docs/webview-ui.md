@@ -11,6 +11,8 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - `Button` 禁用态保留当前 Variant 的背景和边框语义，再统一降低透明度；Primary、Secondary、Subtle、Ghost 和 Danger 不应收敛为同一种禁用背景
 - `ConfirmPopover` 默认在标题左侧显示警示图标，普通确认使用警告色、危险确认使用危险色；领域操作可通过 `titleIcon` 覆盖图标，传入 `null` 可隐藏
 - `Alert` 与 `ConfirmPopover` 的默认状态图标使用实心语义色外形，内部符号使用当前提示或浮层背景色；不要直接填充整个 Lucide 图标而遮住内部符号
+- 少量互斥视图或内容筛选的紧凑切换使用 `RadioGroup variant="segmented"`，外层使用低强调混合背景，选中项回到 Webview 页面背景，以便在亮色主题形成灰底白色选中项、暗色主题形成亮底深色选中项；组件保留 RadioGroup 的方向键与焦点语义。选项的悬浮状态标识通过 `RadioGroupItem` 的 `badge` 和 `badgeVariant` 传入，不在业务页面自行定位。具有独立面板语义和键盘导航需求的内容分组继续使用 Tabs；普通表单选项继续使用默认单选样式
+- 横向 Tabs 在窄容器中通过 `TabsList overflowNavigation` 启用自动溢出导航；组件使用 ResizeObserver 检测可用宽度，仅在溢出时显示左右按钮，切换活动项时自动将其滚入可视区域
 - 页面特有的复杂布局可保留在页面 SCSS 中，通用组件状态统一写入 `webview/src/components/ui/ui.scss`
 - 领域组件可以封装固定含义的共享控件，例如 `ProTag`；不要为仅改名或透传属性增加包装层
 - 命令式通知统一使用 `Toast.info`、`Toast.success`、`Toast.warning` 和 `Toast.error`，每个使用通知的 Webview 入口只挂载一个 `ToastViewport`

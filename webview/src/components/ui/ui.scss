@@ -669,10 +669,25 @@
   align-items: stretch;
   gap: 2px;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+.v2ex-tabs__scroll-button {
+  width: 24px;
+  height: 28px;
+  min-width: 24px;
+  flex: none;
+  padding: 0;
+
+  .v2ex-button__icon,
+  .v2ex-button__icon > svg {
+    width: 15px;
+    height: 15px;
   }
 }
 
@@ -908,6 +923,94 @@
   height: 8px;
   border-radius: 50%;
   background: var(--v2ex-focus-border);
+}
+
+.v2ex-radio-group__badge {
+  min-width: auto;
+  height: 13px;
+  padding: 0 3px;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.v2ex-radio-group__badge--danger {
+  border-color: var(--vscode-contrastBorder, var(--v2ex-danger-fg));
+  color: #fff;
+  background: var(--v2ex-danger-fg);
+}
+
+.v2ex-radio-group--segmented {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--vscode-contrastBorder, transparent);
+  border-radius: var(--v2ex-radius-md);
+  background: var(--v2ex-light-button-bg);
+
+  .v2ex-radio-group__label {
+    position: relative;
+    min-height: 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--v2ex-radius-sm);
+    color: var(--v2ex-muted-fg);
+    font-weight: 600;
+
+    &:hover:not(:has(.v2ex-radio-group__item:disabled)):not(
+        :has(.v2ex-radio-group__item[data-state='checked'])
+      ) {
+      color: var(--v2ex-webview-fg);
+      background: var(--v2ex-light-button-hover-bg);
+    }
+
+    &:has(.v2ex-radio-group__item[data-state='checked']) {
+      border-color: var(--vscode-contrastBorder, var(--v2ex-control-border));
+      color: var(--v2ex-webview-fg);
+      background: var(--v2ex-webview-bg);
+      box-shadow: 0 1px 2px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.16));
+    }
+
+    &:has(.v2ex-radio-group__item:focus-visible) {
+      border-color: var(--vscode-contrastActiveBorder, var(--v2ex-focus-border));
+      outline: 1px solid var(--vscode-contrastActiveBorder, var(--v2ex-focus-border));
+      outline-offset: -1px;
+    }
+
+    &:has(.v2ex-radio-group__item:disabled) {
+      color: var(--v2ex-disabled-fg);
+      cursor: not-allowed;
+    }
+  }
+
+  .v2ex-radio-group__item {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    opacity: 0;
+  }
+
+  .v2ex-radio-group__indicator {
+    display: none;
+  }
+
+  .v2ex-radio-group__text {
+    position: relative;
+    z-index: 1;
+  }
+
+  .v2ex-radio-group__badge {
+    position: absolute;
+    z-index: 0;
+    top: -7px;
+    right: -9px;
+  }
 }
 
 .v2ex-tooltip,

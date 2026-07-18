@@ -25,6 +25,8 @@ import {
   Pagination,
   Popover,
   Progress,
+  RadioGroup,
+  RadioGroupItem,
   Select,
   Spinner,
   Tag,
@@ -59,6 +61,7 @@ export default function ThemePreviewApp() {
   const [inputValue, setInputValue] = useState('V2EX')
   const [otpValue, setOtpValue] = useState('12')
   const [previewPage, setPreviewPage] = useState(4)
+  const [replyViewMode, setReplyViewMode] = useState('nested')
 
   const setPreviewTheme = (label: string, bodyClass: string) => {
     setActiveTheme(label)
@@ -178,6 +181,15 @@ export default function ThemePreviewApp() {
             showQuickJumper
             onPageChange={setPreviewPage}
           />
+          <RadioGroup
+            aria-label="回复列表展示模式"
+            variant="segmented"
+            value={replyViewMode}
+            onValueChange={setReplyViewMode}
+          >
+            <RadioGroupItem value="flat" label="普通列表" />
+            <RadioGroupItem value="nested" label="楼中楼" badge="BETA" badgeVariant="danger" />
+          </RadioGroup>
         </PreviewSection>
 
         <PreviewSection title="操作与状态">
@@ -261,13 +273,19 @@ export default function ThemePreviewApp() {
         </PreviewSection>
 
         <PreviewSection title="导航与数据">
-          <Tabs defaultValue="theme">
-            <TabsList>
+          <Tabs className="theme-preview-overflow-tabs" defaultValue="theme">
+            <TabsList overflowNavigation>
               <TabsTrigger value="theme">主题</TabsTrigger>
               <TabsTrigger value="component">组件</TabsTrigger>
+              <TabsTrigger value="navigation">导航</TabsTrigger>
+              <TabsTrigger value="feedback">反馈</TabsTrigger>
+              <TabsTrigger value="data">数据展示</TabsTrigger>
             </TabsList>
             <TabsContent value="theme">主题内容</TabsContent>
             <TabsContent value="component">组件内容</TabsContent>
+            <TabsContent value="navigation">导航内容</TabsContent>
+            <TabsContent value="feedback">反馈内容</TabsContent>
+            <TabsContent value="data">数据展示内容</TabsContent>
           </Tabs>
           <Collapsible defaultOpen>
             <CollapsibleTrigger className="theme-preview-tree-trigger">

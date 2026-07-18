@@ -1,5 +1,14 @@
 import { Tabs as TabsPrimitive } from 'radix-ui'
-import type { ComponentProps, ReactNode } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode
+} from 'react'
+import { Button } from './Button'
 import { mergeClassNames } from './utils'
 
 export interface TabsProps extends Omit<
@@ -21,18 +30,173 @@ export function Tabs({ className, orientation = 'horizontal', ...props }: TabsPr
   )
 }
 
-export interface TabsListProps extends ComponentProps<typeof TabsPrimitive.List> {
+export interface TabsListProps extends Omit<ComponentProps<typeof TabsPrimitive.List>, 'ref'> {
   /** 标签栏右侧附加内容 */
   extra?: ReactNode
+  /** 溢出时显示横向滚动按钮 */
+  overflowNavigation?: boolean
 }
 
-/** 标签列表及可选工具区 */
-export function TabsList({ children, className, extra, ...props }: TabsListProps) {
+interface TabsOverflowState {
+  /** 是否存在溢出 */
+  overflow: boolean
+  /** 是否可以向前滚动 */
+  canScrollBack: boolean
+  /** 是否可以向后滚动 */
+  canScrollForward: boolean
+}
+
+const initialOverflowState: TabsOverflowState = {
+  overflow: false,
+  canScrollBack: false,
+  canScrollForward: false
+}
+
+/** 标签列表、可选溢出导航及工具区 */
+export function TabsList({
+  children,
+  className,
+  extra,
+  overflowNavigation = false,
+  ...props
+}: TabsListProps) {
+  const listRef = useRef<HTMLDivElement>(null)
+  const [overflowState, setOverflowState] = useState<TabsOverflowState>(initialOverflowState)
+
+  /** 更新标签列表溢出状态 */
+  const updateOverflowState = useCallback(() => {
+    const list = listRef.current
+    if (!list || !overflowNavigation) {
+      return
+    }
+
+    const maxScrollLeft = Math.max(0, list.scrollWidth - list.clientWidth)
+    const nextState: TabsOverflowState = {
+      overflow: maxScrollLeft > 1,
+      canScrollBack: list.scrollLeft > 1,
+      canScrollForward: list.scrollLeft < maxScrollLeft - 1
+    }
+
+    setOverflowState(current =>
+      current.overflow === nextState.overflow &&
+      current.canScrollBack === nextState.canScrollBack &&
+      current.canScrollForward === nextState.canScrollForward
+        ? current
+        : nextState
+    )
+  }, [overflowNavigation])
+
+  /** 将指定标签滚动到可视区域 */
+  const scrollTabIntoView = useCallback((tab: HTMLElement, behavior: ScrollBehavior) => {
+    const list = listRef.current
+    if (!list) {
+      return
+    }
+
+    const listRect = list.getBoundingClientRect()
+    const tabRect = tab.getBoundingClientRect()
+    const leftDelta = tabRect.left - listRect.left
+    const rightDelta = tabRect.right - listRect.right
+
+    if (leftDelta < -1) {
+      list.scrollBy({ left: leftDelta, behavior })
+    } else if (rightDelta > 1) {
+      list.scrollBy({ left: rightDelta, behavior })
+    }
+  }, [])
+
+  /** 滚动到下一个未完全显示的标签 */
+  function scrollOverflow(direction: 'back' | 'forward') {
+    const list = listRef.current
+    if (!list) {
+      return
+    }
+
+    const listRect = list.getBoundingClientRect()
+    const tabs = Array.from(list.querySelectorAll<HTMLElement>('[role="tab"]'))
+    const target =
+      direction === 'back'
+        ? tabs.reverse().find(tab => tab.getBoundingClientRect().left < listRect.left - 1)
+        : tabs.find(tab => tab.getBoundingClientRect().right > listRect.right + 1)
+
+    if (target) {
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth'
+      scrollTabIntoView(target, behavior)
+    }
+  }
+
+  useLayoutEffect(() => {
+    const list = listRef.current
+    if (!list || !overflowNavigation) {
+      setOverflowState(initialOverflowState)
+      return
+    }
+
+    let frame = 0
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const activeTab = list.querySelector<HTMLElement>('[role="tab"][data-state="active"]')
+        if (activeTab) {
+          scrollTabIntoView(activeTab, 'auto')
+        }
+        updateOverflowState()
+      })
+    }
+    const resizeObserver = new ResizeObserver(scheduleUpdate)
+    const mutationObserver = new MutationObserver(scheduleUpdate)
+
+    resizeObserver.observe(list)
+    mutationObserver.observe(list, {
+      attributes: true,
+      attributeFilter: ['data-state'],
+      childList: true,
+      subtree: true
+    })
+    list.addEventListener('scroll', updateOverflowState, { passive: true })
+    scheduleUpdate()
+
+    return () => {
+      cancelAnimationFrame(frame)
+      resizeObserver.disconnect()
+      mutationObserver.disconnect()
+      list.removeEventListener('scroll', updateOverflowState)
+    }
+  }, [overflowNavigation, scrollTabIntoView, updateOverflowState])
+
   return (
     <div className={mergeClassNames('v2ex-tabs__bar', className)}>
-      <TabsPrimitive.List className="v2ex-tabs__list" {...props}>
+      {overflowState.overflow && (
+        <Button
+          type="button"
+          className="v2ex-tabs__scroll-button"
+          variant="ghost"
+          size="small"
+          icon={<ChevronLeft aria-hidden="true" />}
+          disabled={!overflowState.canScrollBack}
+          aria-label="向左滚动标签"
+          title="向左滚动标签"
+          onClick={() => scrollOverflow('back')}
+        />
+      )}
+      <TabsPrimitive.List ref={listRef} className="v2ex-tabs__list" {...props}>
         {children}
       </TabsPrimitive.List>
+      {overflowState.overflow && (
+        <Button
+          type="button"
+          className="v2ex-tabs__scroll-button"
+          variant="ghost"
+          size="small"
+          icon={<ChevronRight aria-hidden="true" />}
+          disabled={!overflowState.canScrollForward}
+          aria-label="向右滚动标签"
+          title="向右滚动标签"
+          onClick={() => scrollOverflow('forward')}
+        />
+      )}
       {extra && <div className="v2ex-tabs__extra">{extra}</div>}
     </div>
   )

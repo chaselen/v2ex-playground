@@ -38,18 +38,15 @@
 
   > .v2ex-tabs__bar {
     min-height: 44px;
-    padding: 0 8px 0 12px;
+    padding-inline: 8px;
     background: var(--v2ex-webview-bg);
   }
 
   > .v2ex-tabs__bar .v2ex-tabs__trigger {
     min-height: 44px;
+    padding-inline: 8px;
     color: var(--v2ex-webview-fg);
     font-size: var(--v2ex-main-font-size);
-  }
-
-  > .v2ex-tabs__bar .v2ex-tabs__trigger + .v2ex-tabs__trigger {
-    margin-left: 4px;
   }
 
   > .v2ex-tabs__bar .v2ex-tabs__trigger[data-state='active'] {
@@ -76,6 +73,10 @@
     display: flex;
     height: 44px;
     align-items: center;
+  }
+
+  .v2ex-tabs__scroll-button {
+    height: 44px;
   }
 }
 

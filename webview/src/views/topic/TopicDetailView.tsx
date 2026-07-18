@@ -17,7 +17,6 @@ import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import NodeButton from '@/components/NodeButton'
 import ProTag from '@/components/ProTag'
 import {
-  Badge,
   Button,
   ConfirmPopover,
   Empty,
@@ -589,14 +588,17 @@ export default function TopicDetailView({
                   <RadioGroup
                     aria-label="回复列表展示模式"
                     className="reply-view-switch"
+                    variant="segmented"
                     value={replyViewMode}
                     onValueChange={value => setReplyViewMode(value as ReplyViewMode)}
                   >
                     <RadioGroupItem value="flat" label="普通列表" />
-                    <div className="reply-view-nested-option">
-                      <RadioGroupItem value="nested" label="楼中楼" />
-                      <Badge count="BETA" countClassName="reply-view-beta" />
-                    </div>
+                    <RadioGroupItem
+                      value="nested"
+                      label="楼中楼"
+                      badge="BETA"
+                      badgeVariant="danger"
+                    />
                   </RadioGroup>
                 )}
               </div>

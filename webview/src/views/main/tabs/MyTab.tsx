@@ -11,11 +11,9 @@ import {
   Button,
   Empty,
   Progress,
-  Spinner,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
+  RadioGroup,
+  RadioGroupItem,
+  Spinner
 } from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import LoginPrompt from '../components/LoginPrompt'
@@ -659,6 +657,18 @@ export default function MyTab(props: MyTabProps) {
     )
   }
 
+  /** 渲染当前“我的”内容 */
+  function renderActiveContent() {
+    switch (activeContentTab) {
+      case 'topicCollection':
+        return renderMyTopicList('topicCollection', '暂无收藏主题')
+      case 'specialFollowing':
+        return renderMyTopicList('specialFollowing', '暂无特别关注')
+      case 'messages':
+        return renderMessages()
+    }
+  }
+
   if (loading) {
     return (
       <SimpleBar className={styles['my-panel']} autoHide={false}>
@@ -815,15 +825,18 @@ export default function MyTab(props: MyTabProps) {
         </article>
 
         <section className={styles['my-content']}>
-          <Tabs
+          <RadioGroup
+            aria-label="我的内容"
             value={activeContentTab}
             className={styles['my-content-tabs']}
+            variant="segmented"
             onValueChange={value => changeContentTab(value as MyContentTabKey)}
           >
-            <TabsList>
-              <TabsTrigger value="topicCollection">主题收藏</TabsTrigger>
-              <TabsTrigger value="specialFollowing">特别关注</TabsTrigger>
-              <TabsTrigger value="messages">
+            <RadioGroupItem value="topicCollection" label="主题收藏" />
+            <RadioGroupItem value="specialFollowing" label="特别关注" />
+            <RadioGroupItem
+              value="messages"
+              label={
                 <span className={styles['my-message-tab']}>
                   <span>消息</span>
                   {!!overview.unreadNoticeCount && (
@@ -834,16 +847,10 @@ export default function MyTab(props: MyTabProps) {
                     />
                   )}
                 </span>
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="topicCollection">
-              {renderMyTopicList('topicCollection', '暂无收藏主题')}
-            </TabsContent>
-            <TabsContent value="specialFollowing">
-              {renderMyTopicList('specialFollowing', '暂无特别关注')}
-            </TabsContent>
-            <TabsContent value="messages">{renderMessages()}</TabsContent>
-          </Tabs>
+              }
+            />
+          </RadioGroup>
+          <div className={styles['my-content-panel']}>{renderActiveContent()}</div>
         </section>
       </div>
     </SimpleBar>

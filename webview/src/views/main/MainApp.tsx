@@ -311,6 +311,7 @@ export default function MainApp() {
         }}
       >
         <TabsList
+          overflowNavigation
           extra={
             <Button
               className="main-tab-refresh"
