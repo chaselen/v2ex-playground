@@ -1,6 +1,8 @@
 import { Popover as PopoverPrimitive } from 'radix-ui'
+import { TriangleAlert } from 'lucide-react'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { Button } from './Button'
+import { FloatingArrow } from './FloatingArrow'
 import { mergeClassNames } from './utils'
 
 export interface ConfirmPopoverProps {
@@ -14,6 +16,8 @@ export interface ConfirmPopoverProps {
   confirmText?: string
   /** 取消按钮文字 */
   cancelText?: string
+  /** 标题图标 */
+  titleIcon?: ReactNode
   /** 确认按钮是否为危险操作 */
   danger?: boolean
   /** 是否禁用 */
@@ -43,10 +47,17 @@ export function ConfirmPopover({
   onCancel,
   onConfirm,
   side = 'top',
-  title
+  title,
+  titleIcon
 }: ConfirmPopoverProps) {
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const resolvedTitleIcon =
+    titleIcon === undefined ? (
+      <TriangleAlert className="v2ex-confirm-popover__default-icon" aria-hidden="true" />
+    ) : (
+      titleIcon
+    )
 
   async function confirm() {
     setConfirming(true)
@@ -79,8 +90,20 @@ export function ConfirmPopover({
           role="alertdialog"
           aria-busy={confirming}
         >
-          <strong className="v2ex-confirm-popover__title">{title}</strong>
-          {description && <div className="v2ex-confirm-popover__description">{description}</div>}
+          <div className="v2ex-confirm-popover__body">
+            {resolvedTitleIcon && (
+              <span
+                className={mergeClassNames(
+                  'v2ex-confirm-popover__icon',
+                  danger && 'v2ex-confirm-popover__icon--danger'
+                )}
+              >
+                {resolvedTitleIcon}
+              </span>
+            )}
+            <strong className="v2ex-confirm-popover__title">{title}</strong>
+            {description && <div className="v2ex-confirm-popover__description">{description}</div>}
+          </div>
           <div className="v2ex-confirm-popover__actions">
             <Button
               size="small"
@@ -101,7 +124,9 @@ export function ConfirmPopover({
               {confirmText}
             </Button>
           </div>
-          <PopoverPrimitive.Arrow className="v2ex-popover__arrow" />
+          <PopoverPrimitive.Arrow asChild>
+            <FloatingArrow className="v2ex-popover__arrow" />
+          </PopoverPrimitive.Arrow>
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>
     </PopoverPrimitive.Root>

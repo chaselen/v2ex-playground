@@ -1,5 +1,6 @@
 import { Popover as PopoverPrimitive } from 'radix-ui'
 import type { ReactElement, ReactNode } from 'react'
+import { FloatingArrow } from './FloatingArrow'
 import { mergeClassNames } from './utils'
 
 export interface PopoverProps {
@@ -47,7 +48,11 @@ export function Popover({
           collisionPadding={8}
         >
           {content}
-          {showArrow && <PopoverPrimitive.Arrow className="v2ex-popover__arrow" />}
+          {showArrow && (
+            <PopoverPrimitive.Arrow asChild>
+              <FloatingArrow className="v2ex-popover__arrow" />
+            </PopoverPrimitive.Arrow>
+          )}
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>
     </PopoverPrimitive.Root>

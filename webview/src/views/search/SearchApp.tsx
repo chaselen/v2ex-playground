@@ -377,7 +377,9 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
         >
           {renderHighlight(title)}
         </a>
-        {source.replies > 0 && <Badge count={source.replies} overflowCount={99} />}
+        {source.replies > 0 && (
+          <Badge count={source.replies} overflowCount={99} countClassName="search-result-replies" />
+        )}
       </div>
       <div className="search-result-meta">
         <a href={`/member/${source.member}`} onClick={openMember}>

@@ -1,5 +1,6 @@
 import { HoverCard as HoverCardPrimitive } from 'radix-ui'
 import type { ReactElement, ReactNode } from 'react'
+import { FloatingArrow } from './FloatingArrow'
 import { mergeClassNames } from './utils'
 
 export interface HoverCardProps {
@@ -55,7 +56,11 @@ export function HoverCard({
           collisionPadding={8}
         >
           {content}
-          {showArrow && <HoverCardPrimitive.Arrow className="v2ex-popover__arrow" />}
+          {showArrow && (
+            <HoverCardPrimitive.Arrow asChild>
+              <FloatingArrow className="v2ex-popover__arrow" />
+            </HoverCardPrimitive.Arrow>
+          )}
         </HoverCardPrimitive.Content>
       </HoverCardPrimitive.Portal>
     </HoverCardPrimitive.Root>

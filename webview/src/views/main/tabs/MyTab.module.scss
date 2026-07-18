@@ -167,15 +167,6 @@
 
   :global(.v2ex-progress__track) {
     height: 6px;
-    background: color-mix(
-      in srgb,
-      var(--vscode-charts-orange, var(--v2ex-warning-fg)) 18%,
-      var(--v2ex-widget-bg)
-    );
-  }
-
-  :global(.v2ex-progress__indicator) {
-    background: var(--vscode-charts-orange, var(--v2ex-warning-fg));
   }
 
   :global(.v2ex-progress__label) {
@@ -225,6 +216,11 @@
   font-weight: 500;
   color: var(--v2ex-main-content-fg);
   @include mixins.ellipsis;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--vscode-textLink-foreground, var(--v2ex-link-fg));
+  }
 }
 
 .my-balance {
@@ -261,8 +257,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border-radius: 4px;
   color: var(--vscode-icon-foreground, var(--vscode-descriptionForeground));
@@ -314,9 +310,11 @@
 
     &[data-state='active'],
     &[data-state='active']:hover {
-      background: var(--v2ex-primary-button-bg);
-      color: var(--v2ex-primary-button-fg);
-      box-shadow: 0 1px 2px var(--v2ex-widget-shadow-color);
+      background: var(--v2ex-widget-bg);
+      color: var(--v2ex-main-content-fg);
+      box-shadow:
+        0 0 0 1px var(--v2ex-control-border),
+        0 1px 2px var(--v2ex-widget-shadow-color);
     }
   }
 
@@ -344,7 +342,6 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
-  box-shadow: 0 0 0 1px var(--v2ex-widget-bg);
 }
 
 .my-topic-list {
@@ -455,7 +452,7 @@
   margin-top: 4px;
   padding: 6px 8px;
   border-radius: 6px;
-  background: var(--v2ex-widget-bg);
+  background: var(--v2ex-default-bg);
   color: var(--v2ex-main-content-fg);
   line-height: 1.55;
   word-break: break-word;

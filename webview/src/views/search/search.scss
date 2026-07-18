@@ -137,11 +137,6 @@ $panel-border: var(--v2ex-border);
   align-items: flex-start;
   gap: 8px;
   min-width: 0;
-
-  .v2ex-badge {
-    flex: none;
-    margin-left: auto;
-  }
 }
 
 .search-result-title {
@@ -150,6 +145,11 @@ $panel-border: var(--v2ex-border);
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
+}
+
+.search-result-replies {
+  flex: none;
+  margin-left: auto;
 }
 
 .search-result-meta {

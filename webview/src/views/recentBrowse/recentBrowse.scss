@@ -150,6 +150,8 @@ $panel-border: var(--v2ex-border);
 .recent-topic-meta {
   @include topic-list-item.meta;
 
+  padding-right: 32px;
+
   > span,
   time {
     flex: 0 1 auto;

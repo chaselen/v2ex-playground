@@ -96,7 +96,23 @@ export default function ThemePreviewApp() {
             <Button variant="subtle">Subtle</Button>
             <Button variant="ghost">Ghost</Button>
             <Button variant="danger">Danger</Button>
-            <Button disabled>Disabled</Button>
+          </div>
+          <div className="theme-preview-row">
+            <Button variant="primary" disabled>
+              Primary disabled
+            </Button>
+            <Button variant="secondary" disabled>
+              Secondary disabled
+            </Button>
+            <Button variant="subtle" disabled>
+              Subtle disabled
+            </Button>
+            <Button variant="ghost" disabled>
+              Ghost disabled
+            </Button>
+            <Button variant="danger" disabled>
+              Danger disabled
+            </Button>
           </div>
           <div className="theme-preview-row">
             <Avatar fallback="V" />
@@ -174,6 +190,14 @@ export default function ThemePreviewApp() {
               onConfirm={() => Toast.success('确认操作成功')}
             >
               <Button>Confirm</Button>
+            </ConfirmPopover>
+            <ConfirmPopover
+              title="确认执行危险操作吗？"
+              description="操作完成后无法恢复"
+              danger
+              onConfirm={() => Toast.success('危险操作已确认')}
+            >
+              <Button variant="danger">Danger Confirm</Button>
             </ConfirmPopover>
             <Popover content={<div>VS Code Widget 浮层</div>}>
               <Button>Popover</Button>

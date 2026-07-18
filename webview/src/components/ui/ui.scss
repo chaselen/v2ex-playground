@@ -57,6 +57,18 @@
     color: var(--v2ex-primary-button-fg);
     background: var(--v2ex-primary-button-hover-bg);
   }
+
+  &:disabled {
+    border-color: var(--vscode-contrastBorder, transparent);
+    color: var(--v2ex-primary-button-fg);
+    background: var(--v2ex-primary-button-bg);
+  }
+}
+
+.v2ex-button--secondary:disabled {
+  border-color: var(--v2ex-disabled-border);
+  color: var(--v2ex-disabled-fg);
+  background: var(--v2ex-disabled-bg);
 }
 
 .v2ex-button--subtle {
@@ -71,6 +83,10 @@
   &:active:not(:disabled) {
     color: var(--v2ex-active-fg);
     background: var(--v2ex-light-button-active-bg);
+  }
+
+  &:disabled {
+    background: var(--v2ex-light-button-bg);
   }
 }
 
@@ -100,6 +116,12 @@
   &:hover:not(:disabled) {
     color: var(--v2ex-danger-fg);
     background: color-mix(in srgb, var(--v2ex-danger-bg) 84%, var(--v2ex-danger-fg));
+  }
+
+  &:disabled {
+    border-color: var(--vscode-contrastBorder, var(--v2ex-danger-border));
+    color: var(--v2ex-danger-fg);
+    background: var(--v2ex-danger-bg);
   }
 }
 
@@ -221,14 +243,25 @@
   height: 16px;
   margin-top: 1px;
   color: var(--v2ex-info-fg);
+  --v2ex-alert-icon-mark: var(--v2ex-info-bg);
 }
 
 .v2ex-alert--warning .v2ex-alert__icon {
   color: var(--v2ex-warning-fg);
+  --v2ex-alert-icon-mark: var(--v2ex-warning-bg);
 }
 
 .v2ex-alert--danger .v2ex-alert__icon {
   color: var(--v2ex-danger-fg);
+  --v2ex-alert-icon-mark: var(--v2ex-danger-bg);
+}
+
+.v2ex-alert__icon > :first-child {
+  fill: currentColor;
+}
+
+.v2ex-alert__icon > :not(:first-child) {
+  stroke: var(--v2ex-alert-icon-mark);
 }
 
 .v2ex-alert__content {
@@ -885,9 +918,7 @@
 }
 
 .v2ex-tooltip__arrow {
-  fill: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
-  stroke: var(--vscode-contrastBorder, var(--v2ex-border));
-  stroke-width: 1px;
+  transform: translateY(-1px);
 }
 
 .v2ex-popover {
@@ -897,23 +928,69 @@
 }
 
 .v2ex-popover__arrow {
+  transform: translateY(-1px);
+}
+
+.v2ex-floating-arrow__fill {
   fill: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+}
+
+.v2ex-floating-arrow__border {
+  fill: none;
   stroke: var(--vscode-contrastBorder, var(--v2ex-border));
   stroke-width: 1px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .v2ex-confirm-popover {
   width: min(300px, calc(100vw - 16px));
 }
 
+.v2ex-confirm-popover__body {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  column-gap: 8px;
+}
+
+.v2ex-confirm-popover__icon {
+  display: inline-flex;
+  grid-row: 1 / span 2;
+  align-items: flex-start;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--v2ex-warning-fg);
+}
+
+.v2ex-confirm-popover__icon--danger {
+  color: var(--v2ex-danger-fg);
+}
+
+.v2ex-confirm-popover__icon > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.v2ex-confirm-popover__default-icon > :first-child {
+  fill: currentColor;
+}
+
+.v2ex-confirm-popover__default-icon > :not(:first-child) {
+  stroke: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+}
+
 .v2ex-confirm-popover__title {
   display: block;
+  grid-column: 2;
   color: var(--v2ex-widget-fg);
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
 .v2ex-confirm-popover__description {
+  grid-column: 2;
   margin-top: 5px;
   color: var(--v2ex-muted-fg);
   line-height: 1.45;

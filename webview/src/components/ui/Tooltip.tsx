@@ -1,5 +1,6 @@
 import { Tooltip as TooltipPrimitive } from 'radix-ui'
 import type { ReactElement, ReactNode } from 'react'
+import { FloatingArrow } from './FloatingArrow'
 import { mergeClassNames } from './utils'
 
 export interface TooltipProps {
@@ -38,7 +39,9 @@ export function Tooltip({
             sideOffset={6}
           >
             {content}
-            <TooltipPrimitive.Arrow className="v2ex-tooltip__arrow" width={10} height={5} />
+            <TooltipPrimitive.Arrow asChild>
+              <FloatingArrow className="v2ex-tooltip__arrow" />
+            </TooltipPrimitive.Arrow>
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
       </TooltipPrimitive.Root>

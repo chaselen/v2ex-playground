@@ -1,4 +1,4 @@
-import { AlertCircle, CircleAlert, Info } from 'lucide-react'
+import { CircleX, Info, TriangleAlert } from 'lucide-react'
 import type { HTMLAttributes, ReactNode } from 'react'
 import { mergeClassNames } from './utils'
 
@@ -13,8 +13,8 @@ export interface AlertProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'
 
 const icons = {
   info: Info,
-  warning: CircleAlert,
-  danger: AlertCircle
+  warning: TriangleAlert,
+  danger: CircleX
 }
 
 /** 使用 VS Code 输入校验主题色的提示条 */

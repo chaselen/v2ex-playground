@@ -217,6 +217,8 @@ export default function RecentBrowseApp() {
               {topic.publishedAt}
             </time>
           )}
+        </span>
+        <span className="recent-topic-delete-trigger">
           <ConfirmPopover
             title="删除这条浏览记录？"
             description="删除后不可恢复"
