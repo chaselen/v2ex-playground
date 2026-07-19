@@ -222,7 +222,7 @@ export class AccountService {
       // 记录领取前最新奖励，用于确认领取后是否产生了新流水
       const previousReward = await this.findDailySignInReward()
 
-      // 签到页尚未进入下一个周期时，页面仍会显示已领取，最新奖励可能属于前一个日期
+      // 签到页尚未刷新到新一天时，页面仍会显示已领取，最新奖励可能属于前一个日期
       // <span class="gray"><li class="fa fa-ok-sign" style="color: #0c0;"></li> &nbsp;每日登录奖励已领取</span>
       if ($('.fa.fa-ok-sign').length) {
         return {

@@ -274,11 +274,23 @@ export default function MyTab(props: MyTabProps) {
 
   useEffect(() => {
     return vscode.on('dailySignInStatusChanged', data => {
+      if (data.loading) {
+        // 自动签到探测时 loading 事件可能仍带 signedIn=false，避免把已签到状态打回
+        setDailySignInLoading(true)
+        if (data.signedIn) {
+          setDailySignedIn(true)
+        }
+        if (data.reward !== undefined) {
+          setDailySignInReward(data.reward)
+        }
+        return
+      }
+
       setDailySignedIn(data.signedIn)
       if (data.reward !== undefined) {
         setDailySignInReward(data.reward)
       }
-      setDailySignInLoading(!!data.loading)
+      setDailySignInLoading(false)
     })
   }, [])
 

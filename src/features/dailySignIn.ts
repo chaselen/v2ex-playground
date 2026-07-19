@@ -87,11 +87,28 @@ export default async function autoDailySignIn(
   }
   if (!username) return { signedIn: false }
 
-  if (isDailySignedInTodayFor(username)) {
+  const cached = getDailySignInRecordForToday(username)
+  if (cached) {
     return {
       signedIn: true,
-      result: 'repetitive'
+      result: 'repetitive',
+      reward: cached.reward
     }
+  }
+
+  // 与手动签到复用进行中的任务，避免并发重复领取
+  if (dailySignInTask?.username === username) {
+    return dailySignInTask.promise
+  }
+
+  // 签到页已显示已领取（含任务尚未刷新时的上一任务日）时直接返回，不启动 loading 任务，避免 UI 闪烁与无效 redeem
+  const status = await getDailySignInStatus()
+  // 状态查询等待期间可能已有同账号任务启动，优先 join
+  if (dailySignInTask?.username === username) {
+    return dailySignInTask.promise
+  }
+  if (status.signedIn) {
+    return status
   }
 
   return getOrStartDailySignInTask(username, {
@@ -151,13 +168,6 @@ function isDailySignInLoading(): boolean {
  * 查询每日签到状态
  */
 export async function getDailySignInStatus(): Promise<DailySignInData> {
-  if (isDailySignInLoading()) {
-    return {
-      signedIn: isDailySignedInToday(),
-      loading: true
-    }
-  }
-
   const username = G.V2ex.getAuthenticatedUsername()
   if (!username) {
     return {
@@ -166,6 +176,15 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
   }
 
   const record = getDailySignInRecordForToday(username)
+  if (isDailySignInLoading()) {
+    return {
+      // 任务进行中若尚无今日缓存，不把 UI 强行打成未签到；由 Webview 在 loading 时保留原状态
+      signedIn: !!record,
+      loading: true,
+      reward: record?.reward
+    }
+  }
+
   if (record?.reward !== undefined) {
     return {
       signedIn: true,
@@ -176,8 +195,14 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
 
   try {
     const status = await G.V2ex.getDailySignInStatus()
-    const signedIn = status.signedIn && status.reward?.date === getCurrentV2exDate()
-    if (signedIn && status.reward && G.V2ex.getAuthenticatedUsername() === username) {
+    // 签到页显示已领取即视为当前任务日已签到；任务尚未刷新时页面仍会停留在上一任务日
+    const signedIn = status.signedIn
+    // 本地完成缓存只在奖励日期对应当前 +08:00 日期时写入，避免任务刷新后误跳过自动签到
+    if (
+      signedIn &&
+      status.reward?.date === getCurrentV2exDate() &&
+      G.V2ex.getAuthenticatedUsername() === username
+    ) {
       await updateDailySignedInDate(status.reward.date, username, status.reward.reward)
     }
     return {
@@ -189,7 +214,8 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
     logger.error('每日签到状态查询失败', err)
     return {
       signedIn: !!record,
-      result: record ? 'repetitive' : undefined
+      result: record ? 'repetitive' : undefined,
+      reward: record?.reward
     }
   }
 }
@@ -301,27 +327,32 @@ async function runDailySignInWithRetry(
 async function runDailySignIn(username: string): Promise<DailySignInData> {
   try {
     const { result, reward, rewardDate } = await G.V2ex.dailySignIn()
+    const today = getCurrentV2exDate()
+    // 领域层在缺少奖励流水时可能返回 0；UI 与缓存只接受有效正数
+    const normalizedReward = reward > 0 ? reward : undefined
+    // success 或奖励日期属于今天时写入本地完成记录；上一任务日的 repetitive 不缓存，任务刷新后仍会自动领取
     if (
-      (result === 'success' || result === 'repetitive') &&
       rewardDate &&
-      G.V2ex.getAuthenticatedUsername() === username
+      normalizedReward !== undefined &&
+      G.V2ex.getAuthenticatedUsername() === username &&
+      (result === 'success' || (result === 'repetitive' && rewardDate === today))
     ) {
-      await updateDailySignedInDate(rewardDate, username, reward)
+      await updateDailySignedInDate(rewardDate, username, normalizedReward)
     }
     if (result === 'success') {
-      logger.info('每日签到成功', { reward })
-    } else if (result === 'repetitive' && rewardDate === getCurrentV2exDate()) {
+      logger.info('每日签到成功', { reward: normalizedReward })
+    } else if (result === 'repetitive' && rewardDate === today) {
       logger.info('今日已完成签到')
     } else if (result === 'repetitive') {
-      logger.info('V2EX 每日签到尚未刷新', { rewardDate })
+      logger.info('V2EX 每日签到尚未刷新，当前任务日视作已签到', { rewardDate })
     } else {
       logger.warn('每日签到失败')
     }
     return {
-      signedIn:
-        result === 'success' || (result === 'repetitive' && rewardDate === getCurrentV2exDate()),
+      // 页面已领取（含任务尚未刷新、仍显示上一任务日已领取）时 UI 视作已签到
+      signedIn: result === 'success' || result === 'repetitive',
       result,
-      reward
+      reward: normalizedReward
     }
   } catch (err) {
     logger.error('每日签到失败', err)
