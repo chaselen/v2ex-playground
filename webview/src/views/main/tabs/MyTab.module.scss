@@ -60,7 +60,7 @@
   width: 36px;
   height: 36px;
   border-radius: var(--v2ex-radius-md);
-  background: var(--v2ex-default-bg);
+  background: var(--v2ex-light-button-bg);
   color: var(--v2ex-icon-fg);
 }
 
@@ -232,7 +232,7 @@
   max-width: 64%;
   padding: 5px 8px;
   border-radius: 999px;
-  background: var(--v2ex-default-bg);
+  background: var(--v2ex-light-button-bg);
   color: var(--v2ex-main-content-fg);
   font-size: 14px;
   font-weight: 700;
@@ -242,7 +242,7 @@
   }
 
   &:hover {
-    background: var(--v2ex-default-hover-bg);
+    background: var(--v2ex-light-button-hover-bg);
   }
 }
 
@@ -413,7 +413,7 @@
   margin-top: 4px;
   padding: 6px 8px;
   border-radius: var(--v2ex-radius-md);
-  background: var(--v2ex-default-bg);
+  background: var(--v2ex-light-button-bg);
   color: var(--v2ex-main-content-fg);
   line-height: 1.55;
   word-break: break-word;
@@ -505,10 +505,5 @@
   .my-coin {
     width: 15px;
     height: 15px;
-  }
-
-  .my-content-tabs :global(.v2ex-tabs__trigger) {
-    padding-right: 8px;
-    padding-left: 8px;
   }
 }

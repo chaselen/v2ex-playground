@@ -329,7 +329,7 @@ export default function TopicDetailView({
         icon={isFloating ? <RefreshCw aria-hidden="true" /> : undefined}
         loading={refreshing}
         size={buttonSize}
-        variant={isFloating ? 'ghost' : 'secondary'}
+        variant={isFloating ? 'ghost' : 'subtle'}
         onClick={() => void requestTopicAction(refreshTopic, setRefreshing)}
       >
         {isFloating ? null : '刷新页面'}
@@ -366,7 +366,7 @@ export default function TopicDetailView({
                   aria-label="加入收藏"
                   loading={collecting}
                   size={buttonSize}
-                  variant="secondary"
+                  variant="subtle"
                   onClick={() => void requestTopicAction(collectTopic, setCollecting)}
                 >
                   加入收藏
@@ -392,7 +392,7 @@ export default function TopicDetailView({
                 aria-label="取消收藏"
                 loading={cancelingCollect}
                 size={buttonSize}
-                variant="secondary"
+                variant="subtle"
                 onClick={() => void requestTopicAction(cancelCollectTopic, setCancelingCollect)}
               >
                 取消收藏
@@ -423,7 +423,7 @@ export default function TopicDetailView({
                       aria-label="感谢主题创建者"
                       loading={thankingTopic}
                       size={buttonSize}
-                      variant="secondary"
+                      variant="subtle"
                     >
                       感谢
                     </Button>

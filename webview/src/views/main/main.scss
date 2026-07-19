@@ -57,6 +57,11 @@
 
   > .v2ex-tabs__bar .v2ex-tabs__trigger[data-state='active'] {
     color: var(--v2ex-title-fg);
+    font-weight: 600;
+  }
+
+  > .v2ex-tabs__bar .v2ex-tabs__trigger[data-state='active']::after {
+    background: var(--v2ex-tab-indicator);
   }
 
   > .v2ex-tabs__content {

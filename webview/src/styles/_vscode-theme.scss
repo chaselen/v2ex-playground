@@ -28,20 +28,17 @@ body {
   --v2ex-font-family: var(--vscode-font-family, system-ui, sans-serif);
   --v2ex-font-size: var(--vscode-font-size, 13px);
 
-  /* 边框与焦点：高对比主题会在下方覆盖 */
+  /* 边框与焦点：contrast 色仅在高对比 body 类中启用，避免部分宿主注入空值/透明值 */
   --v2ex-border-base: var(
     --vscode-panel-border,
     var(--vscode-widget-border, var(--vscode-editorWidget-border, transparent))
   );
-  --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-border: var(--v2ex-border-base);
   /* --v2ex-hc-border 仅在高对比主题定义，供 var(--v2ex-hc-border, fallback) 使用 */
-  --v2ex-control-border: var(
-    --vscode-contrastBorder,
-    color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent)
-  );
+  --v2ex-control-border: color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent);
   --v2ex-focus-border: var(
-    --vscode-contrastActiveBorder,
-    var(--vscode-focusBorder, var(--vscode-textLink-foreground, var(--v2ex-webview-fg)))
+    --vscode-focusBorder,
+    var(--vscode-textLink-foreground, var(--v2ex-webview-fg))
   );
   --v2ex-button-border: var(--vscode-button-border, var(--v2ex-control-border));
 
@@ -61,7 +58,7 @@ body {
     var(--vscode-editor-selectionBackground, var(--v2ex-active-bg))
   );
 
-  /* 默认低强调控件 */
+  /* 次级按钮色：仅用于 secondary Button，不要当作通用表面色 */
   --v2ex-default-bg: var(
     --vscode-button-secondaryBackground,
     var(
@@ -74,9 +71,12 @@ body {
     --vscode-button-secondaryHoverBackground,
     var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.26))
   );
-  --v2ex-default-active-bg: var(--vscode-toolbar-activeBackground, var(--v2ex-active-bg));
+  --v2ex-default-active-bg: var(
+    --vscode-button-secondaryHoverBackground,
+    var(--v2ex-default-hover-bg)
+  );
 
-  /* 低强调按钮背景 */
+  /* 低强调表面/按钮背景：随页面明暗混合，适合进度条轨道、Tag、chip 等 */
   --v2ex-light-button-bg: color-mix(in srgb, var(--v2ex-webview-fg) 8%, var(--v2ex-webview-bg));
   --v2ex-light-button-hover-bg: color-mix(
     in srgb,
@@ -203,7 +203,15 @@ body {
   --v2ex-menu-separator: var(--vscode-menu-separatorBackground, var(--v2ex-border));
   --v2ex-tooltip-fg: var(--vscode-editorHoverWidget-foreground, var(--v2ex-widget-fg));
   --v2ex-tooltip-bg: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
-  --v2ex-progress-fg: var(--vscode-progressBar-background, var(--v2ex-primary-button-bg));
+  /* progressBar 原色：Tabs 指示器等与宿主扩展页加载条对齐 */
+  --v2ex-progress-base: var(
+    --vscode-progressBar-background,
+    var(--vscode-focusBorder, var(--vscode-textLink-foreground, #3794ff))
+  );
+  /* 业务进度条填充略浅：与页面背景混合，避免过饱和 */
+  --v2ex-progress-fg: color-mix(in srgb, var(--v2ex-progress-base) 82%, var(--v2ex-webview-bg));
+  --v2ex-progress-track-bg: color-mix(in srgb, var(--v2ex-webview-fg) 14%, transparent);
+  --v2ex-tab-indicator: var(--v2ex-progress-base);
 
   /* 滚动条 */
   --v2ex-scrollbar-bg: var(--vscode-scrollbarSlider-background, rgba(127, 127, 127, 0.4));
@@ -252,10 +260,15 @@ body.vscode-high-contrast-light {
   /* 高对比主题优先使用 VS Code contrast 色 */
   --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
   --v2ex-hc-border: var(--vscode-contrastBorder);
+  --v2ex-control-border: var(
+    --vscode-contrastBorder,
+    color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent)
+  );
   --v2ex-focus-border: var(
     --vscode-contrastActiveBorder,
     var(--vscode-focusBorder, var(--v2ex-link-fg))
   );
+  --v2ex-tab-indicator: var(--vscode-contrastActiveBorder, var(--v2ex-progress-base));
   --v2ex-disabled-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
   --v2ex-image-preview-border: var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
   --v2ex-shadow-elevated: none;

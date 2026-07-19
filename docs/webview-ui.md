@@ -10,6 +10,9 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - 业务页面只组合共享组件和领域组件，不直接复制 Radix Portal、焦点、键盘或浮层定位逻辑
 - 图标统一使用 `lucide-react`，装饰图标添加 `aria-hidden="true"`；纯图标按钮必须提供 `aria-label`
 - `Button` 禁用态保留当前 Variant 的背景和边框语义，再统一降低透明度；Primary、Secondary、Subtle、Ghost 和 Danger 不应收敛为同一种禁用背景
+- Secondary 使用 `button.secondaryBackground` / `button.secondaryForeground` 配对，不要用页面前景色配次级按钮底；内容区低强调操作（如话题工具条的刷新/收藏/感谢）优先用 Subtle，避免部分亮色主题下 secondary 过深
+- Tabs 选中指示器使用 `--v2ex-tab-indicator`（即 `--v2ex-progress-base`），与宿主扩展页/侧栏加载进度条同色
+- Progress 填充使用略浅的 `--v2ex-progress-fg`（`color-mix` 将 `--v2ex-progress-base` 与页面背景混合）；轨道用中性 `--v2ex-progress-track-bg`，不要复用 secondary 按钮背景
 - `ConfirmPopover` 默认在标题左侧显示警示图标，普通确认使用警告色、危险确认使用危险色；领域操作可通过 `titleIcon` 覆盖图标，传入 `null` 可隐藏
 - `Alert` 与 `ConfirmPopover` 的默认状态图标使用实心语义色外形，内部符号使用当前提示或浮层背景色；不要直接填充整个 Lucide 图标而遮住内部符号
 - 少量互斥视图或内容筛选的紧凑切换使用 `RadioGroup variant="segmented"`，外层使用低强调混合背景，选中项回到 Webview 页面背景，以便在亮色主题形成灰底白色选中项、暗色主题形成亮底深色选中项；组件保留 RadioGroup 的方向键与焦点语义。选项的悬浮状态标识通过 `RadioGroupItem` 的 `badge` 和 `badgeVariant` 传入，不在业务页面自行定位。具有独立面板语义和键盘导航需求的内容分组继续使用 Tabs；普通表单选项继续使用默认单选样式
@@ -33,7 +36,7 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 关键规则：
 
 - 文本、背景、输入框、边框、焦点、选择态和语义状态的 VS Code 回退链集中写在 `_vscode-theme.scss`
-- 高对比主题：`--v2ex-border` / `--v2ex-focus-border` 已包含 contrast 优先；仅高对比才需要描边的控件使用 `var(--v2ex-hc-border, transparent)`（该变量只在高对比主题定义）
+- 高对比主题：`body.vscode-high-contrast` / `body.vscode-high-contrast-light` 才启用 contrast 色；常规主题不要把 `--vscode-contrastBorder` / `--vscode-contrastActiveBorder` 放在回退链最前，避免部分宿主（如 Trae）注入空值或透明值导致边框与 Tabs 指示器消失。仅高对比才需要描边的控件使用 `var(--v2ex-hc-border, transparent)`（该变量只在高对比主题定义）
 - Tooltip、Popover、Select、DropdownMenu、Dialog 和 Toast 的 Portal 内容必须继承同一语义变量，不能使用固定明暗色
 - Tooltip / 浮层：`--v2ex-tooltip-bg` / `--v2ex-tooltip-fg`；菜单：`--v2ex-menu-*`；箭头必须与浮层使用相同的背景和边框色；箭头只为两条外露斜边描边，不绘制与浮层主体接触的底边，并向主体重叠 `1px` 避免抗锯齿产生可见接缝
 - 固定品牌色或实物色仅用于内容本身（例如货币图标）；交互状态色必须来自 `--v2ex-*`

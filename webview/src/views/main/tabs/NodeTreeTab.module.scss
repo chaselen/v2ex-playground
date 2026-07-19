@@ -184,8 +184,6 @@ $node-child-indent: 18px;
 }
 
 .tree-footer {
-  display: flex;
-  justify-content: flex-end;
   flex: none;
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);
@@ -193,5 +191,5 @@ $node-child-indent: 18px;
 }
 
 .add-node-button {
-  min-width: 96px;
+  width: 100%;
 }

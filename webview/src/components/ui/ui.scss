@@ -13,7 +13,7 @@
   padding: 4px 11px;
   border: 1px solid transparent;
   border-radius: var(--v2ex-radius-sm);
-  color: var(--v2ex-webview-fg);
+  color: var(--v2ex-default-fg);
   background: var(--v2ex-default-bg);
   cursor: pointer;
   line-height: 1.35;
@@ -21,12 +21,12 @@
   user-select: none;
 
   &:hover:not(:disabled) {
-    color: var(--v2ex-hover-fg);
+    color: var(--v2ex-default-fg);
     background: var(--v2ex-default-hover-bg);
   }
 
   &:active:not(:disabled) {
-    color: var(--v2ex-active-fg);
+    color: var(--v2ex-default-fg);
     background: var(--v2ex-default-active-bg);
   }
 
@@ -65,14 +65,31 @@
   }
 }
 
-.v2ex-button--secondary:disabled {
-  border-color: var(--v2ex-disabled-border);
-  color: var(--v2ex-disabled-fg);
-  background: var(--v2ex-disabled-bg);
+.v2ex-button--secondary {
+  border-color: var(--v2ex-hc-border, var(--v2ex-button-border));
+  color: var(--v2ex-default-fg);
+  background: var(--v2ex-default-bg);
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    color: var(--v2ex-default-fg);
+    background: var(--v2ex-default-hover-bg);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--v2ex-default-active-bg);
+  }
+
+  &:disabled {
+    border-color: var(--v2ex-disabled-border);
+    color: var(--v2ex-disabled-fg);
+    background: var(--v2ex-disabled-bg);
+  }
 }
 
 .v2ex-button--subtle {
   border-color: var(--v2ex-hc-border, transparent);
+  color: var(--v2ex-webview-fg);
   background: var(--v2ex-light-button-bg);
 
   &:hover:not(:disabled) {
@@ -81,7 +98,7 @@
   }
 
   &:active:not(:disabled) {
-    color: var(--v2ex-active-fg);
+    color: var(--v2ex-webview-fg);
     background: var(--v2ex-light-button-active-bg);
   }
 
@@ -92,13 +109,16 @@
 
 .v2ex-button--ghost {
   border-color: transparent;
+  color: var(--v2ex-webview-fg);
   background: transparent;
 
   &:hover:not(:disabled) {
+    color: var(--v2ex-hover-fg);
     background: var(--v2ex-hover-bg);
   }
 
   &:active:not(:disabled) {
+    color: var(--v2ex-webview-fg);
     background: var(--v2ex-active-bg);
   }
 
@@ -334,7 +354,7 @@
   overflow: hidden;
   border: 1px solid var(--v2ex-control-border);
   color: var(--v2ex-icon-fg);
-  background: var(--v2ex-default-bg);
+  background: var(--v2ex-light-button-bg);
   vertical-align: middle;
 }
 
@@ -388,7 +408,7 @@
   height: 6px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--v2ex-default-bg);
+  background: var(--v2ex-progress-track-bg);
 }
 
 .v2ex-progress__indicator {
@@ -717,12 +737,14 @@
     content: '';
   }
 
+  /* 指示器完全落在 trigger 内，避免 list overflow 裁切 bottom: -1px */
   &::after {
     position: absolute;
     right: 8px;
-    bottom: -1px;
+    bottom: 0;
     left: 8px;
-    height: 3px;
+    height: 2px;
+    border-radius: 1px 1px 0 0;
     background: transparent;
     content: '';
   }
@@ -742,10 +764,11 @@
 
   &[data-state='active'] {
     color: var(--v2ex-webview-fg);
+    font-weight: 600;
   }
 
   &[data-state='active']::after {
-    background: var(--v2ex-focus-border);
+    background: var(--v2ex-tab-indicator);
   }
 
   &:disabled {
@@ -971,7 +994,8 @@
     &:has(.v2ex-radio-group__item[data-state='checked']) {
       border-color: var(--v2ex-hc-border, var(--v2ex-control-border));
       color: var(--v2ex-webview-fg);
-      background: var(--v2ex-webview-bg);
+      /* 优先用输入/页面背景抬起选中项，避免与轨道同色时选中态消失 */
+      background: var(--v2ex-input-bg, var(--v2ex-webview-bg));
       box-shadow: 0 1px 2px var(--v2ex-widget-shadow-color);
     }
 
