@@ -1,0 +1,81 @@
+.trigger {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.card {
+  width: 280px;
+  padding: 12px;
+  color: var(--v2ex-webview-fg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.heading {
+  min-width: 0;
+}
+
+.usernameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  strong {
+    overflow: hidden;
+    font-size: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.number,
+.meta {
+  color: var(--v2ex-muted-fg);
+  font-size: 12px;
+}
+
+.tagline,
+.bio {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 12px 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.tagline + .bio {
+  margin-top: -6px;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.state {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--v2ex-muted-fg);
+}
+
+.stateError {
+  flex-direction: column;
+  text-align: center;
+}
+
+.open {
+  width: 100%;
+}

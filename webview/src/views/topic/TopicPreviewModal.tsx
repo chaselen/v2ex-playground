@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
+import SimpleBar from 'simplebar-react'
+import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicShareContextMenu from '@/components/TopicShareContextMenu'
 import { Alert, Button, Dialog, Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import useTopicDetailController from './useTopicDetailController'
+import styles from './TopicPreviewModal.module.scss'
 import type { TopicDetail } from '@extension/v2ex/types'
 import type { TopicPanelRpcCommands } from '@extension/shared/webview'
 
@@ -47,7 +50,8 @@ export default function TopicPreviewModal({
   const [floatingActionsContainer, setFloatingActionsContainer] = useState<HTMLDivElement | null>(
     null
   )
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  /** 供 TopicDetailView 滚动定位；绑定 SimpleBar 内部可滚动节点 */
+  const scrollContainerRef = useRef<HTMLElement | null>(null)
   const loadRequestRef = useRef(0)
   const activeTopicIdRef = useRef(topicId)
   const canOperateRef = useRef(canOperate)
@@ -182,9 +186,14 @@ export default function TopicPreviewModal({
     }
   }
 
+  /** 绑定 SimpleBar 实例，并同步真正的滚动容器 */
+  function bindSimpleBar(instance: SimpleBarCore | null) {
+    scrollContainerRef.current = instance?.getScrollElement() ?? null
+  }
+
   return (
     <Dialog
-      className="topic-preview-modal"
+      className={styles.modal}
       closeOnOverlayClick={false}
       footer={
         <>
@@ -208,12 +217,12 @@ export default function TopicPreviewModal({
         onCopyTitleLink={copyPreviewTitleLink}
         onViewInBrowser={viewPreviewInBrowser}
       >
-        <div className="topic-preview-body" ref={setFloatingActionsContainer}>
-          <div className="topic-preview-scroll" ref={scrollContainerRef}>
+        <div className={styles.body} ref={setFloatingActionsContainer}>
+          <SimpleBar ref={bindSimpleBar} className={styles.scroll} autoHide={false}>
             {(state.status === 'loading' || refreshing) && <PageSkeleton variant="topic" />}
 
             {state.status === 'error' && !refreshing && (
-              <div className="topic-preview-state">
+              <div className={styles.state}>
                 <Alert variant="danger" title="加载失败" description={state.message} />
                 <Button icon={<RefreshCw aria-hidden="true" />} onClick={() => void loadTopic()}>
                   重新加载
@@ -224,13 +233,13 @@ export default function TopicPreviewModal({
             {topicController && topicId && !refreshing && (
               <TopicDetailView
                 controller={topicController}
-                className="topic-preview-container"
+                className={styles.container}
                 floatingActionsContainer={floatingActionsContainer}
                 scrollContainerRef={scrollContainerRef}
                 onTopicPreview={onPreviewTopic}
               />
             )}
-          </div>
+          </SimpleBar>
         </div>
       </TopicShareContextMenu>
     </Dialog>

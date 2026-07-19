@@ -7,7 +7,9 @@ import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { isApplePlatform } from '@/core/platform'
 import { imageEmoticonLinks, isImageEmoticon } from '@/core/imageEmoticons'
 import { createVsCodeClient } from '@/core/vscode'
+import { mergeClassNames } from '@/components/ui/utils'
 import { emoticonGroups, replaceImageEmoticonTokens } from './emoticons'
+import styles from './ReplyComposer.module.scss'
 import type { TopicPanelRpcCommands } from '@extension/shared/webview'
 
 /** 回复输入组件 VS Code 通信客户端 */
@@ -461,17 +463,17 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    */
   function renderEmoticonPanel() {
     return (
-      <SimpleBar className="reply-emoticon-panel" autoHide={false}>
-        <div className="reply-emoticon-content">
+      <SimpleBar className={styles.emoticonPanel} autoHide={false}>
+        <div className={styles.emoticonContent}>
           {emoticonGroups.map(group => (
-            <section key={group.title} className="reply-emoticon-section">
+            <section key={group.title} className={styles.emoticonSection}>
               <h3>{group.title}</h3>
-              <div className="reply-emoticon-grid">
+              <div className={styles.emoticonGrid}>
                 {group.list.map(emoticon => (
                   <button
                     key={emoticon}
                     type="button"
-                    className="reply-emoticon-option"
+                    className={styles.emoticonOption}
                     title={emoticon}
                     disabled={emoticonDisabled}
                     onClick={() => insertEmoticon(emoticon)}
@@ -591,7 +593,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   return (
     <form
       ref={composerRef}
-      className="post-reply"
+      className={styles.root}
       aria-busy={posting}
       aria-disabled={posting}
       inert={posting}
@@ -605,12 +607,12 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       onDragLeave={() => setDraggingImage(false)}
       onKeyDown={handleKeyDown}
     >
-      <div className="reply-composer-tabs" role="tablist" aria-label="回复编辑模式">
+      <div className={styles.tabs} role="tablist" aria-label="回复编辑模式">
         <button
           type="button"
           role="tab"
           aria-selected={mode === 'edit'}
-          className={mode === 'edit' ? 'is-active' : undefined}
+          className={mergeClassNames(styles.tab, mode === 'edit' && styles.tabActive)}
           disabled={posting}
           onClick={() => setMode('edit')}
         >
@@ -620,7 +622,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           type="button"
           role="tab"
           aria-selected={mode === 'preview'}
-          className={mode === 'preview' ? 'is-active' : undefined}
+          className={mergeClassNames(styles.tab, mode === 'preview' && styles.tabActive)}
           disabled={posting}
           onClick={() => void previewReply()}
         >
@@ -629,7 +631,12 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       </div>
 
       {mode === 'edit' ? (
-        <div className={`reply-editor-frame ${draggingImage ? 'is-dragging' : ''}`}>
+        <div
+          className={mergeClassNames(
+            styles.editorFrame,
+            draggingImage && styles.editorFrameDragging
+          )}
+        >
           <Textarea
             value={value}
             maxLength={10000}
@@ -638,11 +645,11 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             disabled={posting || uploadingImage}
             onChange={event => updateContent(event.currentTarget.value)}
           />
-          <span className="reply-character-count">{value.length} / 10000</span>
-          <div className="reply-upload-bar">
+          <span className={styles.characterCount}>{value.length} / 10000</span>
+          <div className={styles.uploadBar}>
             <button
               type="button"
-              className="reply-upload-link"
+              className={styles.uploadLink}
               disabled={posting || uploadingImage}
               onClick={selectImage}
             >
@@ -652,29 +659,29 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           </div>
         </div>
       ) : (
-        <div className="reply-preview-panel">
+        <div className={styles.previewPanel}>
           {previewing ? (
             <Spinner aria-label="生成回复预览" />
           ) : previewHtml ? (
             <EnhancedHtmlContent
-              className="topic-content reply-preview-content"
+              className={mergeClassNames('topic-content', styles.previewContent)}
               html={previewHtml}
               showImages={showImages}
             />
           ) : (
-            <p className="muted">暂无预览内容</p>
+            <p className={styles.previewEmpty}>暂无预览内容</p>
           )}
         </div>
       )}
 
-      <div className="reply-submit-row">
+      <div className={styles.submitRow}>
         <Popover
           side="top"
           align="end"
           showArrow
           open={!emoticonDisabled && emoticonPanelVisible}
           content={renderEmoticonPanel()}
-          className="reply-emoticon-popover"
+          className={styles.emoticonPopover}
           onOpenChange={visible => {
             if (!emoticonDisabled) {
               setEmoticonPanelVisible(visible)
@@ -684,11 +691,11 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             }
           }}
         >
-          <span className="reply-extra-popover-trigger">
+          <span className={styles.extraPopoverTrigger}>
             <Tooltip content="插入表情">
               <Button
                 aria-label="插入表情"
-                className="reply-extra-button"
+                className={styles.extraButton}
                 icon={<Smile aria-hidden="true" />}
                 size="small"
                 variant="ghost"
@@ -700,7 +707,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         <Tooltip content="上传图片">
           <Button
             aria-label="上传图片"
-            className="reply-extra-button"
+            className={styles.extraButton}
             icon={<Image aria-hidden="true" />}
             size="small"
             variant="ghost"
@@ -710,7 +717,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           />
         </Tooltip>
         <Button
-          className="submit"
+          className={styles.submit}
           variant="primary"
           type="submit"
           loading={posting}

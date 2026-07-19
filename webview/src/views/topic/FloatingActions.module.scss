@@ -1,0 +1,65 @@
+.root {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 挂到预览弹层等局部容器时改用绝对定位 */
+.contained {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+}
+
+.tooltip {
+  font-size: 13px;
+}
+
+.popconfirmTrigger {
+  display: inline-flex;
+}
+
+.button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--v2ex-button-border, var(--v2ex-border));
+  border-radius: var(--v2ex-radius-md);
+  background: var(--v2ex-widget-bg);
+  color: var(--v2ex-webview-fg);
+  box-shadow: var(--v2ex-shadow-floating);
+
+  &:hover {
+    background: var(--v2ex-hover-bg);
+  }
+
+  &:active {
+    background: var(--v2ex-active-bg);
+    color: var(--v2ex-active-fg);
+  }
+
+  &:disabled,
+  &:disabled:hover {
+    border-color: var(--v2ex-link-soft-border);
+    background: var(--v2ex-link-soft-fill);
+    color: var(--v2ex-link-fg);
+    opacity: 1;
+  }
+}
+
+.buttonActive {
+  border-color: var(--v2ex-link-soft-border);
+  background: var(--v2ex-link-soft-fill);
+  color: var(--v2ex-link-fg);
+}
+
+@media (max-width: 480px) {
+  .root:not(.contained) {
+    right: 12px;
+    bottom: 12px;
+    gap: 6px;
+  }
+}

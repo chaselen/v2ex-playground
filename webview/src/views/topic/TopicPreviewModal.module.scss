@@ -1,0 +1,49 @@
+.modal {
+  width: min(1040px, calc(100vw - 48px));
+  height: min(800px, calc(100vh - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+  color: var(--v2ex-webview-fg);
+
+  :global(.v2ex-dialog__body) {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+.body {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.scroll {
+  height: 100%;
+  min-height: 0;
+
+  :global(.simplebar-content-wrapper) {
+    min-height: 0;
+  }
+
+  :global(.simplebar-content) {
+    min-height: 100%;
+  }
+}
+
+.container {
+  max-width: 800px;
+  padding: 24px;
+  margin: 0 auto;
+}
+
+.state {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+}

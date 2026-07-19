@@ -5,10 +5,8 @@ import {
   ArrowUp,
   Bookmark,
   BookmarkPlus,
-  CircleUserRound,
   Heart,
   Inbox,
-  Lock,
   RefreshCw,
   Reply,
   Tag
@@ -27,8 +25,11 @@ import {
   Tooltip,
   Toast
 } from '@/components/ui'
+import { mergeClassNames } from '@/components/ui/utils'
 import ReplyComposer, { type ReplyComposerHandle } from './ReplyComposer'
 import MemberQuickInfoPopover from './MemberQuickInfoPopover'
+import ReplyLoginPrompt from './ReplyLoginPrompt'
+import { FloatingActions, floatingActionStyles } from './FloatingActions'
 import { buildReplyTree, type TopicReplyNode } from './replyTree'
 import type { OpenTopicPreview } from '@/core/contentEnhancement'
 import type { TopicReply } from '@extension/v2ex/types'
@@ -94,29 +95,29 @@ export default function TopicDetailView({
       ? replyTree
       : topic.replies.map(reply => ({ ...reply, children: [] }))
   const floatingActions = showFloatingActions ? (
-    <div className="floating-actions" aria-label="话题快捷操作">
+    <FloatingActions contained={Boolean(floatingActionsContainer)}>
       {renderTopicActionButtons('floating')}
-      <Tooltip className="floating-action-tooltip" content="滚动到顶部" side="left">
+      <Tooltip className={floatingActionStyles.tooltip} content="滚动到顶部" side="left">
         <Button
           aria-label="滚动到顶部"
-          className="floating-action-button"
+          className={floatingActionStyles.button}
           icon={<ArrowUp aria-hidden="true" />}
           size="large"
           variant="ghost"
           onClick={scrollToTop}
         />
       </Tooltip>
-      <Tooltip className="floating-action-tooltip" content="滚动到底部" side="left">
+      <Tooltip className={floatingActionStyles.tooltip} content="滚动到底部" side="left">
         <Button
           aria-label="滚动到底部"
-          className="floating-action-button"
+          className={floatingActionStyles.button}
           icon={<ArrowDown aria-hidden="true" />}
           size="large"
           variant="ghost"
           onClick={scrollToBottom}
         />
       </Tooltip>
-    </div>
+    </FloatingActions>
   ) : null
 
   /** 刷新话题 */
@@ -319,10 +320,12 @@ export default function TopicDetailView({
   function renderTopicActionButtons(variant: 'toolbar' | 'floating') {
     const isFloating = variant === 'floating'
     const buttonSize = isFloating ? 'large' : 'small'
+    const floatingButtonClass = floatingActionStyles.button
+    const floatingTooltipClass = floatingActionStyles.tooltip
     const refreshButton = (
       <Button
         aria-label="刷新页面"
-        className={isFloating ? 'floating-action-button' : undefined}
+        className={isFloating ? floatingButtonClass : undefined}
         icon={isFloating ? <RefreshCw aria-hidden="true" /> : undefined}
         loading={refreshing}
         size={buttonSize}
@@ -336,7 +339,7 @@ export default function TopicDetailView({
     return (
       <>
         {isFloating ? (
-          <Tooltip className="floating-action-tooltip" content="刷新页面" side="left">
+          <Tooltip className={floatingTooltipClass} content="刷新页面" side="left">
             {refreshButton}
           </Tooltip>
         ) : (
@@ -347,10 +350,10 @@ export default function TopicDetailView({
           <>
             {!topic.isCollected ? (
               isFloating ? (
-                <Tooltip className="floating-action-tooltip" content="加入收藏" side="left">
+                <Tooltip className={floatingTooltipClass} content="加入收藏" side="left">
                   <Button
                     aria-label="加入收藏"
-                    className="floating-action-button"
+                    className={floatingButtonClass}
                     icon={<BookmarkPlus aria-hidden="true" />}
                     loading={collecting}
                     size={buttonSize}
@@ -370,10 +373,13 @@ export default function TopicDetailView({
                 </Button>
               )
             ) : isFloating ? (
-              <Tooltip className="floating-action-tooltip" content="取消收藏" side="left">
+              <Tooltip className={floatingTooltipClass} content="取消收藏" side="left">
                 <Button
                   aria-label="取消收藏"
-                  className="floating-action-button is-active"
+                  className={mergeClassNames(
+                    floatingButtonClass,
+                    floatingActionStyles.buttonActive
+                  )}
                   icon={<Bookmark aria-hidden="true" fill="currentColor" />}
                   loading={cancelingCollect}
                   size={buttonSize}
@@ -400,16 +406,12 @@ export default function TopicDetailView({
                 cancelText="取消"
                 onConfirm={() => requestTopicAction(thankTopic, setThankingTopic)}
               >
-                <span className={isFloating ? 'floating-action-popconfirm-trigger' : undefined}>
+                <span className={isFloating ? floatingActionStyles.popconfirmTrigger : undefined}>
                   {isFloating ? (
-                    <Tooltip
-                      className="floating-action-tooltip"
-                      content="感谢主题创建者"
-                      side="left"
-                    >
+                    <Tooltip className={floatingTooltipClass} content="感谢主题创建者" side="left">
                       <Button
                         aria-label="感谢主题创建者"
-                        className="floating-action-button"
+                        className={floatingButtonClass}
                         icon={<Heart aria-hidden="true" />}
                         loading={thankingTopic}
                         size={buttonSize}
@@ -433,10 +435,13 @@ export default function TopicDetailView({
             {topic.canThank &&
               topic.isThanked &&
               (isFloating ? (
-                <Tooltip className="floating-action-tooltip" content="感谢已发送" side="left">
+                <Tooltip className={floatingTooltipClass} content="感谢已发送" side="left">
                   <Button
                     aria-label="感谢已发送"
-                    className="floating-action-button is-active"
+                    className={mergeClassNames(
+                      floatingButtonClass,
+                      floatingActionStyles.buttonActive
+                    )}
                     disabled
                     icon={<Heart aria-hidden="true" fill="currentColor" />}
                     size="large"
@@ -452,45 +457,6 @@ export default function TopicDetailView({
           </>
         )}
       </>
-    )
-  }
-
-  /** 渲染未登录回复提示 */
-  function renderLoginReplyPrompt() {
-    return (
-      <section className="reply-login-prompt" aria-label="登录后回复">
-        <div className="reply-login-icon">
-          <Lock aria-hidden="true" />
-        </div>
-        <div className="reply-login-content">
-          <h2>登录后参与回复</h2>
-          <p>登录 V2EX 账号后，才能回复话题、感谢回复者，并使用收藏等话题操作。</p>
-        </div>
-        <div className="reply-login-actions">
-          <Button
-            icon={<CircleUserRound aria-hidden="true" />}
-            size="small"
-            variant="primary"
-            onClick={() =>
-              void requestTopicAction(
-                () => controller.login(),
-                () => undefined
-              )
-            }
-          >
-            登录 V2EX
-          </Button>
-          <Button
-            icon={<RefreshCw aria-hidden="true" />}
-            loading={refreshing}
-            size="small"
-            variant="secondary"
-            onClick={() => void requestTopicAction(refreshTopic, setRefreshing)}
-          >
-            刷新
-          </Button>
-        </div>
-      </section>
     )
   }
 
@@ -659,7 +625,16 @@ export default function TopicDetailView({
               onSubmit={postReply}
             />
           ) : (
-            renderLoginReplyPrompt()
+            <ReplyLoginPrompt
+              refreshing={refreshing}
+              onLogin={() =>
+                void requestTopicAction(
+                  () => controller.login(),
+                  () => undefined
+                )
+              }
+              onRefresh={() => void requestTopicAction(refreshTopic, setRefreshing)}
+            />
           ))}
       </article>
 

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { UserRound } from 'lucide-react'
 import { Avatar, Button, HoverCard, Spinner } from '@/components/ui'
+import { mergeClassNames } from '@/components/ui/utils'
 import ProTag from '@/components/ProTag'
 import type { MemberInfo } from '@extension/shared/webview'
+import styles from './MemberQuickInfoPopover.module.scss'
 
 export interface MemberQuickInfoPopoverProps {
   /** 用户名 */
@@ -88,16 +90,16 @@ export default function MemberQuickInfoPopover({
   return (
     <HoverCard
       content={
-        <div className="member-quick-card" role="group" aria-label={`${username} 的用户资料`}>
+        <div className={styles.card} role="group" aria-label={`${username} 的用户资料`}>
           {loading && (
-            <div className="member-quick-state" role="status">
+            <div className={styles.state} role="status">
               <Spinner />
               <span>正在加载用户资料</span>
             </div>
           )}
 
           {!loading && error && (
-            <div className="member-quick-state member-quick-state--error">
+            <div className={mergeClassNames(styles.state, styles.stateError)}>
               <span>{error}</span>
               <Button size="small" onClick={() => requestMemberInfo()}>
                 重试
@@ -107,34 +109,34 @@ export default function MemberQuickInfoPopover({
 
           {!loading && !error && member && (
             <>
-              <header className="member-quick-header">
+              <header className={styles.header}>
                 <Avatar
                   shape="square"
                   src={member.avatar}
                   alt={member.username}
                   fallback={<UserRound aria-hidden="true" />}
                 />
-                <div className="member-quick-heading">
-                  <div className="member-quick-username-row">
+                <div className={styles.heading}>
+                  <div className={styles.usernameRow}>
                     <strong>{member.username}</strong>
                     {member.isPro && <ProTag />}
                   </div>
                   {!!member.memberNumber && (
-                    <span className="member-quick-number">第 {member.memberNumber} 号会员</span>
+                    <span className={styles.number}>第 {member.memberNumber} 号会员</span>
                   )}
                 </div>
               </header>
 
-              {!!member.tagline && <p className="member-quick-tagline">{member.tagline}</p>}
-              {!!member.bio && <p className="member-quick-bio">{member.bio}</p>}
+              {!!member.tagline && <p className={styles.tagline}>{member.tagline}</p>}
+              {!!member.bio && <p className={styles.bio}>{member.bio}</p>}
 
-              <div className="member-quick-meta">
+              <div className={styles.meta}>
                 {!!member.joinedAt && <span>加入于 {member.joinedAt}</span>}
                 {!!member.activityRank && <span>今日活跃度排名 {member.activityRank}</span>}
               </div>
 
               <Button
-                className="member-quick-open"
+                className={styles.open}
                 size="small"
                 variant="primary"
                 onClick={handleOpenMember}
@@ -153,7 +155,7 @@ export default function MemberQuickInfoPopover({
       open={visible}
       onOpenChange={handleVisibleChange}
     >
-      <span className="member-quick-trigger">{children}</span>
+      <span className={styles.trigger}>{children}</span>
     </HoverCard>
   )
 }
