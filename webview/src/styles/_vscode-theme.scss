@@ -99,16 +99,6 @@ body {
     --vscode-button-hoverBackground,
     var(--vscode-textLink-activeForeground, var(--v2ex-primary-button-bg))
   );
-  --v2ex-primary-button-disabled-bg: var(
-    --vscode-button-secondaryBackground,
-    var(--v2ex-default-bg)
-  );
-  --v2ex-primary-light-bg: var(--vscode-button-secondaryBackground, var(--v2ex-selection-bg));
-  --v2ex-primary-light-hover-bg: var(
-    --vscode-button-secondaryHoverBackground,
-    var(--v2ex-hover-bg)
-  );
-  --v2ex-primary-light-active-bg: var(--vscode-toolbar-activeBackground, var(--v2ex-active-bg));
   --v2ex-link-fg: var(--vscode-textLink-foreground, var(--v2ex-webview-fg));
   --v2ex-link-hover-fg: var(
     --vscode-textLink-activeForeground,
@@ -220,8 +210,8 @@ body {
     rgba(127, 127, 127, 0.55)
   );
 
-  /* 图片预览浮层：固定深色底，边框在高对比时切到 contrast */
-  --v2ex-image-preview-border: var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
+  /* 图片预览浮层：固定深色底；高对比 body 类再覆盖为 contrast 边框 */
+  --v2ex-image-preview-border: rgb(255 255 255 / 18%);
 
   /* 与具体 UI 框架无关的形状和动效约束 */
   --v2ex-radius-xs: 3px;

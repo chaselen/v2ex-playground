@@ -117,9 +117,10 @@
     background: var(--v2ex-hover-bg);
   }
 
+  /* 按下用中性加深表面，避免 active-bg 选中蓝 + 页面深色字的对比问题 */
   &:active:not(:disabled) {
     color: var(--v2ex-webview-fg);
-    background: var(--v2ex-active-bg);
+    background: var(--v2ex-light-button-active-bg);
   }
 
   &:disabled {
@@ -816,8 +817,12 @@
     border-color: var(--v2ex-focus-border);
   }
 
-  &:focus-visible,
+  /* 展开只加粗边框，不叠 box-shadow，避免出现双层 outline 环 */
   &[data-state='open'] {
+    border-color: var(--v2ex-focus-border);
+  }
+
+  &:focus-visible {
     border-color: var(--v2ex-focus-border);
     box-shadow: 0 0 0 1px var(--v2ex-focus-border);
   }

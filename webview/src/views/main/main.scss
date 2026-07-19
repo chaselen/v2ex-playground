@@ -23,17 +23,25 @@
     --vscode-sideBar-border,
     var(--vscode-panel-border, var(--vscode-widget-border, transparent))
   );
-  --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  /* 与全局一致：contrast 边框仅在高对比 body 类中启用，避免宿主注入空值 */
+  --v2ex-border: var(--v2ex-border-base);
   --v2ex-hover-bg: var(
     --vscode-list-hoverBackground,
     var(--vscode-toolbar-hoverBackground, transparent)
   );
   --v2ex-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+  /*
+   * 侧栏列表优先 inactive selection（无焦点选中）；
+   * bg/fg 使用同序回退，避免 inactive 蓝底配页面深色字。
+   */
   --v2ex-active-bg: var(
     --vscode-list-inactiveSelectionBackground,
     var(--vscode-list-activeSelectionBackground, var(--v2ex-hover-bg))
   );
-  --v2ex-active-fg: var(--vscode-list-inactiveSelectionForeground, var(--v2ex-webview-fg));
+  --v2ex-active-fg: var(
+    --vscode-list-inactiveSelectionForeground,
+    var(--vscode-list-activeSelectionForeground, var(--v2ex-webview-fg))
+  );
   background: var(--v2ex-webview-bg);
   color: var(--v2ex-webview-fg);
 }
