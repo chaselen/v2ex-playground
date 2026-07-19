@@ -1,8 +1,5 @@
 @use '../../styles/topic-list-item' as topic-list-item;
 
-$muted-color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
-$panel-border: var(--v2ex-border);
-
 .search-scroll {
   width: 100%;
   height: 100%;
@@ -24,8 +21,8 @@ $panel-border: var(--v2ex-border);
 
 .search-header {
   padding: 14px;
-  border: 1px solid $panel-border;
-  border-radius: 8px;
+  border: 1px solid var(--v2ex-border);
+  border-radius: var(--v2ex-radius-lg);
   background: var(--v2ex-webview-bg);
 }
 
@@ -93,7 +90,7 @@ $panel-border: var(--v2ex-border);
     flex-direction: column;
     gap: 6px;
     min-width: 0;
-    color: $muted-color;
+    color: var(--v2ex-muted-fg);
     font-size: 12px;
   }
 }
@@ -115,7 +112,7 @@ $panel-border: var(--v2ex-border);
   flex-direction: column;
   gap: 8px;
   margin-bottom: 10px;
-  color: $muted-color;
+  color: var(--v2ex-muted-fg);
   font-size: 12px;
 }
 
@@ -127,8 +124,8 @@ $panel-border: var(--v2ex-border);
 
 .search-result-card {
   padding: 14px;
-  border: 1px solid $panel-border;
-  border-radius: 8px;
+  border: 1px solid var(--v2ex-border);
+  border-radius: var(--v2ex-radius-lg);
   background: var(--v2ex-widget-bg);
 }
 
@@ -166,7 +163,7 @@ $panel-border: var(--v2ex-border);
   display: -webkit-box;
   margin: 10px 0 0;
   overflow: hidden;
-  color: $muted-color;
+  color: var(--v2ex-muted-fg);
   line-height: 1.6;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;

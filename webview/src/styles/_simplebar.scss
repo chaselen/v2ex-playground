@@ -11,10 +11,10 @@
 [data-simplebar] .simplebar-scrollbar.simplebar-visible::before {
   inset: 2px;
   border-radius: 999px;
-  background: var(--vscode-scrollbarSlider-background);
+  background: var(--v2ex-scrollbar-bg);
   opacity: 1;
 }
 
 [data-simplebar] .simplebar-track.simplebar-hover .simplebar-scrollbar::before {
-  background: var(--vscode-scrollbarSlider-hoverBackground);
+  background: var(--v2ex-scrollbar-hover-bg);
 }

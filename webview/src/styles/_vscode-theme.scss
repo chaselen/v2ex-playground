@@ -1,16 +1,9 @@
-$text-color: var(--vscode-foreground, var(--vscode-editor-foreground));
-$background-color: var(--vscode-editor-background);
-$link-color: var(--vscode-textLink-foreground, var(--vscode-foreground));
-$link-active-color: var(
-  --vscode-textLink-activeForeground,
-  var(--vscode-textLink-foreground, var(--vscode-foreground))
-);
+/* VS Code Theme Color 是 Webview 的唯一主题来源；业务样式只消费 --v2ex-* */
 
-/* VS Code Theme Color 是 Webview 的唯一主题来源 */
 body {
   /* 基础色：优先跟随 VS Code Theme Color */
-  --v2ex-webview-bg: #{$background-color};
-  --v2ex-webview-fg: #{$text-color};
+  --v2ex-webview-bg: var(--vscode-editor-background);
+  --v2ex-webview-fg: var(--vscode-foreground, var(--vscode-editor-foreground));
   --v2ex-muted-fg: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
   --v2ex-icon-fg: var(--vscode-icon-foreground, var(--v2ex-muted-fg));
   --v2ex-widget-bg: var(
@@ -31,20 +24,26 @@ body {
     var(--vscode-descriptionForeground, var(--v2ex-webview-fg))
   );
 
+  /* 排版：跟随宿主 UI 字体 */
+  --v2ex-font-family: var(--vscode-font-family, system-ui, sans-serif);
+  --v2ex-font-size: var(--vscode-font-size, 13px);
+
   /* 边框与焦点：高对比主题会在下方覆盖 */
   --v2ex-border-base: var(
     --vscode-panel-border,
     var(--vscode-widget-border, var(--vscode-editorWidget-border, transparent))
   );
   --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  /* --v2ex-hc-border 仅在高对比主题定义，供 var(--v2ex-hc-border, fallback) 使用 */
   --v2ex-control-border: var(
     --vscode-contrastBorder,
     color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent)
   );
   --v2ex-focus-border: var(
     --vscode-contrastActiveBorder,
-    var(--vscode-focusBorder, #{$link-color})
+    var(--vscode-focusBorder, var(--vscode-textLink-foreground, var(--v2ex-webview-fg)))
   );
+  --v2ex-button-border: var(--vscode-button-border, var(--v2ex-control-border));
 
   /* 中性交互色：hover、active 和 selection 共用 */
   --v2ex-hover-bg: var(
@@ -62,7 +61,7 @@ body {
     var(--vscode-editor-selectionBackground, var(--v2ex-active-bg))
   );
 
-  /* 默认低强调控件背景 */
+  /* 默认低强调控件 */
   --v2ex-default-bg: var(
     --vscode-button-secondaryBackground,
     var(
@@ -70,6 +69,7 @@ body {
       var(--vscode-editor-inactiveSelectionBackground, rgba(127, 127, 127, 0.18))
     )
   );
+  --v2ex-default-fg: var(--vscode-button-secondaryForeground, var(--v2ex-webview-fg));
   --v2ex-default-hover-bg: var(
     --vscode-button-secondaryHoverBackground,
     var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.26))
@@ -90,9 +90,15 @@ body {
   );
 
   /* 主按钮与链接色 */
-  --v2ex-primary-button-bg: var(--vscode-button-background, #{$link-color});
-  --v2ex-primary-button-fg: var(--vscode-button-foreground, #{$background-color});
-  --v2ex-primary-button-hover-bg: var(--vscode-button-hoverBackground, #{$link-active-color});
+  --v2ex-primary-button-bg: var(
+    --vscode-button-background,
+    var(--vscode-textLink-foreground, #3794ff)
+  );
+  --v2ex-primary-button-fg: var(--vscode-button-foreground, var(--v2ex-webview-bg));
+  --v2ex-primary-button-hover-bg: var(
+    --vscode-button-hoverBackground,
+    var(--vscode-textLink-activeForeground, var(--v2ex-primary-button-bg))
+  );
   --v2ex-primary-button-disabled-bg: var(
     --vscode-button-secondaryBackground,
     var(--v2ex-default-bg)
@@ -103,8 +109,20 @@ body {
     var(--v2ex-hover-bg)
   );
   --v2ex-primary-light-active-bg: var(--vscode-toolbar-activeBackground, var(--v2ex-active-bg));
-  --v2ex-link-fg: #{$link-color};
-  --v2ex-link-hover-fg: #{$link-active-color};
+  --v2ex-link-fg: var(--vscode-textLink-foreground, var(--v2ex-webview-fg));
+  --v2ex-link-hover-fg: var(
+    --vscode-textLink-activeForeground,
+    var(--vscode-textLink-foreground, var(--v2ex-webview-fg))
+  );
+  /* 链接衍生弱强调色：预览钮、高亮条、active 态等 */
+  --v2ex-link-soft-bg: color-mix(in srgb, var(--v2ex-link-fg) 10%, transparent);
+  --v2ex-link-soft-bg-mid: color-mix(in srgb, var(--v2ex-link-fg) 12%, transparent);
+  --v2ex-link-soft-bg-faint: color-mix(in srgb, var(--v2ex-link-fg) 4%, transparent);
+  --v2ex-link-soft-hover-bg: color-mix(in srgb, var(--v2ex-link-fg) 20%, transparent);
+  --v2ex-link-soft-fill: color-mix(in srgb, var(--v2ex-link-fg) 10%, var(--v2ex-widget-bg));
+  --v2ex-link-soft-border: color-mix(in srgb, var(--v2ex-link-fg) 55%, var(--v2ex-border));
+  --v2ex-link-soft-border-strong: color-mix(in srgb, var(--v2ex-link-fg) 72%, transparent);
+  --v2ex-link-soft-ring: color-mix(in srgb, var(--v2ex-link-fg) 35%, transparent);
 
   /* 禁用态 */
   --v2ex-disabled-fg: var(
@@ -151,7 +169,9 @@ body {
   );
   --v2ex-highlight-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
 
-  /* 代码高亮色：VS Code 未向 Webview 暴露语法 token，按主题类型提供接近编辑器的色盘 */
+  /* 代码块与语法色：VS Code 未向 Webview 暴露语法 token，按主题类型提供接近编辑器的色盘 */
+  --v2ex-code-bg: var(--vscode-textCodeBlock-background, var(--v2ex-webview-bg));
+  --v2ex-code-font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
   --v2ex-code-keyword: #c586c0;
   --v2ex-code-type: #4ec9b0;
   --v2ex-code-literal: #569cd6;
@@ -167,13 +187,36 @@ body {
   --v2ex-shadow-elevated: 0 8px 28px var(--v2ex-widget-shadow-color);
   --v2ex-shadow-floating: 0 4px 14px var(--v2ex-widget-shadow-color);
 
-  /* 中性标签色 */
+  /* Badge / Tag */
+  --v2ex-badge-bg: var(--vscode-badge-background, var(--v2ex-danger-fg));
+  --v2ex-badge-fg: var(--vscode-badge-foreground, #fff);
   --v2ex-tag-bg: var(--v2ex-light-button-bg);
   --v2ex-tag-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
   --v2ex-tag-hover-bg: var(--v2ex-light-button-hover-bg);
   --v2ex-tag-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-tag-fg));
 
+  /* 菜单、Tooltip 与进度条 */
+  --v2ex-menu-fg: var(--vscode-menu-foreground, var(--v2ex-widget-fg));
+  --v2ex-menu-bg: var(--vscode-menu-background, var(--v2ex-overlay-bg));
+  --v2ex-menu-selection-fg: var(--vscode-menu-selectionForeground, var(--v2ex-active-fg));
+  --v2ex-menu-selection-bg: var(--vscode-menu-selectionBackground, var(--v2ex-active-bg));
+  --v2ex-menu-separator: var(--vscode-menu-separatorBackground, var(--v2ex-border));
+  --v2ex-tooltip-fg: var(--vscode-editorHoverWidget-foreground, var(--v2ex-widget-fg));
+  --v2ex-tooltip-bg: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+  --v2ex-progress-fg: var(--vscode-progressBar-background, var(--v2ex-primary-button-bg));
+
+  /* 滚动条 */
+  --v2ex-scrollbar-bg: var(--vscode-scrollbarSlider-background, rgba(127, 127, 127, 0.4));
+  --v2ex-scrollbar-hover-bg: var(
+    --vscode-scrollbarSlider-hoverBackground,
+    rgba(127, 127, 127, 0.55)
+  );
+
+  /* 图片预览浮层：固定深色底，边框在高对比时切到 contrast */
+  --v2ex-image-preview-border: var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
+
   /* 与具体 UI 框架无关的形状和动效约束 */
+  --v2ex-radius-xs: 3px;
   --v2ex-radius-sm: 4px;
   --v2ex-radius-md: 6px;
   --v2ex-radius-lg: 8px;
@@ -208,11 +251,13 @@ body.vscode-high-contrast,
 body.vscode-high-contrast-light {
   /* 高对比主题优先使用 VS Code contrast 色 */
   --v2ex-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-hc-border: var(--vscode-contrastBorder);
   --v2ex-focus-border: var(
     --vscode-contrastActiveBorder,
-    var(--vscode-focusBorder, #{$link-color})
+    var(--vscode-focusBorder, var(--v2ex-link-fg))
   );
   --v2ex-disabled-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
+  --v2ex-image-preview-border: var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
   --v2ex-shadow-elevated: none;
   --v2ex-shadow-floating: none;
   --v2ex-code-keyword: var(--v2ex-link-fg);
@@ -222,6 +267,6 @@ body.vscode-high-contrast-light {
   --v2ex-code-string: var(--v2ex-warning-fg);
   --v2ex-code-title: var(--v2ex-info-fg);
   --v2ex-code-variable: var(--v2ex-webview-fg);
-  --v2ex-code-comment: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  --v2ex-code-comment: var(--v2ex-muted-fg);
   --v2ex-code-meta: var(--v2ex-link-fg);
 }

@@ -4,7 +4,8 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 
 ## 组件分层
 
-- `webview/src/components/ui/` 封装 Button、Input、Select、Tabs、Dialog、Popover、Toast 等通用组件
+- `webview/src/components/ui/` 封装 Button、Input、Select、DatePicker、Tabs、Dialog、Popover、Toast 等通用组件
+- 日期选择使用主题化 `DatePicker`（Radix Popover + 日历面板），不要使用原生 `input[type=date]`：宿主 Chromium 日历无法跟随 VS Code 主题
 - 共享组件负责统一 DOM 语义、键盘行为和无障碍属性；业务页面只传递领域内容与状态
 - 业务页面只组合共享组件和领域组件，不直接复制 Radix Portal、焦点、键盘或浮层定位逻辑
 - 图标统一使用 `lucide-react`，装饰图标添加 `aria-hidden="true"`；纯图标按钮必须提供 `aria-label`
@@ -19,16 +20,26 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 
 ## 主题来源
 
-`webview/src/styles/_vscode-theme.scss` 将 VS Code Theme Color 映射为 `--v2ex-*` 语义变量。共享组件只使用这些语义变量，页面只有在表达 VS Code 特有区域（如 Side Bar、Badge、Menu）时才直接读取 `--vscode-*`。
+`webview/src/styles/_vscode-theme.scss` 是 **唯一** 将 VS Code Theme Color 映射为 `--v2ex-*` 语义变量的全局入口。共享组件、页面样式和业务 CSS Modules **优先且默认只使用** `--v2ex-*`，不要直接写 `var(--vscode-*)`。
+
+允许直接读取 `--vscode-*` 的例外：
+
+1. `_vscode-theme.scss` 内的映射定义本身
+2. `webview/theme.html` 回归页中模拟宿主 Theme Color 的 mock 赋值
+3. 宿主区域上下文重映射：例如主面板 `main.scss` 将 Side Bar 相关 token 再映射到 `--v2ex-*` 后，子样式仍只消费 `--v2ex-*`
+
+新增颜色时先补 `--v2ex-*` 映射，再在消费方引用；同一 `--vscode-*` 在页面中出现两次以上时，应升为语义变量。
 
 关键规则：
 
-- 文本、背景、输入框、边框、焦点、选择态和语义状态均必须提供 VS Code 变量回退链
-- 高对比主题的边框优先使用 `--vscode-contrastBorder`，焦点优先使用 `--vscode-contrastActiveBorder`
+- 文本、背景、输入框、边框、焦点、选择态和语义状态的 VS Code 回退链集中写在 `_vscode-theme.scss`
+- 高对比主题：`--v2ex-border` / `--v2ex-focus-border` 已包含 contrast 优先；仅高对比才需要描边的控件使用 `var(--v2ex-hc-border, transparent)`（该变量只在高对比主题定义）
 - Tooltip、Popover、Select、DropdownMenu、Dialog 和 Toast 的 Portal 内容必须继承同一语义变量，不能使用固定明暗色
-- Tooltip、Popover 等浮层箭头必须与浮层使用相同的背景和边框色；箭头只为两条外露斜边描边，不绘制与浮层主体接触的底边，并向主体重叠 `1px` 避免抗锯齿产生可见接缝
-- 固定品牌色或实物色仅用于内容本身（例如货币图标）；交互状态色必须来自 VS Code 变量或 `--v2ex-*` 映射
-- 公共形状和动效使用 `--v2ex-radius-*`、`--v2ex-motion-*`
+- Tooltip / 浮层：`--v2ex-tooltip-bg` / `--v2ex-tooltip-fg`；菜单：`--v2ex-menu-*`；箭头必须与浮层使用相同的背景和边框色；箭头只为两条外露斜边描边，不绘制与浮层主体接触的底边，并向主体重叠 `1px` 避免抗锯齿产生可见接缝
+- 固定品牌色或实物色仅用于内容本身（例如货币图标）；交互状态色必须来自 `--v2ex-*`
+- 公共形状和动效使用 `--v2ex-radius-xs|sm|md|lg`、`--v2ex-motion-*`；宿主字体使用 `--v2ex-font-family` / `--v2ex-font-size`；代码块使用 `--v2ex-code-bg` / `--v2ex-code-font-family`
+- 链接色的弱强调衍生使用 `--v2ex-link-soft-*`（背景、边框、ring、fill），不要在业务页重复 `color-mix(var(--v2ex-link-fg) …)`
+- 业务 SCSS 直接写 `var(--v2ex-*)`，不要再包一层 `$muted-color` / `$panel-border` 之类的 SCSS 别名
 - 动画必须在 `prefers-reduced-motion: reduce` 下关闭
 
 ## 回归验证

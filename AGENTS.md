@@ -106,7 +106,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - Webview 样式使用 SCSS；`webview/src/styles/index.scss` 只加载公共样式和基础全局规则，VS Code Theme Color 到项目语义变量的映射集中在 `webview/src/styles/_vscode-theme.scss`
 - 跨页面共享样式优先通过不直接生成选择器的 SCSS mixin 复用，由页面样式使用 `@use` 和 `@include` 按需引入；话题与用户内容的公共富文本样式集中在 `webview/src/styles/_topic-content.scss`，不要将 `.topic-content` 直接加入全局样式
 - 主面板 CSS Modules 的省略文本、空状态和加载状态等重复模式集中在 `webview/src/views/main/components/_mixins.scss`；新增同类样式时优先复用 mixin，保持最终类名由各 CSS Module 管理
-- Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)，组件颜色优先使用 `--v2ex-*` 语义变量，只有页面独有语义才直接读取 `var(--vscode-*)`
+- Webview 页面必须适配 [VS Code Color Theme](https://code.visualstudio.com/api/references/theme-color)；颜色在 `webview/src/styles/_vscode-theme.scss` 映射为 `--v2ex-*` 后，共享组件与业务样式只使用 `--v2ex-*`。不要在页面中直接写 `var(--vscode-*)`；例外仅限主题映射文件、theme 回归页 mock，以及宿主区域（如 Side Bar）向 `--v2ex-*` 的上下文重映射
 - Tooltip、Popover、ConfirmPopover、DropdownMenu、Dialog 等浮层使用 Radix Portal 挂载到 `document.body`；颜色、边框、焦点和阴影由 `webview/src/components/ui/ui.scss` 统一处理，高对比主题必须依赖 `--vscode-contrastBorder` / `--vscode-contrastActiveBorder`
 - 常规语义状态复用 `Badge`、`Tag`、`Alert` 和 `Empty`；不要在业务页面重新实现同类主题映射
 

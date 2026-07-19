@@ -1,7 +1,5 @@
 @use '../../styles/topic-list-item' as topic-list-item;
 
-$panel-border: var(--v2ex-border);
-
 .recent-scroll {
   height: 100vh;
 }
@@ -11,7 +9,7 @@ $panel-border: var(--v2ex-border);
   min-height: 100vh;
   padding: 16px 20px;
   margin: 0 auto;
-  color: var(--vscode-foreground);
+  color: var(--v2ex-webview-fg);
 }
 
 .recent-toolbar {
@@ -39,7 +37,7 @@ $panel-border: var(--v2ex-border);
 .recent-count {
   min-width: 0;
   margin-top: 10px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--v2ex-muted-fg);
   font-size: 12px;
 }
 
@@ -66,7 +64,7 @@ $panel-border: var(--v2ex-border);
   min-width: 0;
   min-height: 58px;
   padding: 12px 0;
-  border-bottom: 1px solid $panel-border;
+  border-bottom: 1px solid var(--v2ex-border);
   color: inherit;
   text-align: left;
 
@@ -91,7 +89,7 @@ $panel-border: var(--v2ex-border);
 }
 
 .recent-topic-avatar {
-  background: var(--vscode-editorWidget-background);
+  background: var(--v2ex-widget-bg);
 }
 
 .recent-topic-body {
@@ -114,7 +112,7 @@ $panel-border: var(--v2ex-border);
 .recent-topic-published {
   max-width: 190px;
   overflow: hidden;
-  color: var(--vscode-descriptionForeground);
+  color: var(--v2ex-muted-fg);
   font-size: 12px;
   line-height: 1.45;
   text-overflow: ellipsis;
@@ -195,7 +193,7 @@ $panel-border: var(--v2ex-border);
   justify-content: center;
   gap: 12px;
   min-height: 260px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--v2ex-muted-fg);
 }
 
 .recent-pagination {
@@ -211,7 +209,7 @@ $panel-border: var(--v2ex-border);
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
-  color: var(--vscode-descriptionForeground);
+  color: var(--v2ex-muted-fg);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

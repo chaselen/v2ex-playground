@@ -4,14 +4,20 @@
   overflow: hidden;
   font-size: var(--v2ex-main-font-size);
   --v2ex-main-font-size: 13px;
+  /*
+   * Side Bar Webview：用宿主侧栏 token 重映射全局语义变量。
+   * 这是少数允许直接读 --vscode-* 的场景；业务样式仍只消费 --v2ex-*。
+   */
   --v2ex-webview-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
   --v2ex-webview-fg: var(--vscode-sideBar-foreground, var(--vscode-foreground));
   --v2ex-main-content-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
+  --v2ex-title-fg: var(--vscode-sideBarTitle-foreground, var(--v2ex-webview-fg));
   --v2ex-widget-bg: var(
     --vscode-sideBarSectionHeader-background,
     var(--vscode-editorWidget-background, var(--v2ex-webview-bg))
   );
   --v2ex-overlay-bg: var(--vscode-menu-background, var(--v2ex-widget-bg));
+  --v2ex-menu-bg: var(--vscode-menu-background, var(--v2ex-overlay-bg));
   --v2ex-input-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
   --v2ex-border-base: var(
     --vscode-sideBar-border,
@@ -50,7 +56,7 @@
   }
 
   > .v2ex-tabs__bar .v2ex-tabs__trigger[data-state='active'] {
-    color: var(--vscode-sideBarTitle-foreground, var(--v2ex-webview-fg));
+    color: var(--v2ex-title-fg);
   }
 
   > .v2ex-tabs__content {
@@ -125,11 +131,11 @@
   pointer-events: none;
 
   &:hover {
-    background: var(--vscode-toolbar-hoverBackground, var(--v2ex-hover-bg));
+    background: var(--v2ex-hover-bg);
   }
 
   &:focus-visible {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
   }
 }

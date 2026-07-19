@@ -12,7 +12,7 @@
   min-height: 28px;
   padding: 4px 11px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--v2ex-radius-sm);
   color: var(--v2ex-webview-fg);
   background: var(--v2ex-default-bg);
   cursor: pointer;
@@ -59,7 +59,7 @@
   }
 
   &:disabled {
-    border-color: var(--vscode-contrastBorder, transparent);
+    border-color: var(--v2ex-hc-border, transparent);
     color: var(--v2ex-primary-button-fg);
     background: var(--v2ex-primary-button-bg);
   }
@@ -72,7 +72,7 @@
 }
 
 .v2ex-button--subtle {
-  border-color: var(--vscode-contrastBorder, transparent);
+  border-color: var(--v2ex-hc-border, transparent);
   background: var(--v2ex-light-button-bg);
 
   &:hover:not(:disabled) {
@@ -119,7 +119,7 @@
   }
 
   &:disabled {
-    border-color: var(--vscode-contrastBorder, var(--v2ex-danger-border));
+    border-color: var(--v2ex-hc-border, var(--v2ex-danger-border));
     color: var(--v2ex-danger-fg);
     background: var(--v2ex-danger-bg);
   }
@@ -185,10 +185,10 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border: 1px solid var(--vscode-contrastBorder, transparent);
+  border: 1px solid var(--v2ex-hc-border, transparent);
   border-radius: 999px;
-  color: var(--vscode-badge-foreground, #fff);
-  background: var(--vscode-badge-background, var(--v2ex-danger-fg));
+  color: var(--v2ex-badge-fg);
+  background: var(--v2ex-badge-bg);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   line-height: 16px;
@@ -200,8 +200,8 @@
   align-items: center;
   min-height: 20px;
   padding: 1px 7px;
-  border: 1px solid var(--vscode-contrastBorder, var(--v2ex-tag-bg));
-  border-radius: 4px;
+  border: 1px solid var(--v2ex-hc-border, var(--v2ex-tag-bg));
+  border-radius: var(--v2ex-radius-sm);
   color: var(--v2ex-tag-fg);
   background: var(--v2ex-tag-bg);
   font-size: 12px;
@@ -209,10 +209,10 @@
 }
 
 .v2ex-tag--badge {
-  border-color: var(--vscode-contrastBorder, var(--vscode-badge-background));
-  border-radius: 6px;
-  color: var(--vscode-badge-foreground);
-  background: var(--vscode-badge-background);
+  border-color: var(--v2ex-hc-border, var(--v2ex-badge-bg));
+  border-radius: var(--v2ex-radius-md);
+  color: var(--v2ex-badge-fg);
+  background: var(--v2ex-badge-bg);
   font-weight: 700;
 }
 
@@ -222,7 +222,7 @@
   gap: 9px;
   padding: 10px 12px;
   border: 1px solid var(--v2ex-info-border);
-  border-radius: 4px;
+  border-radius: var(--v2ex-radius-sm);
   color: var(--v2ex-webview-fg);
   background: var(--v2ex-info-bg);
 }
@@ -275,7 +275,7 @@
 
 .v2ex-alert__description {
   margin-top: 3px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
@@ -285,7 +285,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
   text-align: center;
 }
 
@@ -296,7 +296,7 @@
   width: 80px;
   height: 80px;
   margin-bottom: 8px;
-  color: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
+  color: var(--v2ex-disabled-fg);
 }
 
 .v2ex-empty__icon > svg {
@@ -333,7 +333,7 @@
   height: 32px;
   overflow: hidden;
   border: 1px solid var(--v2ex-control-border);
-  color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
+  color: var(--v2ex-icon-fg);
   background: var(--v2ex-default-bg);
   vertical-align: middle;
 }
@@ -353,7 +353,7 @@
 }
 
 .v2ex-avatar--square {
-  border-radius: 4px;
+  border-radius: var(--v2ex-radius-sm);
 }
 
 .v2ex-avatar__image {
@@ -394,20 +394,20 @@
 .v2ex-progress__indicator {
   width: 100%;
   height: 100%;
-  background: var(--vscode-progressBar-background, var(--v2ex-primary-button-bg));
+  background: var(--v2ex-progress-fg);
   transition: transform 180ms ease;
 }
 
 .v2ex-progress__label {
   flex: none;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
 .v2ex-spinner {
   display: inline-flex;
-  color: var(--vscode-progressBar-background, var(--v2ex-link-fg));
+  color: var(--v2ex-progress-fg);
 }
 
 .v2ex-spinner > svg {
@@ -712,7 +712,7 @@
     position: absolute;
     z-index: -1;
     inset: 5px 2px;
-    border-radius: 5px;
+    border-radius: var(--v2ex-radius-sm);
     background: transparent;
     content: '';
   }
@@ -824,10 +824,10 @@
   z-index: 1000;
   width: var(--radix-select-trigger-width);
   max-height: min(320px, var(--radix-select-content-available-height));
-  border: 1px solid var(--vscode-contrastBorder, var(--v2ex-border));
+  border: 1px solid var(--v2ex-border);
   border-radius: var(--v2ex-radius-sm);
-  color: var(--vscode-menu-foreground, var(--v2ex-widget-fg));
-  background: var(--vscode-menu-background, var(--v2ex-overlay-bg));
+  color: var(--v2ex-menu-fg);
+  background: var(--v2ex-menu-bg);
   box-shadow: var(--v2ex-shadow-floating);
   overflow: hidden;
   animation: v2ex-overlay-in var(--v2ex-motion-fast) ease-out;
@@ -843,14 +843,14 @@
   min-height: 28px;
   align-items: center;
   padding: 4px 8px 4px 28px;
-  border-radius: 3px;
+  border-radius: var(--v2ex-radius-xs);
   outline: none;
   cursor: default;
   user-select: none;
 
   &[data-highlighted] {
-    color: var(--vscode-menu-selectionForeground, var(--v2ex-active-fg));
-    background: var(--vscode-menu-selectionBackground, var(--v2ex-active-bg));
+    color: var(--v2ex-menu-selection-fg);
+    background: var(--v2ex-menu-selection-bg);
   }
 
   &[data-disabled] {
@@ -934,7 +934,7 @@
 }
 
 .v2ex-radio-group__badge--danger {
-  border-color: var(--vscode-contrastBorder, var(--v2ex-danger-fg));
+  border-color: var(--v2ex-hc-border, var(--v2ex-danger-fg));
   color: #fff;
   background: var(--v2ex-danger-fg);
 }
@@ -946,7 +946,7 @@
   flex-wrap: nowrap;
   gap: 2px;
   padding: 3px;
-  border: 1px solid var(--vscode-contrastBorder, transparent);
+  border: 1px solid var(--v2ex-hc-border, transparent);
   border-radius: var(--v2ex-radius-md);
   background: var(--v2ex-light-button-bg);
 
@@ -969,15 +969,15 @@
     }
 
     &:has(.v2ex-radio-group__item[data-state='checked']) {
-      border-color: var(--vscode-contrastBorder, var(--v2ex-control-border));
+      border-color: var(--v2ex-hc-border, var(--v2ex-control-border));
       color: var(--v2ex-webview-fg);
       background: var(--v2ex-webview-bg);
-      box-shadow: 0 1px 2px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.16));
+      box-shadow: 0 1px 2px var(--v2ex-widget-shadow-color);
     }
 
     &:has(.v2ex-radio-group__item:focus-visible) {
-      border-color: var(--vscode-contrastActiveBorder, var(--v2ex-focus-border));
-      outline: 1px solid var(--vscode-contrastActiveBorder, var(--v2ex-focus-border));
+      border-color: var(--v2ex-focus-border);
+      outline: 1px solid var(--v2ex-focus-border);
       outline-offset: -1px;
     }
 
@@ -1017,9 +1017,9 @@
 .v2ex-popover,
 .v2ex-menu {
   z-index: 1000;
-  border: 1px solid var(--vscode-contrastBorder, var(--v2ex-border));
-  color: var(--vscode-editorHoverWidget-foreground, var(--v2ex-widget-fg));
-  background: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+  border: 1px solid var(--v2ex-border);
+  color: var(--v2ex-tooltip-fg);
+  background: var(--v2ex-tooltip-bg);
   box-shadow: var(--v2ex-shadow-floating);
   animation: v2ex-overlay-in var(--v2ex-motion-fast) ease-out;
 }
@@ -1047,13 +1047,233 @@
   transform: translateY(-1px);
 }
 
+.v2ex-date-picker {
+  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 7px 4px 9px;
+  border: 1px solid var(--v2ex-input-border);
+  border-radius: var(--v2ex-radius-sm);
+  outline: none;
+  color: var(--v2ex-input-fg);
+  background: var(--v2ex-input-bg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover:not(:disabled) {
+    border-color: var(--v2ex-focus-border);
+  }
+
+  /* 去掉浏览器默认 focus ring，与 Input 一致用内描边 */
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible,
+  &[aria-expanded='true'] {
+    border-color: var(--v2ex-focus-border);
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
+  }
+}
+
+.v2ex-date-picker--placeholder {
+  color: var(--v2ex-placeholder-fg);
+}
+
+.v2ex-date-picker--disabled {
+  border-color: var(--v2ex-disabled-border);
+  color: var(--v2ex-disabled-fg);
+  background: var(--v2ex-disabled-bg);
+  cursor: not-allowed;
+}
+
+.v2ex-date-picker__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2ex-date-picker__icon {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--v2ex-icon-fg);
+}
+
+.v2ex-date-picker__popover {
+  width: min(288px, calc(100vw - 16px));
+  max-width: min(288px, calc(100vw - 16px));
+  padding: 10px;
+  outline: none;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.v2ex-date-picker__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  color: var(--v2ex-webview-fg);
+}
+
+.v2ex-date-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.v2ex-date-picker__title {
+  flex: 1;
+  min-width: 0;
+  color: var(--v2ex-webview-fg);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.v2ex-date-picker__nav {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--v2ex-radius-sm);
+  outline: none;
+  color: var(--v2ex-icon-fg);
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover {
+    color: var(--v2ex-hover-fg);
+    background: var(--v2ex-hover-bg);
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible {
+    border-color: var(--v2ex-focus-border);
+    background: var(--v2ex-hover-bg);
+  }
+
+  > svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.v2ex-date-picker__weekdays,
+.v2ex-date-picker__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.v2ex-date-picker__weekday {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  color: var(--v2ex-muted-fg);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.v2ex-date-picker__day {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--v2ex-radius-sm);
+  outline: none;
+  color: var(--v2ex-webview-fg);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover {
+    background: var(--v2ex-hover-bg);
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible {
+    border-color: var(--v2ex-focus-border);
+    background: var(--v2ex-hover-bg);
+  }
+}
+
+.v2ex-date-picker__day--outside {
+  color: var(--v2ex-muted-fg);
+  opacity: 0.72;
+}
+
+.v2ex-date-picker__day--today {
+  color: var(--v2ex-link-fg);
+  background: var(--v2ex-link-soft-bg);
+  font-weight: 600;
+}
+
+.v2ex-date-picker__day--selected {
+  border-color: var(--v2ex-hc-border, transparent);
+  color: var(--v2ex-primary-button-fg);
+  background: var(--v2ex-primary-button-bg);
+  font-weight: 600;
+
+  &:hover {
+    color: var(--v2ex-primary-button-fg);
+    background: var(--v2ex-primary-button-hover-bg);
+  }
+}
+
+.v2ex-date-picker__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+  border-top: 1px solid var(--v2ex-border);
+}
+
 .v2ex-floating-arrow__fill {
-  fill: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+  fill: var(--v2ex-tooltip-bg);
 }
 
 .v2ex-floating-arrow__border {
   fill: none;
-  stroke: var(--vscode-contrastBorder, var(--v2ex-border));
+  stroke: var(--v2ex-border);
   stroke-width: 1px;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -1094,7 +1314,7 @@
 }
 
 .v2ex-confirm-popover__default-icon > :not(:first-child) {
-  stroke: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
+  stroke: var(--v2ex-tooltip-bg);
 }
 
 .v2ex-confirm-popover__title {
@@ -1125,8 +1345,8 @@
   max-width: min(320px, calc(100vw - 16px));
   padding: 4px;
   border-radius: var(--v2ex-radius-sm);
-  color: var(--vscode-menu-foreground, var(--v2ex-widget-fg));
-  background: var(--vscode-menu-background, var(--v2ex-overlay-bg));
+  color: var(--v2ex-menu-fg);
+  background: var(--v2ex-menu-bg);
 }
 
 .v2ex-context-menu--compact {
@@ -1165,19 +1385,19 @@
   gap: 5px;
   min-height: 26px;
   padding: 3px 8px 3px 4px;
-  border-radius: 3px;
+  border-radius: var(--v2ex-radius-xs);
   outline: none;
   cursor: default;
   user-select: none;
 
   &[data-highlighted],
   &--active {
-    color: var(--vscode-menu-selectionForeground, var(--v2ex-active-fg));
-    background: var(--vscode-menu-selectionBackground, var(--v2ex-active-bg));
+    color: var(--v2ex-menu-selection-fg);
+    background: var(--v2ex-menu-selection-bg);
   }
 
   &[data-disabled] {
-    color: var(--vscode-disabledForeground, var(--v2ex-disabled-fg));
+    color: var(--v2ex-disabled-fg);
     opacity: 0.72;
   }
 }
@@ -1199,7 +1419,7 @@
 .v2ex-menu__separator {
   height: 1px;
   margin: 4px;
-  background: var(--vscode-menu-separatorBackground, var(--v2ex-border));
+  background: var(--v2ex-menu-separator);
 }
 
 .v2ex-dialog__overlay {
@@ -1219,7 +1439,7 @@
   width: min(640px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
   flex-direction: column;
-  border: 1px solid var(--vscode-contrastBorder, var(--v2ex-border));
+  border: 1px solid var(--v2ex-border);
   border-radius: var(--v2ex-radius-md);
   outline: none;
   color: var(--v2ex-widget-fg);
@@ -1452,7 +1672,7 @@
 .v2ex-image-preview__next,
 .v2ex-image-preview__toolbar {
   z-index: 1;
-  border-color: var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
+  border-color: var(--v2ex-image-preview-border);
   color: #fff;
   background: rgb(0 0 0 / 72%);
   box-shadow: var(--v2ex-shadow-floating);
@@ -1511,7 +1731,7 @@
   gap: 3px;
   max-width: calc(100vw - 28px);
   padding: 5px 7px;
-  border: 1px solid var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
+  border: 1px solid var(--v2ex-image-preview-border);
   border-radius: var(--v2ex-radius-md);
   transform: translateX(-50%);
 }
@@ -1578,7 +1798,7 @@
   width: 40%;
   height: 20px;
   margin-bottom: 16px;
-  border-radius: 4px;
+  border-radius: var(--v2ex-radius-sm);
 }
 
 .v2ex-skeleton__paragraph {
@@ -1591,13 +1811,13 @@
 .v2ex-skeleton__line {
   width: var(--v2ex-skeleton-line-width, 100%);
   height: 14px;
-  border-radius: 3px;
+  border-radius: var(--v2ex-radius-xs);
 }
 
 .v2ex-skeleton__button {
   width: 72px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: var(--v2ex-radius-sm);
 }
 
 .v2ex-skeleton__avatar {
@@ -1622,7 +1842,7 @@
 }
 
 .v2ex-skeleton__avatar--square {
-  border-radius: 4px;
+  border-radius: var(--v2ex-radius-sm);
 }
 
 @keyframes v2ex-spin {

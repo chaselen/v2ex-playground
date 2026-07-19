@@ -21,7 +21,7 @@
 .my-card {
   overflow: hidden;
   border: 1px solid var(--v2ex-border);
-  border-radius: 8px;
+  border-radius: var(--v2ex-radius-lg);
   background: var(--v2ex-widget-bg);
   color: var(--v2ex-main-content-fg);
 }
@@ -53,15 +53,15 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border-radius: 6px;
+  border-radius: var(--v2ex-radius-md);
 }
 
 .my-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 6px;
+  border-radius: var(--v2ex-radius-md);
   background: var(--v2ex-default-bg);
-  color: var(--vscode-icon-foreground, var(--v2ex-webview-fg));
+  color: var(--v2ex-icon-fg);
 }
 
 .my-identity {
@@ -85,7 +85,7 @@
 
 .my-tagline {
   margin: 3px 0 0;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
   font-size: 12px;
   line-height: 1.2;
   font-weight: 400;
@@ -96,7 +96,7 @@
   flex: none;
   width: 14px;
   height: 14px;
-  color: var(--vscode-icon-foreground, var(--vscode-descriptionForeground));
+  color: var(--v2ex-icon-fg);
   stroke-width: 1.8;
 }
 
@@ -114,7 +114,7 @@
   min-width: 0;
   min-height: 44px;
   padding: 0 6px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
   text-align: center;
 
   & + & {
@@ -123,7 +123,7 @@
 
   &:hover strong,
   &:hover span {
-    color: var(--vscode-textLink-foreground);
+    color: var(--v2ex-link-fg);
   }
 
   strong,
@@ -171,7 +171,7 @@
 
   :global(.v2ex-progress__label) {
     min-width: 34px;
-    color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+    color: var(--v2ex-muted-fg);
     font-size: 14px;
     font-weight: 600;
     text-align: right;
@@ -192,7 +192,7 @@
 
   :global(.v2ex-button) {
     max-width: 100%;
-    border-radius: 6px;
+    border-radius: var(--v2ex-radius-md);
     font-weight: 600;
   }
 }
@@ -219,7 +219,7 @@
 
   &:hover,
   &:focus-visible {
-    color: var(--vscode-textLink-foreground, var(--v2ex-link-fg));
+    color: var(--v2ex-link-fg);
   }
 }
 
@@ -260,8 +260,8 @@
   width: 24px;
   height: 24px;
   padding: 0;
-  border-radius: 4px;
-  color: var(--vscode-icon-foreground, var(--vscode-descriptionForeground));
+  border-radius: var(--v2ex-radius-sm);
+  color: var(--v2ex-icon-fg);
 
   &:hover {
     background: var(--v2ex-hover-bg);
@@ -321,7 +321,7 @@
   min-height: 30px;
   padding: 6px 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--v2ex-radius-md);
   background: transparent;
   color: var(--v2ex-main-content-fg);
   font: inherit;
@@ -353,7 +353,7 @@
   gap: 8px;
   min-width: 0;
   padding: 8px 6px;
-  border-radius: 6px;
+  border-radius: var(--v2ex-radius-md);
   color: var(--v2ex-main-content-fg);
 
   &:hover {
@@ -382,7 +382,7 @@
   align-items: baseline;
   gap: 4px 8px;
   min-width: 0;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
   line-height: 1.5;
 
   strong {
@@ -391,19 +391,19 @@
   }
 
   a {
-    color: var(--vscode-textLink-foreground, var(--v2ex-link-fg));
+    color: var(--v2ex-link-fg);
     text-decoration: none;
     cursor: pointer;
   }
 
   a:hover {
-    color: var(--vscode-textLink-activeForeground, var(--v2ex-hover-fg));
+    color: var(--v2ex-link-hover-fg);
     text-decoration: underline;
   }
 
   time {
     flex: none;
-    color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+    color: var(--v2ex-muted-fg);
     font-size: 11px;
   }
 }
@@ -412,20 +412,20 @@
   min-width: 0;
   margin-top: 4px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--v2ex-radius-md);
   background: var(--v2ex-default-bg);
   color: var(--v2ex-main-content-fg);
   line-height: 1.55;
   word-break: break-word;
 
   a {
-    color: var(--vscode-textLink-foreground, var(--v2ex-link-fg));
+    color: var(--v2ex-link-fg);
     text-decoration: none;
     cursor: pointer;
   }
 
   a:hover {
-    color: var(--vscode-textLink-activeForeground, var(--v2ex-hover-fg));
+    color: var(--v2ex-link-hover-fg);
     text-decoration: underline;
   }
 }
@@ -437,7 +437,7 @@
   justify-content: center;
   min-height: 168px;
   padding: 16px 8px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
   text-align: center;
 
   :global(.v2ex-empty__title) {

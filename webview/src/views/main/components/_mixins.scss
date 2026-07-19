@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
 
   :global(.v2ex-empty) {
     text-align: center;

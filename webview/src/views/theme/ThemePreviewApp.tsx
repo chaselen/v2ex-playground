@@ -17,6 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   ConfirmPopover,
+  DatePicker,
   Dialog,
   DropdownMenu,
   Empty,
@@ -265,9 +266,9 @@ export default function ThemePreviewApp() {
               options={[{ label: '禁用选择器', value: 'disabled' }]}
             />
             <div className="theme-preview-date-range" aria-label="日期范围">
-              <Input aria-label="开始日期" type="date" />
+              <DatePicker aria-label="开始日期" placeholder="开始日期" />
               <span aria-hidden="true">~</span>
-              <Input aria-label="结束日期" type="date" />
+              <DatePicker aria-label="结束日期" placeholder="结束日期" />
             </div>
           </div>
         </PreviewSection>

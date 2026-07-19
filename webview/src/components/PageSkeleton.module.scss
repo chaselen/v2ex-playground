@@ -1,7 +1,7 @@
 .skeleton {
   --skeleton-divider: var(
-    --vscode-widget-border,
-    color-mix(in srgb, var(--v2ex-webview-fg, var(--vscode-foreground)) 12%, transparent)
+    --v2ex-border-base,
+    color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent)
   );
   width: min(100%, 760px);
   padding: 20px;
@@ -154,7 +154,7 @@
   gap: 20px;
   padding: 18px;
   border: 1px solid var(--skeleton-divider);
-  border-radius: 8px;
+  border-radius: var(--v2ex-radius-lg);
 }
 
 .balance-summary {
@@ -181,7 +181,7 @@
 .balance-ledger {
   margin-top: 18px;
   border: 1px solid var(--skeleton-divider);
-  border-radius: 8px;
+  border-radius: var(--v2ex-radius-lg);
   overflow: hidden;
 }
 
@@ -216,7 +216,7 @@
   padding: 18px;
   margin-bottom: 10px;
   border: 1px solid var(--skeleton-divider);
-  border-radius: 8px;
+  border-radius: var(--v2ex-radius-lg);
 }
 
 .tag-title {
@@ -229,7 +229,7 @@
   padding: 14px;
   margin-bottom: 10px;
   border: 1px solid var(--skeleton-divider);
-  border-radius: 8px;
+  border-radius: var(--v2ex-radius-lg);
 }
 
 .search-card > :first-child {
@@ -286,7 +286,7 @@
 
 .my-card {
   border: 1px solid var(--skeleton-divider);
-  border-radius: 8px;
+  border-radius: var(--v2ex-radius-lg);
   overflow: hidden;
 }
 

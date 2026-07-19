@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  color: var(--vscode-foreground);
-  background: var(--vscode-editor-background);
+  color: var(--v2ex-webview-fg);
+  background: var(--v2ex-webview-bg);
 }
 
 .two-factor-panel {
@@ -22,7 +22,7 @@
 
   h1 {
     margin: 2px 0 0;
-    color: var(--vscode-foreground);
+    color: var(--v2ex-webview-fg);
     font-size: 22px;
     font-weight: 600;
     line-height: 1.25;
@@ -30,7 +30,7 @@
 }
 
 .two-factor-eyebrow {
-  color: var(--vscode-descriptionForeground);
+  color: var(--v2ex-muted-fg);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
@@ -38,7 +38,7 @@
 
 .two-factor-intro {
   margin: 0;
-  color: var(--vscode-descriptionForeground);
+  color: var(--v2ex-muted-fg);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -49,10 +49,10 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 10px;
   padding: 12px 12px;
-  border: 1px solid var(--vscode-inputValidation-errorBorder, var(--v2ex-danger-border));
-  border-radius: 4px;
-  color: var(--vscode-inputValidation-errorForeground, var(--v2ex-danger-fg));
-  background: var(--vscode-inputValidation-errorBackground, var(--v2ex-danger-bg));
+  border: 1px solid var(--v2ex-danger-border);
+  border-radius: var(--v2ex-radius-sm);
+  color: var(--v2ex-danger-fg);
+  background: var(--v2ex-danger-bg);
 }
 
 .two-factor-error-icon {
@@ -67,7 +67,7 @@
 }
 
 .two-factor-error-title {
-  color: var(--vscode-foreground);
+  color: var(--v2ex-webview-fg);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
@@ -75,7 +75,7 @@
 
 .two-factor-error-description {
   margin-top: 2px;
-  color: var(--vscode-descriptionForeground);
+  color: var(--v2ex-muted-fg);
   font-size: 13px;
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -89,18 +89,18 @@
   justify-content: center;
   padding: 0;
   border: 0;
-  border-radius: 4px;
-  color: var(--vscode-icon-foreground);
+  border-radius: var(--v2ex-radius-sm);
+  color: var(--v2ex-icon-fg);
   background: transparent;
   cursor: pointer;
 
   &:hover {
-    color: var(--vscode-foreground);
-    background: var(--vscode-toolbar-hoverBackground);
+    color: var(--v2ex-webview-fg);
+    background: var(--v2ex-hover-bg);
   }
 
   &:focus-visible {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 1px;
   }
 

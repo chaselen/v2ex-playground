@@ -12,6 +12,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  DatePicker,
   Empty,
   Input,
   Pagination,
@@ -242,17 +243,17 @@ export default function SearchApp() {
                 <label>
                   <span>发帖日期</span>
                   <div className="search-date-range">
-                    <Input
-                      type="date"
+                    <DatePicker
                       aria-label="开始日期"
+                      placeholder="开始日期"
                       disabled={loading}
                       value={filters.dateStart}
                       onValueChange={value => updateFilter('dateStart', value)}
                     />
                     <span aria-hidden="true">~</span>
-                    <Input
-                      type="date"
+                    <DatePicker
                       aria-label="结束日期"
+                      placeholder="结束日期"
                       disabled={loading}
                       value={filters.dateEnd}
                       onValueChange={value => updateFilter('dateEnd', value)}

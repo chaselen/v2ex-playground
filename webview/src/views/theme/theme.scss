@@ -148,7 +148,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 7px;
-  border: 1px solid var(--vscode-contrastBorder, var(--v2ex-control-border));
+  border: 1px solid var(--v2ex-hc-border, var(--v2ex-control-border));
   border-radius: 999px;
   background: var(--v2ex-light-button-bg);
   color: var(--v2ex-webview-fg);
@@ -163,10 +163,7 @@
 }
 
 .theme-preview-status--success {
-  border-color: var(
-    --vscode-contrastBorder,
-    color-mix(in srgb, var(--v2ex-success-fg) 38%, transparent)
-  );
+  border-color: var(--v2ex-hc-border, color-mix(in srgb, var(--v2ex-success-fg) 38%, transparent));
   background: color-mix(in srgb, var(--v2ex-success-fg) 12%, transparent);
   color: color-mix(in srgb, var(--v2ex-success-fg) 64%, var(--v2ex-webview-fg));
 }

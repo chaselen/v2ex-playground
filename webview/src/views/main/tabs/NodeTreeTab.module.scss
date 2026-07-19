@@ -90,7 +90,7 @@ $node-child-indent: 18px;
 
 .tree-item--loading,
 .tree-item--empty {
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
 }
 
 .tree-item--error {
@@ -113,10 +113,7 @@ $node-child-indent: 18px;
 }
 
 .tree-item--pagination {
-  --v2ex-main-pagination-hover-bg: var(
-    --vscode-toolbar-hoverBackground,
-    var(--vscode-button-secondaryHoverBackground, var(--v2ex-hover-bg))
-  );
+  --v2ex-main-pagination-hover-bg: var(--v2ex-hover-bg);
 }
 
 .node-toggle {

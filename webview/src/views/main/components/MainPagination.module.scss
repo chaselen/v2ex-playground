@@ -3,7 +3,7 @@
   align-items: center;
   gap: var(--v2ex-main-pagination-gap, 6px);
   min-width: 0;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
 
   :global(.v2ex-pagination) {
     min-width: 0;

@@ -21,7 +21,7 @@
 .topic-row {
   min-height: 30px;
   padding: 3px 6px;
-  border-radius: 4px;
+  border-radius: var(--v2ex-radius-sm);
 
   &:hover {
     background: var(--v2ex-hover-bg);
@@ -35,7 +35,7 @@
   justify-content: center;
   min-height: 180px;
   padding: 16px;
-  color: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
+  color: var(--v2ex-muted-fg);
 }
 
 .error-text,
