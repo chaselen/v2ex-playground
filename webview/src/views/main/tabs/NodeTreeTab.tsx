@@ -210,14 +210,28 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     return (
       <div className={styles['node-actions']} onClick={stopTreeClick}>
         {tab === 'custom' && (
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<Trash2 aria-hidden="true" />}
-            title="删除"
-            aria-label="删除"
-            onClick={() => data.itemKey && onRemoveNode(data.itemKey)}
-          />
+          <ConfirmPopover
+            title={`确定删除“${data.label}”节点？`}
+            description="删除后该节点将从自定义节点列表中移除"
+            confirmText="删除"
+            cancelText="取消"
+            danger
+            onConfirm={() => {
+              if (data.itemKey) {
+                onRemoveNode(data.itemKey)
+              }
+            }}
+          >
+            <span>
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<Trash2 aria-hidden="true" />}
+                title="删除"
+                aria-label="删除"
+              />
+            </span>
+          </ConfirmPopover>
         )}
         {tab === 'collection' && (
           <ConfirmPopover
