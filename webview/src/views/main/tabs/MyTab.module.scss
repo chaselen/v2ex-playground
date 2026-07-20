@@ -23,11 +23,15 @@
   padding: 8px;
 }
 
+/*
+ * 侧栏账户卡只做描边分组，不铺 widget 底。
+ * Monokai Dimmed 等主题下 sideBarSectionHeader 与侧栏底差明显，
+ * 实心底会整块浮起；透出 --v2ex-webview-bg 更贴近宿主侧栏。
+ */
 .my-card {
   overflow: hidden;
   border: 1px solid var(--v2ex-border);
   border-radius: var(--v2ex-radius-lg);
-  background: var(--v2ex-widget-bg);
   color: var(--v2ex-main-content-fg);
 }
 
