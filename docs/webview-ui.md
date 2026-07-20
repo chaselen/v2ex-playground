@@ -14,7 +14,7 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - 有背景的交互态必须 fg/bg 同族配对：选中态用 `--v2ex-active-fg` + `--v2ex-active-bg`；Ghost hover 用 `--v2ex-toolbar-hover-bg`（`toolbar.hoverBackground` 优先，回退 `list.hoverBackground`），不要用列表行 `--v2ex-hover-bg`；Ghost 按下不要用 `active-bg` 配页面字色，应使用中性 `--v2ex-light-button-active-bg`
 - `--v2ex-hover-bg` 留给列表/树/菜单项等「行 hover」（`list.hoverBackground` 优先）；工具栏式透明 action 用 `--v2ex-toolbar-hover-bg`
 - 不要把 `button.secondaryBackground` 映射成「浅主色 / 通用表面」类 token；低强调表面统一用 `--v2ex-light-button-*` 或 `--v2ex-link-soft-*`
-- Tabs 选中指示器使用 `--v2ex-tab-indicator`（优先 `panelTitle.activeBorder`，回退 `--v2ex-progress-base`），与宿主底部 Panel 当前标题下划线同色；高对比主题优先 `contrastActiveBorder`
+- Tabs 未选中 hover 使用 `--v2ex-toolbar-hover-bg`（透明 chrome，不要用列表行 `--v2ex-hover-bg`）；选中指示器使用 `--v2ex-tab-indicator`（优先 `panelTitle.activeBorder`，回退 `--v2ex-progress-base`），与宿主底部 Panel 当前标题下划线同色；高对比主题优先 `contrastActiveBorder`
 - Progress 填充使用略浅的 `--v2ex-progress-fg`（`color-mix` 将 `--v2ex-progress-base` 与页面背景混合）；轨道用中性 `--v2ex-progress-track-bg`，不要复用 secondary 按钮背景
 - 主面板 `main.scss` 可重映射 Side Bar 相关 `--v2ex-*`，但不得把 `--vscode-contrastBorder` 重新插回常规主题边框回退链；侧栏选中态 bg/fg 须同序回退（inactive → active → hover / 页面字色）
 - `ConfirmPopover` 默认在标题左侧显示警示图标，普通确认使用警告色、危险确认使用危险色；领域操作可通过 `titleIcon` 覆盖图标，传入 `null` 可隐藏

@@ -936,7 +936,7 @@
   }
 
   &:hover:not([data-state='active'])::before {
-    background: var(--v2ex-hover-bg);
+    background: var(--v2ex-toolbar-hover-bg);
   }
 
   &:focus-visible {
