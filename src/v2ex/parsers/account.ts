@@ -75,8 +75,8 @@ export function parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | u
     </div>
   </div>
 
-  因此这里直接从 #member-activity 的内部 HTML 中匹配 width，避免后续站点调整
-  活跃度内部类名或嵌套层级时导致解析遗漏
+  直接从 #member-activity 的内部 HTML 中匹配 width；
+  不依赖活跃度内部类名或嵌套层级，站点微调时更稳
   */
   overview.activityPercent = Number(activityHtml.match(/width\s*:\s*([\d.]+)%/)?.[1] || 0)
 

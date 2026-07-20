@@ -40,6 +40,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - [Webview RPC 通信](docs/webview-rpc.md) — 消息协议、约定式控制器、事件推送和安全边界
 - [Webview UI 与主题](docs/webview-ui.md) — Radix 原语、Lucide 图标、VS Code 语义变量和组件扩展约束
 - 修改上述文档涉及的代码逻辑时，必须同步更新对应文档；新增需要长期维护的关键实现规则或设计取舍时，应在 `docs/` 中补充文档，并在此处添加引用
+- 文档与代码注释只写结论、设计取舍、边界条件和可复现的踩坑（可注明具体宿主如 Cursor，便于对照复现）；不要写入与 Agent 或同事的讨论过程、迁移对比口吻（如「不再组合…」）、个案调试流水账。TODO 与后续优化方向可以保留；通顺的常用词（如「避免」「设计取舍」）不要机械改写
 
 ## 开发命令
 
@@ -83,7 +84,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 ## URI 与文件系统
 
 - VS Code API 返回的 URI 不保证使用 `file:` scheme；路径拼接优先使用 `Uri.joinPath()`，文件读写优先使用 `workspace.fs`，不要在远程或虚拟 URI 上使用 `fsPath`
-- `Uri.joinPath(context.globalStorageUri, ...)` 可能生成 `vscode-userdata:` URI；`workspace.fs` 可以正常读写该 URI，但 `WebviewPanel.iconPath` 无法正确显示它。将全局缓存图片设置为面板图标时，使用 `workspace.fs.readFile()` 读取内容并转换为 base64 `data:` URI，不要通过 `fsPath` 强制转换为 `file:` URI
+- `Uri.joinPath(context.globalStorageUri, ...)` 可能生成 `vscode-userdata:` URI；`workspace.fs` 可以正常读写该 URI，但 `WebviewPanel.iconPath` 无法正确显示它。**踩坑：** 将全局缓存图片设为面板图标时，用 `workspace.fs.readFile()` 读内容并转为 base64 `data:` URI，不要经 `fsPath` 强转 `file:` URI
 
 ## Webview 架构
 
@@ -99,7 +100,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - RPC 契约使用函数签名定义，集中在 `src/shared/*View.ts` 和 `src/shared/webviewRpc.ts`
 - 只有 `rpc_` 前缀的方法可以由 Webview 调用；Panel 生命周期方法使用不带该前缀的常规方法名
 - 新增或修改 RPC 命令、事件、请求参数或响应字段时，先更新 `src/shared/` 中的契约，再同步扩展侧处理器和 Webview 调用方；不要绕过 Proxy 客户端直接调用 `postMessage`
-- 有状态的 Webview 初始化不能依赖扩展侧在面板创建后单向发送一次状态事件；Cursor 中缓存命中、脚本启动或 Webview 上下文重建的时序可能与 VS Code 不同，事件可能早于 React 监听注册而丢失。此类页面应由扩展侧保存最新状态，RPC 契约复用 `WebviewStateRpcCommands<State>` 提供 `ready()` 状态读取，并在 Webview 端复用 `subscribeWebviewState()` 先注册事件监听、再主动读取当前状态；状态事件仅用于后续增量同步
+- 有状态的 Webview 初始化不能依赖扩展侧在面板创建后单向发送一次状态事件。**踩坑：** 不同宿主（如 Cursor 与 VS Code）在缓存命中、脚本启动或 Webview 上下文重建上的时序可能不同，事件可能早于 React 监听注册而丢失。此类页面应由扩展侧保存最新状态，RPC 契约复用 `WebviewStateRpcCommands<State>` 提供 `ready()` 状态读取，并在 Webview 端复用 `subscribeWebviewState()` 先注册事件监听、再主动读取当前状态；状态事件仅用于后续增量同步
 
 ## Webview 样式与主题
 
@@ -144,6 +145,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 对外接口、关键参数、重要常量和复杂业务逻辑需添加说明；优先使用 JSDoc，避免为显而易见的实现添加注释
 - 代码块内部的简短逻辑说明使用 `//`，避免被编辑器识别为变量 JSDoc
 - 短中文注释不以句号结尾；完整句子或多行描述不受此限制
+- 注释内容同样遵循「项目文档」中的撰写约束：只写结论与可复现信息，不写讨论过程
 - 除非需求明确要求，不随意改动 activation events、命令 ID、配置项 key
 
 ## 提交

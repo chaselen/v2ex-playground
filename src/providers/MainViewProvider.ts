@@ -50,7 +50,7 @@ function updateViewTitle(view: vscode.WebviewView, detail?: string): void {
     return
   }
 
-  // VS Code 会自动添加视图容器标题，Cursor 则直接显示运行时标题
+  // 踩坑：VS Code 会自动加视图容器标题前缀，Cursor 则直接显示运行时标题
   const titlePrefix = vscode.env.appName.toLowerCase().includes('cursor') ? 'V2EX: ' : ''
   view.title = `${titlePrefix}${detail}`
 }

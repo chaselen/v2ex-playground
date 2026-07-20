@@ -12,8 +12,8 @@
 }
 
 /*
- * 账户内容区才需要 8px 内边距。
- * 未登录/空状态直接走 empty-panel，避免相对收藏节点多出一层 padding。
+ * 账户内容区才需要 8px 内边距；
+ * 未登录/空状态走 empty-panel，与收藏节点对齐。
  */
 .my-panel-content {
   box-sizing: border-box;
@@ -24,9 +24,8 @@
 }
 
 /*
- * 侧栏账户卡只做描边分组，不铺 widget 底。
- * Monokai Dimmed 等主题下 sideBarSectionHeader 与侧栏底差明显，
- * 实心底会整块浮起；透出 --v2ex-webview-bg 更贴近宿主侧栏。
+ * 侧栏账户卡只做描边分组，背景透出侧栏底色。
+ * 踩坑：部分主题 sectionHeader 与侧栏底对比过大，铺实心底会显得浮起。
  */
 .my-card {
   overflow: hidden;

@@ -54,7 +54,7 @@ const previewThemes = [
   }
 ]
 
-/** UI 迁移与 VS Code 主题适配回归页 */
+/** VS Code 主题适配回归页 */
 export default function ThemePreviewApp() {
   const [activeTheme, setActiveTheme] = useState('暗色')
   const [selectedKey, setSelectedKey] = useState('v2ex')
@@ -151,7 +151,7 @@ export default function ThemePreviewApp() {
             className="theme-preview-empty"
             icon={<Inbox />}
             title="暂无内容"
-            description="空状态不再区分明暗插画"
+            description="空状态使用统一插画"
           />
         </PreviewSection>
 

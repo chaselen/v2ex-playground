@@ -6,7 +6,7 @@
   --v2ex-main-font-size: 13px;
   /*
    * Side Bar Webview：用宿主侧栏 token 重映射全局语义变量。
-   * 这是少数允许直接读 --vscode-* 的场景；业务样式仍只消费 --v2ex-*。
+   * 少数允许直接读 --vscode-* 的场景；业务样式仍只消费 --v2ex-*。
    */
   --v2ex-webview-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
   --v2ex-webview-fg: var(--vscode-sideBar-foreground, var(--vscode-foreground));
@@ -23,7 +23,7 @@
     --vscode-sideBar-border,
     var(--vscode-panel-border, var(--vscode-widget-border, transparent))
   );
-  /* 与全局一致：contrast 边框仅在高对比 body 类中启用，避免宿主注入空值 */
+  /* contrast 边框仅在高对比 body 类中启用；部分宿主会注入空值/透明 contrast token */
   --v2ex-border: var(--v2ex-border-base);
   --v2ex-hover-bg: var(
     --vscode-list-hoverBackground,
@@ -36,7 +36,7 @@
   );
   /*
    * 侧栏列表优先 inactive selection（无焦点选中）；
-   * bg/fg 使用同序回退，避免 inactive 蓝底配页面深色字。
+   * bg/fg 同序回退。踩坑：inactive 底配页面字色会失配。
    */
   --v2ex-active-bg: var(
     --vscode-list-inactiveSelectionBackground,

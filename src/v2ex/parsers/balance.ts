@@ -73,7 +73,7 @@ export function parseLatestDailySignInReward(
 /**
  * 解析金币、银币和铜币余额
  *
- * V2EX 账户概览会省略数量为 0 的高位币种，所以不能只按文本数字顺序解析。
+ * V2EX 账户概览会省略数量为 0 的高位币种，需按币种图片 alt 解析，不能只按文本数字顺序。
  * 这里按 DOM 顺序读取文本金额，并在遇到币种图片时通过 alt 确认金额归属。
  *
  * @param balanceArea 余额区域

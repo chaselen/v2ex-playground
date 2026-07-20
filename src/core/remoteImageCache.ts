@@ -96,7 +96,7 @@ export async function cleanupExpiredCacheFiles(cacheDirName: string, ttlMs: numb
   const cacheDirUri = getExtensionFileCacheDir(cacheDirName)
   const expireBefore = Date.now() - ttlMs
 
-  // 先创建目录，避免 Cursor 在读取不存在目录时额外输出错误日志
+  // 先创建目录；踩坑：Cursor 读取不存在目录时会额外打错误日志
   await vscode.workspace.fs.createDirectory(cacheDirUri)
   const cacheFiles = await vscode.workspace.fs.readDirectory(cacheDirUri)
   await Promise.all(
@@ -170,7 +170,7 @@ function isFileNotFoundError(err: unknown) {
     return true
   }
 
-  // Cursor 的文件系统实现可能直接透传 Node.js ENOENT 错误
+  // 踩坑：Cursor 的文件系统可能直接透传 Node.js ENOENT
   return (
     typeof err === 'object' &&
     err !== null &&

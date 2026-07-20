@@ -39,7 +39,7 @@
 - Markdown 标记不解析，原样显示
 - 直接图片 URL 可能生成 `a > img.embedded_image`，因此原生输出也需要图片增强与隐藏图片处理
 
-回复提交使用原生格式，`TopicPanelController` 的回复预览固定请求 `default` 是有意行为，不应在未确认回复提交接口支持 Markdown 前增加格式切换。
+回复提交使用原生格式；`TopicPanelController` 的回复预览固定请求 `default`。在确认提交接口支持 Markdown 之前，不要增加预览格式切换。
 
 ## Markdown 格式
 

@@ -33,7 +33,7 @@ body {
   --v2ex-font-family: var(--vscode-font-family, system-ui, sans-serif);
   --v2ex-font-size: var(--vscode-font-size, 13px);
 
-  /* 边框与焦点：contrast 色仅在高对比 body 类中启用，避免部分宿主注入空值/透明值 */
+  /* 边框与焦点：contrast 色仅在高对比 body 类中启用；部分宿主会注入空值/透明值 */
   --v2ex-border-base: var(
     --vscode-panel-border,
     var(--vscode-widget-border, var(--vscode-editorWidget-border, transparent))
@@ -54,16 +54,16 @@ body {
   );
   --v2ex-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
   /*
-   * 工具栏 / Ghost 等透明 action：优先 toolbar.hoverBackground，
-   * 避免 list 行 hover 在主题里过重时按钮像「整行选中」。
+   * 工具栏 / Ghost 等透明 action：优先 toolbar.hoverBackground。
+   * 踩坑：list 行 hover 在部分主题过重，按钮会像「整行选中」。
    */
   --v2ex-toolbar-hover-bg: var(
     --vscode-toolbar-hoverBackground,
     var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.14))
   );
   /*
-   * 选中态 bg/fg 同序回退：active → inactive → hover/页面字色，
-   * 避免只有 inactive 底时配上页面深色字。
+   * 选中态 bg/fg 同序回退：active → inactive → hover/页面字色。
+   * 踩坑：仅有 inactive 底时若 fg 落到页面字色，对比度会失效。
    */
   --v2ex-active-bg: var(
     --vscode-list-activeSelectionBackground,
@@ -78,7 +78,7 @@ body {
     var(--vscode-editor-selectionBackground, var(--v2ex-active-bg))
   );
 
-  /* 次级按钮色：仅用于 secondary Button，不要当作通用表面色 */
+  /* 次级按钮色：仅用于 secondary Button，不作通用表面色 */
   --v2ex-default-bg: var(
     --vscode-button-secondaryBackground,
     var(
@@ -195,7 +195,7 @@ body {
   --v2ex-shadow-elevated: 0 8px 28px var(--v2ex-widget-shadow-color);
   --v2ex-shadow-floating: 0 4px 14px var(--v2ex-widget-shadow-color);
 
-  /* Badge / Tag：缺省走主按钮配对，不要回退成 danger */
+  /* Badge / Tag：缺省走主按钮配对，不回退成 danger */
   --v2ex-badge-bg: var(--vscode-badge-background, var(--v2ex-primary-button-bg));
   --v2ex-badge-fg: var(--vscode-badge-foreground, var(--v2ex-primary-button-fg));
   --v2ex-tag-bg: var(--v2ex-light-button-bg);

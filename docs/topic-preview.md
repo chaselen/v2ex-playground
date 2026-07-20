@@ -14,9 +14,9 @@
 
 `webview/src/views/topic/TopicDetailView.tsx` 是完整话题内容和交互的唯一入口，普通话题页与预览弹窗都使用该组件。它直接渲染标题、正文、附言、评论树和分页，并组合主题工具栏、收藏、感谢、回复操作和悬浮按钮。`ReplyComposer.tsx` 自行管理回复编辑、预览、上传、提交和重置状态。
 
-不要在 `TopicApp.tsx` 或 `TopicPreviewModal.tsx` 中复制话题详情结构或操作按钮。
+话题详情结构与操作按钮集中在 `TopicDetailView`；`TopicApp.tsx` 与 `TopicPreviewModal.tsx` 只负责装配，不复制详情实现。
 
-`TopicDetailView` 提供以下显示控制属性，新增同类展示差异时优先扩展该组件，不创建另一套详情视图：
+`TopicDetailView` 提供以下显示控制属性，新增同类展示差异时优先扩展该组件：
 
 - `showReplyComposer`
 - `showFloatingActions`
