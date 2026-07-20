@@ -27,6 +27,9 @@ interface SkeletonRowsProps {
   rows: number
 }
 
+/** 话题标题骨架宽度序列（长短交错，避免单调递增） */
+const topicTitleWidths = [72, 54, 84, 61, 78, 58, 80, 66]
+
 /** Webview 首次加载时使用的页面结构化骨架 */
 export default function PageSkeleton({ variant, rows = 5 }: PageSkeletonProps) {
   return (
@@ -265,7 +268,12 @@ function NodeTreePlaceholder({ rows }: SkeletonRowsProps) {
           </div>
           {Array.from({ length: topicCount }, (_, topicIndex) => (
             <div className={styles['tree-topic']} key={topicIndex}>
-              <Skeleton.Title className={styles['tree-topic-title']} />
+              <Skeleton.Title
+                className={styles['tree-topic-title']}
+                style={{
+                  width: `${topicTitleWidths[(nodeIndex + topicIndex * 2) % topicTitleWidths.length]}%`
+                }}
+              />
               <Skeleton.Button className={styles.badge} />
             </div>
           ))}
@@ -313,13 +321,16 @@ function MyPlaceholder({ rows }: SkeletonRowsProps) {
   )
 }
 
-/** 主面板使用的紧凑话题行占位（标题占满剩余宽度，回复数始终居右） */
+/** 主面板使用的紧凑话题行占位（标题宽度有变化，回复数 margin-left:auto 居右） */
 function CompactTopicRows({ rows }: SkeletonRowsProps) {
   return (
     <div className={styles['compact-rows']}>
       {Array.from({ length: rows }, (_, index) => (
         <div className={styles['compact-row']} key={index}>
-          <Skeleton.Title className={styles['compact-row-title']} />
+          <Skeleton.Title
+            className={styles['compact-row-title']}
+            style={{ width: `${topicTitleWidths[index % topicTitleWidths.length]}%` }}
+          />
           <Skeleton.Button className={styles.badge} />
         </div>
       ))}

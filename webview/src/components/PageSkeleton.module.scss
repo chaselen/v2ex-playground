@@ -369,12 +369,8 @@
   padding: 3px 6px;
 }
 
-/* 与 TopicRow 一致：标题条 flex:1 占满剩余宽度，badge 始终贴右 */
-/* 提高优先级以覆盖 .v2ex-skeleton__title 默认 width: 40% */
-.compact-row .compact-row-title {
-  flex: 1 1 0%;
-  min-width: 0;
-  width: auto;
+.compact-row-title {
+  flex: none;
   height: 16px;
   margin: 0;
 }
@@ -383,6 +379,7 @@
   flex: none;
   width: 28px;
   height: 18px;
+  margin-left: auto;
 }
 
 /* 节点树骨架：节点行 + 缩进话题行，仅两级 */
@@ -413,7 +410,7 @@
   margin: 0;
 }
 
-/* 对齐 NodeTreeTab / TopicRow：缩进 + 标题条占满剩余宽度 + 回复数居右 */
+/* 对齐 NodeTreeTab：缩进 + 标题宽度交错 + badge margin-left:auto 居右 */
 .tree-topic {
   display: flex;
   min-width: 0;
@@ -423,11 +420,8 @@
   padding: 3px 8px 3px 22px;
 }
 
-/* 提高优先级以覆盖 .v2ex-skeleton__title 默认 width: 40% */
-.tree-topic .tree-topic-title {
-  flex: 1 1 0%;
-  min-width: 0;
-  width: auto;
+.tree-topic-title {
+  flex: none;
   height: 14px;
   margin: 0;
 }
@@ -436,6 +430,7 @@
   flex: none;
   width: 28px;
   height: 18px;
+  margin-left: auto;
 }
 
 .my-card {
