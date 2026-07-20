@@ -78,13 +78,24 @@ $node-child-indent: 18px;
 .tree-item--pagination {
   min-height: 30px;
   padding: 2px 8px 4px ($node-child-indent + 4px);
+
+  /* 分页行不需要整行 hover 背景，只保留内部控件自身的交互态 */
+  &:hover {
+    color: inherit;
+    background: transparent;
+  }
 }
 
 .tree-item--loading,
 .tree-item--error,
 .tree-item--empty {
+  // 省略号不能直接加在 tree-item 上，否则会覆盖 flex 导致无法垂直居中
   padding: 0 8px 0 ($node-child-indent + 8px);
-  @include mixins.ellipsis;
+
+  > span {
+    min-width: 0;
+    @include mixins.ellipsis;
+  }
 }
 
 .tree-item--loading,

@@ -182,6 +182,7 @@ export default function ThemePreviewApp() {
             showQuickJumper
             onPageChange={setPreviewPage}
           />
+          <Pagination compact page={previewPage} totalPages={12} onPageChange={setPreviewPage} />
           <RadioGroup
             aria-label="回复列表展示模式"
             variant="segmented"
@@ -305,6 +306,7 @@ export default function ThemePreviewApp() {
             </CollapsibleContent>
           </Collapsible>
           <Pagination page={1} totalPages={8} onPageChange={() => undefined} />
+          <Pagination compact page={3} totalPages={8} onPageChange={() => undefined} />
         </PreviewSection>
 
         <PreviewSection title="反馈与空状态">

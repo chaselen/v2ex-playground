@@ -530,58 +530,239 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
   color: var(--v2ex-muted-fg);
+  font-size: var(--v2ex-font-size, 13px);
 }
 
 .v2ex-pagination__button {
-  min-width: 26px;
-  height: 26px;
-  padding: 2px 6px;
+  min-width: 30px;
+  height: 28px;
+  min-height: 28px;
+  padding: 2px 8px;
+  font-size: inherit;
+
+  /* 禁用的前后箭头：hover 不改变颜色与背景 */
+  &:disabled:hover {
+    color: var(--v2ex-disabled-fg);
+    background: transparent;
+  }
 }
 
-.v2ex-pagination__button--active,
-.v2ex-pagination__button--active:hover:not(:disabled) {
+.v2ex-pagination__button--active {
   color: var(--v2ex-active-fg);
   background: var(--v2ex-active-bg);
+
+  &:hover:not(:disabled) {
+    color: var(--v2ex-active-fg);
+    background: color-mix(in srgb, var(--v2ex-active-bg) 78%, var(--v2ex-active-fg));
+  }
 }
 
 .v2ex-pagination__ellipsis {
-  min-width: 20px;
+  min-width: 22px;
+  font-size: inherit;
+  line-height: 28px;
   text-align: center;
 }
 
+/* 侧栏等紧凑场景保持小尺寸 */
+.v2ex-pagination--compact {
+  gap: 3px;
+  font-size: 12px;
+
+  .v2ex-pagination__button {
+    min-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    padding: 2px 6px;
+  }
+
+  .v2ex-pagination__ellipsis {
+    min-width: 20px;
+    line-height: 26px;
+  }
+}
+
 .v2ex-pagination__compact-label {
+  display: inline-flex;
   min-width: 52px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--v2ex-radius-sm);
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
   text-align: center;
+  cursor: default;
+
+  &:disabled {
+    opacity: 1;
+    cursor: default;
+  }
+
+  &--interactive {
+    cursor: pointer;
+
+    &:hover,
+    &.v2ex-pagination__compact-label--open {
+      color: var(--v2ex-hover-fg);
+      background: var(--v2ex-toolbar-hover-bg);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--v2ex-focus-border);
+      outline-offset: 1px;
+    }
+  }
+}
+
+/* 紧凑模式 hover 页码列表：Radix ScrollArea + 菜单项样式 */
+.v2ex-pagination__page-select.v2ex-popover {
+  min-width: 72px;
+  max-width: min(120px, calc(100vw - 16px));
+  padding: 4px;
+  overflow: hidden;
+}
+
+.v2ex-pagination__page-select-list {
+  position: relative;
+  max-height: 156px;
+  overflow: hidden;
+}
+
+.v2ex-pagination__page-select-viewport {
+  width: 100%;
+  max-height: 156px;
+  border-radius: inherit;
+}
+
+.v2ex-pagination__page-select-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.v2ex-pagination__page-select-scrollbar {
+  display: flex;
+  width: 8px;
+  touch-action: none;
+  user-select: none;
+  padding: 2px;
+  transition: background var(--v2ex-motion-fast) ease-out;
+
+  &[data-orientation='vertical'] {
+    right: 0;
+  }
+}
+
+.v2ex-pagination__page-select-thumb {
+  position: relative;
+  flex: 1;
+  border-radius: 999px;
+  background: var(--v2ex-scrollbar-bg);
+
+  &:hover {
+    background: var(--v2ex-scrollbar-hover-bg);
+  }
+
+  /* 保证极短列表时拇指仍可点 */
+  &::before {
+    position: absolute;
+    inset: 50% -50%;
+    content: '';
+    transform: translate(-50%, -50%);
+    width: 100%;
+    min-width: 12px;
+    min-height: 24px;
+  }
+}
+
+.v2ex-pagination__page-select-item {
+  display: flex;
+  min-height: 26px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: var(--v2ex-radius-xs);
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--v2ex-menu-selection-fg);
+    background: var(--v2ex-menu-selection-bg);
+  }
+
+  &--active {
+    color: var(--v2ex-active-fg);
+    background: var(--v2ex-active-bg);
+    font-weight: 600;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--v2ex-active-fg);
+      background: var(--v2ex-active-bg);
+    }
+  }
 }
 
 .v2ex-pagination__jumper {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-left: 5px;
+  margin-left: 6px;
+  font-size: inherit;
   white-space: nowrap;
 }
 
 .v2ex-pagination__jumper input {
-  width: 48px;
-  height: 26px;
-  padding: 2px 5px;
+  width: 52px;
+  height: 28px;
+  padding: 2px 6px;
   border: 1px solid var(--v2ex-input-border);
   border-radius: var(--v2ex-radius-sm);
   outline: 0;
   color: var(--v2ex-input-fg);
   background: var(--v2ex-input-bg);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
   text-align: center;
+  /* 去掉 number 输入的系统上下箭头 */
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    margin: 0;
+    appearance: none;
+  }
 
   &:focus-visible {
     border-color: var(--v2ex-focus-border);
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
   }
+}
+
+.v2ex-pagination--compact .v2ex-pagination__jumper input {
+  width: 48px;
+  height: 26px;
+  padding: 2px 5px;
 }
 
 .v2ex-otp {

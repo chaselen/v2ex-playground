@@ -11,13 +11,29 @@
     color: inherit;
   }
 
-  :global(.v2ex-pagination__button:hover) {
+  :global(.v2ex-pagination__button:hover:not(:disabled):not(.v2ex-pagination__button--active)) {
     background: var(--v2ex-main-pagination-hover-bg, var(--v2ex-hover-bg));
     color: var(--v2ex-hover-fg);
   }
 
+  :global(.v2ex-pagination__button:disabled:hover) {
+    background: transparent;
+    color: var(--v2ex-disabled-fg);
+  }
+
+  :global(.v2ex-pagination__button--active:hover:not(:disabled)) {
+    color: var(--v2ex-active-fg);
+    background: color-mix(in srgb, var(--v2ex-active-bg) 78%, var(--v2ex-active-fg));
+  }
+
   :global(.v2ex-pagination__compact-label) {
     color: var(--v2ex-main-content-fg);
+  }
+
+  :global(.v2ex-pagination__compact-label--interactive:hover),
+  :global(.v2ex-pagination__compact-label--open) {
+    background: var(--v2ex-main-pagination-hover-bg, var(--v2ex-hover-bg));
+    color: var(--v2ex-hover-fg);
   }
 }
 
