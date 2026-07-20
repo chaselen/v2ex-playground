@@ -4,6 +4,11 @@ body {
   /* 基础色：优先跟随 VS Code Theme Color */
   --v2ex-webview-bg: var(--vscode-editor-background);
   --v2ex-webview-fg: var(--vscode-foreground, var(--vscode-editor-foreground));
+  /*
+   * 长文/阅读内容字色：与 editor.background 同族配对。
+   * UI chrome、控件文案继续用 --v2ex-webview-fg。
+   */
+  --v2ex-content-fg: var(--vscode-editor-foreground, var(--vscode-foreground));
   --v2ex-muted-fg: var(--vscode-descriptionForeground, var(--v2ex-webview-fg));
   --v2ex-icon-fg: var(--vscode-icon-foreground, var(--v2ex-muted-fg));
   --v2ex-widget-bg: var(
@@ -42,17 +47,32 @@ body {
   );
   --v2ex-button-border: var(--vscode-button-border, var(--v2ex-control-border));
 
-  /* 中性交互色：hover、active 和 selection 共用 */
+  /* 中性交互色：列表/树行 hover 优先 list；工具栏式 action 另见 toolbar-hover */
   --v2ex-hover-bg: var(
     --vscode-list-hoverBackground,
     var(--vscode-toolbar-hoverBackground, rgba(127, 127, 127, 0.14))
   );
   --v2ex-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+  /*
+   * 工具栏 / Ghost 等透明 action：优先 toolbar.hoverBackground，
+   * 避免 list 行 hover 在主题里过重时按钮像「整行选中」。
+   */
+  --v2ex-toolbar-hover-bg: var(
+    --vscode-toolbar-hoverBackground,
+    var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.14))
+  );
+  /*
+   * 选中态 bg/fg 同序回退：active → inactive → hover/页面字色，
+   * 避免只有 inactive 底时配上页面深色字。
+   */
   --v2ex-active-bg: var(
     --vscode-list-activeSelectionBackground,
     var(--vscode-list-inactiveSelectionBackground, var(--v2ex-hover-bg))
   );
-  --v2ex-active-fg: var(--vscode-list-activeSelectionForeground, var(--v2ex-webview-fg));
+  --v2ex-active-fg: var(
+    --vscode-list-activeSelectionForeground,
+    var(--vscode-list-inactiveSelectionForeground, var(--v2ex-webview-fg))
+  );
   --v2ex-selection-bg: var(
     --vscode-selection-background,
     var(--vscode-editor-selectionBackground, var(--v2ex-active-bg))
@@ -122,32 +142,29 @@ body {
   --v2ex-disabled-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
   --v2ex-disabled-border: var(--vscode-input-border, var(--v2ex-border));
 
-  /* 语义色：用于 Banner、校验、提示和状态组件 */
-  --v2ex-info-fg: var(
-    --vscode-inputValidation-infoForeground,
-    var(--vscode-textLink-foreground, #3794ff)
-  );
+  /*
+   * 语义色：Alert / Toast / 状态文案用通用 foreground；
+   * inputValidation.* 只作 bg/border 回退（校验条场景），不作通用字色优先源。
+   */
+  --v2ex-info-fg: var(--vscode-textLink-foreground, var(--vscode-charts-blue, #3794ff));
   --v2ex-info-bg: var(
     --vscode-inputValidation-infoBackground,
     color-mix(in srgb, var(--v2ex-info-fg) 10%, var(--v2ex-webview-bg))
   );
   --v2ex-info-border: var(--vscode-inputValidation-infoBorder, var(--v2ex-info-fg));
-  --v2ex-success-fg: var(--vscode-charts-green, #89d185);
+  --v2ex-success-fg: var(--vscode-testing-iconPassed, var(--vscode-charts-green, #89d185));
   --v2ex-success-bg: color-mix(in srgb, var(--v2ex-success-fg) 10%, var(--v2ex-webview-bg));
   --v2ex-success-border: var(--vscode-charts-green, var(--v2ex-success-fg));
   --v2ex-warning-fg: var(
-    --vscode-inputValidation-warningForeground,
-    var(--vscode-editorWarning-foreground, #cca700)
+    --vscode-editorWarning-foreground,
+    var(--vscode-list-warningForeground, #cca700)
   );
   --v2ex-warning-bg: var(
     --vscode-inputValidation-warningBackground,
     color-mix(in srgb, var(--v2ex-warning-fg) 10%, var(--v2ex-webview-bg))
   );
   --v2ex-warning-border: var(--vscode-inputValidation-warningBorder, var(--v2ex-warning-fg));
-  --v2ex-danger-fg: var(
-    --vscode-inputValidation-errorForeground,
-    var(--vscode-errorForeground, #f14c4c)
-  );
+  --v2ex-danger-fg: var(--vscode-errorForeground, var(--vscode-list-errorForeground, #f14c4c));
   --v2ex-danger-bg: var(
     --vscode-inputValidation-errorBackground,
     color-mix(in srgb, var(--v2ex-danger-fg) 10%, var(--v2ex-webview-bg))
@@ -157,7 +174,8 @@ body {
     --vscode-editor-findMatchHighlightBackground,
     var(--vscode-list-filterMatchBackground, var(--v2ex-warning-bg))
   );
-  --v2ex-highlight-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
+  /* 搜索高亮底属 editor 系，字色跟 content 配对 */
+  --v2ex-highlight-fg: var(--v2ex-content-fg);
 
   /* 代码块与语法色：VS Code 未向 Webview 暴露语法 token，按主题类型提供接近编辑器的色盘 */
   --v2ex-code-bg: var(--vscode-textCodeBlock-background, var(--v2ex-webview-bg));
@@ -177,11 +195,12 @@ body {
   --v2ex-shadow-elevated: 0 8px 28px var(--v2ex-widget-shadow-color);
   --v2ex-shadow-floating: 0 4px 14px var(--v2ex-widget-shadow-color);
 
-  /* Badge / Tag */
-  --v2ex-badge-bg: var(--vscode-badge-background, var(--v2ex-danger-fg));
-  --v2ex-badge-fg: var(--vscode-badge-foreground, #fff);
+  /* Badge / Tag：缺省走主按钮配对，不要回退成 danger */
+  --v2ex-badge-bg: var(--vscode-badge-background, var(--v2ex-primary-button-bg));
+  --v2ex-badge-fg: var(--vscode-badge-foreground, var(--v2ex-primary-button-fg));
   --v2ex-tag-bg: var(--v2ex-light-button-bg);
-  --v2ex-tag-fg: var(--vscode-editor-foreground, var(--v2ex-webview-fg));
+  /* Tag 是 UI chip，字色跟页面 chrome，不跟长文 content-fg */
+  --v2ex-tag-fg: var(--v2ex-webview-fg);
   --v2ex-tag-hover-bg: var(--v2ex-light-button-hover-bg);
   --v2ex-tag-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-tag-fg));
 

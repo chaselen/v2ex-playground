@@ -6,7 +6,8 @@
   overflow: auto;
   font-size: 14px;
   background: var(--v2ex-webview-bg);
-  color: var(--v2ex-webview-fg);
+  /* 与 editor.background 同族：正文默认 editor.foreground */
+  color: var(--v2ex-content-fg);
 }
 
 .topic-container {
@@ -123,7 +124,7 @@
   h5,
   h6 {
     margin: 1.65em 0 0.65em;
-    color: var(--v2ex-webview-fg);
+    color: var(--v2ex-content-fg);
     font-weight: 650;
     line-height: 1.35;
 
@@ -154,7 +155,7 @@
 
   b,
   strong {
-    color: color-mix(in srgb, var(--v2ex-webview-fg) 94%, transparent);
+    color: color-mix(in srgb, var(--v2ex-content-fg) 94%, transparent);
   }
 
   a {
@@ -241,7 +242,7 @@
     padding: 10px 14px;
     border-left: 3px solid var(--v2ex-link-soft-border);
     background: color-mix(in srgb, var(--v2ex-widget-bg) 72%, transparent);
-    color: color-mix(in srgb, var(--v2ex-webview-fg) 82%, transparent);
+    color: color-mix(in srgb, var(--v2ex-content-fg) 82%, transparent);
 
     > :last-child {
       margin-bottom: 0;
@@ -304,7 +305,7 @@
 
     th {
       background: color-mix(in srgb, var(--v2ex-widget-bg) 88%, var(--v2ex-webview-bg));
-      color: var(--v2ex-webview-fg);
+      color: var(--v2ex-content-fg);
       font-weight: 600;
       text-align: left;
     }
@@ -399,7 +400,7 @@
 
   .v2ex-empty__title {
     margin: 0 0 6px;
-    color: var(--v2ex-webview-fg);
+    color: var(--v2ex-content-fg);
     line-height: 1.4;
   }
 
@@ -451,7 +452,7 @@
 
   .v2ex-empty__title {
     margin: 0 0 4px;
-    color: var(--v2ex-webview-fg);
+    color: var(--v2ex-content-fg);
     line-height: 1.4;
   }
 
@@ -513,7 +514,7 @@
     var(--v2ex-hc-border, color-mix(in srgb, var(--v2ex-success-fg) 38%, transparent));
   border-radius: 999px;
   background: color-mix(in srgb, var(--v2ex-success-fg) 12%, transparent);
-  color: color-mix(in srgb, var(--v2ex-success-fg) 64%, var(--v2ex-webview-fg));
+  color: color-mix(in srgb, var(--v2ex-success-fg) 64%, var(--v2ex-content-fg));
   font-size: 12px;
   font-weight: 600;
   line-height: 1.3;

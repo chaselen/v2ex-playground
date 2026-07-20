@@ -30,6 +30,10 @@
     var(--vscode-toolbar-hoverBackground, transparent)
   );
   --v2ex-hover-fg: var(--vscode-list-hoverForeground, var(--v2ex-webview-fg));
+  --v2ex-toolbar-hover-bg: var(
+    --vscode-toolbar-hoverBackground,
+    var(--vscode-list-hoverBackground, transparent)
+  );
   /*
    * 侧栏列表优先 inactive selection（无焦点选中）；
    * bg/fg 使用同序回退，避免 inactive 蓝底配页面深色字。

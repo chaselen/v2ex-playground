@@ -5,7 +5,8 @@
   height: 100%;
   min-height: 0;
   background: var(--v2ex-webview-bg);
-  color: var(--v2ex-webview-fg);
+  /* 与 editor.background 同族：资料/回复正文用 editor.foreground */
+  color: var(--v2ex-content-fg);
   font-size: 14px;
 
   .simplebar-content-wrapper {
@@ -15,7 +16,7 @@
   .simplebar-content {
     min-height: 100%;
     background: var(--v2ex-webview-bg);
-    color: var(--v2ex-webview-fg);
+    color: var(--v2ex-content-fg);
   }
 }
 

@@ -3,7 +3,7 @@
   height: min(800px, calc(100vh - 48px));
   max-height: calc(100vh - 48px);
   overflow: hidden;
-  color: var(--v2ex-webview-fg);
+  color: var(--v2ex-content-fg);
 
   :global(.v2ex-dialog__body) {
     height: 100%;
