@@ -32,7 +32,6 @@ $node-child-indent: 18px;
 
 .node-tree {
   flex: 1;
-  padding-block: 2px;
   color: var(--v2ex-webview-fg);
   user-select: none;
 }
@@ -48,7 +47,7 @@ $node-child-indent: 18px;
 .tree-item {
   display: flex;
   min-width: 0;
-  min-height: 26px;
+  min-height: 28px;
   align-items: center;
   color: var(--v2ex-webview-fg);
   outline: none;

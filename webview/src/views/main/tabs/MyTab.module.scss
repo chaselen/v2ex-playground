@@ -5,17 +5,22 @@
   flex: 1;
   min-height: 0;
   height: 100%;
-  padding: 8px;
 
   :global(.simplebar-content) {
     min-height: 100%;
   }
 }
 
+/*
+ * 账户内容区才需要 8px 内边距。
+ * 未登录/空状态直接走 empty-panel，避免相对收藏节点多出一层 padding。
+ */
 .my-panel-content {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  padding: 8px;
 }
 
 .my-card {

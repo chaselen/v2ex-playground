@@ -694,9 +694,7 @@ export default function MyTab(props: MyTabProps) {
   if (!loggedIn) {
     return (
       <SimpleBar className={styles['my-panel']} autoHide={false}>
-        <div className={styles['my-panel-content']}>
-          <LoginPrompt />
-        </div>
+        <LoginPrompt />
       </SimpleBar>
     )
   }
@@ -704,7 +702,7 @@ export default function MyTab(props: MyTabProps) {
   if (!overview && overviewError) {
     return (
       <SimpleBar className={styles['my-panel']} autoHide={false}>
-        <div className={`${styles['my-panel-content']} ${styles['empty-panel']}`}>
+        <div className={styles['empty-panel']}>
           <Empty title="加载失败" description={overviewError} icon={<Inbox aria-hidden="true" />} />
           <Button size="small" loading={loading} onClick={onRetryOverview}>
             重试
@@ -717,7 +715,7 @@ export default function MyTab(props: MyTabProps) {
   if (!overview) {
     return (
       <SimpleBar className={styles['my-panel']} autoHide={false}>
-        <div className={`${styles['my-panel-content']} ${styles['empty-panel']}`}>
+        <div className={styles['empty-panel']}>
           <Empty title="暂无账户概览" icon={<Inbox aria-hidden="true" />} />
         </div>
       </SimpleBar>

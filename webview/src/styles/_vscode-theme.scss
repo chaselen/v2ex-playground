@@ -193,7 +193,7 @@ body {
   --v2ex-menu-separator: var(--vscode-menu-separatorBackground, var(--v2ex-border));
   --v2ex-tooltip-fg: var(--vscode-editorHoverWidget-foreground, var(--v2ex-widget-fg));
   --v2ex-tooltip-bg: var(--vscode-editorHoverWidget-background, var(--v2ex-overlay-bg));
-  /* progressBar 原色：Tabs 指示器等与宿主扩展页加载条对齐 */
+  /* progressBar 原色：业务进度条与宿主扩展页加载条对齐 */
   --v2ex-progress-base: var(
     --vscode-progressBar-background,
     var(--vscode-focusBorder, var(--vscode-textLink-foreground, #3794ff))
@@ -201,7 +201,8 @@ body {
   /* 业务进度条填充略浅：与页面背景混合，避免过饱和 */
   --v2ex-progress-fg: color-mix(in srgb, var(--v2ex-progress-base) 82%, var(--v2ex-webview-bg));
   --v2ex-progress-track-bg: color-mix(in srgb, var(--v2ex-webview-fg) 14%, transparent);
-  --v2ex-tab-indicator: var(--v2ex-progress-base);
+  /* Tabs 指示器：对齐宿主 Panel 当前标题下划线，缺省回退 progressBar */
+  --v2ex-tab-indicator: var(--vscode-panelTitle-activeBorder, var(--v2ex-progress-base));
 
   /* 滚动条 */
   --v2ex-scrollbar-bg: var(--vscode-scrollbarSlider-background, rgba(127, 127, 127, 0.4));
@@ -258,7 +259,10 @@ body.vscode-high-contrast-light {
     --vscode-contrastActiveBorder,
     var(--vscode-focusBorder, var(--v2ex-link-fg))
   );
-  --v2ex-tab-indicator: var(--vscode-contrastActiveBorder, var(--v2ex-progress-base));
+  --v2ex-tab-indicator: var(
+    --vscode-contrastActiveBorder,
+    var(--vscode-panelTitle-activeBorder, var(--v2ex-progress-base))
+  );
   --v2ex-disabled-border: var(--vscode-contrastBorder, var(--v2ex-border-base));
   --v2ex-image-preview-border: var(--vscode-contrastBorder, rgb(255 255 255 / 18%));
   --v2ex-shadow-elevated: none;
