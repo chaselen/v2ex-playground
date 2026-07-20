@@ -105,12 +105,15 @@ function MemberPlaceholder({ rows }: SkeletonRowsProps) {
         </div>
         <Skeleton.Button className={styles['icon-button']} />
       </div>
-      <div className={styles.tabs}>
-        <Skeleton.Button />
-        <Skeleton.Button />
-        <Skeleton.Button />
+      {/* 对齐真实页 .member-content：资料区下方再接标签与列表 */}
+      <div className={styles['member-body']}>
+        <div className={styles.tabs}>
+          <Skeleton.Button />
+          <Skeleton.Button />
+          <Skeleton.Button />
+        </div>
+        <TopicRows rows={rows} avatars={false} />
       </div>
-      <TopicRows rows={rows} avatars={false} />
     </div>
   )
 }
@@ -190,14 +193,59 @@ function RecentPlaceholder({ rows }: SkeletonRowsProps) {
   )
 }
 
-/** 主面板层级节点占位 */
+/**
+ * 构建节点树骨架分组
+ * 真实页面只有「节点 / 话题」两级：前若干节点展开话题，其余为折叠节点
+ * rows 控制大致可见行数（节点行 + 话题行）
+ */
+function buildNodeTreeGroups(rows: number): number[] {
+  const target = Math.max(rows, 4)
+  const groups: number[] = []
+  let used = 0
+
+  // 第一个节点展开 3 条话题
+  groups.push(3)
+  used += 4
+
+  // 仍有空间时再展开一个节点
+  if (used + 3 <= target) {
+    groups.push(2)
+    used += 3
+  }
+
+  while (used < target) {
+    groups.push(0)
+    used += 1
+  }
+
+  return groups
+}
+
+/** 主面板节点树占位：节点 / 话题两级，对齐自定义与收藏页 */
 function NodeTreePlaceholder({ rows }: SkeletonRowsProps) {
+  const groups = buildNodeTreeGroups(rows)
+
   return (
     <div className={styles['tree-rows']}>
-      {Array.from({ length: rows }, (_, index) => (
-        <div className={styles['tree-row']} style={{ paddingLeft: (index % 3) * 18 }} key={index}>
-          <Skeleton.Avatar size="extra-extra-small" shape="square" />
-          <Skeleton.Title style={{ width: `${58 - (index % 3) * 8}%` }} />
+      {groups.map((topicCount, nodeIndex) => (
+        <div className={styles['tree-group']} key={nodeIndex}>
+          <div className={styles['tree-node']}>
+            <Skeleton.Avatar
+              size="extra-extra-small"
+              shape="square"
+              className={styles['tree-chevron']}
+            />
+            <Skeleton.Title
+              className={styles['tree-node-label']}
+              style={{ width: `${46 + (nodeIndex % 3) * 12}%` }}
+            />
+          </div>
+          {Array.from({ length: topicCount }, (_, topicIndex) => (
+            <div className={styles['tree-topic']} key={topicIndex}>
+              <Skeleton.Title className={styles['tree-topic-title']} />
+              <Skeleton.Button className={styles.badge} />
+            </div>
+          ))}
         </div>
       ))}
     </div>
@@ -242,13 +290,13 @@ function MyPlaceholder({ rows }: SkeletonRowsProps) {
   )
 }
 
-/** 主面板使用的紧凑话题行占位 */
+/** 主面板使用的紧凑话题行占位（标题占满剩余宽度，回复数始终居右） */
 function CompactTopicRows({ rows }: SkeletonRowsProps) {
   return (
     <div className={styles['compact-rows']}>
       {Array.from({ length: rows }, (_, index) => (
         <div className={styles['compact-row']} key={index}>
-          <Skeleton.Title style={{ width: `${82 - (index % 3) * 9}%` }} />
+          <Skeleton.Title className={styles['compact-row-title']} />
           <Skeleton.Button className={styles.badge} />
         </div>
       ))}
@@ -256,7 +304,7 @@ function CompactTopicRows({ rows }: SkeletonRowsProps) {
   )
 }
 
-/** 通用话题行占位 */
+/** 通用话题行占位（对齐 TopicListItem：标题+回复数 / 元信息） */
 function TopicRows({ rows, avatars }: { rows: number; avatars: boolean }) {
   return (
     <div>
@@ -264,10 +312,12 @@ function TopicRows({ rows, avatars }: { rows: number; avatars: boolean }) {
         <div className={styles.row} key={index}>
           {avatars && <Skeleton.Avatar size="small" />}
           <div className={styles['row-content']}>
-            <Skeleton.Title style={{ width: `${82 - (index % 3) * 9}%` }} />
+            <div className={styles['row-title']}>
+              <Skeleton.Title style={{ width: `${82 - (index % 3) * 9}%` }} />
+              <Skeleton.Button className={styles.badge} />
+            </div>
             <Skeleton.Paragraph rows={1} />
           </div>
-          <Skeleton.Button className={styles.badge} />
         </div>
       ))}
     </div>

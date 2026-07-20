@@ -16,6 +16,36 @@
   width: min(100%, 820px);
 }
 
+/*
+ * 用户页骨架对齐 member.scss：
+ * 资料区 padding-bottom + 底边框，内容区 margin-top；
+ * 避免 Skeleton.Paragraph 默认 margin 与 profile padding 叠出大块空白
+ */
+.member .profile {
+  align-items: center;
+  gap: 14px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--skeleton-divider);
+}
+
+.member .username {
+  height: 22px;
+  margin-bottom: 8px;
+}
+
+.member .profile-meta {
+  margin-bottom: 0;
+}
+
+.member .member-body {
+  margin-top: 14px;
+}
+
+.member .tabs {
+  padding: 0 0 10px;
+  border-bottom: 0;
+}
+
 .search,
 .tag-topics,
 .recent,
@@ -24,9 +54,10 @@
   padding: 0;
 }
 
+/* 与 NodeTreeTab 一致：树本身无外层 padding，行内自带间距 */
 .node-tree {
   width: 100%;
-  padding: 8px;
+  padding: 0;
 }
 
 .topic-title {
@@ -92,12 +123,12 @@
 .row {
   display: flex;
   gap: 12px;
-  padding: 14px 0;
   border-bottom: 1px solid var(--skeleton-divider);
 }
 
 .reply {
   align-items: flex-start;
+  padding: 14px 0;
 }
 
 .reply-list > .reply:first-child {
@@ -105,7 +136,9 @@
 }
 
 .row {
-  align-items: center;
+  align-items: flex-start;
+  min-height: 58px;
+  padding: 10px 0;
 }
 
 .row-content,
@@ -114,9 +147,27 @@
   min-width: 0;
 }
 
-.row-content > :first-child {
+.row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.row-title > :first-child {
+  flex: none;
   height: 18px;
-  margin-bottom: 10px;
+  margin: 0;
+}
+
+.row-title .badge {
+  flex: none;
+  margin-left: auto;
+}
+
+/* 去掉 Paragraph 默认下边距，避免列表行底部多出空白 */
+.row-content > :last-child {
+  margin-bottom: 0;
 }
 
 .badge,
@@ -253,35 +304,79 @@
 .compact-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
   min-height: 30px;
   padding: 3px 6px;
 }
 
-.compact-row > :first-child {
+/* 与 TopicRow 一致：标题条 flex:1 占满剩余宽度，badge 始终贴右 */
+/* 提高优先级以覆盖 .v2ex-skeleton__title 默认 width: 40% */
+.compact-row .compact-row-title {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: auto;
   height: 16px;
   margin: 0;
 }
 
 .compact-row .badge {
+  flex: none;
   width: 28px;
   height: 18px;
 }
 
+/* 节点树骨架：节点行 + 缩进话题行，仅两级 */
 .tree-rows {
-  padding-top: 8px;
+  min-width: 0;
 }
 
-.tree-row {
+.tree-group {
+  min-width: 0;
+}
+
+.tree-node {
   display: flex;
+  min-width: 0;
+  min-height: 32px;
   align-items: center;
-  gap: 8px;
-  min-height: 38px;
+  gap: 5px;
+  padding: 4px 6px;
 }
 
-.tree-row > :last-child {
-  height: 16px;
+.tree-chevron {
+  flex: none;
+}
+
+.tree-node-label {
+  flex: none;
+  height: 14px;
   margin: 0;
+}
+
+/* 对齐 NodeTreeTab / TopicRow：缩进 + 标题条占满剩余宽度 + 回复数居右 */
+.tree-topic {
+  display: flex;
+  min-width: 0;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 22px;
+}
+
+/* 提高优先级以覆盖 .v2ex-skeleton__title 默认 width: 40% */
+.tree-topic .tree-topic-title {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: auto;
+  height: 14px;
+  margin: 0;
+}
+
+.tree-topic .badge {
+  flex: none;
+  width: 28px;
+  height: 18px;
 }
 
 .my-card {
