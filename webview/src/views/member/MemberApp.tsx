@@ -16,7 +16,6 @@ import {
   Button,
   Empty,
   Pagination,
-  Spinner,
   Tag,
   Tabs,
   TabsContent,
@@ -336,9 +335,10 @@ function renderContent(
 
   if (loading && content.tab !== activeTab) {
     return (
-      <div className="member-content-state">
-        <Spinner aria-label="加载用户内容" />
-      </div>
+      <PageSkeleton
+        variant={activeTab === 'replies' ? 'member-replies' : 'member-topics'}
+        rows={4}
+      />
     )
   }
 

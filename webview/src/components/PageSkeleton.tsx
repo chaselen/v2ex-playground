@@ -5,6 +5,8 @@ import styles from './PageSkeleton.module.scss'
 type PageSkeletonVariant =
   | 'topic'
   | 'member'
+  | 'member-topics'
+  | 'member-replies'
   | 'balance'
   | 'search'
   | 'tag-topics'
@@ -47,6 +49,10 @@ function renderPlaceholder(variant: PageSkeletonVariant, rows: number): ReactNod
       return <TopicPlaceholder />
     case 'member':
       return <MemberPlaceholder rows={rows} />
+    case 'member-topics':
+      return <TopicRows rows={rows} avatars={false} />
+    case 'member-replies':
+      return <MemberReplyRows rows={rows} />
     case 'balance':
       return <BalancePlaceholder rows={rows} />
     case 'search':
@@ -114,6 +120,23 @@ function MemberPlaceholder({ rows }: SkeletonRowsProps) {
         </div>
         <TopicRows rows={rows} avatars={false} />
       </div>
+    </div>
+  )
+}
+
+/** 用户页标签内容：最近回复列表占位（对齐 .member-reply-item） */
+function MemberReplyRows({ rows }: SkeletonRowsProps) {
+  return (
+    <div className={styles['member-reply-list']}>
+      {Array.from({ length: rows }, (_, index) => (
+        <div className={styles['member-reply']} key={index}>
+          <div className={styles['member-reply-meta']}>
+            <Skeleton.Paragraph rows={1} className={styles['member-reply-summary']} />
+            <Skeleton.Paragraph rows={1} className={styles['member-reply-time']} />
+          </div>
+          <Skeleton.Paragraph rows={2} className={styles['member-reply-body']} />
+        </div>
+      ))}
     </div>
   )
 }
@@ -313,10 +336,15 @@ function TopicRows({ rows, avatars }: { rows: number; avatars: boolean }) {
           {avatars && <Skeleton.Avatar size="small" />}
           <div className={styles['row-content']}>
             <div className={styles['row-title']}>
-              <Skeleton.Title style={{ width: `${82 - (index % 3) * 9}%` }} />
+              <Skeleton.Title style={{ width: `${62 - (index % 3) * 8}%` }} />
               <Skeleton.Button className={styles.badge} />
             </div>
-            <Skeleton.Paragraph rows={1} />
+            {/* 第二行对齐 meta：节点标签 + 时间，实际内容较短 */}
+            <Skeleton.Paragraph
+              rows={1}
+              className={styles['row-meta']}
+              style={{ width: `${42 - (index % 3) * 6}%` }}
+            />
           </div>
         </div>
       ))}

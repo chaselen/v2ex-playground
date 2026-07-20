@@ -49,9 +49,62 @@
 .search,
 .tag-topics,
 .recent,
-.node-topics {
+.node-topics,
+.member-topics,
+.member-replies {
   width: 100%;
   padding: 0;
+}
+
+/* 对齐真实页 .member-topic-list / .member-reply-list 外框 */
+.member-topics,
+.member-replies {
+  border: 1px solid var(--skeleton-divider);
+  border-radius: var(--v2ex-radius-md);
+  overflow: hidden;
+}
+
+/* 对齐 TopicListItem.row：10px 12px 内边距 */
+.member-topics .row {
+  padding: 10px 12px;
+}
+
+/* 去掉列表末行分割线，贴合外框 */
+.member-topics .row:last-child,
+.member-replies .member-reply:last-child {
+  border-bottom: 0;
+}
+
+/* 用户页「最近回复」骨架：摘要栏 + 正文 */
+.member-reply {
+  border-bottom: 1px solid var(--skeleton-divider);
+}
+
+.member-reply-meta {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  background: color-mix(in srgb, var(--v2ex-webview-fg) 4%, transparent);
+}
+
+.member-reply-summary {
+  flex: 1;
+  min-width: 0;
+  width: min(70%, 360px);
+  margin: 0;
+}
+
+.member-reply-time {
+  flex: none;
+  width: 72px;
+  margin: 0;
+}
+
+.member-reply-body {
+  padding: 12px;
+  margin: 0;
 }
 
 /* 与 NodeTreeTab 一致：树本身无外层 padding，行内自带间距 */
@@ -167,6 +220,12 @@
 
 /* 去掉 Paragraph 默认下边距，避免列表行底部多出空白 */
 .row-content > :last-child {
+  margin-bottom: 0;
+}
+
+/* 对齐 TopicListItem meta：节点 + 时间，介于标题行与短文案之间 */
+.row-meta {
+  max-width: 280px;
   margin-bottom: 0;
 }
 
