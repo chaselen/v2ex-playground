@@ -208,8 +208,12 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
 
   function renderNodeActions(data: TreeItem) {
     return (
-      <div className={styles['node-actions']} onClick={stopTreeClick}>
-        {tab === 'custom' && (
+      <div
+        className={`${styles['node-actions']}${data.loading ? ` ${styles['node-actions--loading']}` : ''}`}
+        onClick={stopTreeClick}
+      >
+        {/* 刷新中只保留刷新按钮，避免删除/取消收藏一并露出 */}
+        {!data.loading && tab === 'custom' && (
           <ConfirmPopover
             title={`确定删除“${data.label}”节点？`}
             description="删除后该节点将从自定义节点列表中移除"
@@ -233,7 +237,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
             </span>
           </ConfirmPopover>
         )}
-        {tab === 'collection' && (
+        {!data.loading && tab === 'collection' && (
           <ConfirmPopover
             title={`确定取消收藏“${data.label}”节点？`}
             description="取消后该节点将从收藏节点列表中移除"

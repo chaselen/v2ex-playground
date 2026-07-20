@@ -166,7 +166,7 @@ $node-child-indent: 18px;
   margin-left: auto;
   margin-right: 6px;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  /* 不用过渡：loading 结束时若淡出，会先闪回 refresh 再隐藏 */
 
   :global(.v2ex-button) {
     width: 24px;
@@ -183,6 +183,11 @@ $node-child-indent: 18px;
   &:focus-within {
     opacity: 1;
   }
+}
+
+/* 必须写在 .node-actions 之后，否则同优先级会被 opacity: 0 覆盖 */
+.node-actions--loading {
+  opacity: 1;
 }
 
 .empty-panel {
