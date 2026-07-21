@@ -86,9 +86,13 @@ export function expectTopicDetail(detail: TopicDetail) {
   expect(detail.replyTotalPage).toBeGreaterThanOrEqual(1)
   expect(Array.isArray(detail.replies)).toBe(true)
   if (detail.replies.length) {
-    expect(detail.replies[0].time).toEqual(expect.any(String))
-    expect(detail.replies[0].time.length).toBeGreaterThan(0)
-    expect(detail.replies[0].repliedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+    const reply = detail.replies[0]
+    expect(reply.time).toEqual(expect.any(String))
+    expect(reply.time.length).toBeGreaterThan(0)
+    expect(reply.repliedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+    expect(reply.isMod).toEqual(expect.any(Boolean))
+    expect(reply.isOp).toEqual(expect.any(Boolean))
+    expect(reply.isPro).toEqual(expect.any(Boolean))
   }
 }
 

@@ -163,6 +163,12 @@ export interface TopicReply {
   userAvatar: string
   /** 用户名 */
   userName: string
+  /** 是否具有管理社区权限（MOD） */
+  isMod: boolean
+  /** 是否为楼主（OP） */
+  isOp: boolean
+  /** 是否为 PRO 会员 */
+  isPro: boolean
   /** 相对回复时间，如“10 分钟前”“2141 天前” */
   time: string
   /** 完整回复时间，格式为 YYYY-MM-DD HH:mm:ss */

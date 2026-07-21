@@ -1,0 +1,52 @@
+/* 对齐 V2EX 站内 .badges / .badge 胶囊：相邻标签左右相连，首尾圆角 */
+
+.badges {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: default;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border-top: 1px solid var(--v2ex-hc-border, var(--v2ex-link-fg));
+  border-bottom: 1px solid var(--v2ex-hc-border, var(--v2ex-link-fg));
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+
+  &:first-child {
+    border-left: 1px solid var(--v2ex-hc-border, var(--v2ex-link-fg));
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+  }
+
+  &:last-child {
+    border-right: 1px solid var(--v2ex-hc-border, var(--v2ex-link-fg));
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+  }
+}
+
+.mod {
+  color: var(--v2ex-primary-button-fg);
+  background: var(--v2ex-link-fg);
+}
+
+.op {
+  color: var(--v2ex-link-fg);
+  background: transparent;
+}
+
+.pro {
+  color: var(--v2ex-badge-fg);
+  background: var(--v2ex-badge-bg);
+}

@@ -615,19 +615,6 @@
   }
 }
 
-.user--author::after {
-  content: '楼主';
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 5px;
-  padding: 1px 3px;
-  border: 1px solid var(--v2ex-link-fg);
-  border-radius: var(--v2ex-radius-sm);
-  font-size: 0.8em;
-  font-weight: 400;
-}
-
 .floor {
   display: inline-block;
   margin-left: 4px;

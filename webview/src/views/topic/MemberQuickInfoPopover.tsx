@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { UserRound } from 'lucide-react'
 import { Avatar, Button, HoverCard, Spinner } from '@/components/ui'
 import { mergeClassNames } from '@/components/ui/utils'
-import ProTag from '@/components/ProTag'
+import UserBadge from '@/components/UserBadge'
 import type { MemberInfo } from '@extension/shared/webview'
 import styles from './MemberQuickInfoPopover.module.scss'
 
@@ -119,7 +119,7 @@ export default function MemberQuickInfoPopover({
                 <div className={styles.heading}>
                   <div className={styles.usernameRow}>
                     <strong>{member.username}</strong>
-                    {member.isPro && <ProTag />}
+                    {member.isPro && <UserBadge pro />}
                   </div>
                   {!!member.memberNumber && (
                     <span className={styles.number}>第 {member.memberNumber} 号会员</span>

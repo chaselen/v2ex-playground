@@ -181,11 +181,15 @@ export function parseReplies($: cheerio.CheerioAPI): TopicReply[] {
   const topicBox = getTopicReplyBox($)
   topicBox.children('div[id].cell').each((_, element) => {
     const replyTime = getV2exTimeSpan($(element))
+    const badges = $(element).find('.badges').first()
 
     replies.push({
       replyId: $(element).attr('id')?.split('r_')[1] || '0',
       userAvatar: $(element).find('img.avatar').attr('src') || '',
       userName: $(element).find('a.dark').html() || '',
+      isMod: badges.find('.badge.mod').length > 0,
+      isOp: badges.find('.badge.op').length > 0,
+      isPro: badges.find('.badge.pro').length > 0,
       time: replyTime.text().trim(),
       repliedAt: dayjs(replyTime.attr('title')!).format('YYYY-MM-DD HH:mm:ss'),
       floor: $(element).find('span.no').text(),

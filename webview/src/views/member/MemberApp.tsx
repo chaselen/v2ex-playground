@@ -6,7 +6,7 @@ import { normalizeHtml } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import PageSkeleton from '@/components/PageSkeleton'
-import ProTag from '@/components/ProTag'
+import UserBadge from '@/components/UserBadge'
 import TopicListItem from '@/components/TopicListItem'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import { useLatestRequest } from '@/hooks/useLatestRequest'
@@ -254,7 +254,7 @@ export default function MemberApp() {
               )}
               {profile.member.isPro && (
                 <div className="member-pro">
-                  <ProTag />
+                  <UserBadge pro />
                   <span>PRO 会员</span>
                 </div>
               )}

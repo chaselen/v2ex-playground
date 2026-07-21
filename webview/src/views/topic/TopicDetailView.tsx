@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import NodeButton from '@/components/NodeButton'
-import ProTag from '@/components/ProTag'
+import UserBadge from '@/components/UserBadge'
 import {
   Button,
   ConfirmPopover,
@@ -199,10 +199,10 @@ export default function TopicDetailView({
   }
 
   /** 渲染用户链接和快速信息 */
-  function renderMemberLink(username: string, isReplyAuthor = false, isTopicAuthor = false) {
+  function renderMemberLink(username: string, isTopicAuthor = false) {
     const link = (
       <a
-        className={`user ${isReplyAuthor ? 'user--author' : ''} ${isTopicAuthor ? 'text-bold' : ''}`}
+        className={`user ${isTopicAuthor ? 'text-bold' : ''}`}
         href="javascript:;"
         onClick={event => {
           event.preventDefault()
@@ -231,7 +231,8 @@ export default function TopicDetailView({
       <div className="reply-item" key={reply.replyId}>
         <div className="reply-body">
           <div className="reply-meta">
-            {renderMemberLink(reply.userName, topic.authorName === reply.userName)}
+            {renderMemberLink(reply.userName)}
+            <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
             <span className="time" title={reply.repliedAt || reply.time}>
               {reply.time}
             </span>
@@ -471,8 +472,8 @@ export default function TopicDetailView({
           <NodeButton className="topic-node-tag" onClick={() => void controller.openNode()}>
             {topic.node.title}
           </NodeButton>
-          {renderMemberLink(topic.authorName, false, true)}
-          {topic.isAuthorPro && <ProTag />}
+          {renderMemberLink(topic.authorName, true)}
+          <UserBadge pro={topic.isAuthorPro} />
           <span className="time">
             <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span> ·{' '}
             {topic.visitCount} 次点击

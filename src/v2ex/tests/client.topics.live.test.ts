@@ -73,6 +73,27 @@ describe.sequential('V2exClient topics', () => {
     expect(detail.isAuthorPro).toBe(true)
   })
 
+  test('gets reply MOD / OP / PRO badges from a known public topic', async () => {
+    const detail = await client.getTopicDetail(1228289)
+
+    expect(detail.authorName).toBe('Livid')
+    expect(detail.isAuthorPro).toBe(true)
+
+    const authorReply = detail.replies.find(reply => reply.userName === 'Livid')
+    expect(authorReply).toMatchObject({
+      isMod: true,
+      isOp: true,
+      isPro: true
+    })
+
+    const proReply = detail.replies.find(reply => reply.userName === 'itechify')
+    expect(proReply).toMatchObject({
+      isMod: false,
+      isOp: false,
+      isPro: true
+    })
+  })
+
   test('gets tags from a known public topic', async () => {
     const detail = await client.getTopicDetail(101091)
 

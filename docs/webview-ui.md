@@ -21,7 +21,7 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - 少量互斥视图或内容筛选的紧凑切换使用 `RadioGroup variant="segmented"`，外层使用低强调混合背景，选中项回到 Webview 页面背景（亮色：灰底白色选中；暗色：亮底深色选中）；组件保留 RadioGroup 的方向键与焦点语义。选项的悬浮状态标识通过 `RadioGroupItem` 的 `badge` 和 `badgeVariant` 传入。具有独立面板语义和键盘导航需求的内容分组使用 Tabs；普通表单选项使用默认单选样式
 - 横向 Tabs 在窄容器中通过 `TabsList overflowNavigation` 启用自动溢出导航；组件使用 ResizeObserver 检测可用宽度，仅在溢出时显示左右按钮，切换活动项时自动将其滚入可视区域
 - 页面特有的复杂布局可保留在页面 SCSS 中，通用组件状态统一写入 `webview/src/components/ui/ui.scss`
-- 领域组件可封装固定含义的共享控件（如 `ProTag`）；仅改名或透传属性的包装层没有必要
+- 领域组件可封装固定含义的共享控件（如 `UserBadge`）；仅改名或透传属性的包装层没有必要
 - 命令式通知统一使用 `Toast.info`、`Toast.success`、`Toast.warning` 和 `Toast.error`，每个使用通知的 Webview 入口只挂载一个 `ToastViewport`
 
 ## 主题来源
