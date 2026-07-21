@@ -219,10 +219,10 @@ export class AccountService {
       const { data: html } = await this.session.get<string>('/mission/daily')
       const $ = cheerio.load(html)
 
-      // 记录领取前最新奖励，用于确认领取后是否产生了新流水
+      // 记录领取前最新奖励，用任务日确认领取后是否产生了新流水
       const previousReward = await this.findDailySignInReward()
 
-      // 签到页尚未刷新到新一天时，页面仍会显示已领取，最新奖励可能属于前一个日期
+      // 签到页尚未刷新到新一天时，页面仍会显示已领取，最新奖励可能属于前一个任务日
       // <span class="gray"><li class="fa fa-ok-sign" style="color: #0c0;"></li> &nbsp;每日登录奖励已领取</span>
       if ($('.fa.fa-ok-sign').length) {
         return {
@@ -246,7 +246,8 @@ export class AccountService {
       await this.session.get(`/mission/daily/redeem?once=${once}`)
       if (getLoginIdentity(this.session) !== loginIdentity) return failed
       const latestReward = await this.findDailySignInReward()
-      const isNewReward = latestReward && latestReward.date !== previousReward?.date
+      // 比较任务日而非流水墙钟日：同一自然日可先后领到上一任务日与新任务日
+      const isNewReward = !!latestReward && latestReward.date !== previousReward?.date
 
       return {
         result: isNewReward ? 'success' : 'failed',

@@ -2,6 +2,7 @@ import vscode from 'vscode'
 import Config from '@/config'
 import G from '@/global'
 import type { DailyRes } from '@/v2ex'
+import { beijingNow, getBeijingDate } from '@/core/dayjs'
 import { logger } from '@/core/logger'
 
 /** 自动签到选项 */
@@ -34,6 +35,12 @@ const AUTO_SIGN_IN_RETRY_DELAYS = [2_000, 5_000]
 
 /** 自动签到定期检查间隔 */
 const AUTO_SIGN_IN_CHECK_INTERVAL_MS = 60 * 60 * 1000
+
+/**
+ * 每日任务常见刷新时刻（北京时间小时，含）。
+ * 刷新前窗口为 0:00–7:59；任务日刷新时刻可能变化，8 点后仍按小时轮询。
+ */
+const TYPICAL_MISSION_REFRESH_HOUR = 8
 
 /** 签到完成记录 */
 interface DailySignInRecord {
@@ -93,6 +100,23 @@ export default async function autoDailySignIn(
       signedIn: true,
       result: 'repetitive',
       reward: cached.reward
+    }
+  }
+
+  // 任务日通常在北京时间约 8 点刷新；昨日已签到时，次日 0:00–7:59 不请求 V2EX，
+  // 避免无效查询/领取与休眠唤醒时的网络失败噪声
+  if (isBeforeTypicalMissionRefresh()) {
+    const previous = getDailySignInRecordFor(username)
+    if (previous?.date === getBeijingDate(-1)) {
+      logger.debug('自动签到跳过：任务刷新前且昨日已完成', {
+        rewardDate: previous.date,
+        beijingHour: beijingNow().hour()
+      })
+      return {
+        signedIn: true,
+        result: 'repetitive',
+        reward: previous.reward
+      }
     }
   }
 
@@ -197,13 +221,10 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
     const status = await G.V2ex.getDailySignInStatus()
     // 签到页显示已领取即视为当前任务日已签到；任务尚未刷新时页面仍会停留在上一任务日
     const signedIn = status.signedIn
-    // 本地完成缓存只在奖励日期对应当前 +08:00 日期时写入，避免任务刷新后误跳过自动签到
-    if (
-      signedIn &&
-      status.reward?.date === getCurrentV2exDate() &&
-      G.V2ex.getAuthenticatedUsername() === username
-    ) {
-      await updateDailySignedInDate(status.reward.date, username, status.reward.reward)
+    // 领域层 reward.date 已是任务日；仅今日/昨日写入本地完成缓存
+    const cacheDate = status.reward ? toSignInCacheDate(status.reward.date) : undefined
+    if (signedIn && cacheDate && status.reward && G.V2ex.getAuthenticatedUsername() === username) {
+      await updateDailySignedInDate(cacheDate, username, status.reward.reward)
     }
     return {
       signedIn,
@@ -327,24 +348,26 @@ async function runDailySignInWithRetry(
 async function runDailySignIn(username: string): Promise<DailySignInData> {
   try {
     const { result, reward, rewardDate } = await G.V2ex.dailySignIn()
-    const today = getCurrentV2exDate()
     // 领域层在缺少奖励流水时可能返回 0；UI 与缓存只接受有效正数
     const normalizedReward = reward > 0 ? reward : undefined
-    // success 或奖励日期属于今天时写入本地完成记录；上一任务日的 repetitive 不缓存，任务刷新后仍会自动领取
+    // rewardDate 为任务日；success / repetitive 且属于近两日时写入本地完成记录
+    const cacheDate =
+      rewardDate && (result === 'success' || result === 'repetitive')
+        ? toSignInCacheDate(rewardDate)
+        : undefined
     if (
-      rewardDate &&
+      cacheDate &&
       normalizedReward !== undefined &&
-      G.V2ex.getAuthenticatedUsername() === username &&
-      (result === 'success' || (result === 'repetitive' && rewardDate === today))
+      G.V2ex.getAuthenticatedUsername() === username
     ) {
-      await updateDailySignedInDate(rewardDate, username, normalizedReward)
+      await updateDailySignedInDate(cacheDate, username, normalizedReward)
     }
     if (result === 'success') {
-      logger.info('每日签到成功', { reward: normalizedReward })
-    } else if (result === 'repetitive' && rewardDate === today) {
+      logger.info('每日签到成功', { reward: normalizedReward, cacheDate })
+    } else if (result === 'repetitive' && cacheDate === getBeijingDate()) {
       logger.info('今日已完成签到')
     } else if (result === 'repetitive') {
-      logger.info('V2EX 每日签到尚未刷新，当前任务日视作已签到', { rewardDate })
+      logger.info('V2EX 每日签到尚未刷新，当前任务日视作已签到', { rewardDate, cacheDate })
     } else {
       logger.warn('每日签到失败')
     }
@@ -382,12 +405,41 @@ function updateDailySignedInDate(date: string, username: string, reward: number)
  * @param username 登录账号用户名
  */
 function getDailySignInRecordForToday(username: string): DailySignInRecord | undefined {
-  const today = getCurrentV2exDate()
-  const record = G.context.globalState.get<DailySignInRecord>(LAST_AUTO_SIGN_IN_DATE_KEY)
-  return record?.username === username && record.date === today ? record : undefined
+  const today = getBeijingDate()
+  const record = getDailySignInRecordFor(username)
+  return record?.date === today ? record : undefined
 }
 
-/** 获取 V2EX 余额流水使用的 +08:00 日期 */
-function getCurrentV2exDate(): string {
-  return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10)
+/**
+ * 获取指定账号最近一次本地签到完成记录
+ * @param username 登录账号用户名
+ */
+function getDailySignInRecordFor(username: string): DailySignInRecord | undefined {
+  const record = G.context.globalState.get<DailySignInRecord>(LAST_AUTO_SIGN_IN_DATE_KEY)
+  return record?.username === username ? record : undefined
+}
+
+/**
+ * 是否处于常见任务刷新前的安静时段（北京时间 0:00–7:59）。
+ * 昨日已签到时自动签到在此窗口内不访问网络。
+ */
+function isBeforeTypicalMissionRefresh(): boolean {
+  return beijingNow().hour() < TYPICAL_MISSION_REFRESH_HOUR
+}
+
+/**
+ * 将领域层返回的任务日规范化为本地签到完成缓存日期。
+ *
+ * `rewardDate` 已是任务日（描述 `YYYYMMDD 的每日登录奖励`），不是流水墙钟日。
+ * 仅接受北京时间今日或昨日的任务日，避免过旧流水误写入。
+ *
+ * @returns 应写入的缓存日期；与近两日任务无关时返回 undefined（不写缓存）
+ */
+function toSignInCacheDate(missionDate: string): string | undefined {
+  const today = getBeijingDate()
+  const yesterday = getBeijingDate(-1)
+  if (missionDate === today || missionDate === yesterday) {
+    return missionDate
+  }
+  return undefined
 }

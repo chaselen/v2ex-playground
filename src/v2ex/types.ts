@@ -222,7 +222,11 @@ export type DailyRes = 'success' | 'repetitive' | 'failed'
 
 /** 每日签到奖励记录 */
 export interface DailySignInReward {
-  /** 奖励流水日期，格式为 YYYY-MM-DD */
+  /**
+   * 任务日，格式为 YYYY-MM-DD。
+   * 取自流水描述 `YYYYMMDD 的每日登录奖励`；描述缺失时回退为流水墙钟日期。
+   * 凌晨补领时墙钟日可能已是次日，任务日仍为上一自然日。
+   */
   date: string
   /** 获得的铜币数 */
   reward: number
@@ -242,7 +246,10 @@ export interface DailySignInResult {
   result: DailyRes
   /** 当日签到奖励铜币数 */
   reward: number
-  /** 奖励流水日期，格式为 YYYY-MM-DD */
+  /**
+   * 任务日，格式为 YYYY-MM-DD（与 {@link DailySignInReward.date} 相同语义）。
+   * 用于确认新流水与写入本地完成缓存，不是流水墙钟日期。
+   */
   rewardDate?: string
 }
 
@@ -293,7 +300,9 @@ export interface BalanceTransaction {
   direction: BalanceTransactionDirection
   /** 流水后余额原始文本 */
   balance: string
-  /** 描述 HTML */
+  /** 描述纯文本（cheerio `.text()`，用于解析任务日等） */
+  description: string
+  /** 描述 HTML（cheerio `.html()` 序列化结果，仅供展示） */
   descriptionHtml: string
 }
 

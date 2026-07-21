@@ -137,6 +137,7 @@ export function expectBalanceDetail(detail: BalanceDetail) {
       amount: expect.any(String),
       direction: expect.stringMatching(/^(positive|negative|neutral)$/),
       balance: expect.any(String),
+      description: expect.any(String),
       descriptionHtml: expect.any(String)
     })
   }

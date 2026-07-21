@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio/slim'
-import dayjs from 'dayjs'
+import dayjs from '@/core/dayjs'
 import { getV2exTimeSpan, type CheerioSelection } from './common'
 import type { Node, TagTopicList, Topic, TopicDetail, TopicReply } from '../types'
 

@@ -34,6 +34,7 @@ export function parseBalance($: cheerio.CheerioAPI, requestedPage: number): Bala
         : 'neutral'
     const time = cells.eq(0).text().trim()
 
+    const descriptionCell = cells.eq(4)
     transactions.push({
       key: `${requestedPage}-${index}-${time}`,
       time,
@@ -41,7 +42,9 @@ export function parseBalance($: cheerio.CheerioAPI, requestedPage: number): Bala
       amount,
       direction,
       balance: cells.eq(3).text().trim(),
-      descriptionHtml: cells.eq(4).html() || ''
+      // 任务日等规则匹配用纯文本；.html() 序列化会把中文编成 &#x..; 实体，不能用来做中文匹配
+      description: descriptionCell.text().trim(),
+      descriptionHtml: descriptionCell.html() || ''
     })
   })
 
@@ -66,8 +69,28 @@ export function parseLatestDailySignInReward(
   if (!transaction) return undefined
 
   const reward = Number(transaction.amount.replace(/,/g, '')) || 0
-  const date = transaction.time.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+  const date = parseDailySignInMissionDate(transaction)
   return date && reward > 0 ? { date, reward } : undefined
+}
+
+/**
+ * 解析每日登录奖励的任务日。
+ *
+ * 描述形如 `20250330 的每日登录奖励 2 铜币`：前缀日期为任务日。
+ * 北京时间 0:00–8:00 补领上一任务日时，流水墙钟日可能已是次日，不能只用 time 的日历日。
+ * 描述缺失时回退为流水时间开头的 YYYY-MM-DD。
+ *
+ * 必须使用 `description`（`.text()`），不要用 `descriptionHtml`：后者是 cheerio 再序列化结果，
+ * 中文常被编成 `&#x7684;` 等实体，与网页源码里的纯文本不是同一形态。
+ */
+export function parseDailySignInMissionDate(
+  transaction: Pick<BalanceTransaction, 'time' | 'description'>
+): string | undefined {
+  const fromDescription = transaction.description.match(/(\d{8})\s*的每日登录奖励/)?.[1]
+  if (fromDescription) {
+    return `${fromDescription.slice(0, 4)}-${fromDescription.slice(4, 6)}-${fromDescription.slice(6, 8)}`
+  }
+  return transaction.time.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
 }
 
 /**

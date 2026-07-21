@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio/slim'
 import { describe, expect, test } from 'vitest'
-import { parseBalance, parseLatestDailySignInReward } from './balance'
+import { parseBalance, parseDailySignInMissionDate, parseLatestDailySignInReward } from './balance'
 
 describe('balance parsers', () => {
   test('parses balance summary, pagination, amounts and description HTML', () => {
@@ -45,10 +45,12 @@ describe('balance parsers', () => {
       direction: 'negative',
       balance: '112142.1'
     })
+    expect(detail.transactions[0].description).toContain('话题')
     expect(detail.transactions[0].descriptionHtml).toContain('href="/t/1219202"')
     expect(detail.transactions[1]).toMatchObject({
       amount: '9.0',
-      direction: 'positive'
+      direction: 'positive',
+      description: '奖励'
     })
   })
 
@@ -102,6 +104,48 @@ describe('balance parsers', () => {
       date: '2026-07-12',
       reward: 7
     })
+  })
+
+  test('uses mission day from description when wall-clock date is already next day', () => {
+    // 北京时间 07:57 补领上一任务日：流水墙钟日 03-31，描述任务日 03-30
+    const detail = parseBalance(
+      cheerio.load(`
+        <div id="Main">
+          <table class="data">
+            <tr>
+              <td class="d"><small class="gray">2025-03-31 08:25:29 +08:00</small></td>
+              <td class="d">每日登录奖励</td>
+              <td class="d"><span class="positive"><strong>15.0</strong></span></td>
+              <td class="d">100.0</td>
+              <td class="d"><span class="gray">20250331 的每日登录奖励 15 铜币</span></td>
+            </tr>
+            <tr>
+              <td class="d"><small class="gray">2025-03-31 07:57:28 +08:00</small></td>
+              <td class="d">每日登录奖励</td>
+              <td class="d"><span class="positive"><strong>2.0</strong></span></td>
+              <td class="d">85.0</td>
+              <td class="d"><span class="gray">20250330 的每日登录奖励 2 铜币</span></td>
+            </tr>
+          </table>
+        </div>
+      `),
+      1
+    )
+
+    expect(parseLatestDailySignInReward(detail.transactions)).toEqual({
+      date: '2025-03-31',
+      reward: 15
+    })
+    expect(parseDailySignInMissionDate(detail.transactions[1])).toBe('2025-03-30')
+  })
+
+  test('falls back to wall-clock date when description has no mission day', () => {
+    expect(
+      parseDailySignInMissionDate({
+        time: '2026-06-10 08:44:56 +08:00',
+        description: '奖励'
+      })
+    ).toBe('2026-06-10')
   })
 
   test('keeps coin types aligned when higher denominations are absent', () => {
