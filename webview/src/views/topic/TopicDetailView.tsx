@@ -236,7 +236,12 @@ export default function TopicDetailView({
             <span className="time" title={reply.repliedAt || reply.time}>
               {reply.time}
             </span>
-            {reply.thanks > 0 && <span className="thanks">♥ {reply.thanks}</span>}
+            {reply.thanks > 0 && (
+              <span className="thanks" title={`${reply.thanks} 人感谢`}>
+                <Heart aria-hidden="true" />
+                {reply.thanks}
+              </span>
+            )}
             <div className="reply-actions">
               {renderReplyActions(reply)}
               <span className="floor">{reply.floor}</span>
@@ -276,10 +281,11 @@ export default function TopicDetailView({
     return (
       <>
         {reply.thanked ? (
-          <span className="thanked">
-            <Heart aria-hidden="true" fill="currentColor" />
-            感谢已发送
-          </span>
+          <Tooltip content="感谢已发送">
+            <span className="reply-thanked" aria-label="感谢已发送">
+              <Heart aria-hidden="true" fill="currentColor" />
+            </span>
+          </Tooltip>
         ) : (
           <ConfirmPopover
             title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}

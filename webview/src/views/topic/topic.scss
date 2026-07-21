@@ -503,8 +503,7 @@
   color: var(--v2ex-muted-fg);
 }
 
-.topic-action-status,
-.thanked {
+.topic-action-status {
   display: inline-flex;
   min-height: 22px;
   align-items: center;
@@ -581,9 +580,27 @@
   min-width: 0;
   margin-bottom: 6px;
 
-  .time,
-  .thanks {
+  .time {
     color: var(--v2ex-muted-fg);
+  }
+
+  // 已感谢数：描边红心 + 数字，比次要时间信息更醒目
+  .thanks {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--v2ex-danger-fg);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+
+    > svg {
+      width: 13px;
+      height: 13px;
+      flex: none;
+      // 小尺寸下默认描边偏细，加粗以匹配数字字重
+      stroke-width: 2.75;
+    }
   }
 }
 
@@ -602,6 +619,24 @@
     min-width: 24px;
     min-height: 24px;
     padding: 3px;
+  }
+
+  // 已发送感谢：非按钮态实心红心；图标 16px 对齐 ghost small Button 的 icon
+  .reply-thanked {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    color: var(--v2ex-danger-fg);
+    line-height: 1;
+
+    > svg {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      stroke-width: 0;
+    }
   }
 
   .floor {

@@ -184,6 +184,14 @@
   padding: 14px 0;
 }
 
+// 对齐真实回复 .reply-meta → 正文：用户名行与内容行之间需有间距
+// .author 全局 margin-bottom: 0（供 topic-meta 横排），回复列布局单独补回
+.reply .row-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .reply-list > .reply:first-child {
   padding-top: 12px;
 }
