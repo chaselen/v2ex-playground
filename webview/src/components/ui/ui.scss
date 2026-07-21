@@ -1837,7 +1837,7 @@
   position: fixed;
   z-index: 1300;
   inset: 0;
-  background: rgb(0 0 0 / 88%);
+  background: var(--v2ex-media-mask-bg);
   animation: v2ex-overlay-fade-in var(--v2ex-motion-normal) ease-out;
 }
 

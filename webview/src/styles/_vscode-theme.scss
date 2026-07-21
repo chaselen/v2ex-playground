@@ -20,7 +20,12 @@ body {
     --vscode-menu-background,
     var(--vscode-editorHoverWidget-background, var(--v2ex-widget-bg))
   );
-  --v2ex-mask-bg: color-mix(in srgb, var(--v2ex-webview-bg) 60%, transparent);
+  /* Dialog 模态遮罩：压暗背景，突出中间面板 */
+  --v2ex-mask-bg: rgb(0 0 0 / 50%);
+  /* 全屏媒体预览遮罩：更深，便于沉浸看图 */
+  --v2ex-media-mask-bg: rgb(0 0 0 / 88%);
+  /* 内容加载 veil：跟页面底同色起雾，弱于模态遮罩 */
+  --v2ex-veil-bg: color-mix(in srgb, var(--v2ex-webview-bg) 60%, transparent);
   --v2ex-input-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
   --v2ex-input-fg: var(--vscode-input-foreground, var(--v2ex-webview-fg));
   --v2ex-input-border: var(--vscode-input-border, var(--v2ex-control-border));
