@@ -137,7 +137,8 @@ export default async function autoDailySignIn(
 
   return getOrStartDailySignInTask(username, {
     notifyOnSuccess: true,
-    notifyOnFailure: true,
+    // 自动签到失败只写日志，不弹错误；避免休眠断网等场景打扰用户
+    notifyOnFailure: false,
     retryOnFailure: true,
     ...options
   })
