@@ -181,6 +181,7 @@ export default function MyTab(props: MyTabProps) {
   })
   const notificationRequestSeq = useRef(0)
   const accountKeyRef = useRef<string | undefined>(undefined)
+  const contentSectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (!loggedIn) {
@@ -252,7 +253,7 @@ export default function MyTab(props: MyTabProps) {
         return
       }
 
-      const requests: Promise<void>[] = []
+      const requests: Promise<boolean>[] = []
       if (topicLists.topicCollection.loaded) {
         requests.push(loadMyTopics('topicCollection', 1))
       }
@@ -334,10 +335,11 @@ export default function MyTab(props: MyTabProps) {
       const data = await vscode.getMyTopics({ tab, page })
       if (topicRequestSeq.current[tab] === requestSeq) {
         onMyTopicListLoaded(data)
+        return true
       }
     } catch (err) {
       if (topicRequestSeq.current[tab] !== requestSeq) {
-        return
+        return false
       }
       setTopicLists(current => ({
         ...current,
@@ -349,6 +351,8 @@ export default function MyTab(props: MyTabProps) {
         }
       }))
     }
+
+    return false
   }
 
   /**
@@ -387,10 +391,11 @@ export default function MyTab(props: MyTabProps) {
       const data = await vscode.getMyNotifications(page)
       if (notificationRequestSeq.current === requestSeq) {
         onMyNotificationsLoaded(data)
+        return true
       }
     } catch (err) {
       if (notificationRequestSeq.current !== requestSeq) {
-        return
+        return false
       }
       setNotificationList(current => ({
         ...current,
@@ -399,6 +404,23 @@ export default function MyTab(props: MyTabProps) {
         error: (err as Error).message
       }))
     }
+
+    return false
+  }
+
+  /**
+   * 切换内容页码并回到列表首条数据
+   * @param loadPage 加载目标页
+   */
+  async function changeContentPage(loadPage: () => Promise<boolean>) {
+    if (!(await loadPage())) {
+      return
+    }
+
+    // 等待新一页列表完成渲染后，将非吸顶容器作为稳定的回位锚点
+    requestAnimationFrame(() => {
+      contentSectionRef.current?.scrollIntoView({ block: 'start' })
+    })
   }
 
   /**
@@ -601,7 +623,7 @@ export default function MyTab(props: MyTabProps) {
               disabled={state.loading}
               onPageChange={page => {
                 if (page !== state.page) {
-                  loadMyTopics(tab, page)
+                  void changeContentPage(() => loadMyTopics(tab, page))
                 }
               }}
             />
@@ -659,7 +681,7 @@ export default function MyTab(props: MyTabProps) {
               disabled={state.loading}
               onPageChange={page => {
                 if (page !== state.page) {
-                  loadMyNotifications(page)
+                  void changeContentPage(() => loadMyNotifications(page))
                 }
               }}
             />
@@ -834,7 +856,7 @@ export default function MyTab(props: MyTabProps) {
           </div>
         </article>
 
-        <section className={styles['my-content']}>
+        <section ref={contentSectionRef} className={styles['my-content']}>
           <div className={styles['my-content-tabs-header']}>
             <RadioGroup
               aria-label="我的内容"
