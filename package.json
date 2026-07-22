@@ -182,7 +182,7 @@
     "file-type": "^22.0.1",
     "highlight.js": "^11.11.1",
     "lucide-react": "^1.25.0",
-    "oxfmt": "^0.53.0",
+    "oxfmt": "^0.60.0",
     "picomatch": "^4.0.4",
     "radix-ui": "^1.6.2",
     "react": "^19.2.6",

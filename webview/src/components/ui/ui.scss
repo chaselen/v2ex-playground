@@ -1171,8 +1171,8 @@
     font-weight: 600;
 
     &:hover:not(:has(.v2ex-radio-group__item:disabled)):not(
-        :has(.v2ex-radio-group__item[data-state='checked'])
-      ) {
+      :has(.v2ex-radio-group__item[data-state='checked'])
+    ) {
       color: var(--v2ex-webview-fg);
       background: var(--v2ex-light-button-hover-bg);
     }
