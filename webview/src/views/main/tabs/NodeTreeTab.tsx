@@ -338,7 +338,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
               <div
                 role="treeitem"
                 aria-expanded={expanded}
-                className={`${styles['tree-item']} ${styles['tree-item--node']}`}
+                className={`${styles['tree-item']} ${styles['tree-item--node']}${expanded ? ` ${styles['tree-item--node-expanded']}` : ''}`}
               >
                 <button
                   type="button"

@@ -281,6 +281,13 @@
   color: var(--v2ex-main-content-fg);
 }
 
+.my-content-tabs-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--v2ex-webview-bg);
+}
+
 .my-content-tabs {
   :global(.v2ex-radio-group__label) {
     min-width: 0;

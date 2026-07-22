@@ -835,31 +835,33 @@ export default function MyTab(props: MyTabProps) {
         </article>
 
         <section className={styles['my-content']}>
-          <RadioGroup
-            aria-label="我的内容"
-            value={activeContentTab}
-            className={styles['my-content-tabs']}
-            variant="segmented"
-            onValueChange={value => changeContentTab(value as MyContentTabKey)}
-          >
-            <RadioGroupItem value="topicCollection" label="主题收藏" />
-            <RadioGroupItem value="specialFollowing" label="特别关注" />
-            <RadioGroupItem
-              value="messages"
-              label={
-                <span className={styles['my-message-tab']}>
-                  <span>消息</span>
-                  {!!overview.unreadNoticeCount && (
-                    <Badge
-                      count={overview.unreadNoticeCount}
-                      overflowCount={99}
-                      countClassName={styles['my-message-badge-count']}
-                    />
-                  )}
-                </span>
-              }
-            />
-          </RadioGroup>
+          <div className={styles['my-content-tabs-header']}>
+            <RadioGroup
+              aria-label="我的内容"
+              value={activeContentTab}
+              className={styles['my-content-tabs']}
+              variant="segmented"
+              onValueChange={value => changeContentTab(value as MyContentTabKey)}
+            >
+              <RadioGroupItem value="topicCollection" label="主题收藏" />
+              <RadioGroupItem value="specialFollowing" label="特别关注" />
+              <RadioGroupItem
+                value="messages"
+                label={
+                  <span className={styles['my-message-tab']}>
+                    <span>消息</span>
+                    {!!overview.unreadNoticeCount && (
+                      <Badge
+                        count={overview.unreadNoticeCount}
+                        overflowCount={99}
+                        countClassName={styles['my-message-badge-count']}
+                      />
+                    )}
+                  </span>
+                }
+              />
+            </RadioGroup>
+          </div>
           <div className={styles['my-content-panel']}>{renderActiveContent()}</div>
         </section>
       </div>

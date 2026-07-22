@@ -71,6 +71,13 @@ $node-child-indent: 18px;
   min-height: 32px;
 }
 
+.tree-item--node-expanded {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--v2ex-webview-bg);
+}
+
 .tree-item--topic {
   padding-left: $node-child-indent + 4px;
 }
