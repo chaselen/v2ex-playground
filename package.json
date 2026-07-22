@@ -176,7 +176,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "axios": "^1.16.1",
     "cheerio": "^1.2.0",
-    "cookie": "^1.1.1",
+    "cookie": "^2.0.1",
     "dayjs": "^1.11.21",
     "esbuild": "^0.28.0",
     "file-type": "^22.0.1",

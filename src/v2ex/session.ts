@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import { parse as parseCookieHeader } from 'cookie'
+import { parseCookie } from 'cookie'
 import picomatch from 'picomatch'
 import { CookieJar } from 'tough-cookie'
 import { installHttpFailureLogging, type HttpFailureHandler } from '@/core/httpFailureLogging'
@@ -183,7 +183,8 @@ export class V2exSession {
       this.cookieJar.setCookieSync(cookie, url)
       return
     }
-    Object.entries(parseCookieHeader(cookie)).forEach(([name, value]) => {
+    Object.entries(parseCookie(cookie)).forEach(([name, value]) => {
+      if (value === undefined) return
       this.cookieJar.setCookieSync(`${name}=${value}`, url)
     })
   }

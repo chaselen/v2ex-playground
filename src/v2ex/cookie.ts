@@ -1,4 +1,4 @@
-import { parse as parseCookieHeader, serialize as serializeCookie } from 'cookie'
+import { parseCookie, stringifyCookie } from 'cookie'
 
 /** 登录态 Cookie 名称 */
 export const loginCookieName = 'A2'
@@ -20,24 +20,33 @@ export function normalizeLoginCookie(input: string | undefined): string {
     return ''
   }
 
-  const parsedCookie = parseCookieHeader(cookie)
-  const parsedCookieValue = parsedCookie[loginCookieName]
+  const cookies = parseCookie(cookie)
+  const parsedCookieValue = cookies[loginCookieName]
   if (parsedCookieValue) {
-    const loginCookie = serializeCookie(loginCookieName, parsedCookieValue, {
-      encode: value => value
-    })
-    const twoFactorCookieValue = parsedCookie[twoFactorCookieName]
+    const loginCookie = stringifyCookie(
+      { [loginCookieName]: parsedCookieValue },
+      {
+        encode: value => value
+      }
+    )
+    const twoFactorCookieValue = cookies[twoFactorCookieName]
     if (!twoFactorCookieValue) {
       return loginCookie
     }
-    const twoFactorCookie = serializeCookie(twoFactorCookieName, twoFactorCookieValue, {
-      encode: value => value
-    })
+    const twoFactorCookie = stringifyCookie(
+      { [twoFactorCookieName]: twoFactorCookieValue },
+      {
+        encode: value => value
+      }
+    )
     return `${loginCookie}; ${twoFactorCookie}`
   }
 
   if (rawLoginCookieValuePattern.test(cookie)) {
-    return serializeCookie(loginCookieName, cookie.replace(/;$/, ''), { encode: value => value })
+    return stringifyCookie(
+      { [loginCookieName]: cookie.replace(/;$/, '') },
+      { encode: value => value }
+    )
   }
   return ''
 }
