@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { UserRound } from 'lucide-react'
-import { Avatar, Button, HoverCard, Spinner } from '@/components/ui'
+import { Avatar, Button, HoverCard, Spinner, Tag } from '@/components/ui'
 import { mergeClassNames } from '@/components/ui/utils'
 import UserBadge from '@/components/UserBadge'
 import type { MemberInfo } from '@extension/shared/webview'
@@ -121,14 +121,16 @@ export default function MemberQuickInfoPopover({
                     <strong>{member.username}</strong>
                     {member.isPro && <UserBadge pro />}
                   </div>
-                  {!!member.memberNumber && (
-                    <span className={styles.number}>第 {member.memberNumber} 号会员</span>
-                  )}
+                  {!!member.memberNumber && <Tag>第 {member.memberNumber} 号会员</Tag>}
                 </div>
               </header>
 
               {!!member.tagline && <p className={styles.tagline}>{member.tagline}</p>}
-              {!!member.bio && <p className={styles.bio}>{member.bio}</p>}
+              {!!member.bio && (
+                <p className={styles.bio} title={member.bio}>
+                  {member.bio}
+                </p>
+              )}
 
               <div className={styles.meta}>
                 {!!member.joinedAt && <span>加入于 {member.joinedAt}</span>}
