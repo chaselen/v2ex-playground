@@ -310,7 +310,7 @@ export default class MainViewProvider
       title: n.title
     }))
     // 持久化凭据可能仍在后台验证，此时先保留登录态以展示受保护标签的骨架屏
-    const loggedIn = G.V2ex.isAuthenticated() || !!G.V2ex.getLoginCookie()
+    const loggedIn = G.V2ex.hasLoginSession()
 
     if (!loggedIn) {
       this._syncUnreadNoticeBadge(0)

@@ -177,7 +177,7 @@ export class TopicPanelController
     this.postViewState({
       status: 'topic',
       topic: topicDetail,
-      canOperate: G.V2ex.isAuthenticated()
+      canOperate: G.V2ex.hasLoginSession()
     })
   }
 

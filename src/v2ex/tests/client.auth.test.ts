@@ -76,6 +76,7 @@ describe('V2exClient authentication', () => {
     const client = new V2exClient('A2=login; A2O=two-factor; V2EX_LANG=zhcn')
 
     expect(client.getLoginCookie()).toBe('A2=login; A2O=two-factor')
+    expect(client.hasLoginSession()).toBe(true)
   })
 
   test('loads persisted credentials but waits for validation before marking authenticated', async () => {
@@ -106,6 +107,7 @@ describe('V2exClient authentication', () => {
 
     await expect(client.ensureAuthenticated()).rejects.toThrow('temporary network failure')
     expect(client.getLoginCookie()).toBe('A2=persisted')
+    expect(client.hasLoginSession()).toBe(true)
     expect(save).not.toHaveBeenCalled()
 
     await expect(client.ensureAuthenticated()).resolves.toBe(true)
@@ -125,6 +127,7 @@ describe('V2exClient authentication', () => {
 
     expect(client.getLoginCookie()).toBe('')
     expect(client.isAuthenticated()).toBe(false)
+    expect(client.hasLoginSession()).toBe(false)
     expect(client.getAuthenticatedUsername()).toBeUndefined()
     expect(save).toHaveBeenLastCalledWith('')
     expect(onLoginExpired).toHaveBeenCalledOnce()

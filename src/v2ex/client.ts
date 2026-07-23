@@ -139,9 +139,14 @@ export class V2exClient {
     return this.session.getLoginCookie()
   }
 
-  /** 当前登录 Cookie 是否已经通过验证 */
+  /** 当前登录 Cookie 是否已验证有效且已取得登录用户名 */
   isAuthenticated(): boolean {
     return !!this.authenticatedUsername
+  }
+
+  /** 当前是否存在已验证账号或待验证登录凭据，仅用于决定登录态 UI */
+  hasLoginSession(): boolean {
+    return this.isAuthenticated() || !!this.getLoginCookie()
   }
 
   /** 获取当前已验证用户名 */

@@ -19,6 +19,7 @@
 扩展功能通过 `V2exClient` 使用以下 API：
 
 - `isAuthenticated()`：当前是否已有经过验证的登录账号
+- `hasLoginSession()`：当前是否已有经过验证的账号或仍持有待验证登录凭据，仅用于决定登录态 UI
 - `getAuthenticatedUsername()`：取得当前已验证用户名，未登录时返回空值
 - `getLoginCookie()`：取得当前可持久化的 A2/A2O，用于登录输入框回显等必要场景
 - `ensureAuthenticated()`：已有已验证用户名时直接返回，否则检查当前登录 Cookie；并发调用复用正在进行的检查
@@ -35,6 +36,8 @@
 扩展入口通过 `V2exClient.create({ loginCookieStore, ...options })` 创建客户端。该异步工厂先从凭据存储读取登录 Cookie，再用它建立正式业务 Session。启动检查完成前，存在持久化 Cookie 不代表已经登录；UI 只能以 `isAuthenticated()` 或 `getAuthenticatedUsername()` 的结果为准。
 
 `refreshAuthentication()` 请求 V2EX 首页并解析当前用户名。明确解析到未登录状态时进入统一的登录失效清理；网络错误或无法识别的页面结构会继续抛错，不会删除凭据。`ensureAuthenticated()` 用于普通受保护功能，避免每次调用都重复检查首页。
+
+启动检查因临时网络错误失败时，主面板和话题页可以在仍有登录 Cookie 的前提下保留登录态 UI，避免把“尚未验证”错误展示为“未登录”。受保护数据读取仍通过 `ensureAuthenticated()` 验证，话题写操作则以服务端响应为准；服务端明确重定向到 `/signin` 时继续走统一的登录失效清理。
 
 进程重启后只恢复 A2/A2O，不持久化已验证用户名、布尔状态或 CookieJar 中的内部 Cookie。V2EX 后续响应会重新建立运行时所需的其他 Cookie。
 
