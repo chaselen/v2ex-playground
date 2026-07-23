@@ -44,3 +44,5 @@
 站内话题链接识别集中在 `webview/src/core/topicLink.ts`。只接受 `v2ex.com` 及其子域名下的 `/t/<数字 id>` 路径，允许查询参数和评论锚点。内容增强只负责添加按钮和转发目标话题 id，不直接加载话题数据。
 
 预览按钮和站内链接导航属于 `dangerouslySetInnerHTML` 渲染完成后的运行时 DOM 增强。`EnhancedHtmlContent` 必须在每次 React 提交后幂等同步这些增强，避免父组件重渲染重写 HTML 后丢失按钮或事件监听。
+
+正文、附言和回复中的 HTTPS iframe 统一替换为单行嵌入视频占位，不在 VS Code Webview 中加载第三方播放器，也不受 `v2ex.browse.showImagesInTopic` 设置影响。占位显示来源域名并保留浏览器打开入口；已知视频站点的嵌入地址会转换为适合外部浏览器访问的正常观看页，其他来源沿用原地址。非 HTTPS 或无效 iframe 地址不会进入 Webview。

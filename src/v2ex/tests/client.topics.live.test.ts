@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { load } from 'cheerio/slim'
 import { V2exClient } from '../client'
 import { expectNode, expectTopic, expectTopicDetail } from './client.liveTestAssertions'
 
@@ -114,6 +115,16 @@ describe('V2exClient authenticated topic requests', () => {
     expect(html).toContain('href="/member/alice"')
     expect(html).toContain('href="https://www.v2ex.com/t/1"')
     expect(html).toContain('**粗体**')
+  })
+
+  authTest('previews a YouTube link as an embedded video with V2EX_COOKIE', async () => {
+    const html = await client.previewReply('https://youtu.be/YhxnffqiegU', 'default')
+    const $ = load(html)
+    const iframe = $('.embedded_video_wrapper > iframe.embedded_video')
+
+    expect(iframe).toHaveLength(1)
+    expect(iframe.attr('src')).toBe('https://www.youtube.com/embed/YhxnffqiegU')
+    expect(iframe.attr('allowfullscreen')).toBeDefined()
   })
 
   authTest('previews markdown reply syntax with V2EX_COOKIE', async () => {

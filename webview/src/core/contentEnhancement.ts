@@ -9,6 +9,7 @@ import {
   normalizeImageEmoticonSrc
 } from './imageEmoticons'
 import { decodeCloudflareEmails } from './cloudflareEmail'
+import { getEmbeddedVideoInfo } from './embeddedVideo'
 import type { OpenImagePreview } from '@/components/ImagePreviewProvider'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
@@ -58,14 +59,24 @@ export function normalizeHtml(html?: unknown, options: NormalizeHtmlOptions = {}
   const hasCloudflareEmail =
     normalizedHtml.includes('data-cfemail') ||
     normalizedHtml.includes('/cdn-cgi/l/email-protection#')
+  const hasEmbeddedVideo = /<iframe\b/i.test(normalizedHtml)
 
-  if (loadImages && !hasImgurImage && !hasCloudflareEmail) {
+  if (loadImages && !hasImgurImage && !hasCloudflareEmail && !hasEmbeddedVideo) {
     return normalizedHtml
   }
 
   const template = document.createElement('template')
   template.innerHTML = normalizedHtml
   decodeCloudflareEmails(template.content)
+
+  if (hasEmbeddedVideo) {
+    template.content.querySelectorAll<HTMLIFrameElement>('iframe').forEach(iframe => {
+      const marker = document.createElement('span')
+      marker.className = 'embedded-video-marker'
+      marker.dataset.embedSrc = iframe.getAttribute('src') || ''
+      iframe.replaceWith(marker)
+    })
+  }
 
   if (hasImgurImage || !loadImages) {
     template.content.querySelectorAll<HTMLImageElement>('img').forEach(img => {
@@ -483,6 +494,69 @@ function enhanceCodeBlocks(root: ParentNode) {
     })
 }
 
+/** 外部打开图标 */
+const embeddedVideoExternalIcon =
+  '<path d="M15 3h6v6"/><path d="m10 14 11-11"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'
+
+/**
+ * 创建嵌入视频操作按钮
+ * @param label 按钮文案
+ * @param onClick 点击处理器
+ */
+function createEmbeddedVideoButton(label: string, onClick: () => void): HTMLButtonElement {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'embedded-video-button'
+  button.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">${embeddedVideoExternalIcon}</svg>
+    <span></span>
+  `
+  button.querySelector('span')!.textContent = label
+  button.addEventListener('click', onClick)
+  return button
+}
+
+/**
+ * 将嵌入视频转换为外部打开占位
+ * @param marker 嵌入视频标记
+ */
+function enhanceEmbeddedVideo(marker: HTMLElement) {
+  const info = getEmbeddedVideoInfo(marker.dataset.embedSrc || '', document.baseURI)
+  if (!info) {
+    marker.remove()
+    return
+  }
+
+  const card = document.createElement('div')
+  card.className = 'embedded-video-card'
+
+  const toolbar = document.createElement('div')
+  toolbar.className = 'embedded-video-toolbar'
+  const toolbarSource = document.createElement('span')
+  toolbarSource.textContent = `内嵌视频 · 来源：${info.source}`
+  const toolbarActions = document.createElement('div')
+  toolbarActions.className = 'embedded-video-actions'
+  toolbar.append(toolbarSource, toolbarActions)
+
+  /** 在系统浏览器中打开视频 */
+  const openVideoExternal = () => vscode.openExternal(info.externalUrl)
+
+  toolbarActions.append(createEmbeddedVideoButton('浏览器中打开', openVideoExternal))
+
+  marker.replaceWith(card)
+  card.append(toolbar)
+}
+
+/**
+ * 增强内容中的嵌入视频
+ * @param root 根节点
+ */
+function enhanceEmbeddedVideos(root: ParentNode) {
+  root
+    .querySelectorAll<HTMLElement>('.embedded-video-marker[data-embed-src]')
+    .forEach(enhanceEmbeddedVideo)
+}
+
 /**
  * 给内容区域挂载图片预览与站内跳转行为
  * @param root 根节点
@@ -517,5 +591,6 @@ export function enhanceHtmlContent(
   })
 
   topicLinks.forEach(bindNavigationLink)
+  enhanceEmbeddedVideos(root)
   enhanceCodeBlocks(root)
 }

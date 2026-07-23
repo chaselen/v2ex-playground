@@ -1,6 +1,6 @@
 # V2EX 内容预览 HTML 契约
 
-本文记录 `POST /preview/default` 与 `POST /preview/markdown` 的真实输出特征，供话题正文、回复和回复预览的渲染实现参考。最后核对日期为 2026-07-15，请求使用登录 Cookie 及 `Accept-Language: zh-CN,zh;q=0.9`。
+本文记录 `POST /preview/default` 与 `POST /preview/markdown` 的真实输出特征，供话题正文、回复和回复预览的渲染实现参考。最后核对日期为 2026-07-23，请求使用登录 Cookie 及 `Accept-Language: zh-CN,zh;q=0.9`。
 
 预览接口只返回 HTML 片段，不返回 JSON，也不提供统一的根元素。探测仅调用预览接口，不会发布内容。
 
@@ -31,6 +31,27 @@
 *斜体* ~~删除线~~ `inline &lt;code&gt;`
 ```
 
+视频链接输入：
+
+```text
+https://youtu.be/YhxnffqiegU
+```
+
+输出结构：
+
+```html
+<div class="embedded_video_wrapper">
+  <iframe
+    src="https://www.youtube.com/embed/YhxnffqiegU"
+    class="embedded_video"
+    allowfullscreen=""
+    type="text/html"
+    id="ytplayer"
+    frameborder="0"
+  ></iframe>
+</div>
+```
+
 关键规则：
 
 - HTML 特殊字符会被转义，换行转换为 `<br />`，空行转换为连续两个 `<br />`
@@ -38,6 +59,9 @@
 - `#楼层` 只保留文本，不会单独生成锚点
 - Markdown 标记不解析，原样显示
 - 直接图片 URL 可能生成 `a > img.embedded_image`，因此原生输出也需要图片增强与隐藏图片处理
+- YouTube 和 Vimeo 链接会自动展开为嵌入视频；YouTube 输出使用 `.embedded_video_wrapper > iframe.embedded_video` 结构
+
+视频自动展开能力也记录在 V2EX 官方的 [Markdown 语法帮助](https://www.v2ex.com/help/markdown) 中，属于“V2EX 原生格式”的链接展开规则。
 
 回复提交使用原生格式；`TopicPanelController` 的回复预览固定请求 `default`。在确认提交接口支持 Markdown 之前，不要增加预览格式切换。
 
@@ -110,6 +134,7 @@ Markdown 段落中的单个普通换行保留为源码换行，浏览器按空�
 - Markdown 表格需支持窄面板横向滚动，并区分表头与斑马纹行
 - `strong` 与服务端允许的原始 `b` 应保持一致的前景色
 - 图片无论来自原生自动链接还是 Markdown，都复用同一套图片预览与显示设置
+- 原生格式自动展开的视频 iframe 由内容增强转换为单行占位，只保留来源和浏览器打开入口
 - 未收录的外链图片在加载后若宽高均不超过 32px 且接近方形，按内联图片表情展示，避免普通图片的块级间距撑高单行回复
 
 真实接口断言位于 `src/v2ex/tests/client.topics.live.test.ts`。接口输出可能随 V2EX 服务端升级变化，断言应验证关键结构与过滤规则，避免锁定完整 HTML 字符串。
