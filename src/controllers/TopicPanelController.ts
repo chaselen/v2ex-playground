@@ -470,9 +470,6 @@ export class TopicPanelController
     }
 
     this.detail = detail
-    setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
-      logger.error('话题面板图标更新失败', err)
-    )
     this.render(detail)
     return detail
   }

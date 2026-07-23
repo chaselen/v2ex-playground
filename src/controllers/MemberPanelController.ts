@@ -199,9 +199,6 @@ export class MemberPanelController
     const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
     this.profile = this.createProfile(member, content)
     this.panel.title = formatPanelTitle(this.profile.member.username)
-    setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
-      logger.error('用户面板图标更新失败', err)
-    )
     return this.profile
   }
 
