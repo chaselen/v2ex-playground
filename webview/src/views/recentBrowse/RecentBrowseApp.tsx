@@ -284,6 +284,7 @@ export default function RecentBrowseApp() {
               onEnter={searchRecentBrowse}
             />
             <Button
+              className="recent-search-button"
               variant="primary"
               icon={<Search aria-hidden="true" />}
               loading={loading}

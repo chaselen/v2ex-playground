@@ -30,8 +30,14 @@
 }
 
 .recent-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
   width: 100%;
   max-width: 420px;
+}
+
+.recent-search-button {
+  flex: none;
 }
 
 .recent-count {
