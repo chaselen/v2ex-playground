@@ -22,7 +22,18 @@
 }
 
 .topic-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  .member-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
   h1 {
+    flex: 1;
+    min-width: 0;
     margin: 0;
     font-size: 24px;
     line-height: 1.32;
@@ -45,6 +56,26 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
+
+.member-avatar-button {
+  display: inline-flex;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 2px;
+  }
+}
+
+.member-avatar {
+  flex: none;
 }
 
 .state-panel {
@@ -536,6 +567,7 @@
 
   // 子回复 hover 时祖先也会被命中，仅显示不包含 hover 子回复的最内层操作区
   &:hover:not(:has(.reply-item:hover))
+    > .reply-layout
     > .reply-body
     > .reply-meta
     > .reply-actions
@@ -553,7 +585,15 @@
   padding-top: 12px;
 }
 
+.reply-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
 .reply-body {
+  flex: 1;
   min-width: 0;
 }
 

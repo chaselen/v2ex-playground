@@ -75,11 +75,12 @@
 
 ## ⚙️ 设置项
 
-| 配置项                          | 说明                     | 默认值 |
-| ------------------------------- | ------------------------ | ------ |
-| `v2ex.browse.openInNewTab`      | 始终在新标签页中打开页面 | `true` |
-| `v2ex.browse.autoSignIn`        | 自动进行每日签到         | `true` |
-| `v2ex.browse.showImagesInTopic` | 查看话题时显示图片       | `true` |
+| 配置项                          | 说明                           | 默认值 |
+| ------------------------------- | ------------------------------ | ------ |
+| `v2ex.browse.openInNewTab`      | 始终在新标签页中打开页面       | `true` |
+| `v2ex.browse.autoSignIn`        | 自动进行每日签到               | `true` |
+| `v2ex.browse.showImagesInTopic` | 查看帖子时显示内容中的图片     | `true` |
+| `v2ex.browse.showAvatar`        | 查看帖子时显示作者和回复者头像 | `true` |
 
 ---
 

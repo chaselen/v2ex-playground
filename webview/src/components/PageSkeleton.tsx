@@ -20,6 +20,8 @@ interface PageSkeletonProps {
   variant: PageSkeletonVariant
   /** 列表骨架的条目数量 */
   rows?: number
+  /** 话题骨架是否显示头像 */
+  showAvatar?: boolean
 }
 
 interface SkeletonRowsProps {
@@ -31,7 +33,7 @@ interface SkeletonRowsProps {
 const topicTitleWidths = [72, 54, 84, 61, 78, 58, 80, 66]
 
 /** Webview 首次加载时使用的页面结构化骨架 */
-export default function PageSkeleton({ variant, rows = 5 }: PageSkeletonProps) {
+export default function PageSkeleton({ variant, rows = 5, showAvatar = true }: PageSkeletonProps) {
   return (
     <Skeleton
       active
@@ -40,16 +42,20 @@ export default function PageSkeleton({ variant, rows = 5 }: PageSkeletonProps) {
       aria-busy="true"
       aria-label="加载中"
     >
-      {renderPlaceholder(variant, rows)}
+      {renderPlaceholder(variant, rows, showAvatar)}
     </Skeleton>
   )
 }
 
 /** 根据目标页面返回接近真实内容层级的占位结构 */
-function renderPlaceholder(variant: PageSkeletonVariant, rows: number): ReactNode {
+function renderPlaceholder(
+  variant: PageSkeletonVariant,
+  rows: number,
+  showAvatar: boolean
+): ReactNode {
   switch (variant) {
     case 'topic':
-      return <TopicPlaceholder />
+      return <TopicPlaceholder showAvatar={showAvatar} />
     case 'member':
       return <MemberPlaceholder rows={rows} />
     case 'member-topics':
@@ -81,10 +87,15 @@ function assertNever(variant: never): never {
 }
 
 /** 话题标题、元信息、正文和回复区占位 */
-function TopicPlaceholder() {
+function TopicPlaceholder({ showAvatar }: { showAvatar: boolean }) {
   return (
     <div>
-      <Skeleton.Title className={styles['topic-title']} />
+      <div className={styles['topic-header']}>
+        <Skeleton.Title className={styles['topic-title']} />
+        {showAvatar && (
+          <Skeleton.Avatar className={styles['topic-avatar']} size="large" shape="square" />
+        )}
+      </div>
       <div className={styles['topic-meta']}>
         <Skeleton.Button className={styles.tag} />
         <Skeleton.Title className={styles.author} />
@@ -97,7 +108,7 @@ function TopicPlaceholder() {
       <Skeleton.Paragraph rows={5} />
       <div className={styles.divider} />
       <Skeleton.Title className={styles['section-title']} />
-      <ReplyRows rows={3} />
+      <ReplyRows rows={3} avatars={showAvatar} />
     </div>
   )
 }
@@ -364,12 +375,12 @@ function TopicRows({ rows, avatars }: { rows: number; avatars: boolean }) {
 }
 
 /** 话题回复行占位 */
-function ReplyRows({ rows }: SkeletonRowsProps) {
+function ReplyRows({ rows, avatars }: SkeletonRowsProps & { avatars: boolean }) {
   return (
     <div className={styles['reply-list']}>
       {Array.from({ length: rows }, (_, index) => (
         <div className={styles.reply} key={index}>
-          <Skeleton.Avatar size="small" />
+          {avatars && <Skeleton.Avatar size="small" />}
           <div className={styles['row-content']}>
             <Skeleton.Title className={styles.author} />
             <Skeleton.Paragraph rows={2} />

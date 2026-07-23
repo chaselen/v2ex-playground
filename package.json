@@ -141,7 +141,12 @@
         "v2ex.browse.showImagesInTopic": {
           "type": "boolean",
           "default": true,
-          "description": "查看帖子时显示图片"
+          "description": "查看帖子时显示内容中的图片"
+        },
+        "v2ex.browse.showAvatar": {
+          "type": "boolean",
+          "default": true,
+          "description": "查看帖子时显示作者和回复者头像"
         }
       }
     }

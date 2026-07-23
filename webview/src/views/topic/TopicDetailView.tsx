@@ -9,12 +9,14 @@ import {
   Inbox,
   RefreshCw,
   Reply,
-  Tag
+  Tag,
+  UserRound
 } from 'lucide-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import NodeButton from '@/components/NodeButton'
 import UserBadge from '@/components/UserBadge'
 import {
+  Avatar,
   Button,
   ConfirmPopover,
   Empty,
@@ -80,7 +82,7 @@ export default function TopicDetailView({
   initialReplyViewMode = 'nested',
   onTopicPreview
 }: TopicDetailViewProps) {
-  const { topic, showImages, canOperate } = controller
+  const { topic, showImages, showAvatar, canOperate } = controller
   const [loadingReplyPage, setLoadingReplyPage] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [collecting, setCollecting] = useState(false)
@@ -225,34 +227,68 @@ export default function TopicDetailView({
     )
   }
 
+  /** 渲染用户头像和快速信息 */
+  function renderMemberAvatar(
+    username: string,
+    avatar: string,
+    size: 'small' | 'default' | 'large'
+  ) {
+    return (
+      <MemberQuickInfoPopover
+        username={username}
+        loadMemberInfo={controller.loadMemberQuickInfo}
+        openMember={username => void controller.openMember(username)}
+      >
+        <button
+          type="button"
+          className="member-avatar-button"
+          aria-label={`打开 ${username} 的用户资料`}
+          onClick={() => void controller.openMember(username)}
+        >
+          <Avatar
+            className="member-avatar"
+            size={size}
+            shape="square"
+            src={avatar}
+            alt={username}
+            fallback={<UserRound aria-hidden="true" />}
+          />
+        </button>
+      </MemberQuickInfoPopover>
+    )
+  }
+
   /** 渲染单条回复及其子回复 */
   function renderReply(reply: TopicReplyNode) {
     return (
       <div className="reply-item" key={reply.replyId}>
-        <div className="reply-body">
-          <div className="reply-meta">
-            {renderMemberLink(reply.userName)}
-            <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
-            <span className="time" title={reply.repliedAt || reply.time}>
-              {reply.time}
-            </span>
-            {reply.thanks > 0 && (
-              <span className="thanks" title={`${reply.thanks} 人感谢`}>
-                <Heart aria-hidden="true" />
-                {reply.thanks}
+        <div className="reply-layout">
+          {showAvatar && renderMemberAvatar(reply.userName, reply.userAvatar, 'small')}
+          <div className="reply-body">
+            <div className="reply-meta">
+              {renderMemberLink(reply.userName)}
+              <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
+              <span className="time" title={reply.repliedAt || reply.time}>
+                {reply.time}
               </span>
-            )}
-            <div className="reply-actions">
-              {renderReplyActions(reply)}
-              <span className="floor">{reply.floor}</span>
+              {reply.thanks > 0 && (
+                <span className="thanks" title={`${reply.thanks} 人感谢`}>
+                  <Heart aria-hidden="true" />
+                  {reply.thanks}
+                </span>
+              )}
+              <div className="reply-actions">
+                {renderReplyActions(reply)}
+                <span className="floor">{reply.floor}</span>
+              </div>
             </div>
+            <EnhancedHtmlContent
+              className="topic-content reply-content"
+              html={reply.content}
+              showImages={showImages}
+              onTopicPreview={onTopicPreview}
+            />
           </div>
-          <EnhancedHtmlContent
-            className="topic-content reply-content"
-            html={reply.content}
-            showImages={showImages}
-            onTopicPreview={onTopicPreview}
-          />
         </div>
         {replyViewMode === 'nested' && reply.children.length > 0 && (
           <div className="reply-children">{reply.children.map(child => renderReply(child))}</div>
@@ -472,6 +508,7 @@ export default function TopicDetailView({
       <article className={className}>
         <header className="topic-header">
           <h1>{topic.title}</h1>
+          {showAvatar && renderMemberAvatar(topic.authorName, topic.authorAvatar, 'large')}
         </header>
 
         <div className="topic-meta">

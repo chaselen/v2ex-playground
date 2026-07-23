@@ -21,6 +21,8 @@ interface TopicPreviewModalProps {
   topicId?: string
   /** 是否显示图片 */
   showImages: boolean
+  /** 是否显示头像 */
+  showAvatar: boolean
   /** 是否可回复 */
   canOperate: boolean
   /** 关闭弹窗 */
@@ -41,6 +43,7 @@ type PreviewState =
 export default function TopicPreviewModal({
   topicId,
   showImages,
+  showAvatar,
   canOperate,
   onClose,
   onPreviewTopic
@@ -104,6 +107,7 @@ export default function TopicPreviewModal({
   const topicController = useTopicDetailController({
     topic,
     showImages,
+    showAvatar,
     canOperate,
     onTopicChange: applyTopicChange,
     refresh: refreshPreviewTopic,
@@ -219,7 +223,9 @@ export default function TopicPreviewModal({
       >
         <div className={styles.body} ref={setFloatingActionsContainer}>
           <SimpleBar ref={bindSimpleBar} className={styles.scroll} autoHide={false}>
-            {(state.status === 'loading' || refreshing) && <PageSkeleton variant="topic" />}
+            {(state.status === 'loading' || refreshing) && (
+              <PageSkeleton variant="topic" showAvatar={showAvatar} />
+            )}
 
             {state.status === 'error' && !refreshing && (
               <div className={styles.state}>

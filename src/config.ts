@@ -18,4 +18,9 @@ export default class Config {
   static showImagesInTopic(): boolean {
     return vscode.workspace.getConfiguration().get<boolean>('v2ex.browse.showImagesInTopic', true)
   }
+
+  /** 查看帖子时是否显示头像 */
+  static showAvatar(): boolean {
+    return vscode.workspace.getConfiguration().get<boolean>('v2ex.browse.showAvatar', true)
+  }
 }

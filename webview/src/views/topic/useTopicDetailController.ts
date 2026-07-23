@@ -14,6 +14,8 @@ export interface TopicDetailDataAdapter {
   topic?: TopicDetail
   /** 是否显示图片 */
   showImages: boolean
+  /** 是否显示头像 */
+  showAvatar: boolean
   /** 是否可执行登录态操作 */
   canOperate: boolean
   /** 应用最新话题详情 */
@@ -30,6 +32,8 @@ export interface TopicDetailController {
   topic: TopicDetail
   /** 是否显示图片 */
   showImages: boolean
+  /** 是否显示头像 */
+  showAvatar: boolean
   /** 是否可执行登录态操作 */
   canOperate: boolean
   /** 登录 V2EX */
@@ -65,7 +69,8 @@ export interface TopicDetailController {
 export default function useTopicDetailController(
   adapter: TopicDetailDataAdapter
 ): TopicDetailController | undefined {
-  const { topic, showImages, canOperate, onTopicChange, refresh, loadReplyPage } = adapter
+  const { topic, showImages, showAvatar, canOperate, onTopicChange, refresh, loadReplyPage } =
+    adapter
   const topicRef = useRef(topic)
   const { startRequest } = useLatestRequest()
   topicRef.current = topic
@@ -112,6 +117,7 @@ export default function useTopicDetailController(
     return {
       topic,
       showImages,
+      showAvatar,
       canOperate,
       login: () => vscode.login(),
       refresh: () => applyViewResult(refresh),
@@ -138,5 +144,14 @@ export default function useTopicDetailController(
       openNode: () => vscode.openNode(topic.node),
       openTag: tag => vscode.openTag(tag)
     }
-  }, [topic, showImages, canOperate, onTopicChange, refresh, loadReplyPage, startRequest])
+  }, [
+    topic,
+    showImages,
+    showAvatar,
+    canOperate,
+    onTopicChange,
+    refresh,
+    loadReplyPage,
+    startRequest
+  ])
 }

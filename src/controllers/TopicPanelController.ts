@@ -114,7 +114,10 @@ export class TopicPanelController
       this
     )
     this.configListener = vscode.workspace.onDidChangeConfiguration(event => {
-      if (event.affectsConfiguration('v2ex.browse.showImagesInTopic')) {
+      if (
+        event.affectsConfiguration('v2ex.browse.showImagesInTopic') ||
+        event.affectsConfiguration('v2ex.browse.showAvatar')
+      ) {
         this.postViewState(this.viewState)
       }
     })
@@ -229,7 +232,8 @@ export class TopicPanelController
   private getViewState(): TopicPanelViewState {
     return {
       ...this.viewState,
-      showImages: Config.showImagesInTopic()
+      showImages: Config.showImagesInTopic(),
+      showAvatar: Config.showAvatar()
     }
   }
 

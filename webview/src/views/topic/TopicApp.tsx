@@ -28,6 +28,7 @@ export default function TopicApp() {
     showLogin: false,
     showRefresh: false,
     showImages: true,
+    showAvatar: true,
     canOperate: false
   })
   const [previewTopicId, setPreviewTopicId] = useState<string>()
@@ -35,6 +36,7 @@ export default function TopicApp() {
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
   const showImages = state.showImages !== false
+  const showAvatar = state.showAvatar !== false
 
   /** 应用当前主面板的话题详情 */
   const applyTopicChange = useCallback((nextTopic: TopicDetail) => {
@@ -62,6 +64,7 @@ export default function TopicApp() {
   const topicController = useTopicDetailController({
     topic,
     showImages,
+    showAvatar,
     canOperate: Boolean(state.canOperate),
     onTopicChange: applyTopicChange,
     refresh: refreshTopic,
@@ -87,6 +90,7 @@ export default function TopicApp() {
         showLogin: Boolean(nextState.showLogin),
         showRefresh: Boolean(nextState.showRefresh),
         showImages: nextState.showImages !== false,
+        showAvatar: nextState.showAvatar !== false,
         canOperate: Boolean(nextState.canOperate),
         status: nextState.status
       })
@@ -136,7 +140,7 @@ export default function TopicApp() {
 
   const content = (
     <main className="topic-shell" ref={topicShellRef}>
-      {state.status === 'loading' && <PageSkeleton variant="topic" />}
+      {state.status === 'loading' && <PageSkeleton variant="topic" showAvatar={showAvatar} />}
 
       {state.status === 'error' && (
         <div className="state-panel">
@@ -190,6 +194,7 @@ export default function TopicApp() {
       <TopicPreviewModal
         topicId={previewTopicId}
         showImages={showImages}
+        showAvatar={showAvatar}
         canOperate={Boolean(state.canOperate)}
         onClose={() => setPreviewTopicId(undefined)}
         onPreviewTopic={openTopicPreview}

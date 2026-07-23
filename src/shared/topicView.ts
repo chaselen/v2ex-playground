@@ -25,6 +25,8 @@ export interface TopicPanelViewState {
   showRefresh?: boolean
   /** 查看帖子时是否显示图片 */
   showImages?: boolean
+  /** 查看帖子时是否显示头像 */
+  showAvatar?: boolean
   /** 是否可执行登录态操作 */
   canOperate?: boolean
 }
