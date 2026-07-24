@@ -1,6 +1,6 @@
 import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
 import type { ComponentProps, ReactNode } from 'react'
-import { Badge } from './Badge'
+import { Badge, type BadgeVariant } from './Badge'
 import { mergeClassNames } from './utils'
 
 export interface RadioGroupProps extends ComponentProps<typeof RadioGroupPrimitive.Root> {
@@ -31,7 +31,7 @@ export interface RadioGroupItemProps extends Omit<
   /** 选项徽标 */
   badge?: ReactNode
   /** 徽标语义样式 */
-  badgeVariant?: 'default' | 'danger'
+  badgeVariant?: BadgeVariant
 }
 
 /** 单选项 */
@@ -49,13 +49,7 @@ export function RadioGroupItem({
       </RadioGroupPrimitive.Item>
       <span className="v2ex-radio-group__text">{label}</span>
       {badge !== undefined && badge !== null && (
-        <Badge
-          count={badge}
-          countClassName={mergeClassNames(
-            'v2ex-radio-group__badge',
-            `v2ex-radio-group__badge--${badgeVariant}`
-          )}
-        />
+        <Badge count={badge} countClassName="v2ex-radio-group__badge" variant={badgeVariant} />
       )}
     </label>
   )

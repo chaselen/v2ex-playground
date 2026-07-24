@@ -216,6 +216,12 @@
   white-space: nowrap;
 }
 
+.v2ex-badge__count--danger {
+  border-color: var(--v2ex-hc-border, var(--v2ex-danger-fg));
+  color: #fff;
+  background: var(--v2ex-danger-fg);
+}
+
 .v2ex-tag {
   display: inline-flex;
   align-items: center;
@@ -1140,12 +1146,6 @@
   padding: 0 3px;
   font-size: 8px;
   line-height: 1;
-}
-
-.v2ex-radio-group__badge--danger {
-  border-color: var(--v2ex-hc-border, var(--v2ex-danger-fg));
-  color: #fff;
-  background: var(--v2ex-danger-fg);
 }
 
 .v2ex-radio-group--segmented {
