@@ -46,6 +46,13 @@ export interface TopicPanelRpcCommands
   copyTopicTitleLink(payload: { topicId: string | number; title: string }): void
   /** 在浏览器中打开话题 */
   viewTopicInBrowser(topicId: string | number): void
+  /** 保存话题分享图 */
+  saveTopicShareImage(payload: { topicId: string | number; base64: string }): void
+  /** 加载分享图使用的本地资源 URI 或 data URL */
+  loadTopicShareImages(
+    imageSources: string[],
+    options?: { format?: 'resourceUri' | 'dataUrl' }
+  ): Record<string, string>
   /** 收藏话题并返回最新详情 */
   collectTopic(payload: TopicActionTarget): TopicDetail
   /** 取消收藏话题并返回最新详情 */

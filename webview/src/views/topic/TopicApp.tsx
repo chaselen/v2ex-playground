@@ -6,6 +6,8 @@ import TopicShareContextMenu from '@/components/TopicShareContextMenu'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import TopicPreviewModal from './TopicPreviewModal'
+import TopicShareDialog from './TopicShareDialog'
+import type { ReplyViewMode } from './replyTree'
 import useTopicDetailController from './useTopicDetailController'
 import type { TopicDetail } from '@extension/v2ex/types'
 import type {
@@ -32,6 +34,8 @@ export default function TopicApp() {
     canOperate: false
   })
   const [previewTopicId, setPreviewTopicId] = useState<string>()
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>('nested')
   const topicShellRef = useRef<HTMLElement>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
@@ -172,8 +176,11 @@ export default function TopicApp() {
       {state.status === 'topic' && topicController && (
         <TopicDetailView
           controller={topicController}
+          initialReplyViewMode={replyViewMode}
           scrollContainerRef={topicShellRef}
+          onReplyViewModeChange={setReplyViewMode}
           onTopicPreview={openTopicPreview}
+          onShare={() => setShowShareDialog(true)}
         />
       )}
     </main>
@@ -199,6 +206,22 @@ export default function TopicApp() {
         onClose={() => setPreviewTopicId(undefined)}
         onPreviewTopic={openTopicPreview}
       />
+      {topic && (
+        <TopicShareDialog
+          open={showShareDialog}
+          replyViewMode={replyViewMode}
+          topic={topic}
+          loadFirstReplyPage={() =>
+            topic.replyCurrentPage === 1
+              ? Promise.resolve(topic)
+              : vscode.getTopicPreview({ topicId: topic.id, replyPage: 1 })
+          }
+          loadImages={(imageSources, options) => vscode.loadTopicShareImages(imageSources, options)}
+          onCopyLink={() => vscode.copyTopicLink(topic.id)}
+          onOpenChange={setShowShareDialog}
+          onSave={base64 => vscode.saveTopicShareImage({ topicId: topic.id, base64 })}
+        />
+      )}
     </>
   )
 }

@@ -472,9 +472,9 @@ function appendTopicPreviewButton(anchor: HTMLAnchorElement, openTopicPreview: O
  * 按需加载语法高亮并处理代码块
  * @param root 根节点
  */
-function enhanceCodeBlocks(root: ParentNode) {
+export async function enhanceCodeBlocks(root: ParentNode) {
   const codeBlocks = Array.from(root.querySelectorAll<HTMLElement>('pre > code')).filter(
-    code => !code.classList.contains('hljs') && code.dataset.syntaxHighlightPending !== 'true'
+    code => !code.classList.contains('hljs')
   )
 
   if (!codeBlocks.length) {
@@ -485,13 +485,14 @@ function enhanceCodeBlocks(root: ParentNode) {
     code.dataset.syntaxHighlightPending = 'true'
   })
 
-  void import('./syntaxHighlighting')
-    .then(({ highlightCodeBlocks }) => highlightCodeBlocks(codeBlocks))
-    .catch(() => {
-      codeBlocks.forEach(code => {
-        delete code.dataset.syntaxHighlightPending
-      })
+  try {
+    const { highlightCodeBlocks } = await import('./syntaxHighlighting')
+    highlightCodeBlocks(codeBlocks)
+  } catch {
+    codeBlocks.forEach(code => {
+      delete code.dataset.syntaxHighlightPending
     })
+  }
 }
 
 /** 外部打开图标 */
@@ -592,5 +593,5 @@ export function enhanceHtmlContent(
 
   topicLinks.forEach(bindNavigationLink)
   enhanceEmbeddedVideos(root)
-  enhanceCodeBlocks(root)
+  void enhanceCodeBlocks(root)
 }

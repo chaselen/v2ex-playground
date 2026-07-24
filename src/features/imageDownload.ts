@@ -5,6 +5,7 @@ import http from '@/core/http'
 import { logger } from '@/core/logger'
 import { normalizeRemoteImageSrc } from '@/core/remoteImageCache'
 import G from '@/global'
+import { showSavedFileNotification } from '@/features/savedFileNotification'
 
 /** 上次图片保存目录状态 key */
 const LAST_IMAGE_DOWNLOAD_DIRECTORY_KEY = 'v2ex.imageDownload.lastDirectory'
@@ -49,14 +50,7 @@ export async function downloadImage(imageSrc: string) {
     } catch (err) {
       logger.warn('记录图片保存目录失败', err)
     }
-    const action = await vscode.window.showInformationMessage(
-      `图片已保存：${getUriDisplayPath(destination)}`,
-      '查看'
-    )
-    if (action === '查看') {
-      const command = destination.scheme === 'file' ? 'revealFileInOS' : 'revealInExplorer'
-      await vscode.commands.executeCommand(command, destination)
-    }
+    await showSavedFileNotification(destination, '图片已保存')
   } catch (err) {
     if (isCanceledError(err)) {
       return
@@ -89,14 +83,6 @@ function getDefaultSaveUri(filename: string) {
 function rememberSaveDirectory(destination: Uri) {
   const directory = Uri.joinPath(destination, '..')
   return G.context.globalState.update(LAST_IMAGE_DOWNLOAD_DIRECTORY_KEY, directory.toString())
-}
-
-/**
- * 获取适合通知展示的 URI 路径
- * @param uri 文件 URI
- */
-function getUriDisplayPath(uri: Uri) {
-  return uri.scheme === 'file' ? uri.fsPath : uri.path
 }
 
 /**

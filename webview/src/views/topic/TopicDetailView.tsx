@@ -9,6 +9,7 @@ import {
   Inbox,
   RefreshCw,
   Reply,
+  Share2,
   Tag,
   UserRound
 } from 'lucide-react'
@@ -32,13 +33,10 @@ import ReplyComposer, { type ReplyComposerHandle } from './ReplyComposer'
 import MemberQuickInfoPopover from './MemberQuickInfoPopover'
 import ReplyLoginPrompt from './ReplyLoginPrompt'
 import { FloatingActions, floatingActionStyles } from './FloatingActions'
-import { buildReplyTree, type TopicReplyNode } from './replyTree'
+import { buildReplyTree, type ReplyViewMode, type TopicReplyNode } from './replyTree'
 import type { OpenTopicPreview } from '@/core/contentEnhancement'
 import type { TopicReply } from '@extension/v2ex/types'
 import type { TopicDetailController } from './useTopicDetailController'
-
-/** 回复列表展示模式 */
-export type ReplyViewMode = 'flat' | 'nested'
 
 /** 话题详情视图属性 */
 export interface TopicDetailViewProps {
@@ -62,8 +60,12 @@ export interface TopicDetailViewProps {
   showReplyActions?: boolean
   /** 初始回复展示模式 */
   initialReplyViewMode?: ReplyViewMode
+  /** 回复展示模式变化 */
+  onReplyViewModeChange?: (mode: ReplyViewMode) => void
   /** 打开站内话题预览 */
   onTopicPreview: OpenTopicPreview
+  /** 打开话题分享图 */
+  onShare?: () => void
 }
 
 /**
@@ -80,7 +82,9 @@ export default function TopicDetailView({
   showReplyViewSwitch = true,
   showReplyActions = true,
   initialReplyViewMode = 'nested',
-  onTopicPreview
+  onReplyViewModeChange,
+  onTopicPreview,
+  onShare
 }: TopicDetailViewProps) {
   const { topic, showImages, showAvatar, canOperate } = controller
   const [loadingReplyPage, setLoadingReplyPage] = useState(false)
@@ -99,6 +103,18 @@ export default function TopicDetailView({
   const floatingActions = showFloatingActions ? (
     <FloatingActions contained={Boolean(floatingActionsContainer)}>
       {renderTopicActionButtons('floating')}
+      {onShare && (
+        <Tooltip className={floatingActionStyles.tooltip} content="生成分享图" side="left">
+          <Button
+            aria-label="生成分享图"
+            className={floatingActionStyles.button}
+            icon={<Share2 aria-hidden="true" />}
+            size="large"
+            variant="ghost"
+            onClick={onShare}
+          />
+        </Tooltip>
+      )}
       <Tooltip className={floatingActionStyles.tooltip} content="滚动到顶部" side="left">
         <Button
           aria-label="滚动到顶部"
@@ -198,6 +214,12 @@ export default function TopicDetailView({
   /** 快捷回复楼层 */
   function floorReply(reply: TopicReply) {
     replyComposerRef.current?.setContent(`@${reply.userName} #${reply.floor} `)
+  }
+
+  /** 切换回复列表展示模式 */
+  function changeReplyViewMode(mode: ReplyViewMode) {
+    setReplyViewMode(mode)
+    onReplyViewModeChange?.(mode)
   }
 
   /** 渲染用户链接和快速信息 */
@@ -604,7 +626,7 @@ export default function TopicDetailView({
                     className="reply-view-switch"
                     variant="segmented"
                     value={replyViewMode}
-                    onValueChange={value => setReplyViewMode(value as ReplyViewMode)}
+                    onValueChange={value => changeReplyViewMode(value as ReplyViewMode)}
                   >
                     <RadioGroupItem value="flat" label="普通列表" />
                     <RadioGroupItem

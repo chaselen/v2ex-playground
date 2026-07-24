@@ -37,6 +37,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - [话题测试样本](docs/test-topics.md) — 按空状态、富文本、代码块、附言、分页和回复树分类的公开测试帖子
 - [内容预览 HTML 契约](docs/reply-preview-html.md) — 原生与 Markdown 预览接口的真实 HTML 输出、过滤规则和渲染约束
 - [站内帖子预览](docs/topic-preview.md) — 站内链接预览按钮、统一话题视图、状态隔离和写操作约束
+- [话题分享图](docs/topic-share-image.md) — 长图渲染、本地图片缓存、Webview 资源授权和回退规则
 - [Webview RPC 通信](docs/webview-rpc.md) — 消息协议、约定式控制器、事件推送和安全边界
 - [Webview UI 与主题](docs/webview-ui.md) — Radix 原语、Lucide 图标、VS Code 语义变量和组件扩展约束
 - 修改上述文档涉及的代码逻辑时，必须同步更新对应文档；新增需要长期维护的关键实现规则或设计取舍时，应在 `docs/` 中补充文档，并在此处添加引用
@@ -65,6 +66,8 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 ## 开发环境与格式
 
 项目要求 Node >= 22.18.0。执行 Node、npm 或 npx 命令前需确认当前版本符合 `.nvmrc`；使用 fnm 时可通过 `fnm exec --using 22.18.0 <command>` 确保命令在项目要求的版本下运行。
+
+项目依赖统一放在 `devDependencies` 中，不新增 `dependencies`；扩展侧与 Webview 运行时代码依赖均由 esbuild 或 Vite 打包进产物，不随扩展分发 `node_modules`。
 
 `.oxfmtrc.json` 使用 2 空格、单引号、无分号、无尾随逗号。修改文件后必须对改动文件运行增量格式化。
 

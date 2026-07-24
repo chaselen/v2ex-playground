@@ -1,5 +1,8 @@
 import type { TopicReply } from '../../../../src/v2ex/types'
 
+/** 回复列表展示模式 */
+export type ReplyViewMode = 'flat' | 'nested'
+
 /** 带子回复的帖子回复节点 */
 export interface TopicReplyNode extends TopicReply {
   // TODO: 为父子关系增加置信度与匹配来源，路线参见 docs/nested-replies.md

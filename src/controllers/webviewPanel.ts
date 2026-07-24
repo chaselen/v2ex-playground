@@ -31,6 +31,8 @@ interface V2exWebviewPanelOptions {
   resourceIcon?: ResourcePanelIcon
   /** 是否使用远程图片兜底图标 */
   useDefaultIcon?: boolean
+  /** 额外允许 Webview 加载的本地资源目录 */
+  additionalLocalResourceRoots?: vscode.Uri[]
 }
 
 /**
@@ -58,7 +60,8 @@ export function createV2exWebviewPanel(options: V2exWebviewPanelOptions): vscode
       enableFindWidget: options.enableFindWidget,
       localResourceRoots: [
         Uri.joinPath(G.context.extensionUri, 'html'),
-        Uri.joinPath(G.context.extensionUri, 'resources')
+        Uri.joinPath(G.context.extensionUri, 'resources'),
+        ...(options.additionalLocalResourceRoots || [])
       ]
     }
   )

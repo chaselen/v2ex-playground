@@ -12,6 +12,11 @@ import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewP
 import { checkImgurConnectivity } from '@/features/connectivityCheck'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import {
+  getTopicShareImageCacheDir,
+  loadTopicShareImages,
+  saveTopicShareImage
+} from '@/features/topicShareImage'
+import {
   WebviewCommonController,
   type WebviewNavigationDeps
 } from '@/controllers/WebviewCommonController'
@@ -107,7 +112,8 @@ export class TopicPanelController
       title: input.title || `/t/${topicId}`,
       htmlEntry: 'topic.html',
       enableFindWidget: true,
-      useDefaultIcon: true
+      useDefaultIcon: true,
+      additionalLocalResourceRoots: [getTopicShareImageCacheDir()]
     })
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
       this.panel.webview,
@@ -270,6 +276,19 @@ export class TopicPanelController
   /** 在浏览器中打开话题 */
   rpc_viewTopicInBrowser(topicId: string | number) {
     viewTopicInBrowser(topicId)
+  }
+
+  /** 保存话题分享图 */
+  rpc_saveTopicShareImage(message: { topicId: string | number; base64: string }) {
+    void saveTopicShareImage(message)
+  }
+
+  /** 加载分享图使用的本地资源 URI 或 data URL */
+  rpc_loadTopicShareImages(
+    imageSources: string[],
+    options?: { format?: 'resourceUri' | 'dataUrl' }
+  ) {
+    return loadTopicShareImages(imageSources, this.panel.webview, options)
   }
 
   /** 收藏话题 */
