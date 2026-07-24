@@ -3,7 +3,7 @@
   "icon": "resources/icon.png",
   "displayName": "V2EX Playground",
   "description": "V2EX 游乐场，上班时用来放（mō）松（yú）的插件",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "publisher": "chaselen",
   "repository": {
     "type": "git",
@@ -164,9 +164,9 @@
     "format:check": "oxfmt --check",
     "preview:theme": "vite --config webview/vite.config.ts --open /theme.html",
     "test": "vitest run --config vitest.config.ts",
-    "vscode:package": "npx @vscode/vsce@3.9.1 package",
+    "vscode:package": "npx @vscode/vsce@3.9.2 package",
     "vscode:prepublish": "npm run check && npm run build",
-    "vscode:publish": "npx @vscode/vsce@3.9.1 publish",
+    "vscode:publish": "npx @vscode/vsce@3.9.2 publish",
     "watch": "npm run watch:webview & npm run watch:extension & npm run check:webview:watch & npm run check:extension:watch",
     "watch:extension": "node esbuild.config.ts --watch",
     "watch:webview": "vite build --watch --config webview/vite.config.ts"
