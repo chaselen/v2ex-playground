@@ -57,7 +57,7 @@ export function ToastViewport() {
   }
 
   return (
-    <ToastPrimitive.Provider duration={4000} swipeDirection="right">
+    <ToastPrimitive.Provider duration={3000} swipeDirection="right">
       {items.map(item => {
         const Icon = getToastIcon(item.variant)
         return (
