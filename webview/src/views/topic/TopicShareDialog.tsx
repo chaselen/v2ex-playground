@@ -370,7 +370,9 @@ export default function TopicShareDialog({
               </span>
             )}
           </span>
-          <span className={`floor ${styles.cardReplyFloor}`}>{reply.floor}</span>
+          <div className="reply-actions">
+            <span className="floor">{reply.floor}</span>
+          </div>
         </header>
         <EnhancedHtmlContent
           className={`topic-content reply-content ${styles.cardContent}`}
