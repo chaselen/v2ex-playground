@@ -386,11 +386,13 @@ function syncImageVisibility(
 
   if (showImages) {
     img.hidden = false
+    img.classList.remove('hidden-image-source')
     existingButton?.remove()
     return
   }
 
   img.hidden = true
+  img.classList.add('hidden-image-source')
 
   if (existingButton) {
     return
