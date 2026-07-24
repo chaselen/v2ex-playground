@@ -1,10 +1,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Check, Copy, Download, Heart } from 'lucide-react'
+import { Check, Copy, Download, Heart, Inbox } from 'lucide-react'
 import QRCode from 'qrcode'
 import SimpleBar from 'simplebar-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import UserBadge from '@/components/UserBadge'
-import { Badge, Button, Dialog, RadioGroup, RadioGroupItem, Spinner, Toast } from '@/components/ui'
+import {
+  Badge,
+  Button,
+  Dialog,
+  Empty,
+  RadioGroup,
+  RadioGroupItem,
+  Spinner,
+  Toast
+} from '@/components/ui'
 import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
 import { buildReplyTree, type ReplyViewMode, type TopicReplyNode } from './replyTree'
@@ -78,6 +87,7 @@ export default function TopicShareDialog({
   const [copyingLink, setCopyingLink] = useState(false)
   const generating = saving || copying
   const topicLink = `https://www.v2ex.com/t/${topic.id}`
+  const hasTopicContent = Boolean(topic.content)
   const shareReplies = useMemo(() => {
     if (!firstPageReplies) {
       return []
@@ -429,10 +439,16 @@ export default function TopicShareDialog({
                 </div>
               </header>
 
-              <EnhancedHtmlContent
-                className={`topic-content ${styles.cardContent}`}
-                html={embedHtmlImages(topic.content, embeddedImages)}
-              />
+              {hasTopicContent ? (
+                <EnhancedHtmlContent
+                  className={`topic-content ${styles.cardContent}`}
+                  html={embedHtmlImages(topic.content, embeddedImages)}
+                />
+              ) : (
+                <section className={`topic-empty-content ${styles.cardEmptyContent}`}>
+                  <Empty title="正文无内容" icon={<Inbox aria-hidden="true" />} />
+                </section>
+              )}
 
               {showAppends && topic.appends.length > 0 && (
                 <div className={styles.cardAppends}>
