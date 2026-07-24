@@ -67,10 +67,18 @@
 }
 
 .cardBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: var(--v2ex-muted-fg);
   font-size: 28px;
   font-weight: 750;
   letter-spacing: 0.04em;
+
+  img {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .cardMeta,
@@ -138,6 +146,11 @@
     color: var(--v2ex-content-fg);
     font-size: 16px;
     line-height: 1.4;
+  }
+
+  > .cardReply:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
   }
 }
 
@@ -261,6 +274,12 @@
   gap: 18px;
   padding: 24px;
   border-left: 1px solid var(--v2ex-border);
+}
+
+.replyOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .replyViewModeField {

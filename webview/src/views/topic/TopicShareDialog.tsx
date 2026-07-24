@@ -9,6 +9,7 @@ import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
 import { buildReplyTree, type ReplyViewMode, type TopicReplyNode } from './replyTree'
 import styles from './TopicShareDialog.module.scss'
+import v2exIcon from '../../../../resources/favicon.png'
 import type { TopicDetail, TopicReply } from '@extension/v2ex/types'
 
 /** 远程图片无法嵌入时使用的透明占位图 */
@@ -401,7 +402,10 @@ export default function TopicShareDialog({
           <div className={styles.previewContent}>
             <article className={styles.card} ref={cardRef}>
               <header className={styles.cardHeader}>
-                <div className={styles.cardBrand}>V2EX</div>
+                <div className={styles.cardBrand}>
+                  <img src={v2exIcon} alt="" />
+                  <span>V2EX</span>
+                </div>
                 <h1>{topic.title}</h1>
                 <div className={styles.cardMeta}>
                   <span className={styles.cardAuthor}>
@@ -499,37 +503,39 @@ export default function TopicShareDialog({
               显示作者附言
             </label>
           )}
-          <label className={styles.checkbox}>
-            <input
-              type="checkbox"
-              checked={showReplies}
-              disabled={loadingReplies}
-              onChange={event => void toggleReplies(event.target.checked)}
-            />
-            <span className={styles.checkboxMark}>
-              {loadingReplies ? (
-                <Spinner aria-label="加载第一页回复" />
-              ) : (
-                <Check aria-hidden="true" />
-              )}
-            </span>
-            显示回复（第一页）
-          </label>
-          {showReplies && (
-            <div className={styles.replyViewModeField}>
-              <span>回复列表模式</span>
-              <RadioGroup
-                aria-label="分享图回复列表模式"
-                className={styles.replyViewModeControl}
-                variant="segmented"
-                value={shareReplyViewMode}
-                onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}
-              >
-                <RadioGroupItem value="flat" label="普通列表" />
-                <RadioGroupItem value="nested" label="楼中楼" />
-              </RadioGroup>
-            </div>
-          )}
+          <div className={styles.replyOptions}>
+            <label className={styles.checkbox}>
+              <input
+                type="checkbox"
+                checked={showReplies}
+                disabled={loadingReplies}
+                onChange={event => void toggleReplies(event.target.checked)}
+              />
+              <span className={styles.checkboxMark}>
+                {loadingReplies ? (
+                  <Spinner aria-label="加载第一页回复" />
+                ) : (
+                  <Check aria-hidden="true" />
+                )}
+              </span>
+              显示回复（第一页）
+            </label>
+            {showReplies && (
+              <div className={styles.replyViewModeField}>
+                <span>回复列表模式</span>
+                <RadioGroup
+                  aria-label="分享图回复列表模式"
+                  className={styles.replyViewModeControl}
+                  variant="segmented"
+                  value={shareReplyViewMode}
+                  onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}
+                >
+                  <RadioGroupItem value="flat" label="普通列表" />
+                  <RadioGroupItem value="nested" label="楼中楼" />
+                </RadioGroup>
+              </div>
+            )}
+          </div>
           <div className={styles.actions}>
             <Button
               disabled={loadingReplies || generating}
