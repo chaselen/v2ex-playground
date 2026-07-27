@@ -281,6 +281,14 @@
   border-left: 1px solid var(--v2ex-border);
 }
 
+.controlsTitle {
+  margin: 0;
+  color: var(--v2ex-content-fg);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .replyOptions {
   display: flex;
   flex-direction: column;

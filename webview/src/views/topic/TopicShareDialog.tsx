@@ -490,6 +490,7 @@ export default function TopicShareDialog({
         </SimpleBar>
 
         <aside className={styles.controls}>
+          <h2 className={styles.controlsTitle}>分享选项</h2>
           <div className={styles.linkField}>
             <input aria-label="话题链接" readOnly value={topicLink} />
             <Button
@@ -526,39 +527,41 @@ export default function TopicShareDialog({
               显示作者附言
             </label>
           )}
-          <div className={styles.replyOptions}>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={showReplies}
-                disabled={loadingReplies}
-                onChange={event => void toggleReplies(event.target.checked)}
-              />
-              <span className={styles.checkboxMark}>
-                {loadingReplies ? (
-                  <Spinner aria-label="加载第一页回复" />
-                ) : (
-                  <Check aria-hidden="true" />
-                )}
-              </span>
-              显示回复（第一页）
-            </label>
-            {showReplies && (
-              <div className={styles.replyViewModeField}>
-                <span>回复列表模式</span>
-                <RadioGroup
-                  aria-label="分享图回复列表模式"
-                  className={styles.replyViewModeControl}
-                  variant="segmented"
-                  value={shareReplyViewMode}
-                  onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}
-                >
-                  <RadioGroupItem value="flat" label="普通列表" />
-                  <RadioGroupItem value="nested" label="楼中楼" />
-                </RadioGroup>
-              </div>
-            )}
-          </div>
+          {topic.replyCount > 0 && (
+            <div className={styles.replyOptions}>
+              <label className={styles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={showReplies}
+                  disabled={loadingReplies}
+                  onChange={event => void toggleReplies(event.target.checked)}
+                />
+                <span className={styles.checkboxMark}>
+                  {loadingReplies ? (
+                    <Spinner aria-label="加载第一页回复" />
+                  ) : (
+                    <Check aria-hidden="true" />
+                  )}
+                </span>
+                显示回复（第一页）
+              </label>
+              {showReplies && (
+                <div className={styles.replyViewModeField}>
+                  <span>回复列表模式</span>
+                  <RadioGroup
+                    aria-label="分享图回复列表模式"
+                    className={styles.replyViewModeControl}
+                    variant="segmented"
+                    value={shareReplyViewMode}
+                    onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}
+                  >
+                    <RadioGroupItem value="flat" label="普通列表" />
+                    <RadioGroupItem value="nested" label="楼中楼" />
+                  </RadioGroup>
+                </div>
+              )}
+            </div>
+          )}
           <div className={styles.actions}>
             <Button
               disabled={loadingReplies || generating}
