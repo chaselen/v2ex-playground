@@ -72,6 +72,8 @@ export interface ExampleWebviewEvents {
 
 `WebviewRpcClient<Commands>` 会将契约中的所有命令转换为异步客户端方法，因此 `void` 命令在 Webview 侧也是 `Promise<void>`，其他返回值会自动使用 `Awaited` 展开。
 
+RPC 客户端在发送前移除参数数组末尾的 `undefined`，使省略的可选参数在扩展侧仍保持 JavaScript 默认参数语义。踩坑：部分宿主会将消息参数数组中的 `undefined` 序列化为 `null`，调用方包装可选参数时不能依赖宿主保留 `undefined`。
+
 ## 扩展侧实现
 
 Controller 或 Provider 实现 `WebviewRpcController<Commands>`。命令 `refresh` 对应公开方法 `rpc_refresh`：

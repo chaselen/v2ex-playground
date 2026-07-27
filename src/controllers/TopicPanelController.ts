@@ -286,7 +286,7 @@ export class TopicPanelController
   /** 加载分享图使用的本地资源 URI 或 data URL */
   rpc_loadTopicShareImages(
     imageSources: string[],
-    options?: { format?: 'resourceUri' | 'dataUrl' }
+    options?: { format?: 'resourceUri' | 'dataUrl' } | null
   ) {
     return loadTopicShareImages(imageSources, this.panel.webview, options)
   }

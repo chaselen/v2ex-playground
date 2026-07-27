@@ -74,10 +74,22 @@ export function createVsCodeClient<Commands, Events = Record<string, never>>(): 
         if (command === 'then' || typeof command === 'symbol') {
           return undefined
         }
-        return (...args: unknown[]) => request(command, args)
+        return (...args: unknown[]) => request(command, trimTrailingUndefined(args))
       }
     }
   ) as VsCodeClient<Commands, Events>
+}
+
+/**
+ * 移除末尾未传的可选参数
+ * @param args 请求参数
+ */
+function trimTrailingUndefined(args: unknown[]) {
+  let length = args.length
+  while (length > 0 && args[length - 1] === undefined) {
+    length -= 1
+  }
+  return length === args.length ? args : args.slice(0, length)
 }
 
 /**

@@ -49,7 +49,7 @@ export function getTopicShareImageCacheDir() {
 export async function loadTopicShareImages(
   imageSources: string[],
   webview: vscode.Webview,
-  options: LoadTopicShareImagesOptions = {}
+  options: LoadTopicShareImagesOptions | null = {}
 ) {
   await cleanupTopicShareImageCache()
   const sources = Array.from(new Set(imageSources.map(source => source.trim()).filter(Boolean)))
@@ -65,7 +65,7 @@ export async function loadTopicShareImages(
         const imageUri = await loadTopicShareImage(normalizedSrc)
         // 默认仅返回短资源 URI，data URL 只用于 Webview 无法读取资源时的回退
         const displaySrc =
-          options.format === 'dataUrl'
+          options?.format === 'dataUrl'
             ? await readImageDataUrl(imageUri)
             : webview.asWebviewUri(imageUri).toString()
         return [imageSrc, displaySrc] as const

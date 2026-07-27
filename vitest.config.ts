@@ -7,7 +7,8 @@ export default defineConfig(({ mode }) => {
   return {
     resolve: {
       alias: {
-        '@': new URL('./src', import.meta.url).pathname
+        '@': new URL('./src', import.meta.url).pathname,
+        '@extension': new URL('./src', import.meta.url).pathname
       }
     },
     test: {

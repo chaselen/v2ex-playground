@@ -65,6 +65,22 @@ describe('loadTopicShareImages', () => {
     })
   })
 
+  test('uses the default resource URI format when RPC serializes options as null', async () => {
+    const webview = {
+      asWebviewUri: vi.fn(() => ({ toString: () => 'vscode-webview://share/test.png' }))
+    }
+    const result = await loadTopicShareImages(
+      ['https://cdn.v2ex.com/avatar/test.png'],
+      webview as never,
+      null
+    )
+
+    expect(result).toEqual({
+      'https://cdn.v2ex.com/avatar/test.png': 'vscode-webview://share/test.png'
+    })
+    expect(mocks.loggerWarn).not.toHaveBeenCalled()
+  })
+
   test('returns a data URL from the same cache file when requested as fallback', async () => {
     const result = await loadTopicShareImages(
       ['https://cdn.v2ex.com/avatar/fallback.png'],
