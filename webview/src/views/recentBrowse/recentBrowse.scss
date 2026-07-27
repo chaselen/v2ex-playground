@@ -115,7 +115,10 @@
   min-width: 0;
 }
 
-.recent-topic-published {
+.recent-topic-read-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   max-width: 190px;
   overflow: hidden;
   color: var(--v2ex-muted-fg);
@@ -123,6 +126,18 @@
   line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  svg {
+    flex: none;
+    width: 13px;
+    height: 13px;
+  }
 }
 
 .recent-topic-delete-trigger {
@@ -178,18 +193,6 @@
 
 .recent-topic-node {
   flex: none;
-}
-
-.recent-topic-read-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-
-  svg {
-    flex: none;
-    width: 13px;
-    height: 13px;
-  }
 }
 
 .recent-state {

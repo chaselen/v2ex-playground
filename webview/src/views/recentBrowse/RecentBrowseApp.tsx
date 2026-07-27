@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { History, Inbox, RefreshCw, Search, Trash2, UserRound } from 'lucide-react'
-import dayjs from 'dayjs'
+import { Eye, Inbox, RefreshCw, Search, Trash2, UserRound } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import NodeButton from '@/components/NodeButton'
@@ -13,6 +12,7 @@ import type {
   RecentBrowsePanelWebviewEvents,
   RecentBrowseTopic
 } from '@extension/shared/webview'
+import { formatPublishedTime, formatReadTime, readTimeDateTime } from './recentBrowseTime'
 
 /** 最近浏览面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<RecentBrowsePanelRpcCommands, RecentBrowsePanelWebviewEvents>()
@@ -212,11 +212,14 @@ export default function RecentBrowseApp() {
           />
         </span>
         <span className="recent-topic-end">
-          {!!topic.publishedAt && (
-            <time className="recent-topic-published" title={topic.publishedAt}>
-              {topic.publishedAt}
-            </time>
-          )}
+          <time
+            className="recent-topic-read-time"
+            dateTime={readTimeDateTime(topic.readAt)}
+            title={`浏览时间：${formatReadTime(topic.readAt)}`}
+          >
+            <Eye aria-hidden="true" />
+            <span>{formatReadTime(topic.readAt)}</span>
+          </time>
         </span>
         <span className="recent-topic-delete-trigger">
           <ConfirmPopover
@@ -244,6 +247,11 @@ export default function RecentBrowseApp() {
             {title}
           </a>
           <span className="recent-topic-meta">
+            {!!nodeTitle && (
+              <NodeButton className="recent-topic-node" onClick={event => openNode(event, topic)}>
+                {nodeTitle}
+              </NodeButton>
+            )}
             {!!authorName && (
               <a
                 className="recent-topic-author"
@@ -253,15 +261,11 @@ export default function RecentBrowseApp() {
                 {authorName}
               </a>
             )}
-            {!!nodeTitle && (
-              <NodeButton className="recent-topic-node" onClick={event => openNode(event, topic)}>
-                {nodeTitle}
-              </NodeButton>
+            {!!topic.publishedAt && (
+              <time className="recent-topic-published" title={`发布时间：${topic.publishedAt}`}>
+                {formatPublishedTime(topic.publishedAt)}
+              </time>
             )}
-            <time className="recent-topic-read-time" title={formatReadTime(topic.readAt)}>
-              <History aria-hidden="true" />
-              <span>{formatReadTime(topic.readAt)}</span>
-            </time>
           </span>
         </span>
       </article>
@@ -373,16 +377,4 @@ export default function RecentBrowseApp() {
       </main>
     </SimpleBar>
   )
-}
-
-/**
- * 格式化最近浏览时间
- * @param timestamp 时间戳
- */
-function formatReadTime(timestamp: number): string {
-  if (!timestamp) {
-    return ''
-  }
-
-  return dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
 }
