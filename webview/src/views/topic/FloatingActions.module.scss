@@ -50,10 +50,16 @@
   }
 }
 
-.buttonActive {
+.button.buttonActive {
   border-color: var(--v2ex-link-soft-border);
   background: var(--v2ex-link-soft-fill);
   color: var(--v2ex-link-fg);
+
+  &:hover:not(:disabled) {
+    border-color: var(--v2ex-link-soft-border-strong);
+    background: var(--v2ex-link-soft-hover-bg);
+    color: var(--v2ex-link-fg);
+  }
 }
 
 @media (max-width: 480px) {
