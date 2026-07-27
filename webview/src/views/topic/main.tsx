@@ -9,7 +9,7 @@ import './topic.scss'
 
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
-    <ImagePreviewProvider>
+    <ImagePreviewProvider showEmoticonFilter>
       <App />
     </ImagePreviewProvider>
     <ToastViewport />

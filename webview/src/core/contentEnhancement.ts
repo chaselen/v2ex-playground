@@ -180,15 +180,26 @@ function normalizeImagePreviewSrc(src: string): string {
   }
 }
 
-/**
- * 收集当前页面中可预览的图片地址
- */
-function getImagePreviewSrcList(): string[] {
+/** 当前页面可预览的图片集合 */
+interface ImagePreviewSrcCollection {
+  /** 图片表情地址 */
+  emoticonSrcList: string[]
+  /** 全部图片地址 */
+  srcList: string[]
+}
+
+/** 收集当前页面中可预览的图片地址 */
+function getImagePreviewSrcCollection(): ImagePreviewSrcCollection {
   const srcList: string[] = []
+  const emoticonSrcList: string[] = []
 
   document.querySelectorAll<HTMLElement>('.image-preview-target').forEach(element => {
     if (element instanceof HTMLImageElement) {
-      srcList.push(getImagePreviewSrc(element))
+      const src = getImagePreviewSrc(element)
+      srcList.push(src)
+      if (element.classList.contains('v2ex-emoticon-image')) {
+        emoticonSrcList.push(src)
+      }
       return
     }
 
@@ -197,7 +208,10 @@ function getImagePreviewSrcList(): string[] {
     }
   })
 
-  return Array.from(new Set(srcList.filter(Boolean)))
+  return {
+    emoticonSrcList: Array.from(new Set(emoticonSrcList.filter(Boolean))),
+    srcList: Array.from(new Set(srcList.filter(Boolean)))
+  }
 }
 
 /**
@@ -217,9 +231,11 @@ function openImage(
   }
 
   const normalizedSrc = normalizeImagePreviewSrc(src)
+  const { emoticonSrcList, srcList } = getImagePreviewSrcCollection()
   openImagePreview({
+    emoticonSrcList,
     src: normalizedSrc,
-    srcList: getImagePreviewSrcList()
+    srcList
   })
 }
 

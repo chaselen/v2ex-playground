@@ -46,6 +46,8 @@ export interface ImagePreviewProps {
   open: boolean
   /** 图片地址列表 */
   srcList: string[]
+  /** 工具栏开头的扩展内容 */
+  toolbarStart?: ReactNode
   /** 工具栏末尾的扩展内容 */
   toolbarExtra?: ReactNode
   /** 当前图片索引变化 */
@@ -61,6 +63,7 @@ export function ImagePreview({
   currentIndex,
   open,
   srcList,
+  toolbarStart,
   toolbarExtra,
   onCurrentIndexChange,
   onOpenChange
@@ -265,6 +268,12 @@ export function ImagePreview({
           </div>
 
           <div className="v2ex-image-preview__toolbar" aria-label="图片预览工具">
+            {toolbarStart && (
+              <>
+                {toolbarStart}
+                <span className="v2ex-image-preview__separator" />
+              </>
+            )}
             {imageCount > 1 && (
               <span className="v2ex-image-preview__counter">
                 {currentIndex + 1} / {imageCount}

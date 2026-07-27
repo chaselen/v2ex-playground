@@ -1957,10 +1957,22 @@
 }
 
 .v2ex-image-preview__separator {
+  flex: none;
   width: 1px;
   height: 18px;
   margin: 0 3px;
   background: rgb(255 255 255 / 28%);
+}
+
+.v2ex-image-preview__filter[aria-pressed='true'] {
+  color: #fff;
+  background: rgb(255 255 255 / 24%);
+}
+
+@media (max-width: 520px) {
+  .v2ex-image-preview__filter .v2ex-button__label {
+    display: none;
+  }
 }
 
 @media (max-width: 420px) {
