@@ -403,12 +403,10 @@ export default function TopicDetailView({
 
     return (
       <>
-        {isFloating ? (
+        {isFloating && (
           <Tooltip className={floatingTooltipClass} content="刷新页面" side="left">
             {refreshButton}
           </Tooltip>
-        ) : (
-          refreshButton
         )}
 
         {canOperate && (
@@ -429,6 +427,7 @@ export default function TopicDetailView({
               ) : (
                 <Button
                   aria-label="加入收藏"
+                  icon={<BookmarkPlus aria-hidden="true" />}
                   loading={collecting}
                   size={buttonSize}
                   variant="subtle"
@@ -455,6 +454,7 @@ export default function TopicDetailView({
             ) : (
               <Button
                 aria-label="取消收藏"
+                icon={<Bookmark aria-hidden="true" fill="currentColor" />}
                 loading={cancelingCollect}
                 size={buttonSize}
                 variant="subtle"
@@ -486,6 +486,7 @@ export default function TopicDetailView({
                   ) : (
                     <Button
                       aria-label="感谢主题创建者"
+                      icon={<Heart aria-hidden="true" />}
                       loading={thankingTopic}
                       size={buttonSize}
                       variant="subtle"
@@ -581,9 +582,20 @@ export default function TopicDetailView({
           </section>
         )}
 
-        {showTopicToolbar && canOperate && (
+        {showTopicToolbar && (canOperate || onShare) && (
           <div className="topic-toolbar">
             {renderTopicActionButtons('toolbar')}
+            {onShare && (
+              <Button
+                aria-label="生成分享图"
+                icon={<Share2 aria-hidden="true" />}
+                size="small"
+                variant="subtle"
+                onClick={onShare}
+              >
+                分享
+              </Button>
+            )}
             <span className="toolbar-count">
               {topic.visitCount} 次点击
               {!!topic.collectCount && ` · ${topic.collectCount} 人收藏`}
