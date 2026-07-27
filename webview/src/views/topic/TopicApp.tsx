@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import SimpleBar from 'simplebar-react'
+import type SimpleBarCore from 'simplebar-core'
 import { Alert, Button, Toast } from '@/components/ui'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import PageSkeleton from '@/components/PageSkeleton'
@@ -36,7 +38,7 @@ export default function TopicApp() {
   const [previewTopicId, setPreviewTopicId] = useState<string>()
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>('nested')
-  const topicShellRef = useRef<HTMLElement>(null)
+  const topicScrollRef = useRef<HTMLElement | null>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
   const showImages = state.showImages !== false
@@ -142,8 +144,13 @@ export default function TopicApp() {
     return () => document.removeEventListener('error', onImageError, true)
   }, [])
 
+  /** 绑定 SimpleBar 实例，并同步真正的滚动容器 */
+  function bindSimpleBar(instance: SimpleBarCore | null) {
+    topicScrollRef.current = instance?.getScrollElement() ?? null
+  }
+
   const content = (
-    <main className="topic-shell" ref={topicShellRef}>
+    <SimpleBar ref={bindSimpleBar} className="topic-shell" role="main" autoHide={false}>
       {state.status === 'loading' && <PageSkeleton variant="topic" showAvatar={showAvatar} />}
 
       {state.status === 'error' && (
@@ -177,13 +184,13 @@ export default function TopicApp() {
         <TopicDetailView
           controller={topicController}
           initialReplyViewMode={replyViewMode}
-          scrollContainerRef={topicShellRef}
+          scrollContainerRef={topicScrollRef}
           onReplyViewModeChange={setReplyViewMode}
           onTopicPreview={openTopicPreview}
           onShare={() => setShowShareDialog(true)}
         />
       )}
-    </main>
+    </SimpleBar>
   )
 
   return (

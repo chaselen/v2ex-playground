@@ -8,6 +8,11 @@
   margin: 0 auto;
 }
 
+.topic {
+  width: min(100%, 800px);
+  padding: 24px;
+}
+
 .balance {
   width: min(100%, 1100px);
 }
@@ -552,7 +557,6 @@
 }
 
 @media (max-width: 520px) {
-  .topic,
   .member {
     padding: 14px;
   }
@@ -575,6 +579,18 @@
     grid-template-columns: 1fr 1.4fr 0.7fr;
     gap: 8px;
     padding-inline: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topic {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .balance {
+    padding: 8px;
   }
 }
 

@@ -24,6 +24,13 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - 领域组件可封装固定含义的共享控件（如 `UserBadge`）；仅改名或透传属性的包装层没有必要
 - 命令式通知统一使用 `Toast.info`、`Toast.success`、`Toast.warning` 和 `Toast.error`，每个使用通知的 Webview 入口只挂载一个 `ToastViewport`
 
+## 加载骨架
+
+- 页面首次加载且没有可展示内容时使用 `PageSkeleton` 的对应变体；已有内容上的刷新、分页和提交继续使用局部加载状态
+- 独立页面骨架必须与真实页面容器使用相同的最大宽度、padding 和响应式断点；嵌在真实容器或标签内容内的骨架使用 `width: 100%`，由父容器统一控制外层间距
+- 话题骨架同时用于独立话题页和话题预览，两处真实内容容器均为 `800px / 24px`，在 `480px` 及以下收窄为 `14px`；余额骨架在 `640px` 及以下为 `12px`，在 `420px` 及以下为 `8px`
+- 独立话题页与话题预览统一使用 SimpleBar，并将内部真实滚动节点传给话题详情；楼层定位、返回顶部等行为不得绑定 SimpleBar 的外层元素
+
 ## 主题来源
 
 `webview/src/styles/_vscode-theme.scss` 是 **唯一** 将 VS Code Theme Color 映射为 `--v2ex-*` 语义变量的全局入口。共享组件、页面样式和业务 CSS Modules **优先且默认只使用** `--v2ex-*`。
