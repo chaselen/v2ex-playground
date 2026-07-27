@@ -78,7 +78,8 @@ $node-child-indent: 18px;
   background: var(--v2ex-webview-bg);
 }
 
-.tree-item--topic {
+.topic-row {
+  min-height: 28px;
   padding-left: $node-child-indent + 4px;
 }
 

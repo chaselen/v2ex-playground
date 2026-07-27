@@ -288,6 +288,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
             title={title}
             replies={data.replies}
             isRead={data.isRead}
+            className={styles['topic-row']}
           />
         </div>
       )
