@@ -2,7 +2,7 @@
 
 中文名：V2EX 游乐场
 
-一款用于在 VS Code、Cursor 等编辑器中浏览 [v2ex.com](https://www.v2ex.com) 的扩展。
+一款用于在 VS Code、TRAE、Cursor 等编辑器中浏览 [v2ex.com](https://www.v2ex.com) 的扩展。
 
 无需离开编辑器，即可浏览话题与节点、查看回复、搜索内容、参与互动，并使用签到、收藏、提醒和账户信息等常用功能。适合想专注阅读 V2EX，也适合上班累时短暂放（mō）松（yú）。
 
@@ -19,9 +19,10 @@
 
 ## 🧩 支持的编辑器
 
-- Visual Studio Code
-- Cursor
-- VSCodium、Eclipse Theia 等支持从 Open VSX 安装扩展的编辑器
+- [![Visual Studio Code](https://custom-icon-badges.demolab.com/badge/Visual%20Studio%20Code-0078d7.svg?logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
+- [![TRAE](https://custom-icon-badges.demolab.com/badge/TRAE-111111?logo=trae&logoColor=white)](https://www.trae.ai/)
+- [![Cursor](https://img.shields.io/badge/Cursor-000000?logo=cursor)](https://cursor.com/)
+- [![VSCodium](https://img.shields.io/badge/VSCodium-2F80ED?logo=vscodium&logoColor=fff)](https://vscodium.com/)、[![Eclipse Theia](https://img.shields.io/badge/Eclipse%20Theia-4183C4?logo=eclipseide&logoColor=white)](https://theia-ide.org/) 等支持从 Open VSX 安装扩展的编辑器
 
 ---
 
