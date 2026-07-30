@@ -66,15 +66,30 @@ export function TabsList({
   /** 更新标签列表溢出状态 */
   const updateOverflowState = useCallback(() => {
     const list = listRef.current
-    if (!list || !overflowNavigation) {
+    const bar = list?.parentElement
+    if (!list || !bar || !overflowNavigation) {
       return
+    }
+
+    // 用「不含滚动按钮」的可用宽度判断是否溢出，避免按钮占用空间后无法回退
+    const barStyle = getComputedStyle(bar)
+    const barPadding =
+      (Number.parseFloat(barStyle.paddingLeft) || 0) +
+      (Number.parseFloat(barStyle.paddingRight) || 0)
+    const extra = bar.querySelector<HTMLElement>(':scope > .v2ex-tabs__extra')
+    const extraWidth = extra?.offsetWidth ?? 0
+    const availableWithoutNav = Math.max(0, bar.clientWidth - barPadding - extraWidth)
+    const overflow = list.scrollWidth > availableWithoutNav + 1
+
+    if (!overflow && list.scrollLeft !== 0) {
+      list.scrollLeft = 0
     }
 
     const maxScrollLeft = Math.max(0, list.scrollWidth - list.clientWidth)
     const nextState: TabsOverflowState = {
-      overflow: maxScrollLeft > 1,
-      canScrollBack: list.scrollLeft > 1,
-      canScrollForward: list.scrollLeft < maxScrollLeft - 1
+      overflow,
+      canScrollBack: overflow && list.scrollLeft > 1,
+      canScrollForward: overflow && list.scrollLeft < maxScrollLeft - 1
     }
 
     setOverflowState(current =>
