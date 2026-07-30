@@ -19,7 +19,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - `src/config.ts` / `src/global.ts` — 配置读取和扩展运行时全局状态
 - `docs/` — 关键功能的实现说明、设计取舍和边界条件
 - `webview/` — React + Vite + Radix Primitives Webview 源码
-  - `main.html` / `topic.html` / `member.html` / `balance.html` / `search.html` / `recent-browse.html` / `two-factor.html` — 生产 Webview 的 Vite 多页面入口
+  - `main.html` / `topic.html` / `member.html` / `balance.html` / `search.html` / `tag.html` / `node.html` / `recent-browse.html` / `two-factor.html` — 生产 Webview 的 Vite 多页面入口
   - `theme.html` / `src/views/theme/` — Webview 组件与 VS Code 主题适配回归页
   - `src/views/` — 主面板及各 Webview Panel 页面
   - `src/components/` — 跨页面复用的 Webview UI 组件

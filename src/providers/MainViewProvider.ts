@@ -6,11 +6,12 @@ import autoDailySignIn, {
 } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
-import { openBalance, openMember, openTopic } from '@/features/panelNavigation'
+import { openBalance, openMember, openNode, openTopic } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
 import { downloadImage } from '@/features/imageDownload'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
+import { onCollectionNodesChanged } from '@/features/nodeCollection'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { renderWebviewHtml } from '@/core/webviewHtml'
@@ -27,13 +28,11 @@ import {
   MyOverviewRefreshData,
   MyTopicListData,
   NodeListData,
-  NodeTopicListData,
   NodeChildrenData,
   OpenNodePayload,
   OpenTopicPayload,
   WebviewDailySignInData,
   WebviewNotification,
-  WebviewNode,
   WebviewTopic,
   WebviewRpcController
 } from '@/shared/webview'
@@ -62,11 +61,11 @@ export default class MainViewProvider
   private _rpc?: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>
   private _webviewReady = false
   private _pendingSelectedTab?: MainPanelTabKey
-  private _pendingNode?: WebviewNode
   private _accountOverviewChangedDisposable?: { dispose: () => void }
   private _onlineCountChangedDisposable?: { dispose: () => void }
   private _dailySignInStatusDisposable?: { dispose: () => void }
   private _topicReadDisposable?: { dispose: () => void }
+  private _collectionNodesChangedDisposable?: { dispose: () => void }
   /** 当前主视图徽标上的未读提醒数量 */
   private _badgeUnreadNoticeCount = 0
   /** Webview 恢复可见时的自动签到任务 */
@@ -101,6 +100,10 @@ export default class MainViewProvider
     )
     this._topicReadDisposable?.dispose()
     this._topicReadDisposable = onTopicRead(topicId => this._rpc?.post('topicRead', { topicId }))
+    this._collectionNodesChangedDisposable?.dispose()
+    this._collectionNodesChangedDisposable = onCollectionNodesChanged(data =>
+      this._rpc?.post('collectionNodesChanged', data)
+    )
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
         this.autoSignInWhenVisible()
@@ -116,6 +119,8 @@ export default class MainViewProvider
       this._dailySignInStatusDisposable = undefined
       this._topicReadDisposable?.dispose()
       this._topicReadDisposable = undefined
+      this._collectionNodesChangedDisposable?.dispose()
+      this._collectionNodesChangedDisposable = undefined
       this._rpc?.dispose()
       if (this._view === webviewView) {
         this._view = undefined
@@ -150,11 +155,6 @@ export default class MainViewProvider
   /** 刷新节点 */
   rpc_refreshNode(message: { tab: MainTabKey; itemKey: string; page?: number }) {
     return this._handleRefreshNode(message.tab, message.itemKey, message.page)
-  }
-
-  /** 获取节点话题 */
-  rpc_getNodeTopics(message: { nodeName: string; page?: number }) {
-    return this._handleGetNodeTopics(message.nodeName, message.page)
   }
 
   /** 获取我的主题 */
@@ -205,9 +205,9 @@ export default class MainViewProvider
     openMember(username)
   }
 
-  /** 打开节点主题标签 */
+  /** 打开节点主题面板 */
   rpc_openNode(message: OpenNodePayload) {
-    return this.openNode(message)
+    openNode(message)
   }
 
   /** 打开账户余额面板 */
@@ -323,8 +323,7 @@ export default class MainViewProvider
         collection: []
       },
       loggedIn,
-      selectedTab: this.consumePendingSelectedTab(),
-      selectedNode: this.consumePendingNode()
+      selectedTab: this.consumePendingSelectedTab()
     }
   }
 
@@ -405,23 +404,6 @@ export default class MainViewProvider
         children: [],
         error: (err as Error).message
       }
-    }
-  }
-
-  /**
-   * 获取节点主题列表
-   * @param nodeName 节点 name
-   * @param page 页码
-   */
-  private async _handleGetNodeTopics(nodeName: string, page = 1): Promise<NodeTopicListData> {
-    const result = await G.V2ex.getTopicListByNode(nodeName, page)
-
-    return {
-      node: result.node,
-      page,
-      totalPage: Math.max(result.totalPage || 1, 1),
-      totalCount: Math.max(result.totalCount || 0, 0),
-      topics: result.list.map(topic => this._toWebviewTopic(topic))
     }
   }
 
@@ -654,19 +636,6 @@ export default class MainViewProvider
   }
 
   /**
-   * 打开节点主题标签
-   * @param node 节点
-   */
-  async openNode(node: OpenNodePayload) {
-    this._pendingNode = {
-      name: node.name,
-      title: node.title || node.name
-    }
-    await vscode.commands.executeCommand('v2ex-main.focus')
-    this.postPendingNode()
-  }
-
-  /**
    * 发送待切换标签
    */
   private postPendingSelectedTab() {
@@ -688,27 +657,5 @@ export default class MainViewProvider
     const selectedTab = this._pendingSelectedTab
     this._pendingSelectedTab = undefined
     return selectedTab
-  }
-
-  /**
-   * 发送待打开节点
-   */
-  private postPendingNode() {
-    if (!this._pendingNode || !this._rpc || !this._webviewReady) {
-      return
-    }
-
-    const node = this._pendingNode
-    this._pendingNode = undefined
-    this._rpc.post('openNode', node)
-  }
-
-  /**
-   * 取出待打开节点
-   */
-  private consumePendingNode() {
-    const node = this._pendingNode
-    this._pendingNode = undefined
-    return node
   }
 }

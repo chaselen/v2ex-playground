@@ -247,6 +247,26 @@ export function useNodeTreeTabs() {
   }, [])
 
   /**
+   * 用最新收藏节点列表同步收藏节点标签
+   * 保留仍存在节点的展开与分页状态
+   * @param data 最新收藏节点列表
+   */
+  const applyCollectionNodes = useCallback((data: NodeListData) => {
+    setTabErrors(current => ({
+      ...current,
+      collection: null
+    }))
+    setTabLoaded(current => ({
+      ...current,
+      collection: true
+    }))
+    setTabs(current => ({
+      ...current,
+      collection: mergeNodeItems(data.nodes, current.collection)
+    }))
+  }, [])
+
+  /**
    * 标记已加载节点中的话题已读
    * @param topicId 话题 id
    */
@@ -324,6 +344,7 @@ export function useNodeTreeTabs() {
     tabErrors,
     tabLoaded,
     addNode,
+    applyCollectionNodes,
     cancelCollectNode,
     changeNodePage,
     expandNode,

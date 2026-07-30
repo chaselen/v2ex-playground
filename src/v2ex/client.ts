@@ -309,6 +309,14 @@ export class V2exClient {
   }
 
   /**
+   * 根据节点 name 获取节点页链接
+   * @param nodeName 节点 name
+   */
+  getNodeLink(nodeName: string): string {
+    return this.nodes.getLink(nodeName)
+  }
+
+  /**
    * 根据节点获取话题列表
    * @param nodeName 节点 name
    * @param page 页码
@@ -452,6 +460,14 @@ export class V2exClient {
    */
   cancelCollectTopic(topicId: number): Promise<void> {
     return this.topics.cancelCollect(topicId)
+  }
+
+  /**
+   * 收藏节点
+   * @param nodeName 节点 name
+   */
+  collectNode(nodeName: string): Promise<void> {
+    return this.nodes.collect(nodeName)
   }
 
   /**

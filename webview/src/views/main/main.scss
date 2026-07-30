@@ -110,68 +110,6 @@
   color: var(--v2ex-webview-fg);
 }
 
-.node-tab-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-  max-width: 160px;
-  line-height: 1;
-}
-
-.node-tab-title {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.node-tab-close {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: 0;
-  border-radius: var(--v2ex-radius-sm);
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.12s ease,
-    background-color 0.12s ease;
-  pointer-events: none;
-
-  &:hover {
-    background: var(--v2ex-hover-bg);
-  }
-
-  &:focus-visible {
-    outline: 1px solid var(--v2ex-focus-border);
-    outline-offset: -1px;
-  }
-}
-
-.node-tab-close > svg {
-  display: block;
-  position: static;
-  margin: 0;
-  width: 12px;
-  height: 12px;
-}
-
-.node-tab-trigger:hover .node-tab-close,
-.node-tab-trigger:focus-within .node-tab-close,
-.node-tab-trigger[data-state='active'] .node-tab-close {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-
 .v2ex-menu__item {
   font-size: var(--v2ex-main-font-size, 13px);
 }

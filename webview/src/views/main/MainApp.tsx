@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { RefreshCw, X } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
@@ -7,13 +7,10 @@ import type {
   MainPanelTabKey,
   MainViewRpcCommands,
   MainViewWebviewEvents,
-  WebviewAccountOverview,
-  WebviewNode
+  WebviewAccountOverview
 } from '@extension/shared/webview'
 import { useNodeTreeTabs } from './hooks/useNodeTreeTabs'
-import { useNodeTopicTab } from './hooks/useNodeTopicTab'
 import MyTab, { type MyTabHandle } from './tabs/MyTab'
-import NodeTopicTab from './tabs/NodeTopicTab'
 import NodeTreeTab from './tabs/NodeTreeTab'
 
 /** 主面板 VS Code 通信客户端 */
@@ -26,9 +23,6 @@ const tabLabels: Record<MainPanelTabKey, string> = {
   collection: '收藏节点',
   my: '我的'
 }
-
-/** Webview 主面板标签 key */
-type WebviewMainTabKey = MainPanelTabKey | 'node'
 
 /** 刷新标签选项 */
 interface RefreshTabOptions {
@@ -48,52 +42,20 @@ const contentRetryOptions: RefreshTabOptions = {
 }
 
 /**
- * 截取动态节点标签标题
- * @param title 完整节点标题
- */
-function getNodeTabTitle(title: string): string {
-  return Array.from(title).slice(0, 4).join('')
-}
-
-/**
  * 主面板应用
  */
 export default function MainApp() {
-  const [activeTab, setActiveTab] = useState<WebviewMainTabKey>('explore')
-  const [pendingTabs, setPendingTabs] = useState<WebviewMainTabKey[]>([])
-  const [contentLoadingTabs, setContentLoadingTabs] = useState<WebviewMainTabKey[]>([])
-  const [refreshingTabs, setRefreshingTabs] = useState<WebviewMainTabKey[]>([])
+  const [activeTab, setActiveTab] = useState<MainPanelTabKey>('explore')
+  const [pendingTabs, setPendingTabs] = useState<MainPanelTabKey[]>([])
+  const [contentLoadingTabs, setContentLoadingTabs] = useState<MainPanelTabKey[]>([])
+  const [refreshingTabs, setRefreshingTabs] = useState<MainPanelTabKey[]>([])
   const [loggedIn, setLoggedIn] = useState(false)
   const [accountOverview, setAccountOverview] = useState<WebviewAccountOverview>()
   const [accountOverviewError, setAccountOverviewError] = useState<string | null>(null)
   const [accountOverviewLoaded, setAccountOverviewLoaded] = useState(false)
   const [initializing, setInitializing] = useState(true)
   const myTabRef = useRef<MyTabHandle>(null)
-  const lastFixedTab = useRef<MainPanelTabKey>('explore')
   const nodeTreeTabs = useNodeTreeTabs()
-  const nodeTopicTab = useNodeTopicTab()
-
-  /**
-   * 打开节点主题标签
-   * @param node 节点
-   */
-  const openNodeTab = useCallback(
-    (node: WebviewNode) => {
-      setActiveTab('node')
-      nodeTopicTab.openNodeTab(node)
-    },
-    [nodeTopicTab.openNodeTab]
-  )
-
-  /**
-   * 关闭节点主题标签
-   */
-  function closeNodeTab() {
-    nodeTopicTab.closeNodeTab()
-    if (activeTab === 'node') {
-      setActiveTab(lastFixedTab.current)
-    }
-  }
 
   /**
    * 处理初始化数据
@@ -106,16 +68,12 @@ export default function MainApp() {
       setAccountOverviewError(null)
       setAccountOverviewLoaded(!!data.accountOverview)
       if (data.selectedTab) {
-        lastFixedTab.current = data.selectedTab
         setActiveTab(data.selectedTab)
-      }
-      if (data.selectedNode) {
-        openNodeTab(data.selectedNode)
       }
       setInitializing(false)
       nodeTreeTabs.initializeTabs(data.tabs)
     },
-    [nodeTreeTabs.initializeTabs, openNodeTab]
+    [nodeTreeTabs.initializeTabs]
   )
 
   /**
@@ -147,7 +105,7 @@ export default function MainApp() {
    * @param tab 标签 key
    * @param options 刷新选项
    */
-  async function refreshTab(tab: WebviewMainTabKey, options: RefreshTabOptions = {}) {
+  async function refreshTab(tab: MainPanelTabKey, options: RefreshTabOptions = {}) {
     if (pendingTabs.includes(tab)) {
       return
     }
@@ -161,13 +119,6 @@ export default function MainApp() {
     }
 
     try {
-      if (tab === 'node') {
-        if (nodeTopicTab.nodeTab) {
-          await nodeTopicTab.requestNodeTopics(nodeTopicTab.nodeTab, 1)
-        }
-        return
-      }
-
       if (tab === 'my') {
         await refreshMyTab()
         return
@@ -232,15 +183,15 @@ export default function MainApp() {
         setAccountOverviewLoaded(true)
       }),
       vscode.on('selectMainTab', data => {
-        lastFixedTab.current = data.tab
         setActiveTab(data.tab)
       }),
       vscode.on('topicRead', data => {
         nodeTreeTabs.markTopicRead(data.topicId)
-        nodeTopicTab.markTopicRead(data.topicId)
         myTabRef.current?.markTopicRead(data.topicId)
       }),
-      vscode.on('openNode', openNodeTab)
+      vscode.on('collectionNodesChanged', data => {
+        nodeTreeTabs.applyCollectionNodes(data)
+      })
     ]
     vscode
       .ready()
@@ -253,18 +204,16 @@ export default function MainApp() {
     return () => {
       disposables.forEach(dispose => dispose())
     }
-  }, [nodeTopicTab.markTopicRead, nodeTreeTabs.markTopicRead, onInitData, openNodeTab])
+  }, [nodeTreeTabs.applyCollectionNodes, nodeTreeTabs.markTopicRead, onInitData])
 
   /** 当前标签刷新按钮文案 */
-  const activeTabLabel =
-    activeTab === 'node' ? nodeTopicTab.nodeTab?.title || '节点' : tabLabels[activeTab]
+  const activeTabLabel = tabLabels[activeTab]
   /** 当前标签是否正在通过工具栏刷新 */
   const activeTabRefreshing = refreshingTabs.includes(activeTab)
   /** 当前标签是否有页面级错误 */
   const activeTabHasError =
     (activeTab === 'collection' && !!nodeTreeTabs.tabErrors.collection) ||
-    (activeTab === 'my' && !!accountOverviewError && !accountOverview) ||
-    (activeTab === 'node' && !!nodeTopicTab.nodeTab?.error && !nodeTopicTab.nodeTab.topics.length)
+    (activeTab === 'my' && !!accountOverviewError && !accountOverview)
   /** 收藏节点标签是否处于加载状态 */
   const collectionTabLoading =
     initializing ||
@@ -285,8 +234,7 @@ export default function MainApp() {
     (!pendingTabs.includes(activeTab) || activeTabRefreshing) &&
     !activeTabHasError &&
     !(activeTab === 'collection' && !loggedIn) &&
-    !(activeTab === 'my' && !loggedIn) &&
-    !(activeTab === 'node' && !nodeTopicTab.nodeTab)
+    !(activeTab === 'my' && !loggedIn)
 
   /** 固定节点标签公共参数 */
   const nodeTreeTabProps = {
@@ -303,11 +251,7 @@ export default function MainApp() {
         value={activeTab}
         className="main-tabs"
         onValueChange={value => {
-          const tab = value as WebviewMainTabKey
-          setActiveTab(tab)
-          if (tab !== 'node') {
-            lastFixedTab.current = tab
-          }
+          setActiveTab(value as MainPanelTabKey)
         }}
       >
         <TabsList
@@ -330,28 +274,6 @@ export default function MainApp() {
           <TabsTrigger value="custom">{tabLabels.custom}</TabsTrigger>
           <TabsTrigger value="collection">{tabLabels.collection}</TabsTrigger>
           <TabsTrigger value="my">{tabLabels.my}</TabsTrigger>
-          {nodeTopicTab.nodeTab && (
-            <TabsTrigger value="node" className="node-tab-trigger">
-              <span className="node-tab-label">
-                <span className="node-tab-title" title={nodeTopicTab.nodeTab.title}>
-                  {getNodeTabTitle(nodeTopicTab.nodeTab.title)}
-                </span>
-                <button
-                  type="button"
-                  className="node-tab-close"
-                  title={`关闭${nodeTopicTab.nodeTab.title}节点`}
-                  aria-label={`关闭${nodeTopicTab.nodeTab.title}节点`}
-                  onMouseDown={event => event.stopPropagation()}
-                  onClick={event => {
-                    event.stopPropagation()
-                    closeNodeTab()
-                  }}
-                >
-                  <X aria-hidden="true" />
-                </button>
-              </span>
-            </TabsTrigger>
-          )}
         </TabsList>
         <TabsContent value="explore">
           <NodeTreeTab tab="explore" nodes={nodeTreeTabs.tabs.explore} {...nodeTreeTabProps} />
@@ -385,19 +307,10 @@ export default function MainApp() {
             overviewError={accountOverviewError}
             onRetryOverview={() => refreshTab('my', contentRetryOptions)}
             onOpenNodeCollection={() => {
-              lastFixedTab.current = 'collection'
               setActiveTab('collection')
             }}
           />
         </TabsContent>
-        {nodeTopicTab.nodeTab && (
-          <TabsContent value="node">
-            <NodeTopicTab
-              node={nodeTopicTab.nodeTab}
-              onPageChange={page => nodeTopicTab.requestNodeTopics(nodeTopicTab.nodeTab!, page)}
-            />
-          </TabsContent>
-        )}
       </Tabs>
     </main>
   )

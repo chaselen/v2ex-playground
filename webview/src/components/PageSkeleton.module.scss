@@ -345,7 +345,8 @@
   margin: 4px 0 10px;
 }
 
-.tag-header {
+.tag-header,
+.node-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -356,10 +357,28 @@
   border-radius: var(--v2ex-radius-lg);
 }
 
-.tag-title {
+.tag-title,
+.node-title {
   width: 180px;
   height: 28px;
   margin: 8px 0;
+}
+
+.node-header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.node-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.node-description {
+  width: min(90%, 420px);
+  margin: 0 0 8px;
 }
 
 .search-card {

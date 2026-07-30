@@ -195,6 +195,10 @@ export interface Node {
   avatar?: string
   /** 节点简介 */
   description?: string
+  /** 是否已收藏；未登录时通常为 false */
+  isCollected?: boolean
+  /** 收藏人数 */
+  collectCount?: number
 }
 
 /**

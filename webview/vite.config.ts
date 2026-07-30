@@ -24,6 +24,7 @@ export default defineConfig({
         balance: resolve(__dirname, 'balance.html'),
         search: resolve(__dirname, 'search.html'),
         tag: resolve(__dirname, 'tag.html'),
+        node: resolve(__dirname, 'node.html'),
         recentBrowse: resolve(__dirname, 'recent-browse.html'),
         twoFactor: resolve(__dirname, 'two-factor.html'),
         theme: resolve(__dirname, 'theme.html')

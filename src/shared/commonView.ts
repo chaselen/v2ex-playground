@@ -6,7 +6,7 @@ export interface OpenTopicPayload {
   title?: string
 }
 
-/** 打开节点主题标签参数 */
+/** 打开节点主题面板参数 */
 export interface OpenNodePayload {
   /** 节点 name */
   name: string

@@ -9,8 +9,7 @@ import autoDailySignIn, { startDailySignInScheduler } from '@/features/dailySign
 import {
   openRecentBrowse,
   openSearch,
-  refreshTopicPanelsForAuthChange,
-  setOpenNodeTabHandler
+  refreshTopicPanelsForAuthChange
 } from '@/features/panelNavigation'
 import { startConnectivityCheck } from '@/features/connectivityCheck'
 import { initializeLogger, logger } from '@/core/logger'
@@ -57,8 +56,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
     return authenticated
   }
-
-  setOpenNodeTabHandler(node => mainViewProvider.openNode(node))
 
   // 启动后台清理、网络检查与每日签到调度
   void deleteExtensionFileCacheDir(LEGACY_IMAGE_PREVIEW_CACHE_DIR).catch(err => {

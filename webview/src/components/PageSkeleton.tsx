@@ -71,7 +71,7 @@ function renderPlaceholder(
     case 'recent':
       return <RecentPlaceholder rows={rows} />
     case 'node-topics':
-      return <CompactTopicRows rows={rows} />
+      return <NodeTopicsPlaceholder rows={rows} />
     case 'node-tree':
       return <NodeTreePlaceholder rows={rows} />
     case 'my':
@@ -212,6 +212,27 @@ function TagTopicsPlaceholder({ rows }: SkeletonRowsProps) {
           <Skeleton.Paragraph rows={1} className={styles.eyebrow} />
           <Skeleton.Title className={styles['tag-title']} />
           <Skeleton.Paragraph rows={1} className={styles.summary} />
+        </div>
+        <Skeleton.Button />
+      </div>
+      <TopicRows rows={rows} avatars={false} />
+    </div>
+  )
+}
+
+/** 节点头像、标题、简介和主题列表占位 */
+function NodeTopicsPlaceholder({ rows }: SkeletonRowsProps) {
+  return (
+    <div>
+      <div className={styles['node-header']}>
+        <div className={styles['node-header-main']}>
+          <Skeleton.Avatar size="large" shape="square" />
+          <div className={styles['node-header-text']}>
+            <Skeleton.Paragraph rows={1} className={styles.eyebrow} />
+            <Skeleton.Title className={styles['node-title']} />
+            <Skeleton.Paragraph rows={2} className={styles['node-description']} />
+            <Skeleton.Paragraph rows={1} className={styles.summary} />
+          </div>
         </div>
         <Skeleton.Button />
       </div>

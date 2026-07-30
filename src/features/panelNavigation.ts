@@ -5,6 +5,7 @@ import { BalancePanelController } from '@/controllers/BalancePanelController'
 import { SearchPanelController } from '@/controllers/SearchPanelController'
 import { RecentBrowsePanelController } from '@/controllers/RecentBrowsePanelController'
 import { TagPanelController } from '@/controllers/TagPanelController'
+import { NodePanelController } from '@/controllers/NodePanelController'
 import type { OpenNodePayload, OpenTopicPayload } from '@/shared/webview'
 import G from '@/global'
 
@@ -25,6 +26,9 @@ const topicPanels: Record<string, TopicPanelController> = {}
 /** 标签页面控制器 */
 const tagPanels: Record<string, TagPanelController> = {}
 
+/** 节点页面控制器 */
+const nodePanels: Record<string, NodePanelController> = {}
+
 /** 账户余额页面控制器 */
 let balancePanel: BalancePanelController | undefined
 
@@ -34,25 +38,14 @@ let searchPanel: SearchPanelController | undefined
 /** 最近浏览页面控制器 */
 let recentBrowsePanel: RecentBrowsePanelController | undefined
 
-/** 打开主面板节点标签回调 */
-let openNodeTab: (node: OpenNodePayload) => void = () => undefined
-
 /**
  * 控制器面板导航依赖
  */
 const panelDeps = {
   openMember,
   openTopic,
-  openNode: (node: OpenNodePayload) => openNodeTab(node),
+  openNode,
   openTag
-}
-
-/**
- * 设置打开主面板节点标签回调
- * @param handler 打开节点标签回调
- */
-export function setOpenNodeTabHandler(handler: (node: OpenNodePayload) => void) {
-  openNodeTab = handler
 }
 
 /**
@@ -150,11 +143,46 @@ export function openTag(tag: string) {
 }
 
 /**
- * 登录态变化后刷新已打开的话题面板
+ * 打开节点主题页面
+ * @param node 节点参数
+ */
+export function openNode(node: OpenNodePayload) {
+  const nodeName = node.name?.trim()
+  if (!nodeName) {
+    throw new Error('打开节点面板缺少必要参数')
+  }
+
+  const title = node.title?.trim() || nodeName
+  const nodeKey = G.V2ex.getNodeLink(nodeName)
+  let controller = nodePanels[nodeKey]
+  if (controller) {
+    controller.reveal()
+    return
+  }
+
+  if (!Config.openInNewTab()) {
+    Object.values(nodePanels).forEach(nodePanel => {
+      nodePanel.dispose()
+    })
+  }
+
+  controller = new NodePanelController(nodeName, title, panelDeps)
+  nodePanels[nodeKey] = controller
+  controller.onDidDispose(() => {
+    delete nodePanels[nodeKey]
+  })
+  controller.load().catch(() => undefined)
+}
+
+/**
+ * 登录态变化后刷新已打开的话题、节点和余额面板
  */
 export function refreshTopicPanelsForAuthChange() {
   Object.values(topicPanels).forEach(topicPanel => {
     topicPanel.refreshForAuthChange()
+  })
+  Object.values(nodePanels).forEach(nodePanel => {
+    nodePanel.refreshForAuthChange()
   })
   balancePanel?.refreshForAuthChange()
 }
