@@ -19,16 +19,16 @@
 
 ## 🧩 支持的编辑器
 
-- [![Visual Studio Code](https://custom-icon-badges.demolab.com/badge/Visual%20Studio%20Code-0078d7.svg?logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
-- [![TRAE](https://custom-icon-badges.demolab.com/badge/TRAE-111111?logo=trae&logoColor=white)](https://www.trae.ai/)
-- [![Cursor](https://img.shields.io/badge/Cursor-000000?logo=cursor)](https://cursor.com/)
-- [![VSCodium](https://img.shields.io/badge/VSCodium-2F80ED?logo=vscodium&logoColor=fff)](https://vscodium.com/)、[![Eclipse Theia](https://img.shields.io/badge/Eclipse%20Theia-4183C4?logo=eclipseide&logoColor=white)](https://theia-ide.org/) 等支持从 Open VSX 安装扩展的编辑器
+- [![Visual Studio Code](https://custom-icon-badges.demolab.com/badge/Visual%20Studio%20Code-007ACC?logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com)
+- [![TRAE](https://custom-icon-badges.demolab.com/badge/TRAE-000000?logo=trae&logoColor=white)](https://www.trae.ai)
+- [![Cursor](https://img.shields.io/badge/Cursor-000000?logo=cursor&logoColor=white)](https://cursor.com)
+- [![VSCodium](https://img.shields.io/badge/VSCodium-2F80ED?logo=vscodium&logoColor=white)](https://vscodium.com)、[![Eclipse Theia](https://img.shields.io/badge/Eclipse%20Theia-0B5394?logo=eclipseide&logoColor=white)](https://theia-ide.org) 等支持从 Open VSX 安装扩展的编辑器
 
 ---
 
 ## ✨ 功能
 
-- 话题浏览：查看首页、节点和标签主题，也可通过话题 ID 或链接直接打开话题
+- 话题浏览：查看首页、节点和标签主题，也可通过 ID 或链接直接打开
 - 话题详情：阅读主题内容和回复，支持站内预览、代码高亮、楼中楼、用户资料、用户标识和多图预览
 - 最近浏览：搜索、打开和管理最近查看过的话题
 - 回复与互动：回复、收藏和感谢话题，支持回复预览、图片上传和表情
