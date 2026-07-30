@@ -1,4 +1,4 @@
-import type { TopicReply } from '../../../../src/v2ex/types'
+import type { TopicReply } from '@extension/v2ex/types'
 
 /** 回复列表展示模式 */
 export type ReplyViewMode = 'flat' | 'nested'

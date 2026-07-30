@@ -4,7 +4,9 @@
     "moduleResolution": "bundler",
     "target": "es2022",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // webview 源码被扩展侧测试直接 import 时，沿用 webview 的 @extension 别名
+      "@extension/*": ["./src/*"]
     },
     "lib": ["es2022", "DOM"],
     "skipLibCheck": true,

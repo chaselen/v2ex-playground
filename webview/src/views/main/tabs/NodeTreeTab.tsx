@@ -6,7 +6,7 @@ import { Button, ConfirmPopover, Empty } from '@/components/ui'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
-import type { MainTabKey, NodeItem, TreeItem } from '@/views/main/types'
+import type { MainTabKey, NodeItem, TreeItem } from '../types'
 import styles from './NodeTreeTab.module.scss'
 
 interface NodeTreeTabProps {
