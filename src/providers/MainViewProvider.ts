@@ -432,12 +432,18 @@ export default class MainViewProvider
       () => G.V2ex.getAllNodes()
     )
 
-    const items = nodes.map(n => ({
-      label: n.title,
-      description: n.name
+    const customNodeNames = new Set(getCustomNodes().map(node => node.name))
+    const items = nodes.map(node => ({
+      label: node.title,
+      description: customNodeNames.has(node.name)
+        ? `(${node.name}) · $(check) 已添加`
+        : `(${node.name})`,
+      name: node.name,
+      title: node.title
     }))
 
     const select = await vscode.window.showQuickPick(items, {
+      title: '添加自定义节点',
       placeHolder: '搜索节点',
       matchOnDescription: true
     })
@@ -447,8 +453,8 @@ export default class MainViewProvider
     }
 
     const isAdd = await addCustomNode({
-      name: select.description!,
-      title: select.label
+      name: select.name,
+      title: select.title
     })
 
     if (isAdd) {
