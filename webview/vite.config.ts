@@ -3,13 +3,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  root: __dirname,
+  root: import.meta.dirname,
   base: './',
   plugins: [react()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      '@extension': resolve(__dirname, '../src')
+      '@': resolve(import.meta.dirname, 'src'),
+      '@extension': resolve(import.meta.dirname, '../src')
     }
   },
   build: {
@@ -18,16 +18,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 10000,
     rolldownOptions: {
       input: {
-        main: resolve(__dirname, 'main.html'),
-        topic: resolve(__dirname, 'topic.html'),
-        member: resolve(__dirname, 'member.html'),
-        balance: resolve(__dirname, 'balance.html'),
-        search: resolve(__dirname, 'search.html'),
-        tag: resolve(__dirname, 'tag.html'),
-        node: resolve(__dirname, 'node.html'),
-        recentBrowse: resolve(__dirname, 'recent-browse.html'),
-        twoFactor: resolve(__dirname, 'two-factor.html'),
-        theme: resolve(__dirname, 'theme.html')
+        main: resolve(import.meta.dirname, 'main.html'),
+        topic: resolve(import.meta.dirname, 'topic.html'),
+        member: resolve(import.meta.dirname, 'member.html'),
+        balance: resolve(import.meta.dirname, 'balance.html'),
+        search: resolve(import.meta.dirname, 'search.html'),
+        tag: resolve(import.meta.dirname, 'tag.html'),
+        node: resolve(import.meta.dirname, 'node.html'),
+        recentBrowse: resolve(import.meta.dirname, 'recent-browse.html'),
+        twoFactor: resolve(import.meta.dirname, 'two-factor.html'),
+        theme: resolve(import.meta.dirname, 'theme.html')
       }
     }
   }
