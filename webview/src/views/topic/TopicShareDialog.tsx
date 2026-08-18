@@ -4,16 +4,7 @@ import QRCode from 'qrcode'
 import SimpleBar from 'simplebar-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import UserBadge from '@/components/UserBadge'
-import {
-  Badge,
-  Button,
-  Dialog,
-  Empty,
-  RadioGroup,
-  RadioGroupItem,
-  Spinner,
-  Toast
-} from '@/components/ui'
+import { Button, Dialog, Empty, RadioGroup, RadioGroupItem, Spinner, Toast } from '@/components/ui'
 import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
 import { buildReplyTree, type ReplyViewMode, type TopicReplyNode } from './replyTree'
@@ -398,17 +389,7 @@ export default function TopicShareDialog({
   }
 
   return (
-    <Dialog
-      className={styles.dialog}
-      open={open}
-      title={
-        <span className={styles.dialogTitle}>
-          <span>分享话题</span>
-          <Badge count="BETA" variant="danger" />
-        </span>
-      }
-      onOpenChange={onOpenChange}
-    >
+    <Dialog className={styles.dialog} open={open} title="分享话题" onOpenChange={onOpenChange}>
       <div className={styles.layout}>
         <SimpleBar
           className={styles.preview}

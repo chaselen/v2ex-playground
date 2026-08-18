@@ -190,7 +190,7 @@ export default function ThemePreviewApp() {
             onValueChange={setReplyViewMode}
           >
             <RadioGroupItem value="flat" label="普通列表" />
-            <RadioGroupItem value="nested" label="楼中楼" badge="BETA" badgeVariant="danger" />
+            <RadioGroupItem value="nested" label="楼中楼" />
           </RadioGroup>
         </PreviewSection>
 
