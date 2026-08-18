@@ -220,18 +220,6 @@
     }
   }
 
-  .image-preview-target {
-    border-radius: var(--v2ex-radius-xs);
-    transition: box-shadow 160ms ease;
-
-    &:hover {
-      outline: none;
-      box-shadow:
-        0 0 0 1px var(--v2ex-link-soft-ring),
-        0 6px 18px color-mix(in srgb, var(--v2ex-widget-shadow-color, #000) 55%, transparent);
-    }
-  }
-
   .hidden-image-button {
     &:focus-visible {
       outline: 1px solid var(--v2ex-focus-border);
@@ -375,12 +363,6 @@
     blockquote:last-child {
       margin-bottom: 0;
     }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .topic-content .image-preview-target {
-    transition: none;
   }
 }
 

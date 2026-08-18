@@ -439,7 +439,10 @@ function bindImageLinkPreview(anchor: HTMLAnchorElement, openImagePreview: OpenI
   const imageSrc = proxyImgurImageSrc(anchor.href)
 
   anchor.dataset.imagePreviewBound = 'true'
-  anchor.classList.add('image-preview-target')
+  // 包裹图片时视觉目标是内部 img，避免 a 和 img 同时带 class
+  if (!image) {
+    anchor.classList.add('image-preview-target')
+  }
   bindImageOpen(anchor, {
     action: '查看大图',
     getSrc: () => (image ? getImagePreviewSrc(image) : imageSrc),

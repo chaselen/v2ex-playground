@@ -30,10 +30,17 @@
   .image-preview-target {
     cursor: pointer;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
       outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 2px;
     }
+  }
+
+  /* 包裹图片的链接本身不带该类，键盘焦点落在 a 上 */
+  a:has(> .image-preview-target):focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 2px;
   }
 
   .hidden-image-button {
