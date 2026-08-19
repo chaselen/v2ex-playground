@@ -30,10 +30,10 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 
 - 仅作用于话题回复；正文、附言和分享图中的回复不启用
 - 判定以当前可见内容的实测高度为准：完整高度 ≥ 收起高度 + 100px 才折叠，避免临界抖动
-- 遵循 `v2ex.browse.showImagesInTopic`：按当前显示/隐藏图片后的实际高度判定，切换设置后重新测量
+- 遵循 `v2ex.browse.showImagesInTopic`：按当前显示/隐藏图片后的实际高度判定；切换设置后就地重测，不重置用户已选择的展开/收起。仅回复 HTML 变化时恢复自动折叠
 - 使用 `ResizeObserver` 跟踪内容增高（如图片加载、代码高亮）；用户手动展开/收起后不再自动改写状态
-- 收起高度 280px，底部渐变遮罩；按钮文案为「展开回复」/「收起回复」，并设置 `aria-expanded`
-- 收起态禁用内容区内链接、图片预览与隐藏图片占位点击，避免点到被裁切区域；展开按钮自行 `stopPropagation`
+- 收起高度 280px，底部渐变遮罩与当前回复条目表面色对齐（`--v2ex-reply-surface`）；嵌套层不透明混合上一层表面，封顶行不改写该变量，沿用上一层缩进色。按钮文案为「展开回复」/「收起回复」，并设置 `aria-expanded`
+- 收起态对内容区设置 `inert` 与 `aria-hidden`，避免键盘和辅助技术进入被裁切的链接、图片预览与隐藏图片占位；CSS `pointer-events: none` 作为指针兜底。展开按钮在内容区外，自行 `stopPropagation`
 - 实现见 `webview/src/views/topic/CollapsibleReplyContent.tsx` 与 `collapsibleReply.ts`
 
 ## 加载骨架

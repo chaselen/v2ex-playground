@@ -584,7 +584,7 @@
 }
 
 .v2ex-collapsible-reply {
-  --v2ex-collapsible-reply-mask-bg: var(--v2ex-webview-bg);
+  --v2ex-collapsible-reply-mask-bg: var(--v2ex-reply-surface, var(--v2ex-webview-bg));
   position: relative;
 }
 
@@ -594,7 +594,7 @@
   overflow: hidden;
   padding-bottom: 0;
 
-  // 收起时禁用被裁切区域内的链接、预览与隐藏图片占位，避免误触
+  // 指针兜底：键盘与辅助技术由内容区 inert 禁用
   .topic-content a,
   .topic-content .image-preview-target,
   .topic-content .topic-preview-button,
@@ -637,22 +637,19 @@
 }
 
 .reply-children {
+  --v2ex-reply-parent-surface: var(--v2ex-reply-surface, var(--v2ex-webview-bg));
   margin: 12px -10px 0 18px;
 
   > .reply-item {
+    --v2ex-reply-surface: color-mix(
+      in srgb,
+      var(--v2ex-widget-bg) 48%,
+      var(--v2ex-reply-parent-surface)
+    );
     padding: 12px 10px;
     border-bottom: 0;
     border-left: 1px solid var(--v2ex-border);
-    background: color-mix(in srgb, var(--v2ex-widget-bg) 48%, transparent);
-
-    // 嵌套回复浅底上的渐变遮罩需与条目背景对齐
-    .v2ex-collapsible-reply {
-      --v2ex-collapsible-reply-mask-bg: color-mix(
-        in srgb,
-        var(--v2ex-widget-bg) 48%,
-        var(--v2ex-webview-bg)
-      );
-    }
+    background: var(--v2ex-reply-surface);
   }
 }
 
@@ -665,6 +662,7 @@
     border-left: 0;
     border-bottom: 1px solid var(--v2ex-border);
     background: transparent;
+    // 不改写表面色，遮罩沿用上一层缩进行
 
     &:last-child {
       border-bottom: 0;

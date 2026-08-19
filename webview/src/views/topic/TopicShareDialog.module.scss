@@ -176,13 +176,19 @@
 }
 
 .cardReplyChildren {
+  --v2ex-reply-parent-surface: var(--v2ex-reply-surface, var(--v2ex-webview-bg));
   margin: 12px -10px 0 18px;
 
   > .cardReply {
+    --v2ex-reply-surface: color-mix(
+      in srgb,
+      var(--v2ex-widget-bg) 48%,
+      var(--v2ex-reply-parent-surface)
+    );
     padding: 12px 10px;
     border-bottom: 0;
     border-left: 1px solid var(--v2ex-border);
-    background: color-mix(in srgb, var(--v2ex-widget-bg) 48%, transparent);
+    background: var(--v2ex-reply-surface);
   }
 }
 

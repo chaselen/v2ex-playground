@@ -15,8 +15,8 @@ export interface CollapsibleReplyContentProps {
   /**
    * 是否显示帖子图片
    *
-   * 对应 `v2ex.browse.showImagesInTopic`。关闭时按隐藏图片后的实际高度判定，
-   * 切换后会重新测量，不沿用上一模式的折叠状态。
+   * 对应 `v2ex.browse.showImagesInTopic`。关闭时按隐藏图片后的实际高度判定；
+   * 切换后就地重测，不重置用户已选择的展开 / 收起。仅 `contentKey` 变化时恢复自动折叠。
    */
   showImages: boolean
 }
@@ -26,7 +26,8 @@ export interface CollapsibleReplyContentProps {
  *
  * 仅包裹话题回复；正文、附言与分享图中的回复不使用此组件。
  * 是否折叠以当前可见内容的实测高度为准；图片加载与代码高亮等异步增高
- * 通过 ResizeObserver 再次判定，用户手动展开 / 收起后不再自动改写状态。
+ * 通过 ResizeObserver 再次判定。切换显示图片只重测；用户手动展开 / 收起后
+ * 不再自动改写状态。仅回复 HTML 变化时重置为自动折叠。
  */
 export default function CollapsibleReplyContent({
   children,
@@ -40,7 +41,9 @@ export default function CollapsibleReplyContent({
   useLayoutEffect(() => {
     userToggledRef.current = false
     setMode('idle')
+  }, [contentKey])
 
+  useLayoutEffect(() => {
     const body = bodyRef.current
     if (!body) {
       return
@@ -91,7 +94,12 @@ export default function CollapsibleReplyContent({
         mode === 'expanded' && 'v2ex-collapsible-reply--expanded'
       )}
     >
-      <div className="v2ex-collapsible-reply__body" ref={bodyRef}>
+      <div
+        className="v2ex-collapsible-reply__body"
+        ref={bodyRef}
+        inert={mode === 'collapsed'}
+        aria-hidden={mode === 'collapsed' || undefined}
+      >
         {children}
       </div>
       {showToggle && (
