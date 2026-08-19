@@ -3,6 +3,36 @@ import type { TopicReply } from '@extension/v2ex/types'
 /** 回复列表展示模式 */
 export type ReplyViewMode = 'flat' | 'nested'
 
+/**
+ * 楼中楼最大视觉缩进层数
+ *
+ * 根回复 depth 为 0；其子容器在 depth 为 0/1/2 时继续增加缩进，depth ≥ 3 时不再右移。
+ * 深层回复仍完整展开，只限制水平占用。规则说明参见 docs/nested-replies.md。
+ */
+export const MAX_REPLY_VISUAL_INDENT_DEPTH = 3
+
+/**
+ * 当前回复的子容器是否继续增加视觉缩进
+ * @param depth 当前回复深度，根为 0
+ */
+export function shouldIndentReplyChildren(depth: number): boolean {
+  return depth < MAX_REPLY_VISUAL_INDENT_DEPTH
+}
+
+/**
+ * 楼中楼子回复容器的类名
+ * @param depth 当前回复深度，根为 0
+ * @param baseClass 基础嵌套容器类名
+ * @param cappedClass 达到缩进上限时追加的类名
+ */
+export function getReplyChildrenClassName(
+  depth: number,
+  baseClass: string,
+  cappedClass: string
+): string {
+  return shouldIndentReplyChildren(depth) ? baseClass : `${baseClass} ${cappedClass}`
+}
+
 /** 带子回复的帖子回复节点 */
 export interface TopicReplyNode extends TopicReply {
   // TODO: 为父子关系增加置信度与匹配来源，路线参见 docs/nested-replies.md

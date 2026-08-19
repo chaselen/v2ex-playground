@@ -7,7 +7,12 @@ import UserBadge from '@/components/UserBadge'
 import { Button, Dialog, Empty, RadioGroup, RadioGroupItem, Spinner, Toast } from '@/components/ui'
 import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
-import { buildReplyTree, type ReplyViewMode, type TopicReplyNode } from './replyTree'
+import {
+  buildReplyTree,
+  getReplyChildrenClassName,
+  type ReplyViewMode,
+  type TopicReplyNode
+} from './replyTree'
 import styles from './TopicShareDialog.module.scss'
 import v2exIcon from '../../../../resources/favicon.png'
 import type { TopicDetail, TopicReply } from '@extension/v2ex/types'
@@ -344,8 +349,12 @@ export default function TopicShareDialog({
     }
   }
 
-  /** 渲染单条分享回复及其子回复 */
-  function renderShareReply(reply: TopicReplyNode) {
+  /**
+   * 渲染单条分享回复及其子回复
+   * @param reply 回复节点
+   * @param depth 当前深度，根为 0；用于限制楼中楼视觉缩进
+   */
+  function renderShareReply(reply: TopicReplyNode, depth = 0) {
     // 页面未提供数量时仍需体现当前用户已发送的感谢
     const thankCount = Math.max(reply.thanks, reply.thanked ? 1 : 0)
     return (
@@ -380,8 +389,14 @@ export default function TopicShareDialog({
           html={embedHtmlImages(reply.content, embeddedImages)}
         />
         {shareReplyViewMode === 'nested' && reply.children.length > 0 && (
-          <div className={styles.cardReplyChildren}>
-            {reply.children.map(child => renderShareReply(child))}
+          <div
+            className={getReplyChildrenClassName(
+              depth,
+              styles.cardReplyChildren,
+              styles.cardReplyChildrenMaxIndent
+            )}
+          >
+            {reply.children.map(child => renderShareReply(child, depth + 1))}
           </div>
         )}
       </article>

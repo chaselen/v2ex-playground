@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { load } from 'cheerio/slim'
-import { buildReplyTree, type TopicReplyNode } from '../../../webview/src/views/topic/replyTree'
+import {
+  buildReplyTree,
+  getReplyChildrenClassName,
+  shouldIndentReplyChildren,
+  type TopicReplyNode
+} from '../../../webview/src/views/topic/replyTree'
 import type { TopicReply } from '../types'
 
 /** 创建算法测试所需的最小完整回复数据 */
@@ -138,5 +143,24 @@ describe('buildReplyTree', () => {
     )
 
     expect(floors(tree)).toEqual([['1', [['2', []]]]])
+  })
+})
+
+describe('shouldIndentReplyChildren', () => {
+  it('根到第 3 层缩进内继续右移，更深不再增加缩进', () => {
+    expect(shouldIndentReplyChildren(0)).toBe(true)
+    expect(shouldIndentReplyChildren(1)).toBe(true)
+    expect(shouldIndentReplyChildren(2)).toBe(true)
+    expect(shouldIndentReplyChildren(3)).toBe(false)
+    expect(shouldIndentReplyChildren(8)).toBe(false)
+  })
+
+  it('为达到上限的子容器追加封顶类名', () => {
+    expect(getReplyChildrenClassName(2, 'reply-children', 'reply-children--max-indent')).toBe(
+      'reply-children'
+    )
+    expect(getReplyChildrenClassName(3, 'reply-children', 'reply-children--max-indent')).toBe(
+      'reply-children reply-children--max-indent'
+    )
   })
 })

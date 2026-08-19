@@ -33,7 +33,12 @@ import ReplyComposer, { type ReplyComposerHandle } from './ReplyComposer'
 import MemberQuickInfoPopover from './MemberQuickInfoPopover'
 import ReplyLoginPrompt from './ReplyLoginPrompt'
 import { FloatingActions, floatingActionStyles } from './FloatingActions'
-import { buildReplyTree, type ReplyViewMode, type TopicReplyNode } from './replyTree'
+import {
+  buildReplyTree,
+  getReplyChildrenClassName,
+  type ReplyViewMode,
+  type TopicReplyNode
+} from './replyTree'
 import type { OpenTopicPreview } from '@/core/contentEnhancement'
 import type { TopicReply } from '@extension/v2ex/types'
 import type { TopicDetailController } from './useTopicDetailController'
@@ -280,8 +285,12 @@ export default function TopicDetailView({
     )
   }
 
-  /** 渲染单条回复及其子回复 */
-  function renderReply(reply: TopicReplyNode) {
+  /**
+   * 渲染单条回复及其子回复
+   * @param reply 回复节点
+   * @param depth 当前深度，根为 0；用于限制楼中楼视觉缩进
+   */
+  function renderReply(reply: TopicReplyNode, depth = 0) {
     return (
       <div className="reply-item" key={reply.replyId}>
         <div className="reply-layout">
@@ -313,7 +322,15 @@ export default function TopicDetailView({
           </div>
         </div>
         {replyViewMode === 'nested' && reply.children.length > 0 && (
-          <div className="reply-children">{reply.children.map(child => renderReply(child))}</div>
+          <div
+            className={getReplyChildrenClassName(
+              depth,
+              'reply-children',
+              'reply-children--max-indent'
+            )}
+          >
+            {reply.children.map(child => renderReply(child, depth + 1))}
+          </div>
         )}
       </div>
     )

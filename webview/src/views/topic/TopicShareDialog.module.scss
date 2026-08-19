@@ -186,6 +186,22 @@
   }
 }
 
+// 达到视觉缩进上限后仍展开子回复，但不再累加缩进、左边框与浅底
+.cardReplyChildren.cardReplyChildrenMaxIndent {
+  margin: 12px 0 0;
+
+  > .cardReply {
+    padding: 12px 0;
+    border-left: 0;
+    border-bottom: 1px solid var(--v2ex-border);
+    background: transparent;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+
 .cardReplyAuthor {
   display: flex;
   align-items: center;

@@ -16,8 +16,15 @@ V2EX 帖子页面返回的是按楼层排列的回复列表。回复数据包含
 ## 代码位置
 
 - 算法实现：`webview/src/views/topic/replyTree.ts`
-- 页面渲染与模式切换：`webview/src/views/topic/TopicApp.tsx`
+- 页面渲染与模式切换：`webview/src/views/topic/TopicApp.tsx`、`TopicDetailView.tsx`
 - 嵌套回复样式：`webview/src/views/topic/topic.scss`
+- 分享图楼中楼渲染：`webview/src/views/topic/TopicShareDialog.tsx`
+
+## 视觉缩进上限
+
+楼中楼模式限制最大视觉缩进为 3 层，避免窄面板中深层嵌套把正文挤没。根回复 `depth = 0`，子回复 `depth = parentDepth + 1`。父回复 `depth` 为 `0/1/2` 时，子容器继续增加 `margin-left`、左边框与浅底；`depth ≥ 3` 时子容器追加封顶类，不再累加水平缩进、左边框或浅底，仅用底部分隔线区分相邻深层回复，正文与第 3 层缩进列对齐。
+
+深层回复仍然完整展开，不做自动折叠。共享常量与判定见 `MAX_REPLY_VISUAL_INDENT_DEPTH`、`shouldIndentReplyChildren()`；话题页与分享图共用同一规则。
 
 ## 输入与输出
 
@@ -255,7 +262,7 @@ interface TopicReplyNode extends TopicReply {
 - 仅将正文开头或引用区域中的 `@用户名` 视为强回复信号
 - 区分 `@用户 #楼层`、单独 `@用户` 和正文中的普通 `#数字`
 - 缓存已加载分页的最小回复索引，在不额外请求页面的前提下改进跨页匹配
-- 增加最大视觉缩进限制和深层回复折叠，改善窄面板下的可读性
+- 深层回复折叠（例如超过缩进上限后默认收起，可手动展开），进一步改善窄面板可读性
 
 ### TODO：回复关系置信度与来源
 
