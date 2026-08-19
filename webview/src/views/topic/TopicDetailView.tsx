@@ -16,6 +16,7 @@ import {
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import NodeButton from '@/components/NodeButton'
 import UserBadge from '@/components/UserBadge'
+import CollapsibleReplyContent from './CollapsibleReplyContent'
 import {
   Avatar,
   Button,
@@ -313,12 +314,14 @@ export default function TopicDetailView({
                 <span className="floor">{reply.floor}</span>
               </div>
             </div>
-            <EnhancedHtmlContent
-              className="topic-content reply-content"
-              html={reply.content}
-              showImages={showImages}
-              onTopicPreview={onTopicPreview}
-            />
+            <CollapsibleReplyContent contentKey={reply.content} showImages={showImages}>
+              <EnhancedHtmlContent
+                className="topic-content reply-content"
+                html={reply.content}
+                showImages={showImages}
+                onTopicPreview={onTopicPreview}
+              />
+            </CollapsibleReplyContent>
           </div>
         </div>
         {replyViewMode === 'nested' && reply.children.length > 0 && (

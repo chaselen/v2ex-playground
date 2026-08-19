@@ -583,6 +583,59 @@
   line-height: 1.66;
 }
 
+.v2ex-collapsible-reply {
+  --v2ex-collapsible-reply-mask-bg: var(--v2ex-webview-bg);
+  position: relative;
+}
+
+.v2ex-collapsible-reply--collapsed {
+  // 与 collapsibleReply.ts 中 COLLAPSED_REPLY_MAX_HEIGHT 保持一致
+  max-height: 280px;
+  overflow: hidden;
+  padding-bottom: 0;
+
+  // 收起时禁用被裁切区域内的链接、预览与隐藏图片占位，避免误触
+  .topic-content a,
+  .topic-content .image-preview-target,
+  .topic-content .topic-preview-button,
+  .topic-content .hidden-image-button,
+  .topic-content .embedded-video-button {
+    pointer-events: none;
+  }
+
+  &::before {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 130px;
+    background: linear-gradient(to top, var(--v2ex-collapsible-reply-mask-bg) 10px, transparent);
+  }
+}
+
+.v2ex-collapsible-reply--expanded {
+  overflow: auto;
+  max-height: none;
+  padding-bottom: 40px;
+}
+
+.v2ex-collapsible-reply__toggle {
+  position: absolute;
+  z-index: 2;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.v2ex-collapsible-reply--expanded .v2ex-collapsible-reply__toggle {
+  bottom: 5px;
+}
+
 .reply-children {
   margin: 12px -10px 0 18px;
 
@@ -591,6 +644,15 @@
     border-bottom: 0;
     border-left: 1px solid var(--v2ex-border);
     background: color-mix(in srgb, var(--v2ex-widget-bg) 48%, transparent);
+
+    // 嵌套回复浅底上的渐变遮罩需与条目背景对齐
+    .v2ex-collapsible-reply {
+      --v2ex-collapsible-reply-mask-bg: color-mix(
+        in srgb,
+        var(--v2ex-widget-bg) 48%,
+        var(--v2ex-webview-bg)
+      );
+    }
   }
 }
 

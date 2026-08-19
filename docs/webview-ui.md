@@ -24,6 +24,18 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - 领域组件可封装固定含义的共享控件（如 `UserBadge`）；仅改名或透传属性的包装层没有必要
 - 命令式通知统一使用 `Toast.info`、`Toast.success`、`Toast.warning` 和 `Toast.error`，每个使用通知的 Webview 入口只挂载一个 `ToastViewport`
 
+## 长回复收起
+
+话题页回复过长时默认收起，减少长图或大段内容占满阅读区：
+
+- 仅作用于话题回复；正文、附言和分享图中的回复不启用
+- 判定以当前可见内容的实测高度为准：完整高度 ≥ 收起高度 + 100px 才折叠，避免临界抖动
+- 遵循 `v2ex.browse.showImagesInTopic`：按当前显示/隐藏图片后的实际高度判定，切换设置后重新测量
+- 使用 `ResizeObserver` 跟踪内容增高（如图片加载、代码高亮）；用户手动展开/收起后不再自动改写状态
+- 收起高度 280px，底部渐变遮罩；按钮文案为「展开回复」/「收起回复」，并设置 `aria-expanded`
+- 收起态禁用内容区内链接、图片预览与隐藏图片占位点击，避免点到被裁切区域；展开按钮自行 `stopPropagation`
+- 实现见 `webview/src/views/topic/CollapsibleReplyContent.tsx` 与 `collapsibleReply.ts`
+
 ## 加载骨架
 
 - 页面首次加载且没有可展示内容时使用 `PageSkeleton` 的对应变体；已有内容上的刷新、分页和提交继续使用局部加载状态
