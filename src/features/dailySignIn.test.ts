@@ -190,6 +190,7 @@ describe('dailySignIn feature', () => {
       signedIn: true,
       result: 'success',
       reward: 20,
+      rewardDate: '2026-07-21',
       loading: false
     })
     expect(mocks.globalStateUpdate).toHaveBeenCalledWith('lastAutoSignInDate', {
@@ -197,6 +198,9 @@ describe('dailySignIn feature', () => {
       date: '2026-07-21',
       reward: 20
     })
+    expect(mocks.showInformationMessage).toHaveBeenCalledWith(
+      '[2026-07-21] V2EX 每日签到成功，获得 20 铜币'
+    )
   })
 
   test('manual sign-in caches success with previous mission day when claimed before refresh', async () => {
@@ -212,6 +216,7 @@ describe('dailySignIn feature', () => {
       signedIn: true,
       result: 'success',
       reward: 14,
+      rewardDate: '2026-07-20',
       loading: false
     })
     expect(mocks.globalStateUpdate).toHaveBeenCalledWith('lastAutoSignInDate', {
@@ -219,6 +224,30 @@ describe('dailySignIn feature', () => {
       date: '2026-07-20',
       reward: 14
     })
+    // 成功提示前缀为任务日，凌晨补领仍显示上一自然日
+    expect(mocks.showInformationMessage).toHaveBeenCalledWith(
+      '[2026-07-20] V2EX 每日签到成功，获得 14 铜币'
+    )
+  })
+
+  test('success notification falls back to typical mission date when rewardDate is missing', async () => {
+    setBeijingTime('2026-07-21', 3)
+    mocks.dailySignIn.mockResolvedValue({
+      result: 'success',
+      reward: 12,
+      rewardDate: undefined
+    })
+
+    await expect(dailySignIn()).resolves.toMatchObject({
+      signedIn: true,
+      result: 'success',
+      reward: 12,
+      loading: false
+    })
+    // 领域层无任务日时，0:00–7:59 按昨日回退
+    expect(mocks.showInformationMessage).toHaveBeenCalledWith(
+      '[2026-07-20] V2EX 每日签到成功，获得 12 铜币'
+    )
   })
 
   test('manual sign-in omits zero reward when balance has no daily login entry', async () => {

@@ -25,6 +25,11 @@ export interface DailySignInData {
   result?: DailyRes
   /** 当日签到奖励铜币数 */
   reward?: number
+  /**
+   * 签到任务日 YYYY-MM-DD。
+   * 来自余额描述中的任务日，不是流水墙钟日；常见刷新前（约 8 点）可能为昨日。
+   */
+  rewardDate?: string
 }
 
 /** 上次自动签到完成日期存储 key */
@@ -332,7 +337,11 @@ async function runDailySignInWithRetry(
 
   const isCurrentAccount = G.V2ex.getAuthenticatedUsername() === username
   if (isCurrentAccount && data.result === 'success' && options.notifyOnSuccess) {
-    vscode.window.showInformationMessage(`V2EX 每日签到成功，获得 ${data.reward} 铜币`)
+    // 任务日优先用领域层 rewardDate；缺失时按常见 8 点刷新规则回退
+    const missionDate = data.rewardDate ?? getTypicalMissionDate()
+    vscode.window.showInformationMessage(
+      `[${missionDate}] V2EX 每日签到成功，获得 ${data.reward} 铜币`
+    )
   } else if (isCurrentAccount && data.result === 'failed' && options.notifyOnFailure) {
     vscode.window.showErrorMessage('V2EX 每日签到失败，请稍后重试', '查看日志').then(action => {
       if (action === '查看日志') logger.show()
@@ -376,7 +385,8 @@ async function runDailySignIn(username: string): Promise<DailySignInData> {
       // 页面已领取（含任务尚未刷新、仍显示上一任务日已领取）时 UI 视作已签到
       signedIn: result === 'success' || result === 'repetitive',
       result,
-      reward: normalizedReward
+      reward: normalizedReward,
+      rewardDate
     }
   } catch (err) {
     logger.error('每日签到失败', err)
@@ -426,6 +436,14 @@ function getDailySignInRecordFor(username: string): DailySignInRecord | undefine
  */
 function isBeforeTypicalMissionRefresh(): boolean {
   return beijingNow().hour() < TYPICAL_MISSION_REFRESH_HOUR
+}
+
+/**
+ * 按常见任务刷新时刻推断当前任务日。
+ * 北京时间 0:00–7:59 视为上一自然日任务，8 点起视为当日。
+ */
+function getTypicalMissionDate(): string {
+  return isBeforeTypicalMissionRefresh() ? getBeijingDate(-1) : getBeijingDate()
 }
 
 /**
