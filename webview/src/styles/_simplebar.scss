@@ -3,6 +3,15 @@
  * 页面布局相关规则仍由各页面样式负责
  */
 
+/*
+ * SimpleBar 给滚动容器设置 tabindex="0"，以便空格 / PageDown 滚动。
+ * 键盘操作会匹配 :focus-visible，Chromium 默认橙色焦点框会圈住整页。
+ */
+[data-simplebar],
+[data-simplebar] .simplebar-content-wrapper {
+  outline: none;
+}
+
 [data-simplebar] .simplebar-track.simplebar-vertical {
   width: 8px;
 }

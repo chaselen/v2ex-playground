@@ -14,6 +14,8 @@ body,
   width: 100%;
   height: 100%;
   margin: 0;
+  /* 空格翻页会让页面容器进入 :focus-visible，去掉整页默认焦点框 */
+  outline: none;
 }
 
 body {

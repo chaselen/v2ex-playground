@@ -977,12 +977,8 @@
   min-width: 0;
   min-height: 0;
   flex: 1;
+  /* 标签页是整栏布局容器，空格翻页会匹配 :focus-visible；不画整块焦点框 */
   outline: none;
-
-  &:focus-visible {
-    outline: 1px solid var(--v2ex-focus-border);
-    outline-offset: -1px;
-  }
 }
 
 .v2ex-select {
