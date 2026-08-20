@@ -33,6 +33,13 @@ export function isTopicRead(topicId: number): boolean {
 }
 
 /**
+ * 获取当前已读话题 id
+ */
+export function getReadTopicIds(): number[] {
+  return Object.keys(getRecentBrowseRecordsMap()).map(Number)
+}
+
+/**
  * 更新最近浏览话题详情
  * @param detail 话题详情
  */

@@ -186,8 +186,10 @@ export default function MainApp() {
         setActiveTab(data.tab)
       }),
       vscode.on('topicRead', data => {
-        nodeTreeTabs.markTopicRead(data.topicId)
-        myTabRef.current?.markTopicRead(data.topicId)
+        data.topicIds.forEach(topicId => {
+          nodeTreeTabs.markTopicRead(topicId)
+          myTabRef.current?.markTopicRead(topicId)
+        })
       }),
       vscode.on('collectionNodesChanged', data => {
         nodeTreeTabs.applyCollectionNodes(data)

@@ -234,8 +234,8 @@ export interface SelectMainTabData {
  * 话题已读数据
  */
 export interface TopicReadData {
-  /** 话题 id */
-  topicId: number
+  /** 已读话题 id；同窗口打开时为 1 个，焦点或可见时同步为当前全部已读 */
+  topicIds: number[]
 }
 
 /**

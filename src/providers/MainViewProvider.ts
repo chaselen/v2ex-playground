@@ -10,7 +10,7 @@ import { openBalance, openMember, openNode, openTopic } from '@/features/panelNa
 import { openExternal } from '@/features/openExternal'
 import { downloadImage } from '@/features/imageDownload'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
-import { isTopicRead, onTopicRead } from '@/features/recentBrowse'
+import { getReadTopicIds, isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import { onCollectionNodesChanged } from '@/features/nodeCollection'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
@@ -65,6 +65,7 @@ export default class MainViewProvider
   private _onlineCountChangedDisposable?: { dispose: () => void }
   private _dailySignInStatusDisposable?: { dispose: () => void }
   private _topicReadDisposable?: { dispose: () => void }
+  private _windowStateDisposable?: { dispose: () => void }
   private _collectionNodesChangedDisposable?: { dispose: () => void }
   /** 当前主视图徽标上的未读提醒数量 */
   private _badgeUnreadNoticeCount = 0
@@ -99,7 +100,15 @@ export default class MainViewProvider
       this._rpc?.post('dailySignInStatusChanged', data)
     )
     this._topicReadDisposable?.dispose()
-    this._topicReadDisposable = onTopicRead(topicId => this._rpc?.post('topicRead', { topicId }))
+    this._topicReadDisposable = onTopicRead(topicId =>
+      this._rpc?.post('topicRead', { topicIds: [topicId] })
+    )
+    this._windowStateDisposable?.dispose()
+    this._windowStateDisposable = vscode.window.onDidChangeWindowState(state => {
+      if (state.focused) {
+        this._syncTopicReadFromStorage()
+      }
+    })
     this._collectionNodesChangedDisposable?.dispose()
     this._collectionNodesChangedDisposable = onCollectionNodesChanged(data =>
       this._rpc?.post('collectionNodesChanged', data)
@@ -107,6 +116,7 @@ export default class MainViewProvider
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
         this.autoSignInWhenVisible()
+        this._syncTopicReadFromStorage()
       }
     })
     webviewView.onDidDispose(() => {
@@ -119,6 +129,8 @@ export default class MainViewProvider
       this._dailySignInStatusDisposable = undefined
       this._topicReadDisposable?.dispose()
       this._topicReadDisposable = undefined
+      this._windowStateDisposable?.dispose()
+      this._windowStateDisposable = undefined
       this._collectionNodesChangedDisposable?.dispose()
       this._collectionNodesChangedDisposable = undefined
       this._rpc?.dispose()
@@ -592,6 +604,20 @@ export default class MainViewProvider
       .finally(() => {
         this._visibleAutoSignInPromise = undefined
       })
+  }
+
+  /**
+   * 按当前 globalState 把已读话题再推给主面板
+   *
+   * 多窗口没有 Memento 变更事件，只在窗口聚焦或主面板重新可见时重读；
+   * 复用现有 topicRead 一次推送当前已读 id，只补已读，不改回未读
+   */
+  private _syncTopicReadFromStorage() {
+    if (!this._webviewReady || !this._view?.visible) {
+      return
+    }
+
+    this._rpc?.post('topicRead', { topicIds: getReadTopicIds() })
   }
 
   /**
