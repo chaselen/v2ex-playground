@@ -49,10 +49,16 @@ SecretStorage 只持久化规范化后的 A2/A2O：
 
 - 用户输入可以是完整 Cookie、A2/A2O 片段或单独的 A2 值，提交前统一规范化
 - 普通响应中的内部 Cookie 只保留在运行时，不写入 SecretStorage
-- 2FA 成功后，新的 A2O 先写入触发请求的 CookieJar，再显式保存当前 A2/A2O
+- 2FA 成功且触发请求重试成功后，新的 A2O 已写入 CookieJar，再显式保存当前登录 Cookie
 - 退出或登录失效时删除 SecretStorage 中的凭据
 
 `LoginCredentialStore.load()` 优先使用有效的 SecretStorage 数据。旧版 `globalState['cookie']` 只参与一次迁移；读取后会清理遗留值，损坏或包含多余字段的数据也会按 A2/A2O 重新规范化。
+
+### 两步验证 A2O 的作用域
+
+持久化 Cookie 恢复到 CookieJar 时，A2/A2O 使用 V2EX 服务端的 `Domain=.v2ex.com; Path=/` 作用域。
+
+**踩坑：** 如果在 `https://www.v2ex.com` 上仅写入 `A2O=value`，CookieJar 会创建 host-only 的 `www.v2ex.com` Cookie。V2EX `/2fa` 成功响应下发的 `A2O` 使用 `Domain=.v2ex.com; Path=/`，两者作用域不同而会同时存在。持久化时应取最后一个（最新写入的）认证值，并在下次恢复时采用服务端作用域，才能让后续 `Set-Cookie` 正确覆盖旧值。
 
 ## 登录、切号与候选会话
 
@@ -74,7 +80,7 @@ SecretStorage 只持久化规范化后的 A2/A2O：
 
 同一验证流程可以复用已打开的面板；另一个流程开始时可以替换旧面板。用户取消时保留原登录状态，并由触发请求按既有错误路径结束。
 
-正式业务请求完成 2FA 后，客户端会把运行时 CookieJar 中更新后的 A2/A2O 保存到 SecretStorage。该显式路径用于保留服务端补充的 A2O，普通 `Set-Cookie` 不触发持久化写入。
+正式业务请求完成 2FA 且原请求重试成功后，客户端会把运行时 CookieJar 中更新后的 A2/A2O 保存到 SecretStorage。普通 `Set-Cookie` 不触发持久化写入。
 
 ## 登录失效与退出
 
@@ -122,7 +128,7 @@ SecretStorage 只持久化规范化后的 A2/A2O：
 - 候选 Cookie 成功后一次性提交，失败或取消不改变当前账号
 - 并发候选只有一个可以提交，退出或其他切换生效后旧候选不能覆盖当前状态
 - 候选登录 2FA 与正式业务 2FA 分别使用正确的 Session
-- 正式业务 2FA 成功后持久化更新的 A2O，普通响应不持久化内部 Cookie
+- 正式业务 2FA 成功且重试原请求后持久化更新的 A2O，普通响应不持久化内部 Cookie
 - 首页检查和受保护页面重定向触发的登录失效只清理、通知一次
 - 普通在途请求可以自然完成，不要求通过全局会话守卫取消
 - 在签到发起 `redeem` 前或等待其返回时切号，流程返回失败；旧用户名任务不更新缓存、不重试、不通知

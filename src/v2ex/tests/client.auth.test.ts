@@ -235,7 +235,7 @@ describe('V2exClient authentication', () => {
     expect(save).not.toHaveBeenCalled()
   })
 
-  test('persists A2O after business two-factor verification', async () => {
+  test('persists A2O after the retried business request completes two-factor verification', async () => {
     const { store, save } = createLoginCookieStore('A2=current')
     const onTwoFactorRequired = vi.fn(async verification => {
       await verification.submitCode('123456')
@@ -251,6 +251,10 @@ describe('V2exClient authentication', () => {
     const session = getClientSession(client)
 
     await expect(getSessionOptions(session).onTwoFactorRequired?.()).resolves.toBe(true)
+    expect(save).not.toHaveBeenCalled()
+
+    session.setCookie('A2=current; A2O=verified')
+    await expect(getSessionOptions(session).onTwoFactorVerified?.()).resolves.toBeUndefined()
 
     expect(save).toHaveBeenLastCalledWith('A2=current; A2O=verified')
   })
@@ -344,12 +348,13 @@ describe('V2exClient authentication', () => {
     save.mockImplementationOnce(() => credentialDeletion.promise)
 
     const logout = client.logout()
-    const verification = getSessionOptions(session).onTwoFactorRequired?.()
+    await expect(getSessionOptions(session).onTwoFactorRequired?.()).resolves.toBe(true)
+    const persistence = getSessionOptions(session).onTwoFactorVerified?.()
     await vi.waitFor(() => expect(save).toHaveBeenCalledWith(''))
     credentialDeletion.resolve()
 
     await logout
-    await expect(verification).resolves.toBe(false)
+    await expect(persistence).resolves.toBeUndefined()
     expect(client.getLoginCookie()).toBe('')
     expect(save).toHaveBeenCalledTimes(1)
   })

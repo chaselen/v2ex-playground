@@ -24,6 +24,9 @@ import {
 /** V2EX 服务地址 */
 export const V2EX_BASE_URL = 'https://www.v2ex.com'
 
+/** V2EX 登录 Cookie 的服务端作用域 */
+const V2EX_LOGIN_COOKIE_SCOPE = 'Domain=.v2ex.com; Path=/'
+
 /** V2EX 请求超时时间 */
 export const V2EX_REQUEST_TIMEOUT = 15000
 
@@ -48,6 +51,8 @@ const isRedirectCheckPath = picomatch([
 export interface V2exSessionOptions {
   onLoginExpired?: LoginExpiredHandler
   onTwoFactorRequired?: () => boolean | Promise<boolean>
+  /** 两步验证完成且原请求重试成功 */
+  onTwoFactorVerified?: () => void | Promise<void>
   onHttpFailure?: HttpFailureHandler
 }
 
@@ -179,13 +184,9 @@ export class V2exSession {
 
   /** 写入 Cookie 或 Set-Cookie 字符串 */
   private writeCookie(cookie: string, url: string): void {
-    if (!cookie.includes(';')) {
-      this.cookieJar.setCookieSync(cookie, url)
-      return
-    }
-    Object.entries(parseCookie(cookie)).forEach(([name, value]) => {
+    Object.entries(parseCookie(cookie, { decode: value => value })).forEach(([name, value]) => {
       if (value === undefined) return
-      this.cookieJar.setCookieSync(`${name}=${value}`, url)
+      this.cookieJar.setCookieSync(`${name}=${value}; ${V2EX_LOGIN_COOKIE_SCOPE}`, url)
     })
   }
 
@@ -217,7 +218,9 @@ export class V2exSession {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
     this.refreshConfigCookie(config)
-    return this.http.request(config)
+    const retriedResponse = await this.http.request(config)
+    await this.options.onTwoFactorVerified?.()
+    return retriedResponse
   }
 
   /** 刷新重试请求配置中的 Cookie */

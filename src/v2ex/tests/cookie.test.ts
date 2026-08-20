@@ -21,6 +21,18 @@ describe('normalizeLoginCookie', () => {
     expect(normalizeLoginCookie(cookie)).toBe(`${a2Cookie}; ${a2oCookie}`)
   })
 
+  test('keeps the latest A2O when CookieJar returns multiple matching cookies', () => {
+    const cookie = `${a2Cookie}; A2O=expired; ${a2oCookie}`
+
+    expect(normalizeLoginCookie(cookie)).toBe(`${a2Cookie}; ${a2oCookie}`)
+  })
+
+  test('keeps encoded login cookie values unchanged', () => {
+    const cookie = 'A2="account%2Ftoken%3D"; A2O="two-factor%2Btoken%3D"'
+
+    expect(normalizeLoginCookie(cookie)).toBe(cookie)
+  })
+
   test('normalizes standalone A2 cookie', () => {
     expect(normalizeLoginCookie(`${a2Cookie};`)).toBe(a2Cookie)
   })

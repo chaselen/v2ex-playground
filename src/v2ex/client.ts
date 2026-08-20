@@ -118,6 +118,7 @@ export class V2exClient {
     this.session = new V2exSession(initialCookie, {
       onLoginExpired: () => this.handleLoginExpired(),
       onTwoFactorRequired: () => this.handleTwoFactorRequired(),
+      onTwoFactorVerified: () => this.handleTwoFactorVerified(),
       onHttpFailure: options.onHttpFailure
     })
     this.baseUrl = this.session.baseUrl
@@ -531,14 +532,18 @@ export class V2exClient {
   private async handleTwoFactorRequired(): Promise<boolean> {
     const revision = this.authRevision
     const verified = (await this.options.onTwoFactorRequired?.(this.twoFactorVerification)) ?? false
-    if (!verified || this.authRevision !== revision) return false
+    return verified && this.authRevision === revision
+  }
 
+  /** 两步验证完成且原请求重试成功后持久化最新登录 Cookie */
+  private async handleTwoFactorVerified(): Promise<void> {
+    const revision = this.authRevision
     const loginCookie = this.getLoginCookie()
+    if (!loginCookie) return
     await this.enqueueCredentialMutation(async () => {
       if (this.authRevision !== revision) return
       await this.options.loginCookieStore?.save(loginCookie)
     })
-    return this.authRevision === revision
   }
 
   /** 创建只作用于当前认证状态的两步验证操作 */
