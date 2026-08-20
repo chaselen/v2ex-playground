@@ -3,7 +3,7 @@
   "icon": "resources/icon.png",
   "displayName": "V2EX Playground",
   "description": "V2EX 游乐场，上班时用来放（mō）松（yú）的插件",
-  "version": "1.21.1",
+  "version": "1.22.0",
   "publisher": "chaselen",
   "repository": {
     "type": "git",
@@ -189,7 +189,7 @@
     "file-type": "^22.0.1",
     "highlight.js": "^11.11.1",
     "lucide-react": "^1.25.0",
-    "oxfmt": "^0.62.0",
+    "oxfmt": "^0.64.0",
     "picomatch": "^4.0.4",
     "qrcode": "^1.5.4",
     "radix-ui": "^1.6.2",

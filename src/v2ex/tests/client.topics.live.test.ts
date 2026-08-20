@@ -75,7 +75,7 @@ describe.sequential('V2exClient topics', () => {
   })
 
   test('gets reply MOD / OP / PRO badges from a known public topic', async () => {
-    const detail = await client.getTopicDetail(1228289)
+    const detail = await client.getTopicDetail(443648)
 
     expect(detail.authorName).toBe('Livid')
     expect(detail.isAuthorPro).toBe(true)
@@ -87,7 +87,7 @@ describe.sequential('V2exClient topics', () => {
       isPro: true
     })
 
-    const proReply = detail.replies.find(reply => reply.userName === 'itechify')
+    const proReply = detail.replies.find(reply => reply.userName === 'dawnven')
     expect(proReply).toMatchObject({
       isMod: false,
       isOp: false,

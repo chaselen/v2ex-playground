@@ -70,10 +70,9 @@ export const WEBVIEW_RPC_METHOD_PREFIX = 'rpc_'
  * 使用约定式方法名实现 Webview RPC 的控制器
  */
 export type WebviewRpcController<Commands> = {
-  [Command in WebviewRpcCommandKey<Commands> as `${typeof WEBVIEW_RPC_METHOD_PREFIX}${Command}`]: WebviewRpcHandler<
-    Commands,
-    Command
-  >
+  [
+    Command in WebviewRpcCommandKey<Commands> as `${typeof WEBVIEW_RPC_METHOD_PREFIX}${Command}`
+  ]: WebviewRpcHandler<Commands, Command>
 }
 
 /** Webview RPC 客户端 */
