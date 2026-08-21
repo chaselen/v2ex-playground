@@ -17,7 +17,7 @@ export function getV2exNodeAvatarUrl(
   nodeName: string,
   size: V2exNodeAvatarSize = 'normal'
 ): string {
-  return `${V2EX_NODE_AVATAR_PROXY_BASE}/${encodeURIComponent(nodeName)}/${size}`
+  return `${V2EX_NODE_AVATAR_PROXY_BASE}/${nodeName}?size=${size}`
 }
 
 /**

@@ -26,7 +26,7 @@
 
 「自定义」与「收藏节点」列表在节点名前展示图标：
 
-- 头像地址按节点 `name` 拼代理 URL：`https://img.fuyou.tech/v2ex/node/{name}/normal`（约 48px，列表显示 16px，照顾 Retina），不直连 `cdn.v2ex.com`（Webview 下部分资源会 403）
+- 头像地址按节点 `name` 拼代理 URL：`https://img.fuyou.tech/v2ex/node/{name}?size=normal`（约 48px，列表显示 16px，照顾 Retina），不直连 `cdn.v2ex.com`（Webview 下部分资源会 403）
 - 收藏列表仍以 `/my/nodes` 为准；头像不依赖 `getAllNodes()`
 - Webview `<img>` 使用 `referrerPolicy="no-referrer"`；不做扩展侧磁盘缓存
 - 图标使用 `--v2ex-media-plate-bg` 中性灰底板（兼顾白前景透明图），不加外框；`object-fit: contain`，并用双边 `drop-shadow` 勾边
