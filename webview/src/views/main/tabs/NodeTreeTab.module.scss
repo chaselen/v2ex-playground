@@ -131,13 +131,18 @@ $node-child-indent: 18px;
   height: 16px;
   flex: none;
   border-radius: 3px;
-  background: var(--v2ex-media-plate-bg);
 }
 
 .node-avatar {
   object-fit: contain;
-  /* 给近白/近黑透明图标补一圈描边，避免在底板上融掉 */
-  filter: drop-shadow(0 0 0.55px rgb(0 0 0 / 55%)) drop-shadow(0 0 0.55px rgb(255 255 255 / 45%));
+  /*
+   * 无底板：用 0 blur 的四向 drop-shadow 做硬描边
+   * 比带模糊的光晕更利落，也减少彩色图标边缘色晕
+   */
+  filter: drop-shadow(0.35px 0 0 rgb(0 0 0 / 45%)) drop-shadow(-0.35px 0 0 rgb(0 0 0 / 45%))
+    drop-shadow(0 0.35px 0 rgb(0 0 0 / 45%)) drop-shadow(0 -0.35px 0 rgb(0 0 0 / 45%))
+    drop-shadow(0.35px 0 0 rgb(255 255 255 / 35%)) drop-shadow(-0.35px 0 0 rgb(255 255 255 / 35%))
+    drop-shadow(0 0.35px 0 rgb(255 255 255 / 35%)) drop-shadow(0 -0.35px 0 rgb(255 255 255 / 35%));
 }
 
 .node-label {

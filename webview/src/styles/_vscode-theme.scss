@@ -237,8 +237,6 @@ body {
 
   /* 图片预览浮层：固定深色底；高对比 body 类再覆盖为 contrast 边框 */
   --v2ex-image-preview-border: rgb(255 255 255 / 18%);
-  /* 节点图标底板：偏浅中性灰，兼顾深色/浅色（含白前景透明底）图标 */
-  --v2ex-media-plate-bg: color-mix(in srgb, var(--v2ex-webview-fg) 72%, var(--v2ex-webview-bg));
 
   /* 与具体 UI 框架无关的形状和动效约束 */
   --v2ex-radius-xs: 3px;
