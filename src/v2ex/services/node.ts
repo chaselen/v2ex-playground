@@ -39,17 +39,11 @@ export class NodeService {
   /** 获取所有节点 */
   async getAll(): Promise<Node[]> {
     if (this.cachedNodes.length) return this.cachedNodes
-    const { data: html } = await this.session.get<string>('/planes')
-    const $ = cheerio.load(html)
-    const nodes: Node[] = []
-    $('a.item_node').each((_, element) => {
-      nodes.push({
-        name: $(element).attr('href')?.split('go/')[1] || '',
-        title: $(element).text().trim()
-      })
-    })
-    this.cachedNodes = nodes
-    return nodes
+    const { data } = await this.session.get<V2exApiNode[]>('/api/nodes/all.json')
+    this.cachedNodes = (Array.isArray(data) ? data : [])
+      .map(item => this.mapApiNode(item))
+      .filter(node => node.name.length > 0)
+    return this.cachedNodes
   }
 
   /** 获取已收藏节点 */
@@ -121,10 +115,62 @@ export class NodeService {
     return {
       name: nodeName,
       title: header.find('.node-breadcrumb').first().text().split('›').pop()?.trim() || nodeName,
-      avatar: avatar ? new URL(avatar, this.baseUrl).toString() : undefined,
+      avatar: this.normalizeAvatar(avatar),
       description: description || undefined,
       isCollected,
       collectCount
     }
   }
+
+  /**
+   * 将 `/api/nodes/all.json` 节点映射为领域类型
+   * @param item API 节点
+   */
+  private mapApiNode(item: V2exApiNode): Node {
+    const collectCount = typeof item.stars === 'number' && item.stars >= 0 ? item.stars : undefined
+
+    return {
+      name: item.name?.trim() || '',
+      title: item.title?.trim() || item.name?.trim() || '',
+      avatar: this.normalizeAvatar(
+        item.avatar_mini || item.avatar_normal || item.avatar_large || undefined
+      ),
+      collectCount
+    }
+  }
+
+  /**
+   * 规范化节点图标地址
+   * API / 页面常对无自定义图标节点返回 `/static/img/node_default_*.png`，这类占位图视为无图标
+   * @param avatarSrc 原始图标地址
+   */
+  private normalizeAvatar(avatarSrc?: string): string | undefined {
+    if (!avatarSrc?.trim()) {
+      return undefined
+    }
+
+    try {
+      const avatar = new URL(avatarSrc, this.baseUrl).toString()
+      /* node_default_* 是站点统一占位图，不作为真实节点图标返回 */
+      return avatar.includes('node_default') ? undefined : avatar
+    } catch {
+      return undefined
+    }
+  }
+}
+
+/** V2EX `/api/nodes/all.json` 节点字段 */
+interface V2exApiNode {
+  /** 节点 name */
+  name?: string
+  /** 节点标题 */
+  title?: string
+  /** 收藏人数 */
+  stars?: number
+  /** 小尺寸图标 */
+  avatar_mini?: string
+  /** 常规尺寸图标 */
+  avatar_normal?: string
+  /** 大尺寸图标 */
+  avatar_large?: string
 }

@@ -16,6 +16,7 @@ import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { addCustomNode, getCustomNodes, removeCustomNode } from '@/features/customNodes'
+import { showAddCustomNodeQuickPick } from '@/features/nodeQuickPick'
 import {
   EXPLORE_NODES,
   InitData,
@@ -319,7 +320,8 @@ export default class MainViewProvider
   private async _getInitData(): Promise<InitData> {
     const customNodes = getCustomNodes().map(n => ({
       name: n.name,
-      title: n.title
+      title: n.title,
+      avatar: n.avatar
     }))
     // 持久化凭据可能仍在后台验证，此时先保留登录态以展示受保护标签的骨架屏
     const loggedIn = G.V2ex.hasLoginSession()
@@ -427,7 +429,8 @@ export default class MainViewProvider
     return {
       nodes: customNodes.map(n => ({
         name: n.name,
-        title: n.title
+        title: n.title,
+        avatar: n.avatar
       }))
     }
   }
@@ -445,20 +448,7 @@ export default class MainViewProvider
     )
 
     const customNodeNames = new Set(getCustomNodes().map(node => node.name))
-    const items = nodes.map(node => ({
-      label: node.title,
-      description: customNodeNames.has(node.name)
-        ? `(${node.name}) · $(check) 已添加`
-        : `(${node.name})`,
-      name: node.name,
-      title: node.title
-    }))
-
-    const select = await vscode.window.showQuickPick(items, {
-      title: '添加自定义节点',
-      placeHolder: '搜索节点',
-      matchOnDescription: true
-    })
+    const select = await showAddCustomNodeQuickPick(nodes, customNodeNames)
 
     if (!select) {
       return this._getCustomNodesData()
@@ -466,7 +456,8 @@ export default class MainViewProvider
 
     const isAdd = await addCustomNode({
       name: select.name,
-      title: select.title
+      title: select.title,
+      avatar: select.avatar
     })
 
     if (isAdd) {
