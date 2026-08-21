@@ -16,6 +16,7 @@ import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { addCustomNode, getCustomNodes, removeCustomNode } from '@/features/customNodes'
+import { toWebviewNodesWithAvatars } from '@/features/nodeAvatars'
 import { showAddCustomNodeQuickPick } from '@/features/nodeQuickPick'
 import {
   EXPLORE_NODES,
@@ -318,11 +319,7 @@ export default class MainViewProvider
    * 获取初始数据
    */
   private async _getInitData(): Promise<InitData> {
-    const customNodes = getCustomNodes().map(n => ({
-      name: n.name,
-      title: n.title,
-      avatar: n.avatar
-    }))
+    const customNodes = toWebviewNodesWithAvatars(getCustomNodes())
     // 持久化凭据可能仍在后台验证，此时先保留登录态以展示受保护标签的骨架屏
     const loggedIn = G.V2ex.hasLoginSession()
 
@@ -351,10 +348,7 @@ export default class MainViewProvider
 
     const nodes = await G.V2ex.getCollectionNodes()
     return {
-      nodes: nodes.map(node => ({
-        name: node.name,
-        title: node.title
-      }))
+      nodes: toWebviewNodesWithAvatars(nodes)
     }
   }
 
@@ -425,13 +419,8 @@ export default class MainViewProvider
    * 获取自定义节点视图数据
    */
   private _getCustomNodesData(): NodeListData {
-    const customNodes = getCustomNodes()
     return {
-      nodes: customNodes.map(n => ({
-        name: n.name,
-        title: n.title,
-        avatar: n.avatar
-      }))
+      nodes: toWebviewNodesWithAvatars(getCustomNodes())
     }
   }
 

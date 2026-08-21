@@ -73,7 +73,7 @@ function renderPlaceholder(
     case 'node-topics':
       return <NodeTopicsPlaceholder rows={rows} />
     case 'node-tree':
-      return <NodeTreePlaceholder rows={rows} />
+      return <NodeTreePlaceholder rows={rows} showAvatar={showAvatar} />
     case 'my':
       return <MyPlaceholder rows={rows} />
   }
@@ -280,7 +280,13 @@ function buildNodeTreeGroups(rows: number): number[] {
 }
 
 /** 主面板节点树占位：节点 / 话题两级，对齐自定义与收藏页 */
-function NodeTreePlaceholder({ rows }: SkeletonRowsProps) {
+function NodeTreePlaceholder({
+  rows,
+  showAvatar
+}: SkeletonRowsProps & {
+  /** 是否预留节点图标占位；自定义 / 收藏列表为 true */
+  showAvatar: boolean
+}) {
   const groups = buildNodeTreeGroups(rows)
 
   return (
@@ -293,6 +299,13 @@ function NodeTreePlaceholder({ rows }: SkeletonRowsProps) {
               shape="square"
               className={styles['tree-chevron']}
             />
+            {showAvatar ? (
+              <Skeleton.Avatar
+                size="extra-extra-small"
+                shape="square"
+                className={styles['tree-node-avatar']}
+              />
+            ) : null}
             <Skeleton.Title
               className={styles['tree-node-label']}
               style={{ width: `${46 + (nodeIndex % 3) * 12}%` }}

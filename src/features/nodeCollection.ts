@@ -1,5 +1,6 @@
 import G from '@/global'
 import { logger } from '@/core/logger'
+import { toWebviewNodesWithAvatars } from '@/features/nodeAvatars'
 import type { NodeListData } from '@/shared/webview'
 
 /** 收藏节点列表变化回调 */
@@ -36,10 +37,7 @@ export async function notifyCollectionNodesChanged(): Promise<void> {
 
     const nodes = await G.V2ex.getCollectionNodes()
     await dispatchCollectionNodesChanged({
-      nodes: nodes.map(node => ({
-        name: node.name,
-        title: node.title
-      }))
+      nodes: toWebviewNodesWithAvatars(nodes)
     })
   } catch (err) {
     logger.error('同步收藏节点列表失败', err)

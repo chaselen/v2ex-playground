@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import { ChevronRight, Inbox, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import PageSkeleton from '@/components/PageSkeleton'
@@ -123,6 +123,7 @@ function createNodeTreeItem(tab: MainTabKey, node: NodeItem): TreeItem {
     type: 'node',
     tab,
     itemKey: node.name,
+    avatar: node.avatar,
     loading: node.loading,
     page: node.page,
     totalPage: node.totalPage,
@@ -135,6 +136,47 @@ function createNodeTreeItem(tab: MainTabKey, node: NodeItem): TreeItem {
 /** 获取节点树项 key */
 function getNodeKey(itemKey: string): string {
   return `node:${itemKey}`
+}
+
+/**
+ * 渲染自定义 / 收藏节点前的图标
+ * 首页分类无节点图，不预留占位
+ * @param tab 标签 key
+ * @param avatar 节点图标地址
+ */
+function renderNodeAvatar(tab: MainTabKey, avatar?: string): ReactNode {
+  if (tab !== 'custom' && tab !== 'collection') {
+    return null
+  }
+
+  if (avatar) {
+    return <NodeAvatarImage src={avatar} />
+  }
+
+  return <span className={styles['node-avatar-fallback']} aria-hidden="true" />
+}
+
+/**
+ * 节点远程图标；加载失败时回退占位
+ * @param src 图标地址
+ */
+function NodeAvatarImage({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return <span className={styles['node-avatar-fallback']} aria-hidden="true" />
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      className={styles['node-avatar']}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 /** 从话题树项 key 中读取节点 key */
@@ -350,6 +392,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
                     className={expanded ? styles['node-chevron--expanded'] : undefined}
                     aria-hidden="true"
                   />
+                  {renderNodeAvatar(tab, data.avatar)}
                   <span className={styles['node-label']}>{data.label}</span>
                 </button>
                 {renderNodeActions(data)}
@@ -368,7 +411,13 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
 
   function renderContent() {
     if (loading) {
-      return <PageSkeleton variant="node-tree" rows={7} />
+      return (
+        <PageSkeleton
+          variant="node-tree"
+          rows={7}
+          showAvatar={tab === 'custom' || tab === 'collection'}
+        />
+      )
     }
 
     if (nodes.length) {

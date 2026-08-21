@@ -124,6 +124,22 @@ $node-child-indent: 18px;
   }
 }
 
+.node-avatar,
+.node-avatar-fallback {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 3px;
+  background: var(--v2ex-media-plate-bg);
+}
+
+.node-avatar {
+  object-fit: contain;
+  /* 给近白/近黑透明图标补一圈描边，避免在底板上融掉 */
+  filter: drop-shadow(0 0 0.55px rgb(0 0 0 / 55%)) drop-shadow(0 0 0.55px rgb(255 255 255 / 45%));
+}
+
 .node-label {
   min-width: 0;
   color: var(--v2ex-main-content-fg);

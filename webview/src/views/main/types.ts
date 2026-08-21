@@ -40,6 +40,8 @@ export interface TreeItem {
   itemKey?: string
   topicId?: number
   title?: string
+  /** 节点图标地址；自定义 / 收藏节点列表使用 */
+  avatar?: string
   replies?: number
   isRead?: boolean
   page?: number
