@@ -14,9 +14,8 @@
 
 添加入口使用 VS Code QuickPick：
 
-- 列表项展示节点标题
-- `description` 含节点 `name`、收藏人数（`$(bookmark) {collectCount}`），已添加项附加 `$(check) 已添加`
-- 支持按标题与 `description` 搜索
+- `label` 为 `{title} ({name}) · $(bookmark) {collectCount}`；已添加项前缀 `$(check)`
+- 支持按标题、`name` 与收藏数搜索
 
 ## 存储
 

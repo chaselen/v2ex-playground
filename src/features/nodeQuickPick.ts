@@ -21,8 +21,7 @@ export function showAddCustomNodeQuickPick(
   customNodeNames: ReadonlySet<string>
 ): Thenable<AddCustomNodeQuickPickItem | undefined> {
   const items: AddCustomNodeQuickPickItem[] = nodes.map(node => ({
-    label: node.title,
-    description: formatNodeQuickPickDescription(node, customNodeNames.has(node.name)),
+    label: formatNodeQuickPickLabel(node, customNodeNames.has(node.name)),
     name: node.name,
     title: node.title,
     avatar: node.avatar
@@ -30,27 +29,22 @@ export function showAddCustomNodeQuickPick(
 
   return vscode.window.showQuickPick(items, {
     title: '添加自定义节点',
-    placeHolder: '搜索节点',
-    matchOnDescription: true
+    placeHolder: '搜索节点'
   })
 }
 
 /**
- * 组装节点 QuickPick 描述：name、收藏数、已添加标记
- * description 支持 Codicon 占位符，如 `$(bookmark)`、`$(check)`
+ * 组装节点 QuickPick 标签：`✓ 标题 (name) · 🔖 收藏数`
  * @param node 节点
  * @param alreadyAdded 是否已在自定义节点中
  */
-function formatNodeQuickPickDescription(node: Node, alreadyAdded: boolean): string {
-  const parts = [`(${node.name})`]
+function formatNodeQuickPickLabel(node: Node, alreadyAdded: boolean): string {
+  const title = `${node.title} (${node.name})`
+  const label = alreadyAdded ? `$(check) ${title}` : title
 
-  if (typeof node.collectCount === 'number') {
-    parts.push(`$(bookmark) ${node.collectCount.toLocaleString('zh-CN')}`)
+  if (typeof node.collectCount !== 'number') {
+    return label
   }
 
-  if (alreadyAdded) {
-    parts.push('$(check) 已添加')
-  }
-
-  return parts.join(' · ')
+  return `${label} · $(bookmark) ${node.collectCount.toLocaleString('zh-CN')}`
 }

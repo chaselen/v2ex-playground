@@ -451,10 +451,10 @@ export default class MainViewProvider
 
     if (isAdd) {
       return this._getCustomNodesData()
-    } else {
-      vscode.window.showInformationMessage('节点已经存在，无需再添加')
-      return this._getCustomNodesData()
     }
+
+    vscode.window.showInformationMessage('节点已经存在，无需再添加')
+    return this._getCustomNodesData()
   }
 
   /**
