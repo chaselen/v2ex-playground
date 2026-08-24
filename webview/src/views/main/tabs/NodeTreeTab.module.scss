@@ -136,13 +136,10 @@ $node-child-indent: 18px;
 .node-avatar {
   object-fit: contain;
   /*
-   * 无底板：用 0 blur 的四向 drop-shadow 做硬描边
-   * 比带模糊的光晕更利落，也减少彩色图标边缘色晕
+   * 无底板：单层轻量 drop-shadow 提升透明图标对比
+   * 多层链式 drop-shadow 在节点较多时会明显拖慢 Webview 绘制
    */
-  filter: drop-shadow(0.35px 0 0 rgb(0 0 0 / 45%)) drop-shadow(-0.35px 0 0 rgb(0 0 0 / 45%))
-    drop-shadow(0 0.35px 0 rgb(0 0 0 / 45%)) drop-shadow(0 -0.35px 0 rgb(0 0 0 / 45%))
-    drop-shadow(0.35px 0 0 rgb(255 255 255 / 35%)) drop-shadow(-0.35px 0 0 rgb(255 255 255 / 35%))
-    drop-shadow(0 0.35px 0 rgb(255 255 255 / 35%)) drop-shadow(0 -0.35px 0 rgb(255 255 255 / 35%));
+  filter: drop-shadow(0 0 0.8px rgb(0 0 0 / 50%));
 }
 
 .node-label {
