@@ -29,6 +29,8 @@ export function useNodeTreeTabs() {
     custom: true,
     collection: false
   })
+  /** 是否正在添加收藏节点 */
+  const [collectingNode, setCollectingNode] = useState(false)
   const nodeRequestSeq = useRef(new Map<string, number>())
 
   /**
@@ -226,11 +228,14 @@ export function useNodeTreeTabs() {
 
   /** 添加收藏节点 */
   async function collectNode() {
+    setCollectingNode(true)
     try {
       const data = await vscode.collectNode()
       applyCollectionNodes(data)
     } catch (err) {
       Toast.error((err as Error).message || '收藏节点失败')
+    } finally {
+      setCollectingNode(false)
     }
   }
 
@@ -357,6 +362,7 @@ export function useNodeTreeTabs() {
     applyCollectionNodes,
     cancelCollectNode,
     changeNodePage,
+    collectingNode,
     collectNode,
     expandNode,
     initializeTabs,

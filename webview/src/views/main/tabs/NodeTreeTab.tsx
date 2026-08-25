@@ -22,6 +22,8 @@ interface NodeTreeTabProps {
   error?: string | null
   /** 添加节点 */
   onAddNode?: () => void
+  /** 是否正在添加节点 */
+  addNodeLoading?: boolean
   /** 重试加载标签 */
   onRetryTab?: () => void
   /** 展开节点 */
@@ -197,6 +199,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     nodes,
     loggedIn,
     loading,
+    addNodeLoading = false,
     error,
     onAddNode,
     onRetryTab,
@@ -458,6 +461,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
             variant="primary"
             size="small"
             icon={<Plus aria-hidden="true" />}
+            loading={addNodeLoading}
             onClick={onAddNode}
           >
             添加节点
