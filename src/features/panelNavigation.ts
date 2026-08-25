@@ -49,7 +49,8 @@ const panelDeps = {
   openMember,
   openTopic,
   openNode,
-  openTag
+  openTag,
+  openCreateTopic
 }
 
 /**
@@ -234,14 +235,20 @@ export function openRecentBrowse() {
   })
 }
 
-/** 打开创作新主题页面 */
-export function openCreateTopic() {
+/**
+ * 打开创作新主题页面
+ * @param nodeName 需要预选的主题节点 name
+ */
+export function openCreateTopic(nodeName?: string) {
   if (createTopicPanel) {
     createTopicPanel.reveal()
+    if (nodeName) {
+      createTopicPanel.selectNode(nodeName)
+    }
     return
   }
 
-  createTopicPanel = new CreateTopicPanelController(panelDeps)
+  createTopicPanel = new CreateTopicPanelController(panelDeps, nodeName)
   createTopicPanel.onDidDispose(() => {
     createTopicPanel = undefined
   })

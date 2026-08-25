@@ -50,7 +50,16 @@ export default function CreateTopicApp() {
   useEffect(
     () =>
       subscribeWebviewState(
-        handler => vscode.on('createTopicStateChanged', data => handler(data.state)),
+        handler => {
+          const disposeState = vscode.on('createTopicStateChanged', data => handler(data.state))
+          const disposeNode = vscode.on('createTopicNodeSelected', data =>
+            setDraft(current => ({ ...current, node: data.node }))
+          )
+          return () => {
+            disposeState()
+            disposeNode()
+          }
+        },
         () => vscode.ready(),
         nextState => {
           setState(nextState)

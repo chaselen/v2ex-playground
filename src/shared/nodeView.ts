@@ -30,6 +30,8 @@ export interface NodePanelViewState {
 /** 节点主题面板 Webview RPC 命令 */
 export interface NodePanelRpcCommands
   extends WebviewCommonRpcCommands, WebviewStateRpcCommands<NodePanelViewState> {
+  /** 打开创作新主题面板并预选当前节点 */
+  createTopic(): void
   /** 刷新当前页主题列表 */
   refresh(): void
   /** 加载指定页主题列表 */

@@ -64,4 +64,8 @@ export interface CreateTopicPanelWebviewEvents {
     /** 最新面板状态 */
     state: CreateTopicPanelViewState
   }
+  createTopicNodeSelected: {
+    /** 从其他页面预选的节点 */
+    node: Node
+  }
 }

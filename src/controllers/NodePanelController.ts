@@ -18,9 +18,15 @@ import type {
   WebviewRpcController
 } from '@/shared/webview'
 
+/** 节点面板导航依赖 */
+interface NodePanelNavigationDeps extends WebviewNavigationDeps {
+  /** 打开创作新主题面板 */
+  openCreateTopic: (nodeName?: string) => void
+}
+
 /** 节点主题面板控制器 */
 export class NodePanelController
-  extends WebviewCommonController
+  extends WebviewCommonController<NodePanelNavigationDeps>
   implements WebviewRpcController<NodePanelRpcCommands>
 {
   /** 节点面板缓存 key */
@@ -49,7 +55,7 @@ export class NodePanelController
    * @param title 初始面板标题
    * @param deps 外部面板导航依赖
    */
-  constructor(nodeName: string, title: string, deps: WebviewNavigationDeps) {
+  constructor(nodeName: string, title: string, deps: NodePanelNavigationDeps) {
     super(deps)
     this.nodeName = nodeName
     this.key = G.V2ex.getNodeLink(this.nodeName)
@@ -117,6 +123,11 @@ export class NodePanelController
    */
   rpc_loadPage(page: number) {
     return this.reload(page)
+  }
+
+  /** 打开创作新主题面板并预选当前节点 */
+  rpc_createTopic() {
+    this.navigation.openCreateTopic(this.nodeName)
   }
 
   /** 收藏当前节点 */

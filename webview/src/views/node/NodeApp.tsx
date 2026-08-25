@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bookmark, BookmarkPlus, Inbox, RefreshCw } from 'lucide-react'
+import { Bookmark, BookmarkPlus, Inbox, RefreshCw, SquarePen } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
@@ -135,6 +135,15 @@ export default function NodeApp() {
                 </div>
               </div>
               <div className="node-header-actions">
+                <Button
+                  aria-label={`在${node?.title || '当前节点'}创建新主题`}
+                  icon={<SquarePen aria-hidden="true" />}
+                  variant="primary"
+                  disabled={loading}
+                  onClick={() => void vscode.createTopic()}
+                >
+                  创建新主题
+                </Button>
                 {canCollect && (
                   <Button
                     aria-label={isCollected ? '取消收藏节点' : '收藏节点'}

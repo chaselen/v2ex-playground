@@ -46,12 +46,16 @@ export class CreateTopicPanelController
   private nodes: Node[] = []
   /** 当前草稿所属用户名 */
   private username = ''
+  /** 等待表单加载后应用的预选节点 name */
+  private pendingNodeName = ''
 
   /**
    * @param deps 外部面板导航依赖
+   * @param initialNodeName 初次打开时需要预选的节点 name
    */
-  constructor(deps: WebviewNavigationDeps) {
+  constructor(deps: WebviewNavigationDeps, initialNodeName?: string) {
     super(deps)
+    this.pendingNodeName = initialNodeName?.trim() || ''
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.createTopic',
       title: '创作新主题',
@@ -68,6 +72,42 @@ export class CreateTopicPanelController
   /** 激活当前面板 */
   reveal() {
     this.panel.reveal()
+  }
+
+  /**
+   * 预选主题节点并保留当前草稿的其他字段
+   * @param nodeName 需要预选的节点 name
+   */
+  selectNode(nodeName: string) {
+    const normalizedNodeName = nodeName.trim()
+    if (!normalizedNodeName) return
+    if (this.viewState.status !== 'form') {
+      this.pendingNodeName = normalizedNodeName
+      return
+    }
+
+    const selectedNode = this.toSelectedNode(normalizedNodeName)
+    if (!selectedNode) return
+    const draft = normalizeDraft({ ...this.viewState.form.draft, node: selectedNode })
+    this.viewState = {
+      status: 'form',
+      form: { ...this.viewState.form, draft }
+    }
+    this.rpc.post('createTopicNodeSelected', { node: selectedNode })
+  }
+
+  /**
+   * 从全量节点列表生成表单节点
+   * @param nodeName 节点 name
+   */
+  private toSelectedNode(nodeName: string): Node | undefined {
+    const node = this.nodes.find(item => item.name === nodeName)
+    if (!node) return undefined
+    return {
+      name: node.name,
+      title: node.title,
+      avatar: getV2exNodeAvatarUrl(node.name, 'normal')
+    }
   }
 
   /** 监听面板销毁 */
@@ -121,7 +161,14 @@ export class CreateTopicPanelController
   /** 保存当前草稿 */
   async rpc_saveDraft(draft: CreateTopicDraft) {
     if (!this.username) return
-    await saveCreateTopicDraft(this.username, normalizeDraft(draft))
+    const normalizedDraft = normalizeDraft(draft)
+    if (this.viewState.status === 'form') {
+      this.viewState = {
+        status: 'form',
+        form: { ...this.viewState.form, draft: normalizedDraft }
+      }
+    }
+    await saveCreateTopicDraft(this.username, normalizedDraft)
   }
 
   /** 发布新主题 */
@@ -173,6 +220,10 @@ export class CreateTopicPanelController
       )
       if (draft.node && !this.nodes.some(node => node.name === draft.node?.name)) {
         draft.node = undefined
+      }
+      if (this.pendingNodeName) {
+        draft.node = this.toSelectedNode(this.pendingNodeName)
+        this.pendingNodeName = ''
       }
       this.postViewState({
         status: 'form',

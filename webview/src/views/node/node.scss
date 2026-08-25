@@ -112,7 +112,13 @@
   }
 
   .node-header {
+    flex-direction: column;
     padding: 14px;
+  }
+
+  .node-header-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .node-header-main {
