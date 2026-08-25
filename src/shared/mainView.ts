@@ -258,6 +258,7 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
   removeNode(nodeName: string): NodeListData
   cancelCollectNode(nodeName: string): void
   openBalance(): void
+  createTopic(): void
   search(): void
   login(): void
   ctxCopyLink(payload: { topicId: number; label: string }): void

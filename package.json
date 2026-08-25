@@ -34,6 +34,11 @@
         "icon": "$(search)"
       },
       {
+        "command": "v2ex.createTopic",
+        "title": "创作新主题",
+        "icon": "$(edit)"
+      },
+      {
         "command": "v2ex.openTopic",
         "title": "打开帖子",
         "icon": "$(go-to-file)"
@@ -81,6 +86,10 @@
         },
         {
           "command": "v2ex.search",
+          "when": "false"
+        },
+        {
+          "command": "v2ex.createTopic",
           "when": "false"
         },
         {

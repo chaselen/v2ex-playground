@@ -336,6 +336,7 @@ function MyPlaceholder({ rows }: SkeletonRowsProps) {
         <div className={styles['my-profile']}>
           <Skeleton.Avatar className={styles['my-avatar']} shape="square" />
           <Skeleton.Title className={styles.username} />
+          <Skeleton.Button className={styles['my-profile-action']} />
         </div>
         <div className={styles.stats}>
           {Array.from({ length: 3 }, (_, index) => (

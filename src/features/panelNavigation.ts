@@ -6,6 +6,7 @@ import { SearchPanelController } from '@/controllers/SearchPanelController'
 import { RecentBrowsePanelController } from '@/controllers/RecentBrowsePanelController'
 import { TagPanelController } from '@/controllers/TagPanelController'
 import { NodePanelController } from '@/controllers/NodePanelController'
+import { CreateTopicPanelController } from '@/controllers/CreateTopicPanelController'
 import type { OpenNodePayload, OpenTopicPayload } from '@/shared/webview'
 import G from '@/global'
 
@@ -37,6 +38,9 @@ let searchPanel: SearchPanelController | undefined
 
 /** 最近浏览页面控制器 */
 let recentBrowsePanel: RecentBrowsePanelController | undefined
+
+/** 创作新主题页面控制器 */
+let createTopicPanel: CreateTopicPanelController | undefined
 
 /**
  * 控制器面板导航依赖
@@ -185,6 +189,7 @@ export function refreshTopicPanelsForAuthChange() {
     nodePanel.refreshForAuthChange()
   })
   balancePanel?.refreshForAuthChange()
+  void createTopicPanel?.refreshForAuthChange()
 }
 
 /**
@@ -227,4 +232,18 @@ export function openRecentBrowse() {
   recentBrowsePanel.onDidDispose(() => {
     recentBrowsePanel = undefined
   })
+}
+
+/** 打开创作新主题页面 */
+export function openCreateTopic() {
+  if (createTopicPanel) {
+    createTopicPanel.reveal()
+    return
+  }
+
+  createTopicPanel = new CreateTopicPanelController(panelDeps)
+  createTopicPanel.onDidDispose(() => {
+    createTopicPanel = undefined
+  })
+  void createTopicPanel.load()
 }

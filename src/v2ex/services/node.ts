@@ -128,6 +128,7 @@ export class NodeService {
    */
   private mapApiNode(item: V2exApiNode): Node {
     const collectCount = typeof item.stars === 'number' && item.stars >= 0 ? item.stars : undefined
+    const topicCount = typeof item.topics === 'number' && item.topics >= 0 ? item.topics : undefined
 
     return {
       name: item.name?.trim() || '',
@@ -135,7 +136,8 @@ export class NodeService {
       avatar: this.normalizeAvatar(
         item.avatar_mini || item.avatar_normal || item.avatar_large || undefined
       ),
-      collectCount
+      collectCount,
+      topicCount
     }
   }
 
@@ -167,6 +169,8 @@ interface V2exApiNode {
   title?: string
   /** 收藏人数 */
   stars?: number
+  /** 节点主题总数 */
+  topics?: number
   /** 小尺寸图标 */
   avatar_mini?: string
   /** 常规尺寸图标 */

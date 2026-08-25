@@ -4,7 +4,7 @@
 
 添加自定义节点时，扩展通过 `GET /api/nodes/all.json` 获取全量节点，而不是解析 `/planes` HTML。
 
-- 映射字段：`name`、`title`、`stars` → `collectCount`；图标优先使用 `avatar_mini`（其次 `avatar_normal` / `avatar_large`）
+- 映射字段：`name`、`title`、`stars` → `collectCount`、`topics` → `topicCount`；图标优先使用 `avatar_mini`（其次 `avatar_normal` / `avatar_large`）
 - 默认占位图（路径含 `node_default`）不写入 `avatar`
 - 协议相对地址（如 `//cdn.v2ex.com/...`）会规范化为绝对 `https` URL
 - `NodeService` 进程内缓存全量列表；同会话重复打开添加面板不会重复请求

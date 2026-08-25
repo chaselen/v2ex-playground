@@ -503,6 +503,9 @@
 }
 
 .my-profile {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 26px;
+  align-items: center;
   gap: 9px;
   padding: 10px 12px 8px;
 }
@@ -515,6 +518,11 @@
 .my-profile .username {
   width: 42%;
   margin: 0;
+}
+
+.my-profile-action {
+  width: 26px;
+  height: 26px;
 }
 
 .stats {

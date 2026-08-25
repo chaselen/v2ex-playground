@@ -43,6 +43,28 @@ describe('NodeService', () => {
     expect(service.getLink('0x10c')).toBe('https://www.v2ex.com/go/0x10c')
   })
 
+  test('maps topic and collection counts from all-nodes API', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: [
+        {
+          name: 'programmer',
+          title: '程序员',
+          topics: 54321,
+          stars: 1234
+        }
+      ]
+    })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+
+    await expect(service.getAll()).resolves.toEqual([
+      expect.objectContaining({
+        name: 'programmer',
+        collectCount: 1234,
+        topicCount: 54321
+      })
+    ])
+  })
+
   test('parses node page collection state and topics meta', async () => {
     const get = vi.fn().mockResolvedValue({
       data: createNodePageHtml({

@@ -11,6 +11,7 @@ describe('V2exClient nodes', () => {
     expectNode(nodes[0])
     expect(nodes.every(node => node.name.length > 0 && node.title.length > 0)).toBe(true)
     expect(nodes.some(node => typeof node.collectCount === 'number')).toBe(true)
+    expect(nodes.every(node => typeof node.topicCount === 'number')).toBe(true)
     expect(nodes.some(node => Boolean(node.avatar))).toBe(true)
     expect(nodes.every(node => !node.avatar || /^https:\/\//.test(node.avatar))).toBe(true)
     expect(nodes.every(node => !node.avatar?.includes('node_default'))).toBe(true)
@@ -21,6 +22,7 @@ describe('V2exClient nodes', () => {
       title: '程序员'
     })
     expect(typeof programmer?.collectCount).toBe('number')
+    expect(typeof programmer?.topicCount).toBe('number')
 
     const cached = await client.getAllNodes()
     expect(cached).toBe(nodes)

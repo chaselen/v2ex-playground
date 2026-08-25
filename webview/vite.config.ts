@@ -26,6 +26,7 @@ export default defineConfig({
         tag: resolve(import.meta.dirname, 'tag.html'),
         node: resolve(import.meta.dirname, 'node.html'),
         recentBrowse: resolve(import.meta.dirname, 'recent-browse.html'),
+        createTopic: resolve(import.meta.dirname, 'create-topic.html'),
         twoFactor: resolve(import.meta.dirname, 'two-factor.html'),
         theme: resolve(import.meta.dirname, 'theme.html')
       }

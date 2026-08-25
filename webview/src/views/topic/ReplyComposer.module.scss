@@ -2,12 +2,19 @@
   margin-top: 18px;
 }
 
-.tabs {
+.toolbar {
   display: flex;
-  gap: 24px;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 8px;
   border-bottom: 1px solid var(--v2ex-border);
+}
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
 }
 
 .tab {

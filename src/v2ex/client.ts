@@ -13,6 +13,8 @@ import type {
   AccountOverviewChangedHandler,
   BalanceDetail,
   CheckCookieResult,
+  CreateTopicInput,
+  CreateTopicResult,
   DailySignInResult,
   DailySignInReward,
   DailySignInStatus,
@@ -28,6 +30,7 @@ import type {
   TagTopicList,
   Topic,
   TopicDetail,
+  TopicSyntax,
   TwoFactorRequiredHandler,
   TwoFactorVerification,
   V2exNotification
@@ -361,6 +364,11 @@ export class V2exClient {
     return this.topics.getDetail(topicId, page)
   }
 
+  /** 创作新主题 */
+  createTopic(input: CreateTopicInput): Promise<CreateTopicResult> {
+    return this.topics.create(input)
+  }
+
   /**
    * 获取账户概览
    * @param options 获取选项
@@ -401,6 +409,11 @@ export class V2exClient {
    */
   previewReply(text: string, syntax: 'default' | 'markdown'): Promise<string> {
     return this.topics.previewReply(text, syntax)
+  }
+
+  /** 预览新主题正文 */
+  previewTopic(text: string, syntax: TopicSyntax): Promise<string> {
+    return this.topics.previewTopic(text, syntax)
   }
 
   /**

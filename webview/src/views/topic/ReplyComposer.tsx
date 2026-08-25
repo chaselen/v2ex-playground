@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import { Image, Smile } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import { Button, Popover, Spinner, Textarea, Toast, Tooltip } from '@/components/ui'
@@ -104,14 +104,50 @@ export interface ReplyComposerHandle {
   setContent(content: string): void
 }
 
-/** 回复输入组件属性 */
+/** 正文编辑组件属性 */
 interface ReplyComposerProps {
   /** 是否显示图片 */
   showImages: boolean
   /** 重置编辑状态的标识 */
   resetKey?: string | number
+  /** 受控正文；省略时由组件管理回复正文 */
+  value?: string
+  /** 受控正文变化回调 */
+  onChange?: (content: string) => void
+  /** 最大正文长度 */
+  maxLength?: number
+  /** 编辑框默认行数 */
+  rows?: number
+  /** 编辑框占位文案 */
+  placeholder?: string
+  /** 预览空状态文案 */
+  previewEmptyText?: string
+  /** 生成预览时的无障碍文案 */
+  previewAriaLabel?: string
+  /** 空正文是否禁止进入预览 */
+  previewRequiresContent?: boolean
+  /** 正文预览实现；回复场景默认使用原生格式预览 */
+  onPreview?: (content: string) => Promise<string>
+  /** 图片上传实现 */
+  onUploadImage?: (file: File) => Promise<string>
+  /** Imgur 连通性检测实现 */
+  onCheckImgurConnectivity?: (target: 'upload', refresh: boolean) => Promise<boolean>
+  /** 图片上传状态变化回调 */
+  onUploadingChange?: (uploading: boolean) => void
+  /** 预览或提交前的正文转换 */
+  transformContent?: (content: string) => string
+  /** 编辑模式工具栏右侧内容 */
+  toolbarEnd?: ReactNode
+  /** 编辑模式工具栏附加类名 */
+  toolbarClassName?: string
+  /** 是否显示回复专用表情入口 */
+  showEmoticons?: boolean
+  /** 根元素附加类名 */
+  className?: string
+  /** 是否禁用编辑器交互 */
+  disabled?: boolean
   /** 提交已处理图片表情的回复内容 */
-  onSubmit(content: string): Promise<void>
+  onSubmit?: (content: string) => Promise<void>
 }
 
 /**
@@ -144,13 +180,35 @@ function getImgurImageMaxSize(file: File) {
 }
 
 /**
- * 话题回复输入组件
+ * 可复用于主题正文的回复编辑组件
  */
 const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(function ReplyComposer(
-  { showImages, resetKey, onSubmit: submitContent },
+  {
+    showImages,
+    resetKey,
+    value: controlledValue,
+    onChange,
+    maxLength = 10000,
+    rows = 5,
+    placeholder = '请尽量让自己的回复能够对别人有帮助',
+    previewEmptyText = '暂无预览内容',
+    previewAriaLabel = '生成回复预览',
+    previewRequiresContent = true,
+    onPreview,
+    onUploadImage,
+    onCheckImgurConnectivity,
+    onUploadingChange,
+    transformContent = replaceImageEmoticonTokens,
+    toolbarEnd,
+    toolbarClassName,
+    showEmoticons = true,
+    className,
+    disabled = false,
+    onSubmit: submitContent
+  },
   ref
 ) {
-  const [value, setValue] = useState('')
+  const [internalValue, setInternalValue] = useState('')
   const [mode, setMode] = useState<ReplyComposerMode>('edit')
   const [previewing, setPreviewing] = useState(false)
   const [posting, setPosting] = useState(false)
@@ -165,16 +223,18 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   const [uploadingImage, setUploadingImage] = useState(false)
   const [draggingImage, setDraggingImage] = useState(false)
   const [emoticonPanelVisible, setEmoticonPanelVisible] = useState(false)
+  /** 当前正文 */
+  const value = controlledValue ?? internalValue
   const replyShortcutLabel = isApplePlatform() ? '⌘+Enter' : 'Ctrl+Enter'
   /** 是否禁用表情选择 */
-  const emoticonDisabled = posting || uploadingImage
+  const emoticonDisabled = disabled || posting || uploadingImage
 
   postingRef.current = posting
 
   useImperativeHandle(ref, () => ({
     setContent(content: string) {
       generationRef.current++
-      setValue(content)
+      updateContent(content)
       setPreviewing(false)
       setPosting(false)
       setPreviewHtml('')
@@ -188,9 +248,15 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     reset()
   }, [resetKey])
 
+  useEffect(() => {
+    onUploadingChange?.(uploadingImage)
+  }, [onUploadingChange, uploadingImage])
+
   /** 重置编辑状态 */
   function reset() {
-    setValue('')
+    if (controlledValue === undefined) {
+      setInternalValue('')
+    }
     setMode('edit')
     setPreviewing(false)
     setPosting(false)
@@ -204,7 +270,10 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       generationRef.current++
       setPreviewing(false)
     }
-    setValue(nextValue)
+    if (controlledValue === undefined) {
+      setInternalValue(nextValue)
+    }
+    onChange?.(nextValue)
     if (nextValue !== previewSource) {
       setPreviewHtml('')
     }
@@ -213,9 +282,15 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   /** 生成回复预览 */
   async function previewReply() {
     if (!value.trim()) {
-      Toast.warning('回复内容不能为空')
-      setMode('edit')
-      requestAnimationFrame(() => getTextarea()?.focus())
+      if (previewRequiresContent) {
+        Toast.warning('回复内容不能为空')
+        setMode('edit')
+        requestAnimationFrame(() => getTextarea()?.focus())
+      } else {
+        setMode('preview')
+        setPreviewHtml('')
+        setPreviewSource('')
+      }
       return
     }
 
@@ -228,7 +303,10 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     setMode('preview')
     setPreviewing(true)
     try {
-      const html = await vscode.previewReply(replaceImageEmoticonTokens(value))
+      const previewContent = transformContent(value)
+      const html = onPreview
+        ? await onPreview(previewContent)
+        : await vscode.previewReply(previewContent)
       if (generation === generationRef.current) {
         setPreviewHtml(html)
         setPreviewSource(value)
@@ -247,7 +325,11 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
 
   /** 提交回复 */
   async function submitReply() {
-    const normalizedContent = replaceImageEmoticonTokens(value)
+    if (!submitContent) {
+      return
+    }
+
+    const normalizedContent = transformContent(value)
     if (!normalizedContent) {
       Toast.warning('回复内容不能为空')
       requestAnimationFrame(() => getTextarea()?.focus())
@@ -272,8 +354,12 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     }
   }
 
-  /** 上传回复图片 */
+  /** 上传正文图片 */
   async function uploadImage(file: File) {
+    if (onUploadImage) {
+      return onUploadImage(file)
+    }
+
     return vscode.uploadImage({
       filename: file.name,
       mimeType: file.type || 'application/octet-stream',
@@ -283,6 +369,10 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
 
   /** 检测 Imgur 连通性 */
   function checkImgurConnectivity(target: 'image' | 'upload', refresh = false) {
+    if (onCheckImgurConnectivity && target === 'upload') {
+      return onCheckImgurConnectivity(target, refresh)
+    }
+
     return vscode.checkImgurConnectivity({ target, refresh })
   }
 
@@ -498,7 +588,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param files 文件列表
    */
   async function uploadAndInsertImages(files: FileList | File[]) {
-    if (postingRef.current) {
+    if (disabled || postingRef.current) {
       return
     }
 
@@ -559,7 +649,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param event 粘贴事件
    */
   function handlePaste(event: React.ClipboardEvent<HTMLFormElement>) {
-    if (posting) {
+    if (disabled || posting) {
       return
     }
 
@@ -582,7 +672,13 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param event 键盘事件
    */
   function handleKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
-    if (posting || event.key !== 'Enter' || (!event.metaKey && !event.ctrlKey)) {
+    if (
+      !submitContent ||
+      disabled ||
+      posting ||
+      event.key !== 'Enter' ||
+      (!event.metaKey && !event.ctrlKey)
+    ) {
       return
     }
 
@@ -593,13 +689,13 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   return (
     <form
       ref={composerRef}
-      className={styles.root}
-      aria-busy={posting}
-      aria-disabled={posting}
-      inert={posting}
+      className={mergeClassNames(styles.root, className)}
+      aria-busy={posting || uploadingImage}
+      aria-disabled={disabled || posting}
+      inert={disabled || posting}
       onSubmit={event => {
         event.preventDefault()
-        if (!posting) {
+        if (!disabled && !posting) {
           void submitReply()
         }
       }}
@@ -607,27 +703,30 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       onDragLeave={() => setDraggingImage(false)}
       onKeyDown={handleKeyDown}
     >
-      <div className={styles.tabs} role="tablist" aria-label="回复编辑模式">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'edit'}
-          className={mergeClassNames(styles.tab, mode === 'edit' && styles.tabActive)}
-          disabled={posting}
-          onClick={() => setMode('edit')}
-        >
-          编辑
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'preview'}
-          className={mergeClassNames(styles.tab, mode === 'preview' && styles.tabActive)}
-          disabled={posting}
-          onClick={() => void previewReply()}
-        >
-          预览
-        </button>
+      <div className={mergeClassNames(styles.toolbar, toolbarClassName)}>
+        <div className={styles.tabs} role="tablist" aria-label="正文编辑模式">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'edit'}
+            className={mergeClassNames(styles.tab, mode === 'edit' && styles.tabActive)}
+            disabled={disabled || posting}
+            onClick={() => setMode('edit')}
+          >
+            编辑
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'preview'}
+            className={mergeClassNames(styles.tab, mode === 'preview' && styles.tabActive)}
+            disabled={disabled || posting}
+            onClick={() => void previewReply()}
+          >
+            预览
+          </button>
+        </div>
+        {toolbarEnd}
       </div>
 
       {mode === 'edit' ? (
@@ -639,18 +738,20 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         >
           <Textarea
             value={value}
-            maxLength={10000}
-            rows={5}
-            placeholder="请尽量让自己的回复能够对别人有帮助"
-            disabled={posting || uploadingImage}
+            maxLength={maxLength}
+            rows={rows}
+            placeholder={placeholder}
+            disabled={disabled || posting || uploadingImage}
             onChange={event => updateContent(event.currentTarget.value)}
           />
-          <span className={styles.characterCount}>{value.length} / 10000</span>
+          <span className={styles.characterCount}>
+            {value.length} / {maxLength}
+          </span>
           <div className={styles.uploadBar}>
             <button
               type="button"
               className={styles.uploadLink}
-              disabled={posting || uploadingImage}
+              disabled={disabled || posting || uploadingImage}
               onClick={selectImage}
             >
               {uploadingImage ? '正在上传图片...' : '选择、粘贴、拖放上传图片'}
@@ -661,7 +762,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       ) : (
         <div className={styles.previewPanel}>
           {previewing ? (
-            <Spinner aria-label="生成回复预览" />
+            <Spinner aria-label={previewAriaLabel} />
           ) : previewHtml ? (
             <EnhancedHtmlContent
               className={mergeClassNames('topic-content', styles.previewContent)}
@@ -669,70 +770,76 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
               showImages={showImages}
             />
           ) : (
-            <p className={styles.previewEmpty}>暂无预览内容</p>
+            <p className={styles.previewEmpty}>{previewEmptyText}</p>
           )}
         </div>
       )}
 
-      <div className={styles.submitRow}>
-        <Popover
-          side="top"
-          align="end"
-          showArrow
-          open={!emoticonDisabled && emoticonPanelVisible}
-          content={renderEmoticonPanel()}
-          className={styles.emoticonPopover}
-          onOpenChange={visible => {
-            if (!emoticonDisabled) {
-              setEmoticonPanelVisible(visible)
-              if (visible) {
-                void checkImgurForEmoticons()
-              }
-            }
-          }}
-        >
-          <span className={styles.extraPopoverTrigger}>
-            <Tooltip content="插入表情">
-              <Button
-                aria-label="插入表情"
-                className={styles.extraButton}
-                icon={<Smile aria-hidden="true" />}
-                size="small"
-                variant="ghost"
-                disabled={emoticonDisabled}
-              />
-            </Tooltip>
-          </span>
-        </Popover>
-        <Tooltip content="上传图片">
-          <Button
-            aria-label="上传图片"
-            className={styles.extraButton}
-            icon={<Image aria-hidden="true" />}
-            size="small"
-            variant="ghost"
-            disabled={posting || uploadingImage}
-            loading={uploadingImage}
-            onClick={selectImage}
-          />
-        </Tooltip>
-        <Button
-          className={styles.submit}
-          variant="primary"
-          type="submit"
-          loading={posting}
-          disabled={posting || uploadingImage}
-        >
-          {posting ? (
-            '回复中'
-          ) : (
-            <>
-              回复
-              <kbd>{replyShortcutLabel}</kbd>
-            </>
+      {(submitContent || showEmoticons) && (
+        <div className={styles.submitRow}>
+          {showEmoticons && (
+            <Popover
+              side="top"
+              align="end"
+              showArrow
+              open={!emoticonDisabled && emoticonPanelVisible}
+              content={renderEmoticonPanel()}
+              className={styles.emoticonPopover}
+              onOpenChange={visible => {
+                if (!emoticonDisabled) {
+                  setEmoticonPanelVisible(visible)
+                  if (visible) {
+                    void checkImgurForEmoticons()
+                  }
+                }
+              }}
+            >
+              <span className={styles.extraPopoverTrigger}>
+                <Tooltip content="插入表情">
+                  <Button
+                    aria-label="插入表情"
+                    className={styles.extraButton}
+                    icon={<Smile aria-hidden="true" />}
+                    size="small"
+                    variant="ghost"
+                    disabled={emoticonDisabled}
+                  />
+                </Tooltip>
+              </span>
+            </Popover>
           )}
-        </Button>
-      </div>
+          <Tooltip content="上传图片">
+            <Button
+              aria-label="上传图片"
+              className={styles.extraButton}
+              icon={<Image aria-hidden="true" />}
+              size="small"
+              variant="ghost"
+              disabled={disabled || posting || uploadingImage}
+              loading={uploadingImage}
+              onClick={selectImage}
+            />
+          </Tooltip>
+          {submitContent && (
+            <Button
+              className={styles.submit}
+              variant="primary"
+              type="submit"
+              loading={posting}
+              disabled={disabled || posting || uploadingImage}
+            >
+              {posting ? (
+                '回复中'
+              ) : (
+                <>
+                  回复
+                  <kbd>{replyShortcutLabel}</kbd>
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
@@ -740,7 +847,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         accept={imgurImageAccept}
         multiple
         hidden
-        disabled={posting || uploadingImage}
+        disabled={disabled || posting || uploadingImage}
         onChange={handleFileChange}
       />
     </form>

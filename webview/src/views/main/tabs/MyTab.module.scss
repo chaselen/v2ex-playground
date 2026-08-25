@@ -50,10 +50,22 @@
 
 .my-profile {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
   padding: 10px 12px 8px;
+}
+
+.my-create-topic {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--v2ex-muted-fg);
+
+  &:hover {
+    color: var(--v2ex-main-content-fg);
+  }
 }
 
 .my-avatar-link {

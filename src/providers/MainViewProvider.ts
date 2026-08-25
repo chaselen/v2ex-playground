@@ -229,6 +229,11 @@ export default class MainViewProvider
     openBalance()
   }
 
+  /** 打开创作新主题面板 */
+  async rpc_createTopic() {
+    await vscode.commands.executeCommand('v2ex.createTopic')
+  }
+
   /** 打开外部链接 */
   rpc_openExternal(path: string) {
     openExternal(path)

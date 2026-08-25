@@ -7,7 +7,20 @@ import {
   parseTopicListCells,
   parseTopicMeta
 } from '../parsers/topic'
-import type { TagTopicList, ThankResponse, Topic, TopicDetail } from '../types'
+import { getResponseUrl } from '../clientUtils'
+import {
+  AccountRestrictedError,
+  LoginRequiredError,
+  type CreateTopicInput,
+  type CreateTopicResult,
+  type TagTopicList,
+  type ThankResponse,
+  type Topic,
+  type TopicDetail,
+  type TopicSyntax,
+  TOPIC_CONTENT_MAX_LENGTH,
+  TOPIC_TITLE_MAX_LENGTH
+} from '../types'
 import type { V2exSession } from '../session'
 
 /** V2EX 话题领域服务 */
@@ -62,6 +75,48 @@ export class TopicService {
     return topic
   }
 
+  /** 创作新主题 */
+  async create(input: CreateTopicInput): Promise<CreateTopicResult> {
+    const title = input.title.trim()
+    const content = input.content
+    const nodeName = input.nodeName.trim()
+    const syntax = normalizeTopicSyntax(input.syntax)
+    if (!title) throw new Error('主题标题不能为空')
+    if (title.length > TOPIC_TITLE_MAX_LENGTH) {
+      throw new Error(`主题标题不能超过 ${TOPIC_TITLE_MAX_LENGTH} 个字符`)
+    }
+    if (content.length > TOPIC_CONTENT_MAX_LENGTH) {
+      throw new Error(`主题内容不能超过 ${TOPIC_CONTENT_MAX_LENGTH} 个字符`)
+    }
+    if (!nodeName) throw new Error('请选择主题节点')
+
+    const once = await this.getOnce()
+    const response = await this.session.post<string>(
+      '/write',
+      new URLSearchParams({
+        title,
+        syntax,
+        content,
+        node_name: nodeName,
+        once
+      }),
+      { responseType: 'text' }
+    )
+    const responseUrl = new URL(getResponseUrl(response, this.baseUrl))
+    await this.ensureCreateResponseAvailable(responseUrl)
+    const topicId = parseTopicIdByLink(responseUrl.toString())
+    if (topicId) {
+      return { topicId, title }
+    }
+
+    const $ = cheerio.load(response.data)
+    const errorMessage =
+      $('#error_message').text().trim() ||
+      $('.problem').first().text().trim() ||
+      $('.message').first().text().trim()
+    throw new Error(errorMessage || '发布主题失败')
+  }
+
   /** 提交回复 */
   async postReply(topicId: number, content: string): Promise<void> {
     const once = await this.getOnce()
@@ -76,6 +131,22 @@ export class TopicService {
       responseType: 'text',
       transformResponse: data => data
     })
+    return String(response.data || '')
+  }
+
+  /** 预览新主题正文 */
+  async previewTopic(text: string, syntax: TopicSyntax): Promise<string> {
+    const formData = new FormData()
+    formData.append('text', text)
+    formData.append('topic_content', '1')
+    const response = await this.session.post<string>(
+      `/preview/${normalizeTopicSyntax(syntax)}`,
+      formData,
+      {
+        responseType: 'text',
+        transformResponse: data => data
+      }
+    )
     return String(response.data || '')
   }
 
@@ -116,6 +187,17 @@ export class TopicService {
     })
     if (response.status !== 302) throw new Error(errorMessage)
   }
+
+  /** 检查发布主题后的跳转结果 */
+  private async ensureCreateResponseAvailable(responseUrl: URL): Promise<void> {
+    if (responseUrl.pathname === '/signin') {
+      await this.session.expireLogin()
+      throw new LoginRequiredError('创作新主题需要先登录')
+    }
+    if (responseUrl.pathname === '/restricted') {
+      throw new AccountRestrictedError('当前账号访问受限，无法创作新主题')
+    }
+  }
 }
 
 /** 归一化页码 */
@@ -130,4 +212,9 @@ function normalizeTag(tag: string): string {
     throw new Error('标签名称不能为空')
   }
   return normalizedTag
+}
+
+/** 规范化话题正文语法 */
+function normalizeTopicSyntax(syntax?: string): TopicSyntax {
+  return syntax === 'default' ? 'default' : 'markdown'
 }

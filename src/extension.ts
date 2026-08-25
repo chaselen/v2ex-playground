@@ -8,6 +8,7 @@ import openTopic from '@/commands/openTopic'
 import autoDailySignIn, { startDailySignInScheduler } from '@/features/dailySignIn'
 import {
   openRecentBrowse,
+  openCreateTopic,
   openSearch,
   refreshTopicPanelsForAuthChange
 } from '@/features/panelNavigation'
@@ -98,6 +99,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // 注册页面与设置命令
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => openSearch()))
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.createTopic', () => openCreateTopic())
+  )
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.openTopic', () => openTopic()))
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.recentBrowse', () => openRecentBrowse())

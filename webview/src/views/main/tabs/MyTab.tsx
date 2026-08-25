@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type Ref } from 'react'
-import { CircleCheck, CircleHelp, Gift, Inbox, UserRound } from 'lucide-react'
+import { CircleCheck, CircleHelp, Gift, Inbox, SquarePen, UserRound } from 'lucide-react'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import CurrencyBalance from '@/components/CurrencyBalance'
 import SimpleBar from 'simplebar-react'
@@ -13,7 +13,8 @@ import {
   Progress,
   RadioGroup,
   RadioGroupItem,
-  Spinner
+  Spinner,
+  Tooltip
 } from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import LoginPrompt from '../components/LoginPrompt'
@@ -782,6 +783,16 @@ export default function MyTab(props: MyTabProps) {
                 </p>
               )}
             </div>
+            <Tooltip content="创作新主题" side="left">
+              <Button
+                aria-label="创作新主题"
+                className={styles['my-create-topic']}
+                icon={<SquarePen aria-hidden="true" />}
+                size="small"
+                variant="ghost"
+                onClick={() => void vscode.createTopic()}
+              />
+            </Tooltip>
           </header>
 
           <div className={styles['my-stats']}>

@@ -183,6 +183,38 @@ export interface TopicReply {
   thanked: boolean
 }
 
+/** 话题正文语法 */
+export type TopicSyntax = 'default' | 'markdown'
+
+/** 主题标题字符上限，与 V2EX 网页创作表单一致 */
+export const TOPIC_TITLE_MAX_LENGTH = 120
+
+/** 主题正文字数上限，与 V2EX 网页创作表单一致 */
+export const TOPIC_CONTENT_MAX_LENGTH = 20000
+
+/** 创作新主题默认正文语法 */
+export const DEFAULT_TOPIC_SYNTAX: TopicSyntax = 'markdown'
+
+/** 创作新主题参数 */
+export interface CreateTopicInput {
+  /** 主题标题 */
+  title: string
+  /** 主题正文 */
+  content: string
+  /** 正文语法 */
+  syntax: TopicSyntax
+  /** 主题节点 name */
+  nodeName: string
+}
+
+/** 创作新主题结果 */
+export interface CreateTopicResult {
+  /** 新主题 id */
+  topicId: number
+  /** 新主题标题 */
+  title: string
+}
+
 /**
  * 节点
  */
@@ -199,6 +231,8 @@ export interface Node {
   isCollected?: boolean
   /** 收藏人数 */
   collectCount?: number
+  /** 节点主题总数 */
+  topicCount?: number
 }
 
 /**

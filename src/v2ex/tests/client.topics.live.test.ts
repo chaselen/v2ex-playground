@@ -105,6 +105,12 @@ describe.sequential('V2exClient topics', () => {
 describe('V2exClient authenticated topic requests', () => {
   const authTest = process.env.V2EX_COOKIE ? test : test.skip
 
+  authTest('previews topic markdown with V2EX_COOKIE', async () => {
+    const html = await client.previewTopic('**主题预览**', 'markdown')
+
+    expect(html).toContain('<strong>主题预览</strong>')
+  })
+
   authTest('previews default reply syntax with V2EX_COOKIE', async () => {
     const html = await client.previewReply(
       ['第一行 <标签>', '', '@alice #12 https://www.v2ex.com/t/1', '**粗体**'].join('\n'),
