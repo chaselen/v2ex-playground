@@ -295,6 +295,7 @@ export default function MainApp() {
             nodes={nodeTreeTabs.tabs.collection}
             error={nodeTreeTabs.tabErrors.collection}
             loading={collectionTabLoading}
+            onAddNode={nodeTreeTabs.collectNode}
             onCancelCollectNode={nodeTreeTabs.cancelCollectNode}
             onRetryTab={() => refreshTab('collection', contentRetryOptions)}
             {...nodeTreeTabProps}

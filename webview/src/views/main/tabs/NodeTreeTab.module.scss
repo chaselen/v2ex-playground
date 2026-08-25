@@ -14,6 +14,11 @@ $node-child-indent: 18px;
   flex: 1;
   min-height: 0;
 
+  /* SimpleBar 默认继承 auto 高度，展开内容后 wrapper 会越过滚动区域并覆盖底部操作区。 */
+  :global(.simplebar-wrapper) {
+    height: 100%;
+  }
+
   :global(.simplebar-content-wrapper),
   :global(.simplebar-content) {
     display: flex;
@@ -225,6 +230,9 @@ $node-child-indent: 18px;
 }
 
 .tree-footer {
+  /* 固定操作区保持在滚动层之上，避免滚动条或内部遮罩抢占点击。 */
+  position: relative;
+  z-index: 1;
   flex: none;
   padding: 8px;
   border-top: 1px solid var(--v2ex-border);

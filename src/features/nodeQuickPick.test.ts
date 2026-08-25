@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { Node } from '@/v2ex'
-import { showAddCustomNodeQuickPick, showNodeQuickPick } from './nodeQuickPick'
+import {
+  showAddCollectionNodeQuickPick,
+  showAddCustomNodeQuickPick,
+  showNodeQuickPick
+} from './nodeQuickPick'
 
 /** VS Code QuickPick mock */
 const vscodeMocks = vi.hoisted(() => ({
@@ -53,5 +57,20 @@ describe('nodeQuickPick', () => {
       '大节点 (large) · $(bookmark) 3',
       '$(check) 中节点 (middle) · $(bookmark) 10'
     ])
+  })
+
+  test('marks nodes already in the collection', () => {
+    showAddCollectionNodeQuickPick(nodes, new Set(['small']))
+
+    const items = vscodeMocks.showQuickPick.mock.calls[0][0] as Array<{ label: string }>
+    expect(items.map(item => item.label)).toEqual([
+      '$(check) 小节点 (small) · $(bookmark) 20',
+      '大节点 (large) · $(bookmark) 3',
+      '中节点 (middle) · $(bookmark) 10'
+    ])
+    expect(vscodeMocks.showQuickPick.mock.calls[0][1]).toMatchObject({
+      title: '添加收藏节点',
+      placeHolder: '搜索节点'
+    })
   })
 })

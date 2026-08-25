@@ -17,7 +17,10 @@ import { logger } from '@/core/logger'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { addCustomNode, getCustomNodes, removeCustomNode } from '@/features/customNodes'
 import { toWebviewNodesWithAvatars } from '@/features/nodeAvatars'
-import { showAddCustomNodeQuickPick } from '@/features/nodeQuickPick'
+import {
+  showAddCollectionNodeQuickPick,
+  showAddCustomNodeQuickPick
+} from '@/features/nodeQuickPick'
 import {
   EXPLORE_NODES,
   InitData,
@@ -197,6 +200,11 @@ export default class MainViewProvider
   /** 添加自定义节点 */
   rpc_addNode() {
     return this._handleAddNode()
+  }
+
+  /** 添加收藏节点 */
+  rpc_collectNode() {
+    return this._handleCollectNode()
   }
 
   /** 删除自定义节点 */
@@ -460,6 +468,45 @@ export default class MainViewProvider
 
     vscode.window.showInformationMessage('节点已经存在，无需再添加')
     return this._getCustomNodesData()
+  }
+
+  /** 添加收藏节点 */
+  private async _handleCollectNode(): Promise<NodeListData> {
+    if (!(await G.V2ex.ensureAuthenticated())) {
+      throw new LoginRequiredError('收藏节点前请先登录')
+    }
+
+    const { allNodes, collectionNodes } = await vscode.window.withProgress(
+      {
+        title: '获取节点信息',
+        location: vscode.ProgressLocation.Notification
+      },
+      async () => ({
+        allNodes: await G.V2ex.getAllNodes(),
+        collectionNodes: await G.V2ex.getCollectionNodes()
+      })
+    )
+    const collectionNodeNames = new Set(collectionNodes.map(node => node.name))
+    const select = await showAddCollectionNodeQuickPick(allNodes, collectionNodeNames)
+
+    if (!select) {
+      return { nodes: toWebviewNodesWithAvatars(collectionNodes) }
+    }
+
+    if (collectionNodeNames.has(select.name)) {
+      vscode.window.showInformationMessage('节点已经收藏，无需再添加')
+      return { nodes: toWebviewNodesWithAvatars(collectionNodes) }
+    }
+
+    await G.V2ex.collectNode(select.name)
+    const nodes = await G.V2ex.getCollectionNodes()
+    try {
+      await G.V2ex.getAccountOverview({ force: true })
+    } catch (err) {
+      logger.error('主视图操作失败', err)
+    }
+
+    return { nodes: toWebviewNodesWithAvatars(nodes) }
   }
 
   /**

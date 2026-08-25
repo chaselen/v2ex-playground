@@ -224,6 +224,16 @@ export function useNodeTreeTabs() {
     }
   }
 
+  /** 添加收藏节点 */
+  async function collectNode() {
+    try {
+      const data = await vscode.collectNode()
+      applyCollectionNodes(data)
+    } catch (err) {
+      Toast.error((err as Error).message || '收藏节点失败')
+    }
+  }
+
   /**
    * 初始化固定节点标签数据
    * @param data 初始化标签数据
@@ -347,6 +357,7 @@ export function useNodeTreeTabs() {
     applyCollectionNodes,
     cancelCollectNode,
     changeNodePage,
+    collectNode,
     expandNode,
     initializeTabs,
     markTopicRead,

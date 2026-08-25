@@ -255,6 +255,7 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
   getDailySignInStatus(): WebviewDailySignInData
   dailySignIn(): WebviewDailySignInData
   addNode(): NodeListData
+  collectNode(): NodeListData
   removeNode(nodeName: string): NodeListData
   cancelCollectNode(nodeName: string): void
   openBalance(): void

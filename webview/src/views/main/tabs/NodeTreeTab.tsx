@@ -20,7 +20,7 @@ interface NodeTreeTabProps {
   loading?: boolean
   /** 标签加载错误 */
   error?: string | null
-  /** 添加自定义节点 */
+  /** 添加节点 */
   onAddNode?: () => void
   /** 重试加载标签 */
   onRetryTab?: () => void
@@ -451,7 +451,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
       <SimpleBar className={styles['node-tree-panel']} autoHide={false}>
         {renderContent()}
       </SimpleBar>
-      {!loading && tab === 'custom' && (
+      {!loading && (tab === 'custom' || (tab === 'collection' && loggedIn)) && (
         <div className={styles['tree-footer']}>
           <Button
             className={styles['add-node-button']}
