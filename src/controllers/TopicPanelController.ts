@@ -439,7 +439,7 @@ export class TopicPanelController
       throw new Error('请输入回复内容')
     }
 
-    return G.V2ex.previewReply(content, 'default')
+    return G.V2ex.previewContent(content, 'default', 'reply')
   }
 
   /**

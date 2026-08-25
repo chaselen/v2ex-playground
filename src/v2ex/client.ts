@@ -25,6 +25,7 @@ import type {
   Node,
   NodeTopicList,
   OnlineCountChangedHandler,
+  PreviewContentTarget,
   SoV2exSearchParams,
   SoV2exSearchResult,
   TagTopicList,
@@ -403,17 +404,13 @@ export class V2exClient {
   }
 
   /**
-   * 预览回复内容
-   * @param text 回复内容
+   * 预览话题或回复内容
+   * @param text 预览内容
    * @param syntax 预览语法
+   * @param target 预览目标
    */
-  previewReply(text: string, syntax: 'default' | 'markdown'): Promise<string> {
-    return this.topics.previewReply(text, syntax)
-  }
-
-  /** 预览新主题正文 */
-  previewTopic(text: string, syntax: TopicSyntax): Promise<string> {
-    return this.topics.previewTopic(text, syntax)
+  previewContent(text: string, syntax: TopicSyntax, target: PreviewContentTarget): Promise<string> {
+    return this.topics.previewContent(text, syntax, target)
   }
 
   /**

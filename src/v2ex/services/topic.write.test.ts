@@ -49,9 +49,23 @@ describe('TopicService write', () => {
       vi.fn()
     )
 
-    await expect(service.previewTopic('正文', 'markdown')).resolves.toBe('<p>预览</p>')
+    await expect(service.previewContent('正文', 'markdown', 'topic')).resolves.toBe('<p>预览</p>')
     const body = post.mock.calls[0][1] as FormData
     expect(body.get('text')).toBe('正文')
     expect(body.get('topic_content')).toBe('1')
+  })
+
+  test('omits topic_content when previewing a reply', async () => {
+    const post = vi.fn().mockResolvedValue({ data: '<p>预览</p>' })
+    const service = new TopicService(
+      { post } as unknown as V2exSession,
+      'https://www.v2ex.com',
+      vi.fn()
+    )
+
+    await expect(service.previewContent('回复', 'default', 'reply')).resolves.toBe('<p>预览</p>')
+    const body = post.mock.calls[0][1] as FormData
+    expect(body.get('text')).toBe('回复')
+    expect(body.has('topic_content')).toBe(false)
   })
 })

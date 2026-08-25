@@ -63,7 +63,7 @@ https://youtu.be/YhxnffqiegU
 
 视频自动展开能力也记录在 V2EX 官方的 [Markdown 语法帮助](https://www.v2ex.com/help/markdown) 中，属于“V2EX 原生格式”的链接展开规则。
 
-回复提交使用原生格式；`TopicPanelController` 的回复预览固定请求 `default`。在确认提交接口支持 Markdown 之前，不要增加预览格式切换。
+回复提交使用原生格式；`TopicPanelController` 通过 `previewContent` 以 `reply` 目标固定请求 `default`。新主题正文使用同一方法的 `topic` 目标，并额外提交 `topic_content=1`。在确认提交接口支持 Markdown 之前，不要增加回复预览格式切换。
 
 ## Markdown 格式
 

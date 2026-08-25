@@ -13,6 +13,7 @@ import {
   LoginRequiredError,
   type CreateTopicInput,
   type CreateTopicResult,
+  type PreviewContentTarget,
   type TagTopicList,
   type ThankResponse,
   type Topic,
@@ -123,22 +124,22 @@ export class TopicService {
     await this.session.post(`/t/${topicId}`, new URLSearchParams({ content, once }))
   }
 
-  /** 预览回复内容 */
-  async previewReply(text: string, syntax: 'default' | 'markdown'): Promise<string> {
+  /**
+   * 预览话题或回复内容
+   * @param text 预览内容
+   * @param syntax 预览语法
+   * @param target 预览目标
+   */
+  async previewContent(
+    text: string,
+    syntax: TopicSyntax,
+    target: PreviewContentTarget
+  ): Promise<string> {
     const formData = new FormData()
     formData.append('text', text)
-    const response = await this.session.post<string>(`/preview/${syntax}`, formData, {
-      responseType: 'text',
-      transformResponse: data => data
-    })
-    return String(response.data || '')
-  }
-
-  /** 预览新主题正文 */
-  async previewTopic(text: string, syntax: TopicSyntax): Promise<string> {
-    const formData = new FormData()
-    formData.append('text', text)
-    formData.append('topic_content', '1')
+    if (target === 'topic') {
+      formData.append('topic_content', '1')
+    }
     const response = await this.session.post<string>(
       `/preview/${normalizeTopicSyntax(syntax)}`,
       formData,

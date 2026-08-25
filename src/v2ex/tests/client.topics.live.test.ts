@@ -106,15 +106,16 @@ describe('V2exClient authenticated topic requests', () => {
   const authTest = process.env.V2EX_COOKIE ? test : test.skip
 
   authTest('previews topic markdown with V2EX_COOKIE', async () => {
-    const html = await client.previewTopic('**主题预览**', 'markdown')
+    const html = await client.previewContent('**主题预览**', 'markdown', 'topic')
 
     expect(html).toContain('<strong>主题预览</strong>')
   })
 
   authTest('previews default reply syntax with V2EX_COOKIE', async () => {
-    const html = await client.previewReply(
+    const html = await client.previewContent(
       ['第一行 <标签>', '', '@alice #12 https://www.v2ex.com/t/1', '**粗体**'].join('\n'),
-      'default'
+      'default',
+      'reply'
     )
 
     expect(html).toContain('第一行 &lt;标签&gt;<br /><br />')
@@ -124,7 +125,7 @@ describe('V2exClient authenticated topic requests', () => {
   })
 
   authTest('previews a YouTube link as an embedded video with V2EX_COOKIE', async () => {
-    const html = await client.previewReply('https://youtu.be/YhxnffqiegU', 'default')
+    const html = await client.previewContent('https://youtu.be/YhxnffqiegU', 'default', 'reply')
     const $ = load(html)
     const iframe = $('.embedded_video_wrapper > iframe.embedded_video')
 
@@ -134,7 +135,7 @@ describe('V2exClient authenticated topic requests', () => {
   })
 
   authTest('previews markdown reply syntax with V2EX_COOKIE', async () => {
-    const html = await client.previewReply(
+    const html = await client.previewContent(
       [
         '# 标题',
         '',
@@ -153,7 +154,8 @@ describe('V2exClient authenticated topic requests', () => {
         '<img src="x" onerror="alert(1)">',
         '<a href="javascript:alert(2)" onclick="alert(3)">危险链接</a>'
       ].join('\n'),
-      'markdown'
+      'markdown',
+      'reply'
     )
 
     expect(html).toContain('<h1>标题</h1>')

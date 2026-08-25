@@ -186,6 +186,9 @@ export interface TopicReply {
 /** 话题正文语法 */
 export type TopicSyntax = 'default' | 'markdown'
 
+/** 内容预览目标 */
+export type PreviewContentTarget = 'topic' | 'reply'
+
 /** 主题标题字符上限，与 V2EX 网页创作表单一致 */
 export const TOPIC_TITLE_MAX_LENGTH = 120
 

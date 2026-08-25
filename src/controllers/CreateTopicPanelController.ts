@@ -185,7 +185,7 @@ export class CreateTopicPanelController
 
   /** 预览新主题正文 */
   rpc_previewTopic(payload: { content: string; syntax: CreateTopicInput['syntax'] }) {
-    return G.V2ex.previewTopic(payload.content, payload.syntax)
+    return G.V2ex.previewContent(payload.content, payload.syntax, 'topic')
   }
 
   /** 上传正文图片 */
