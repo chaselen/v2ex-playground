@@ -191,7 +191,7 @@ export default function CreateTopicApp() {
               <p>整理好你的想法，选择合适的节点与大家分享</p>
             </div>
           </div>
-          <span className="create-topic-draft-state">
+          <span className="create-topic-draft-state" role="status" aria-live="polite">
             {initializing ? '正在恢复草稿…' : draftSaved ? '草稿已保存' : '正在保存草稿…'}
           </span>
         </header>
