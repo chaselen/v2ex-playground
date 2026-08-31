@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import {
-  EXPLORE_NODES,
+  getExploreNodes,
   type InitData,
   type MainViewRpcCommands,
   type NodeChildrenData,
@@ -19,7 +19,7 @@ const vscode = createVsCodeClient<MainViewRpcCommands>()
  */
 export function useNodeTreeTabs() {
   const [tabs, setTabs] = useState<MainTabs>({
-    explore: EXPLORE_NODES.map(createNodeItem),
+    explore: getExploreNodes(false).map(createNodeItem),
     custom: [],
     collection: []
   })

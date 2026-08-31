@@ -27,8 +27,24 @@ export const EXPLORE_NODES: WebviewNode[] = [
   { name: 'hot', title: '最热' },
   { name: 'all', title: '全部' },
   { name: 'r2', title: 'R2' },
-  { name: 'nodes', title: '节点' }
+  { name: 'nodes', title: '节点' },
+  { name: 'members', title: '关注' }
 ]
+
+/** 仅登录用户可用的首页分类名称 */
+const AUTHENTICATED_EXPLORE_NODE_NAMES = new Set(['nodes', 'members'])
+
+/**
+ * 获取当前登录态可展示的首页分类
+ * @param loggedIn 是否已登录
+ */
+export function getExploreNodes(loggedIn: boolean): WebviewNode[] {
+  if (loggedIn) {
+    return EXPLORE_NODES
+  }
+
+  return EXPLORE_NODES.filter(node => !AUTHENTICATED_EXPLORE_NODE_NAMES.has(node.name))
+}
 
 /**
  * Webview 话题项

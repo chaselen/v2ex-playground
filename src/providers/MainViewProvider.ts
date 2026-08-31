@@ -22,7 +22,7 @@ import {
   showAddCustomNodeQuickPick
 } from '@/features/nodeQuickPick'
 import {
-  EXPLORE_NODES,
+  getExploreNodes,
   InitData,
   MainTabKey,
   MainPanelTabKey,
@@ -342,7 +342,7 @@ export default class MainViewProvider
 
     return {
       tabs: {
-        explore: EXPLORE_NODES,
+        explore: getExploreNodes(loggedIn),
         custom: customNodes,
         collection: []
       },
