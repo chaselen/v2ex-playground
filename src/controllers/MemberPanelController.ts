@@ -262,11 +262,11 @@ export class MemberPanelController
     }
 
     const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
-    if (!member.memberNumber) {
+    if (!member.memberId) {
       throw new Error('未找到用户编号，无法更新用户关系')
     }
 
-    await updateMemberRelation(action, member.memberNumber)
+    await updateMemberRelation(action, member.memberId)
 
     try {
       await G.V2ex.getAccountOverview({ force: true })

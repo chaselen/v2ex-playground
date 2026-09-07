@@ -22,7 +22,8 @@ export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string)
     .replace(/\s+/g, ' ')
     .trim()
   const ldJson = parseMemberLdJson($)
-  const memberNumber =
+  /** 用户数字编号 */
+  const memberId =
     Number(avatar.attr('data-uid')) ||
     Number(grayText.match(/member #(\d+)/i)?.[1] || 0) ||
     Number(ldJson?.identifier || 0)
@@ -46,7 +47,7 @@ export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string)
     tagline:
       profileBox.find('span.bigger').first().text().trim() || String(ldJson?.description || ''),
     bio: '',
-    memberNumber,
+    memberId,
     joinedAt,
     isPro: profileBox.find('.badges .badge.pro').length > 0,
     activityRank

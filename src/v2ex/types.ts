@@ -427,8 +427,8 @@ export interface MemberInfo {
   tagline: string
   /** 用户简介 */
   bio: string
-  /** 会员编号 */
-  memberNumber: number
+  /** 用户数字编号 */
+  memberId: number
   /** 加入时间，通常为 YYYY-MM-DD HH:mm:ss +08:00，结构化数据回退值可能为 ISO 8601 */
   joinedAt: string
   /** 是否为 PRO 会员 */

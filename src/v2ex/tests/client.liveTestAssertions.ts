@@ -172,8 +172,8 @@ export function expectMemberInfo(member: MemberInfo) {
   expect(member.avatar).toEqual(expect.any(String))
   expect(member.tagline).toEqual(expect.any(String))
   expect(member.bio).toEqual(expect.any(String))
-  expect(member.memberNumber).toEqual(expect.any(Number))
-  expect(member.memberNumber).toBeGreaterThanOrEqual(0)
+  expect(member.memberId).toEqual(expect.any(Number))
+  expect(member.memberId).toBeGreaterThanOrEqual(0)
   expect(member.joinedAt).toEqual(expect.any(String))
   expect(member.isPro).toEqual(expect.any(Boolean))
 }

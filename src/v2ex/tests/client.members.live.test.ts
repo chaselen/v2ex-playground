@@ -10,7 +10,7 @@ describe.sequential('V2exClient members', () => {
     const content = await client.getMemberContent('livid')
 
     expect(member.username.toLowerCase()).toBe('livid')
-    expect(member.memberNumber).toBe(1)
+    expect(member.memberId).toBe(1)
     expect(member.joinedAt).toContain('2010-04-25')
     expect(member.tagline).toBe('Remember the bigger green')
     expect(member.bio).toBe('')

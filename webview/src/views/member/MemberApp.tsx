@@ -302,9 +302,7 @@ export default function MemberApp() {
               )}
               {!!profile.member.bio && <p className="member-bio">{profile.member.bio}</p>}
               <div className="member-meta">
-                {!!profile.member.memberNumber && (
-                  <Tag>第 {profile.member.memberNumber} 号会员</Tag>
-                )}
+                {!!profile.member.memberId && <Tag>第 {profile.member.memberId} 号会员</Tag>}
                 {!!profile.member.joinedAt && (
                   <span title={profile.member.joinedAt}>加入于 {profile.member.joinedAt}</span>
                 )}

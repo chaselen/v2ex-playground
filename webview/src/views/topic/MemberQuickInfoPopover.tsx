@@ -121,7 +121,7 @@ export default function MemberQuickInfoPopover({
                     <strong>{member.username}</strong>
                     {member.isPro && <UserBadge pro />}
                   </div>
-                  {!!member.memberNumber && <Tag>第 {member.memberNumber} 号会员</Tag>}
+                  {!!member.memberId && <Tag>第 {member.memberId} 号会员</Tag>}
                 </div>
               </header>
 

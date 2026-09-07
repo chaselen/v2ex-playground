@@ -28,7 +28,7 @@ describe('parseMemberInfo', () => {
       username: 'Livid',
       tagline: 'Remember the bigger green',
       bio: '',
-      memberNumber: 1,
+      memberId: 1,
       joinedAt: '2010-04-25 21:45:46 +08:00',
       isPro: true,
       activityRank: 13775
@@ -59,7 +59,7 @@ describe('parseMemberInfo', () => {
       username: 'fallback-user',
       tagline: 'Fallback tagline',
       bio: '',
-      memberNumber: 42,
+      memberId: 42,
       joinedAt: '2020-01-02T03:04:05Z'
     })
   })
