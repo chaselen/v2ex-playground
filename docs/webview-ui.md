@@ -9,7 +9,7 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - 共享组件负责统一 DOM 语义、键盘行为和无障碍属性；业务页面只传递领域内容与状态，不复制 Radix Portal、焦点、键盘或浮层定位逻辑
 - 图标统一使用 `lucide-react`，装饰图标添加 `aria-hidden="true"`；纯图标按钮必须提供 `aria-label`
 - `Button` 禁用态保留当前 Variant 的背景和边框语义，再统一降低透明度；Primary、Secondary、Subtle、Ghost 和 Danger 各自保留独立禁用外观
-- Secondary 使用 `button.secondaryBackground` / `button.secondaryForeground` 配对；内容区低强调操作（如话题工具条的刷新/收藏/感谢）优先用 Subtle。**踩坑：** 部分亮色主题下 secondary 过深，用页面前景色配次级按钮底也会失配
+- Secondary 使用 `button.secondaryBackground` / `button.secondaryForeground` 配对；内容区低强调操作（如话题工具条的刷新/收藏/忽略/感谢）优先用 Subtle。**踩坑：** 部分亮色主题下 secondary 过深，用页面前景色配次级按钮底也会失配
 - 有背景的交互态必须 fg/bg 同族配对：选中态用 `--v2ex-active-fg` + `--v2ex-active-bg`；Ghost hover 用 `--v2ex-toolbar-hover-bg`（`toolbar.hoverBackground` 优先，回退 `list.hoverBackground`）；Ghost 按下用中性 `--v2ex-light-button-active-bg`，不用 `active-bg` 配页面字色
 - `--v2ex-hover-bg` 用于列表/树/菜单项等「行 hover」（`list.hoverBackground` 优先）；工具栏式透明 action 用 `--v2ex-toolbar-hover-bg`
 - `button.secondaryBackground` 只映射 Secondary 按钮，不作为「浅主色 / 通用表面」；低强调表面统一用 `--v2ex-light-button-*` 或 `--v2ex-link-soft-*`

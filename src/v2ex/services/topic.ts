@@ -171,16 +171,26 @@ export class TopicService {
 
   /** 收藏话题 */
   async collect(topicId: number): Promise<void> {
-    await this.updateCollection(`/favorite/topic/${topicId}`, '收藏失败')
+    await this.updateTopicAction(`/favorite/topic/${topicId}`, '收藏失败')
   }
 
   /** 取消收藏话题 */
   async cancelCollect(topicId: number): Promise<void> {
-    await this.updateCollection(`/unfavorite/topic/${topicId}`, '取消收藏失败')
+    await this.updateTopicAction(`/unfavorite/topic/${topicId}`, '取消收藏失败')
   }
 
-  /** 更新话题收藏状态 */
-  private async updateCollection(path: string, errorMessage: string): Promise<void> {
+  /** 忽略话题 */
+  async ignore(topicId: number): Promise<void> {
+    await this.updateTopicAction(`/ignore/topic/${topicId}`, '忽略主题失败')
+  }
+
+  /** 取消忽略话题 */
+  async cancelIgnore(topicId: number): Promise<void> {
+    await this.updateTopicAction(`/unignore/topic/${topicId}`, '取消忽略失败')
+  }
+
+  /** 执行话题状态更新请求 */
+  private async updateTopicAction(path: string, errorMessage: string): Promise<void> {
     const once = await this.getOnce()
     const response = await this.session.get<string>(`${path}?once=${once}`, {
       maxRedirects: 0,

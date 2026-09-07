@@ -57,6 +57,10 @@ export interface TopicPanelRpcCommands
   collectTopic(payload: TopicActionTarget): TopicDetail
   /** 取消收藏话题并返回最新详情 */
   cancelCollectTopic(payload: TopicActionTarget): TopicDetail
+  /** 忽略话题并返回最新详情 */
+  ignoreTopic(payload: TopicActionTarget): TopicDetail
+  /** 取消忽略话题并返回最新详情 */
+  cancelIgnoreTopic(payload: TopicActionTarget): TopicDetail
   /** 感谢话题创建者并返回最新详情 */
   thankTopic(payload: TopicActionTarget): TopicDetail
   /** 提交回复并返回最新详情 */

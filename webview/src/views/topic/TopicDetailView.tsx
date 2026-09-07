@@ -5,6 +5,8 @@ import {
   ArrowUp,
   Bookmark,
   BookmarkPlus,
+  Eye,
+  EyeOff,
   Heart,
   Inbox,
   RefreshCw,
@@ -97,6 +99,7 @@ export default function TopicDetailView({
   const [refreshing, setRefreshing] = useState(false)
   const [collecting, setCollecting] = useState(false)
   const [cancelingCollect, setCancelingCollect] = useState(false)
+  const [updatingIgnore, setUpdatingIgnore] = useState(false)
   const [thankingTopic, setThankingTopic] = useState(false)
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>(initialReplyViewMode)
@@ -157,6 +160,16 @@ export default function TopicDetailView({
   /** 取消收藏话题 */
   async function cancelCollectTopic() {
     await controller.cancelCollect()
+  }
+
+  /** 忽略话题 */
+  async function ignoreTopic() {
+    await controller.ignore()
+  }
+
+  /** 取消忽略话题 */
+  async function cancelIgnoreTopic() {
+    await controller.cancelIgnore()
   }
 
   /** 感谢主题创建者 */
@@ -483,6 +496,54 @@ export default function TopicDetailView({
                 取消收藏
               </Button>
             )}
+
+            <ConfirmPopover
+              title={topic.isIgnored ? '确定撤销对这个主题的忽略？' : '确定不想再看到这个主题？'}
+              confirmText="确认"
+              cancelText="取消"
+              onConfirm={() =>
+                requestTopicAction(
+                  topic.isIgnored ? cancelIgnoreTopic : ignoreTopic,
+                  setUpdatingIgnore
+                )
+              }
+            >
+              <span className={isFloating ? floatingActionStyles.popconfirmTrigger : undefined}>
+                {isFloating ? (
+                  <Tooltip
+                    className={floatingTooltipClass}
+                    content={topic.isIgnored ? '取消忽略' : '忽略主题'}
+                    side="left"
+                  >
+                    <Button
+                      aria-label={topic.isIgnored ? '取消忽略' : '忽略主题'}
+                      className={mergeClassNames(
+                        floatingButtonClass,
+                        topic.isIgnored && floatingActionStyles.buttonActive
+                      )}
+                      icon={
+                        topic.isIgnored ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />
+                      }
+                      loading={updatingIgnore}
+                      size={buttonSize}
+                      variant="ghost"
+                    />
+                  </Tooltip>
+                ) : (
+                  <Button
+                    aria-label={topic.isIgnored ? '取消忽略' : '忽略主题'}
+                    icon={
+                      topic.isIgnored ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />
+                    }
+                    loading={updatingIgnore}
+                    size={buttonSize}
+                    variant="subtle"
+                  >
+                    {topic.isIgnored ? '取消忽略' : '忽略主题'}
+                  </Button>
+                )}
+              </span>
+            </ConfirmPopover>
 
             {topic.canThank && !topic.isThanked && (
               <ConfirmPopover

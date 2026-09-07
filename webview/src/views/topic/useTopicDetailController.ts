@@ -44,6 +44,10 @@ export interface TopicDetailController {
   collect(): Promise<void>
   /** 取消收藏话题 */
   cancelCollect(): Promise<void>
+  /** 忽略话题 */
+  ignore(): Promise<void>
+  /** 取消忽略话题 */
+  cancelIgnore(): Promise<void>
   /** 感谢主题创建者 */
   thankTopic(): Promise<void>
   /** 提交回复 */
@@ -123,6 +127,8 @@ export default function useTopicDetailController(
       refresh: () => applyViewResult(refresh),
       collect: () => applyMutationResult(vscode.collectTopic(target)),
       cancelCollect: () => applyMutationResult(vscode.cancelCollectTopic(target)),
+      ignore: () => applyMutationResult(vscode.ignoreTopic(target)),
+      cancelIgnore: () => applyMutationResult(vscode.cancelIgnoreTopic(target)),
       thankTopic: () => applyMutationResult(vscode.thankTopic(target)),
       postReply: content =>
         applyMutationResult(

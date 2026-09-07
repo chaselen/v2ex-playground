@@ -77,6 +77,7 @@ export class TopicPanelController
     collectCount: 0,
     thankCount: 0,
     isCollected: false,
+    isIgnored: false,
     isThanked: false,
     canThank: true,
     collectParamT: null,
@@ -299,6 +300,16 @@ export class TopicPanelController
   /** 取消收藏话题 */
   rpc_cancelCollectTopic(target: TopicActionTarget) {
     return this.runTopicMutation(target, topicId => G.V2ex.cancelCollectTopic(topicId))
+  }
+
+  /** 忽略话题 */
+  rpc_ignoreTopic(target: TopicActionTarget) {
+    return this.runTopicMutation(target, topicId => G.V2ex.ignoreTopic(topicId))
+  }
+
+  /** 取消忽略话题 */
+  rpc_cancelIgnoreTopic(target: TopicActionTarget) {
+    return this.runTopicMutation(target, topicId => G.V2ex.cancelIgnoreTopic(topicId))
   }
 
   /** 感谢话题创建者 */

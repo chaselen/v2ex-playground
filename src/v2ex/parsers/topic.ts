@@ -113,6 +113,7 @@ export function parseTopicMeta(
     collectCount: 0,
     thankCount: 0,
     isCollected: false,
+    isIgnored: false,
     isThanked: false,
     canThank: true,
     collectParamT: null,
@@ -163,6 +164,11 @@ export function parseTopicMeta(
     const collectButton = topicButtons.children('a.tb').eq(0)
     topic.isCollected = collectButton.text().indexOf('取消收藏') >= 0
     topic.collectParamT = collectButton.attr('href')?.split('?t=')[1] || null
+    const ignoreButton = topicButtons
+      .children('a.tb')
+      .filter((_, element) => /^(忽略主题|取消忽略)$/.test($(element).text().trim()))
+      .first()
+    topic.isIgnored = ignoreButton.text().trim() === '取消忽略'
     topic.canThank = topicButtons.children('#topic_thank').length > 0
     topic.isThanked = topicButtons.find('.topic_thanked').length > 0
   }

@@ -174,3 +174,35 @@ describe('topic tag parsing', () => {
     })
   })
 })
+
+describe('topic ignore state parsing', () => {
+  it.each([
+    ['忽略主题', false],
+    ['取消忽略', true]
+  ])('parses %s as isIgnored=%s', (action, isIgnored) => {
+    const $ = cheerio.load(`
+      <div id="Main">
+        <div class="box">
+          <div class="header">
+            <h1>测试话题</h1>
+            <a href="/go/test">测试节点</a>
+            <div class="gray">
+              <a href="/member/tester">tester</a>
+              · <span title="2026-07-15 08:58:03 +08:00">1 小时前</span>
+              · 10 次点击
+            </div>
+          </div>
+          <div class="topic_buttons">
+            <div class="topic_stats">10 次点击</div>
+            <a class="tb" href="/favorite/topic/1?once=token">加入收藏</a>
+            <a class="tb" href="#;">${action}</a>
+            <div id="topic_thank"><a class="tb" href="#;">感谢</a></div>
+          </div>
+        </div>
+        <div class="box"><div class="cell"><span class="gray">0 条回复</span></div></div>
+      </div>
+    `)
+
+    expect(parseTopicMeta($, 1, 'https://www.v2ex.com').isIgnored).toBe(isIgnored)
+  })
+})

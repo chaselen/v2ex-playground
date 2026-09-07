@@ -506,6 +506,22 @@ export class V2exClient {
   }
 
   /**
+   * 忽略话题
+   * @param topicId 话题 id
+   */
+  ignoreTopic(topicId: number): Promise<void> {
+    return this.topics.ignore(topicId)
+  }
+
+  /**
+   * 取消忽略话题
+   * @param topicId 话题 id
+   */
+  cancelIgnoreTopic(topicId: number): Promise<void> {
+    return this.topics.cancelIgnore(topicId)
+  }
+
+  /**
    * 收藏节点
    * @param nodeName 节点 name
    */

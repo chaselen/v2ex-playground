@@ -127,6 +127,8 @@ export interface TopicDetail {
   thankCount: number
   /** 是否已收藏 */
   isCollected: boolean
+  /** 是否已忽略 */
+  isIgnored: boolean
   /** 是否已感谢 */
   isThanked: boolean
   /** 是否能发送感谢（自己的帖子不能发送感谢） */
