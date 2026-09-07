@@ -406,6 +406,16 @@ export type MemberTopicTabKey = 'qna' | 'tech' | 'play' | 'jobs' | 'deals' | 'ci
 export type MemberContentTabKey = 'topics' | 'replies' | MemberTopicTabKey
 
 /**
+ * 特别关注的用户
+ */
+export interface FollowingMember {
+  /** 用户头像地址 */
+  avatar: string
+  /** 用户名 */
+  username: string
+}
+
+/**
  * 用户基本信息
  */
 export interface MemberInfo {
@@ -493,6 +503,8 @@ export interface MemberProfile {
   member: MemberInfo
   /** 当前内容 */
   content: MemberContent
+  /** 当前登录用户的特别关注列表，仅本人页提供 */
+  followingMembers?: FollowingMember[]
 }
 
 /** SoV2EX 搜索结果主题信息 */

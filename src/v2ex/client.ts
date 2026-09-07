@@ -18,6 +18,7 @@ import type {
   DailySignInResult,
   DailySignInReward,
   DailySignInStatus,
+  FollowingMember,
   LoginExpiredHandler,
   MemberContent,
   MemberContentOptions,
@@ -376,6 +377,11 @@ export class V2exClient {
    */
   getSpecialFollowingTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
     return this.account.getSpecialFollowingTopics(page)
+  }
+
+  /** 获取当前登录用户特别关注的用户 */
+  getFollowingMembers(): Promise<FollowingMember[]> {
+    return this.account.getFollowingMembers()
   }
 
   /**

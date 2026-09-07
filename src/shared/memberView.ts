@@ -1,6 +1,11 @@
 import type { MemberContentTabKey, MemberProfile } from '../v2ex/types'
 import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
-export type { MemberContentTabKey, MemberProfile, MemberReply } from '../v2ex/types'
+export type {
+  FollowingMember,
+  MemberContentTabKey,
+  MemberProfile,
+  MemberReply
+} from '../v2ex/types'
 
 /**
  * 发往 Webview 的用户页面状态

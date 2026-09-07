@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Inbox, RefreshCw, UserRound } from 'lucide-react'
+import { Heart, Inbox, RefreshCw, UserRound } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -393,6 +393,43 @@ export default function MemberApp() {
               title="操作失败"
               description={memberActionError}
             />
+          )}
+
+          {state.isSelf && profile.followingMembers && (
+            <section className="member-following" aria-labelledby="member-following-title">
+              <header className="member-following-header">
+                <h2 id="member-following-title" className="member-following-title">
+                  <Heart aria-hidden="true" />
+                  <span>我关注的人</span>
+                  <Tag className="member-following-count">{profile.followingMembers.length}</Tag>
+                </h2>
+              </header>
+              {profile.followingMembers.length ? (
+                <div className="member-following-grid">
+                  {profile.followingMembers.map(member => (
+                    <button
+                      className="member-following-item"
+                      key={member.username}
+                      type="button"
+                      title={`打开 ${member.username} 的个人页`}
+                      onClick={() => openMember(member.username)}
+                    >
+                      <Avatar
+                        size="small"
+                        src={member.avatar}
+                        alt={member.username}
+                        fallback={<UserRound aria-hidden="true" />}
+                      />
+                      <span className="member-following-name">{member.username}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="member-following-empty">
+                  在其他用户的个人页点击“加入特别关注”后，会显示在这里
+                </div>
+              )}
+            </section>
           )}
 
           <section className="member-content">

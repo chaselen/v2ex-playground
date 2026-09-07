@@ -2,7 +2,12 @@ import * as cheerio from 'cheerio/slim'
 import type { AxiosResponse } from 'axios'
 import picomatch from 'picomatch'
 import { getConfigUrl, isV2exUrl } from '../clientUtils'
-import { isSameAccountOverview, parseAccountOverview, parseOnlineCount } from '../parsers/account'
+import {
+  isSameAccountOverview,
+  parseAccountOverview,
+  parseFollowingMembers,
+  parseOnlineCount
+} from '../parsers/account'
 import { parseBalance, parseLatestDailySignInReward } from '../parsers/balance'
 import { parsePagerTotalPage } from '../parsers/common'
 import { parseTopicIdByLink, parseTopicListCells } from '../parsers/topic'
@@ -15,6 +20,7 @@ import {
   type DailySignInResult,
   type DailySignInReward,
   type DailySignInStatus,
+  type FollowingMember,
   type OnlineCountChangedHandler,
   type Topic,
   type V2exNotification
@@ -125,6 +131,12 @@ export class AccountService {
   /** 获取特别关注话题 */
   getSpecialFollowingTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
     return this.getTopicList('/my/following', page)
+  }
+
+  /** 获取特别关注的用户 */
+  async getFollowingMembers(): Promise<FollowingMember[]> {
+    const { data: html } = await this.session.get<string>('/my/following')
+    return parseFollowingMembers(cheerio.load(html))
   }
 
   /** 获取提醒列表 */

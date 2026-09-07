@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio/slim'
 import { parseCoinBalance } from './balance'
-import type { AccountOverview } from '../types'
+import type { AccountOverview, FollowingMember } from '../types'
 
 /**
  * 从 HTML 中解析在线人数
@@ -93,6 +93,41 @@ export function parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | u
   }
 
   return overview
+}
+
+/**
+ * 解析右栏中的特别关注用户
+ * @param $ cheerio 实例
+ */
+export function parseFollowingMembers($: cheerio.CheerioAPI): FollowingMember[] {
+  const followingBox = $('#Rightbar > .box')
+    .filter((_, element) =>
+      $(element)
+        .find('.cell > .fade')
+        .toArray()
+        .some(heading => $(heading).text().trim() === '我关注的人')
+    )
+    .first()
+  const members: FollowingMember[] = []
+  const usernames = new Set<string>()
+
+  followingBox.children('.cell, .inner').each((_, element) => {
+    const cell = $(element)
+    const memberLink = cell.find('a[href^="/member/"]').last()
+    const avatar = cell.find('img.avatar').first()
+    const username = memberLink.text().trim() || avatar.attr('alt')?.trim() || ''
+    if (!username || usernames.has(username)) return
+
+    const member: FollowingMember = {
+      avatar: avatar.attr('src') || '',
+      username
+    }
+
+    usernames.add(username)
+    members.push(member)
+  })
+
+  return members
 }
 
 /**

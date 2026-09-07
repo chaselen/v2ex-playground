@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio/slim'
 import { describe, expect, it } from 'vitest'
-import { parseAccountOverview } from './account'
+import { parseAccountOverview, parseFollowingMembers } from './account'
 
 describe('parseAccountOverview', () => {
   it('解析账户用户名和签名', () => {
@@ -47,5 +47,44 @@ describe('parseAccountOverview', () => {
       specialFollowingCount: 10,
       activityPercent: 75
     })
+  })
+})
+
+describe('parseFollowingMembers', () => {
+  it('解析右栏中的特别关注用户', () => {
+    const $ = cheerio.load(`
+      <div id="Rightbar">
+        <div class="box">
+          <div class="cell"><span class="fade">我关注的人</span></div>
+          <div class="cell">
+            <a href="/member/alice"><img class="avatar" src="//cdn.v2ex.com/alice.png" alt="alice"></a>&nbsp;
+            <a href="/member/alice">alice</a>
+          </div>
+          <div class="inner">
+            <a href="/member/bob"><img class="avatar" src="//cdn.v2ex.com/bob.png" alt="bob"></a>&nbsp;
+            <a href="/member/bob">bob</a>
+          </div>
+        </div>
+      </div>
+    `)
+
+    expect(parseFollowingMembers($)).toEqual([
+      {
+        avatar: '//cdn.v2ex.com/alice.png',
+        username: 'alice'
+      },
+      {
+        avatar: '//cdn.v2ex.com/bob.png',
+        username: 'bob'
+      }
+    ])
+  })
+
+  it('在页面没有特别关注区域时返回空列表', () => {
+    const $ = cheerio.load(
+      '<div id="Rightbar"><div class="box"><div class="cell">其他内容</div></div></div>'
+    )
+
+    expect(parseFollowingMembers($)).toEqual([])
   })
 })

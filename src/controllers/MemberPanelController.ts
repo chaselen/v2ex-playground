@@ -9,7 +9,13 @@ import {
   type WebviewNavigationDeps
 } from '@/controllers/WebviewCommonController'
 import { LoginRequiredError } from '@/v2ex'
-import type { MemberContent, MemberContentTabKey, MemberInfo, MemberProfile } from '@/v2ex'
+import type {
+  FollowingMember,
+  MemberContent,
+  MemberContentTabKey,
+  MemberInfo,
+  MemberProfile
+} from '@/v2ex'
 import type {
   MemberPanelRpcCommands,
   MemberPanelViewState,
@@ -212,7 +218,8 @@ export class MemberPanelController
       G.V2ex.getMemberContent(this.username)
     ])
     this.isSelf = await this.resolveIsSelf(member.username)
-    this.profile = this.createProfile(member, content)
+    const followingMembers = this.isSelf ? await this.loadFollowingMembers() : undefined
+    this.profile = this.createProfile(member, content, followingMembers)
     this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
       logger.error('用户面板图标更新失败', err)
@@ -289,11 +296,27 @@ export class MemberPanelController
    * 创建用户资料
    * @param member 用户基本信息
    * @param content 用户活动内容
+   * @param followingMembers 特别关注列表
    */
-  private createProfile(member: MemberInfo, content: MemberContent): MemberProfile {
+  private createProfile(
+    member: MemberInfo,
+    content: MemberContent,
+    followingMembers = this.profile?.followingMembers
+  ): MemberProfile {
     return {
       member,
-      content
+      content,
+      followingMembers
+    }
+  }
+
+  /** 获取本人页的特别关注列表 */
+  private async loadFollowingMembers(): Promise<FollowingMember[]> {
+    try {
+      return await G.V2ex.getFollowingMembers()
+    } catch (err) {
+      logger.error('特别关注列表加载失败', err, { username: this.username })
+      return []
     }
   }
 
