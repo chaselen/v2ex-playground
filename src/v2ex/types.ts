@@ -423,6 +423,10 @@ export interface MemberInfo {
   isPro: boolean
   /** 今日活跃度排名 */
   activityRank?: number
+  /** 当前登录用户是否特别关注该用户 */
+  isFollowing?: boolean
+  /** 当前登录用户是否屏蔽该用户 */
+  isBlocked?: boolean
 }
 
 /**

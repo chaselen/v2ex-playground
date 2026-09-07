@@ -31,8 +31,12 @@ export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string)
     String(ldJson?.dateCreated || '')
   const activityRank =
     Number(grayText.match(/(?:activity rank|活跃度排名)\s*(\d+)/i)?.[1] || 0) || undefined
+  /** 当前用户特别关注状态 */
+  const isFollowing = parseMemberActionState($, profileBox, 'follow')
+  /** 当前用户屏蔽状态 */
+  const isBlocked = parseMemberActionState($, profileBox, 'block')
 
-  return {
+  const member: MemberInfo = {
     avatar: avatar.attr('src') || String(ldJson?.image || ''),
     username:
       profileBox.find('h1').first().text().trim() ||
@@ -47,6 +51,39 @@ export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string)
     isPro: profileBox.find('.badges .badge.pro').length > 0,
     activityRank
   }
+
+  if (isFollowing !== undefined) {
+    member.isFollowing = isFollowing
+  }
+  if (isBlocked !== undefined) {
+    member.isBlocked = isBlocked
+  }
+
+  return member
+}
+
+/**
+ * 解析用户关系操作状态
+ * @param $ cheerio 实例
+ * @param profileBox 用户资料容器
+ * @param action 关系操作
+ */
+function parseMemberActionState(
+  $: cheerio.CheerioAPI,
+  profileBox: CheerioSelection,
+  action: 'follow' | 'block'
+): boolean | undefined {
+  const actionPattern = new RegExp(`/(un)?${action}/\\d+\\?once=`)
+  const actionElement = profileBox
+    .find('[onclick]')
+    .filter((_, element) => actionPattern.test(String($(element).attr('onclick') || '')))
+    .first()
+  if (!actionElement.length) {
+    return undefined
+  }
+
+  const actionMatch = actionPattern.exec(String(actionElement.attr('onclick') || ''))
+  return Boolean(actionMatch?.[1])
 }
 
 /**

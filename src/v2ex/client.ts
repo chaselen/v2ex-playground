@@ -129,7 +129,7 @@ export class V2exClient {
     this.auth = new AuthService(this.session)
     this.account = new AccountService(this.session)
     this.topics = new TopicService(this.session, this.baseUrl, () => this.auth.getOnce())
-    this.members = new MemberService(this.session, this.baseUrl)
+    this.members = new MemberService(this.session, this.baseUrl, () => this.auth.getOnce())
     this.nodes = new NodeService(this.session, this.baseUrl)
     this.searchService = new SearchService(this.session)
     this.twoFactorVerification = this.createTwoFactorVerification()
@@ -287,6 +287,38 @@ export class V2exClient {
    */
   getMemberContent(username: string, options: MemberContentOptions = {}): Promise<MemberContent> {
     return this.members.getContent(username, options)
+  }
+
+  /**
+   * 加入用户特别关注
+   * @param memberId 用户编号
+   */
+  followMember(memberId: number): Promise<void> {
+    return this.members.follow(memberId)
+  }
+
+  /**
+   * 取消用户特别关注
+   * @param memberId 用户编号
+   */
+  unfollowMember(memberId: number): Promise<void> {
+    return this.members.unfollow(memberId)
+  }
+
+  /**
+   * 屏蔽用户
+   * @param memberId 用户编号
+   */
+  blockMember(memberId: number): Promise<void> {
+    return this.members.block(memberId)
+  }
+
+  /**
+   * 取消屏蔽用户
+   * @param memberId 用户编号
+   */
+  unblockMember(memberId: number): Promise<void> {
+    return this.members.unblock(memberId)
   }
 
   /**

@@ -32,7 +32,11 @@ describe('MemberService', () => {
         `
       }
     })
-    const service = new MemberService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    const service = new MemberService(
+      { get } as unknown as V2exSession,
+      'https://www.v2ex.com',
+      async () => 'once-token'
+    )
 
     const member = await service.getInfo('chaselen')
 
@@ -40,6 +44,39 @@ describe('MemberService', () => {
     expect(member.bio).toBe('jj')
     expect(get).toHaveBeenCalledWith('/api/members/show.json', {
       params: { username: 'chaselen' }
+    })
+  })
+
+  it('使用 once 参数更新用户关系', async () => {
+    const get = vi.fn().mockResolvedValue({ status: 302 })
+    const getOnce = vi.fn().mockResolvedValue('once-token')
+    const service = new MemberService(
+      { get } as unknown as V2exSession,
+      'https://www.v2ex.com',
+      getOnce
+    )
+
+    await service.follow(42)
+    await service.unfollow(42)
+    await service.block(42)
+    await service.unblock(42)
+
+    expect(getOnce).toHaveBeenCalledTimes(4)
+    expect(get).toHaveBeenNthCalledWith(1, '/follow/42?once=once-token', {
+      maxRedirects: 0,
+      validateStatus: expect.any(Function)
+    })
+    expect(get).toHaveBeenNthCalledWith(2, '/unfollow/42?once=once-token', {
+      maxRedirects: 0,
+      validateStatus: expect.any(Function)
+    })
+    expect(get).toHaveBeenNthCalledWith(3, '/block/42?once=once-token', {
+      maxRedirects: 0,
+      validateStatus: expect.any(Function)
+    })
+    expect(get).toHaveBeenNthCalledWith(4, '/unblock/42?once=once-token', {
+      maxRedirects: 0,
+      validateStatus: expect.any(Function)
     })
   })
 })

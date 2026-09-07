@@ -8,6 +8,10 @@ export type { MemberContentTabKey, MemberProfile, MemberReply } from '../v2ex/ty
 export interface MemberPanelViewState {
   /** 页面状态 */
   status: 'loading' | 'member' | 'error'
+  /** 是否存在登录会话 */
+  loggedIn: boolean
+  /** 当前页面是否为登录用户本人 */
+  isSelf: boolean
   /** 用户资料 */
   profile?: MemberProfile
   /** 错误文案 */
@@ -24,6 +28,10 @@ export interface MemberPanelRpcCommands
   refresh(): void
   loadMemberTab(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile
   loadMemberPage(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile
+  followMember(): MemberProfile
+  unfollowMember(): MemberProfile
+  blockMember(): MemberProfile
+  unblockMember(): MemberProfile
 }
 
 /**

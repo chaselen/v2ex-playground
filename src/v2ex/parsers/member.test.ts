@@ -63,4 +63,39 @@ describe('parseMemberInfo', () => {
       joinedAt: '2020-01-02T03:04:05Z'
     })
   })
+
+  it('解析登录用户可用的特别关注和屏蔽状态', () => {
+    const $ = cheerio.load(`
+      <main id="Main">
+        <div class="box">
+          <div class="cell">
+            <img class="avatar" data-uid="42" src="//cdn.v2ex.com/avatar.png" alt="someone">
+            <h1>someone</h1>
+            <input type="button" onclick="location.href = '/follow/42?once=token';">
+            <input type="button" onclick="location.href = '/unblock/42?once=token';">
+          </div>
+        </div>
+      </main>
+    `)
+
+    expect(parseMemberInfo($, 'fallback')).toMatchObject({
+      isFollowing: false,
+      isBlocked: true
+    })
+
+    const followedAndBlocked$ = cheerio.load(`
+      <main id="Main">
+        <div class="box">
+          <img class="avatar" data-uid="42" alt="someone">
+          <input type="button" onclick="location.href = '/unfollow/42?once=token';">
+          <input type="button" onclick="location.href = '/block/42?once=token';">
+        </div>
+      </main>
+    `)
+
+    expect(parseMemberInfo(followedAndBlocked$, 'fallback')).toMatchObject({
+      isFollowing: true,
+      isBlocked: false
+    })
+  })
 })

@@ -180,7 +180,7 @@ export function openNode(node: OpenNodePayload) {
 }
 
 /**
- * 登录态变化后刷新已打开的话题、节点和余额面板
+ * 登录态变化后刷新已打开的话题、用户、节点和余额面板
  */
 export function refreshTopicPanelsForAuthChange() {
   Object.values(topicPanels).forEach(topicPanel => {
@@ -188,6 +188,9 @@ export function refreshTopicPanelsForAuthChange() {
   })
   Object.values(nodePanels).forEach(nodePanel => {
     nodePanel.refreshForAuthChange()
+  })
+  Object.values(memberPanels).forEach(memberPanel => {
+    memberPanel.refreshForAuthChange()
   })
   balancePanel?.refreshForAuthChange()
   void createTopicPanel?.refreshForAuthChange()

@@ -82,7 +82,18 @@
   line-height: 1.5;
 }
 
+.member-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .member-content {
+  margin-top: 14px;
+}
+
+.member-action-error {
   margin-top: 14px;
 }
 

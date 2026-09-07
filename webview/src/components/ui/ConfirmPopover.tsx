@@ -20,6 +20,8 @@ export interface ConfirmPopoverProps {
   titleIcon?: ReactNode
   /** 确认按钮是否为危险操作 */
   danger?: boolean
+  /** 确认后是否立即关闭浮层，不等待确认回调完成 */
+  closeImmediately?: boolean
   /** 是否禁用 */
   disabled?: boolean
   /** 弹出方向 */
@@ -40,6 +42,7 @@ export function ConfirmPopover({
   cancelText = '取消',
   children,
   className,
+  closeImmediately = false,
   confirmText = '确认',
   danger = false,
   description,
@@ -61,9 +64,14 @@ export function ConfirmPopover({
 
   async function confirm() {
     setConfirming(true)
+    if (closeImmediately) {
+      setOpen(false)
+    }
     try {
       await onConfirm()
-      setOpen(false)
+      if (!closeImmediately) {
+        setOpen(false)
+      }
     } finally {
       setConfirming(false)
     }
@@ -77,7 +85,7 @@ export function ConfirmPopover({
 
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={changeOpen}>
-      <PopoverPrimitive.Trigger asChild disabled={disabled}>
+      <PopoverPrimitive.Trigger asChild disabled={disabled || confirming}>
         {children}
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Portal>

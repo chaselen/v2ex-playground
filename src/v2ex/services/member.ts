@@ -27,7 +27,8 @@ const memberContentTabs = new Set<MemberContentTabKey>([
 export class MemberService {
   constructor(
     private readonly session: V2exSession,
-    private readonly baseUrl: string
+    private readonly baseUrl: string,
+    private readonly getOnce: () => Promise<string>
   ) {}
 
   /** 根据用户名获取用户主页链接 */
@@ -60,6 +61,60 @@ export class MemberService {
     return parseMemberContent(cheerio.load(html), username, tab, page)
   }
 
+  /**
+   * 加入特别关注
+   * @param memberId 用户编号
+   */
+  async follow(memberId: number): Promise<void> {
+    await this.updateMemberRelation(memberId, 'follow', '加入特别关注失败')
+  }
+
+  /**
+   * 取消特别关注
+   * @param memberId 用户编号
+   */
+  async unfollow(memberId: number): Promise<void> {
+    await this.updateMemberRelation(memberId, 'unfollow', '取消特别关注失败')
+  }
+
+  /**
+   * 屏蔽用户
+   * @param memberId 用户编号
+   */
+  async block(memberId: number): Promise<void> {
+    await this.updateMemberRelation(memberId, 'block', '屏蔽用户失败')
+  }
+
+  /**
+   * 取消屏蔽用户
+   * @param memberId 用户编号
+   */
+  async unblock(memberId: number): Promise<void> {
+    await this.updateMemberRelation(memberId, 'unblock', '取消屏蔽用户失败')
+  }
+
+  /**
+   * 更新用户关系状态
+   * @param memberId 用户编号
+   * @param action 关系操作
+   * @param errorMessage 操作失败提示
+   */
+  private async updateMemberRelation(
+    memberId: number,
+    action: MemberRelationAction,
+    errorMessage: string
+  ): Promise<void> {
+    const normalizedMemberId = normalizeMemberId(memberId)
+    const once = await this.getOnce()
+    const response = await this.session.get(`/${action}/${normalizedMemberId}?once=${once}`, {
+      maxRedirects: 0,
+      validateStatus: status => status >= 200 && status < 400
+    })
+    if (response.status !== 302) {
+      throw new Error(errorMessage)
+    }
+  }
+
   /** 归一化用户页标签 */
   private normalizeTab(tab?: MemberContentTabKey): MemberContentTabKey {
     return tab && memberContentTabs.has(tab) ? tab : 'topics'
@@ -71,9 +126,23 @@ export class MemberService {
   }
 }
 
+/** 用户关系操作 */
+type MemberRelationAction = 'follow' | 'unfollow' | 'block' | 'unblock'
+
 /** 归一化页码 */
 function normalizePage(page?: number): number {
   return Number.isFinite(page) ? Math.max(1, Math.floor(Number(page))) : 1
+}
+
+/**
+ * 归一化用户编号
+ * @param memberId 用户编号
+ */
+function normalizeMemberId(memberId: number): number {
+  if (!Number.isInteger(memberId) || memberId <= 0) {
+    throw new Error('用户编号无效')
+  }
+  return memberId
 }
 
 /**

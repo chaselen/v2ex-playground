@@ -14,6 +14,7 @@ import {
   Alert,
   Avatar,
   Button,
+  ConfirmPopover,
   Empty,
   Pagination,
   Tag,
@@ -37,6 +38,9 @@ const vscode = createVsCodeClient<MemberPanelRpcCommands, MemberPanelWebviewEven
 /** 用户页请求命令 */
 type MemberRequestCommand = 'loadMemberTab' | 'loadMemberPage'
 
+/** 用户关系操作类型 */
+type MemberAction = 'following' | 'blocking'
+
 /** 用户页固定标签 */
 const memberTabs: Array<{ key: MemberContentTabKey; label: string }> = [
   { key: 'topics', label: '最近发帖' },
@@ -55,12 +59,18 @@ const memberTabs: Array<{ key: MemberContentTabKey; label: string }> = [
 export default function MemberApp() {
   const [state, setState] = useState<MemberPanelViewState>({
     status: 'loading',
+    loggedIn: false,
+    isSelf: false,
     profile: undefined,
     message: '',
     showRefresh: false
   })
   const [activeTab, setActiveTab] = useState<MemberContentTabKey>('topics')
   const [loadingContent, setLoadingContent] = useState(false)
+  /** 当前用户关系操作 */
+  const [memberAction, setMemberAction] = useState<MemberAction>()
+  /** 用户关系操作错误 */
+  const [memberActionError, setMemberActionError] = useState('')
   const scrollRef = useRef<SimpleBarCore | null>(null)
   const profileCacheRef = useRef(new Map<string, MemberProfile>())
   const { startRequest } = useLatestRequest()
@@ -93,6 +103,47 @@ export default function MemberApp() {
   }
 
   /**
+   * 更新用户特别关注或屏蔽状态
+   * @param action 用户关系操作
+   */
+  async function mutateMemberAction(action: MemberAction) {
+    if (!profile || memberAction) {
+      return
+    }
+
+    const isActive = action === 'following' ? profile.member.isFollowing : profile.member.isBlocked
+    if (typeof isActive !== 'boolean') {
+      return
+    }
+
+    setMemberAction(action)
+    setMemberActionError('')
+    try {
+      const nextProfile =
+        action === 'following'
+          ? isActive
+            ? await vscode.unfollowMember()
+            : await vscode.followMember()
+          : isActive
+            ? await vscode.unblockMember()
+            : await vscode.blockMember()
+      profileCacheRef.current.clear()
+      cacheProfile(nextProfile)
+      setState(currentState => ({
+        ...currentState,
+        status: 'member',
+        profile: nextProfile,
+        message: '',
+        showRefresh: true
+      }))
+    } catch (err) {
+      setMemberActionError(err instanceof Error ? err.message : '操作失败')
+    } finally {
+      setMemberAction(undefined)
+    }
+  }
+
+  /**
    * 执行用户页请求
    * @param command 命令名
    * @param tab 标签
@@ -107,12 +158,13 @@ export default function MemberApp() {
     const cachedProfile = profileCacheRef.current.get(getProfileCacheKey(tab, page))
     if (cachedProfile) {
       setLoadingContent(false)
-      setState({
+      setState(currentState => ({
+        ...currentState,
         status: 'member',
         profile: cachedProfile,
         message: '',
         showRefresh: true
-      })
+      }))
       scrollToTop()
       return cachedProfile
     }
@@ -125,12 +177,13 @@ export default function MemberApp() {
       }
 
       cacheProfile(nextProfile)
-      setState({
+      setState(currentState => ({
+        ...currentState,
         status: 'member',
         profile: nextProfile,
         message: '',
         showRefresh: true
-      })
+      }))
       scrollToTop()
       return nextProfile
     } finally {
@@ -177,12 +230,19 @@ export default function MemberApp() {
   useEffect(() => {
     /** 应用扩展侧同步的用户页状态 */
     const applyViewState = (nextState: MemberPanelViewState) => {
+      if (nextState.status === 'loading') {
+        profileCacheRef.current.clear()
+      }
       setState({
         profile: nextState.profile,
+        loggedIn: nextState.loggedIn,
+        isSelf: nextState.isSelf,
         message: nextState.message || '',
         showRefresh: Boolean(nextState.showRefresh),
         status: nextState.status
       })
+      setMemberAction(undefined)
+      setMemberActionError('')
       if (nextState.profile?.content.tab) {
         cacheProfile(nextState.profile)
         setActiveTab(nextState.profile.content.tab)
@@ -258,6 +318,64 @@ export default function MemberApp() {
                   <span>PRO 会员</span>
                 </div>
               )}
+              {state.loggedIn &&
+                !state.isSelf &&
+                (typeof profile.member.isFollowing === 'boolean' ||
+                  typeof profile.member.isBlocked === 'boolean') && (
+                  <div className="member-profile-actions">
+                    {typeof profile.member.isFollowing === 'boolean' && (
+                      <ConfirmPopover
+                        closeImmediately
+                        title={
+                          profile.member.isFollowing
+                            ? `确认要取消对 ${profile.member.username} 的关注？`
+                            : `确认要开始关注 ${profile.member.username}？`
+                        }
+                        description={
+                          profile.member.isFollowing
+                            ? '取消后将不再在特别关注列表中保留该用户'
+                            : '加入后可在特别关注列表中快速找到该用户'
+                        }
+                        confirmText={profile.member.isFollowing ? '取消关注' : '加入关注'}
+                        disabled={Boolean(memberAction && memberAction !== 'following')}
+                        onConfirm={() => mutateMemberAction('following')}
+                      >
+                        <Button
+                          size="small"
+                          variant={profile.member.isFollowing ? 'secondary' : 'primary'}
+                          loading={memberAction === 'following'}
+                          aria-label={profile.member.isFollowing ? '取消特别关注' : '加入特别关注'}
+                        >
+                          {profile.member.isFollowing ? '取消特别关注' : '加入特别关注'}
+                        </Button>
+                      </ConfirmPopover>
+                    )}
+                    {typeof profile.member.isBlocked === 'boolean' && (
+                      <ConfirmPopover
+                        closeImmediately
+                        title={profile.member.isBlocked ? '取消屏蔽该用户？' : '确认屏蔽该用户？'}
+                        description={
+                          profile.member.isBlocked
+                            ? '取消后将恢复显示该用户的相关内容'
+                            : '屏蔽后将不再显示该用户的相关内容'
+                        }
+                        confirmText={profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
+                        danger={!profile.member.isBlocked}
+                        disabled={Boolean(memberAction && memberAction !== 'blocking')}
+                        onConfirm={() => mutateMemberAction('blocking')}
+                      >
+                        <Button
+                          size="small"
+                          variant={profile.member.isBlocked ? 'secondary' : 'danger'}
+                          loading={memberAction === 'blocking'}
+                          aria-label={profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
+                        >
+                          {profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
+                        </Button>
+                      </ConfirmPopover>
+                    )}
+                  </div>
+                )}
             </div>
             <Button
               size="small"
@@ -267,6 +385,15 @@ export default function MemberApp() {
               onClick={refreshMember}
             />
           </header>
+
+          {memberActionError && (
+            <Alert
+              className="member-action-error"
+              variant="danger"
+              title="操作失败"
+              description={memberActionError}
+            />
+          )}
 
           <section className="member-content">
             <Tabs
