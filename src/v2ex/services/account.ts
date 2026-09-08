@@ -31,6 +31,8 @@ import {
 
 /** 成员 API 返回的列表展示字段 */
 interface MemberShowApiInfo {
+  /** 用户编号 */
+  id?: unknown
   /** 用户名 */
   username?: unknown
   /** 常规尺寸头像 */
@@ -215,7 +217,11 @@ export class AccountService {
       throw new Error(`未找到编号为 ${memberId} 的用户`)
     }
 
+    const resolvedMemberId =
+      typeof data.id === 'number' && Number.isInteger(data.id) && data.id > 0 ? data.id : memberId
+
     return {
+      memberId: resolvedMemberId,
       username,
       avatar: pickMemberAvatar(data)
     }

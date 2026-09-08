@@ -21,6 +21,7 @@ describe('AccountService blocked members', () => {
         if (memberId === 350370) {
           return {
             data: {
+              id: 350370,
               username: 'alice',
               avatar_normal: 'https://cdn.v2ex.com/alice.png'
             }
@@ -29,6 +30,7 @@ describe('AccountService blocked members', () => {
         if (memberId === 367256) {
           return {
             data: {
+              id: 367256,
               username: 'bob',
               avatar_large: 'https://cdn.v2ex.com/bob-large.png'
             }
@@ -47,10 +49,12 @@ describe('AccountService blocked members', () => {
 
     await expect(service.getBlockedMembers()).resolves.toEqual([
       {
+        memberId: 350370,
         username: 'alice',
         avatar: 'https://cdn.v2ex.com/alice.png'
       },
       {
+        memberId: 367256,
         username: 'bob',
         avatar: 'https://cdn.v2ex.com/bob-large.png'
       }
@@ -79,6 +83,7 @@ describe('AccountService blocked members', () => {
       if (url === '/api/members/show.json' && config?.params?.id === 2) {
         return {
           data: {
+            id: 2,
             username: 'ok',
             avatar_normal: 'https://cdn.v2ex.com/ok.png'
           }
@@ -96,6 +101,7 @@ describe('AccountService blocked members', () => {
 
     await expect(service.getBlockedMembers()).resolves.toEqual([
       {
+        memberId: 2,
         username: 'ok',
         avatar: 'https://cdn.v2ex.com/ok.png'
       }

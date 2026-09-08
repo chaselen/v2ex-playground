@@ -163,6 +163,7 @@ export function parseFollowingMembers($: cheerio.CheerioAPI): FollowingMember[] 
     if (!username || usernames.has(username)) return
 
     const member: FollowingMember = {
+      memberId: Number(avatar.attr('data-uid')) || 0,
       avatar: avatar.attr('src') || '',
       username
     }

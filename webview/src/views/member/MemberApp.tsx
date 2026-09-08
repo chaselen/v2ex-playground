@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Heart, Inbox, RefreshCw, UserRound, UserX } from 'lucide-react'
+import { Heart, HeartOff, Inbox, RefreshCw, UserCheck, UserRound, UserX } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -78,6 +78,11 @@ export default function MemberApp() {
   const [relationTab, setRelationTab] = useState<MemberRelationTab>('following')
   /** 当前用户关系操作 */
   const [memberAction, setMemberAction] = useState<MemberAction>()
+  /** 本人页关系列表正在处理的用户编号 */
+  const [listedMemberAction, setListedMemberAction] = useState<{
+    tab: MemberRelationTab
+    memberId: number
+  }>()
   /** 用户关系操作错误 */
   const [memberActionError, setMemberActionError] = useState('')
   const scrollRef = useRef<SimpleBarCore | null>(null)
@@ -116,7 +121,7 @@ export default function MemberApp() {
    * @param action 用户关系操作
    */
   async function mutateMemberAction(action: MemberAction) {
-    if (!profile || memberAction) {
+    if (!profile || memberAction || listedMemberAction) {
       return
     }
 
@@ -149,6 +154,39 @@ export default function MemberApp() {
       setMemberActionError(err instanceof Error ? err.message : '操作失败')
     } finally {
       setMemberAction(undefined)
+    }
+  }
+
+  /**
+   * 从本人页关系列表取消关注或取消屏蔽
+   * @param tab 关系分段
+   * @param memberId 用户编号
+   */
+  async function mutateListedMember(tab: MemberRelationTab, memberId: number) {
+    if (!profile || memberAction || listedMemberAction || memberId <= 0) {
+      return
+    }
+
+    setListedMemberAction({ tab, memberId })
+    setMemberActionError('')
+    try {
+      const nextProfile =
+        tab === 'following'
+          ? await vscode.unfollowListedMember(memberId)
+          : await vscode.unblockListedMember(memberId)
+      profileCacheRef.current.clear()
+      cacheProfile(nextProfile)
+      setState(currentState => ({
+        ...currentState,
+        status: 'member',
+        profile: nextProfile,
+        message: '',
+        showRefresh: true
+      }))
+    } catch (err) {
+      setMemberActionError(err instanceof Error ? err.message : '操作失败')
+    } finally {
+      setListedMemberAction(undefined)
     }
   }
 
@@ -251,6 +289,7 @@ export default function MemberApp() {
         status: nextState.status
       })
       setMemberAction(undefined)
+      setListedMemberAction(undefined)
       setMemberActionError('')
       if (nextState.profile?.content.tab) {
         cacheProfile(nextState.profile)
@@ -433,16 +472,24 @@ export default function MemberApp() {
                 </RadioGroup>
               </header>
               {relationTab === 'following'
-                ? renderRelationMembers(
-                    profile.followingMembers,
-                    '在其他用户的个人页点击“加入特别关注”后，会显示在这里',
-                    openMember
-                  )
-                : renderRelationMembers(
-                    profile.blockedMembers,
-                    '暂无屏蔽用户。在其他用户的个人页点击“屏蔽用户”后，会显示在这里',
-                    openMember
-                  )}
+                ? renderRelationMembers({
+                    tab: 'following',
+                    members: profile.followingMembers,
+                    emptyText: '在其他用户的个人页点击“加入特别关注”后，会显示在这里',
+                    listedMemberAction,
+                    busy: Boolean(memberAction || listedMemberAction),
+                    openMember,
+                    onRemove: memberId => mutateListedMember('following', memberId)
+                  })
+                : renderRelationMembers({
+                    tab: 'blocked',
+                    members: profile.blockedMembers,
+                    emptyText: '暂无屏蔽用户。在其他用户的个人页点击“屏蔽用户”后，会显示在这里',
+                    listedMemberAction,
+                    busy: Boolean(memberAction || listedMemberAction),
+                    openMember,
+                    onRemove: memberId => mutateListedMember('blocked', memberId)
+                  })}
             </section>
           )}
 
@@ -485,38 +532,80 @@ export default function MemberApp() {
 
 /**
  * 渲染本人页关系用户网格
- * @param members 关系用户列表
- * @param emptyText 空状态文案
- * @param openMember 打开用户
+ * @param options 渲染选项
  */
-function renderRelationMembers(
-  members: Array<FollowingMember | BlockedMember>,
-  emptyText: string,
+function renderRelationMembers(options: {
+  tab: MemberRelationTab
+  members: Array<FollowingMember | BlockedMember>
+  emptyText: string
+  listedMemberAction?: { tab: MemberRelationTab; memberId: number }
+  busy: boolean
   openMember: (username: string) => void
-) {
+  onRemove: (memberId: number) => void | Promise<void>
+}) {
+  const { busy, emptyText, listedMemberAction, members, onRemove, openMember, tab } = options
   if (!members.length) {
     return <div className="member-relations-empty">{emptyText}</div>
   }
 
+  const removeLabel = tab === 'following' ? '取消关注' : '取消屏蔽'
+  const RemoveIcon = tab === 'following' ? HeartOff : UserCheck
+
   return (
     <div className="member-relations-grid">
-      {members.map(member => (
-        <button
-          className="member-relations-item"
-          key={member.username}
-          type="button"
-          title={`打开 ${member.username} 的个人页`}
-          onClick={() => openMember(member.username)}
-        >
-          <Avatar
-            size="small"
-            src={member.avatar}
-            alt={member.username}
-            fallback={<UserRound aria-hidden="true" />}
-          />
-          <span className="member-relations-name">{member.username}</span>
-        </button>
-      ))}
+      {members.map(member => {
+        const canRemove = member.memberId > 0
+        const removing =
+          listedMemberAction?.tab === tab && listedMemberAction.memberId === member.memberId
+
+        return (
+          <div className="member-relations-item" key={member.username}>
+            <button
+              className="member-relations-open"
+              type="button"
+              title={`打开 ${member.username} 的个人页`}
+              onClick={() => openMember(member.username)}
+            >
+              <Avatar
+                size="small"
+                src={member.avatar}
+                alt={member.username}
+                fallback={<UserRound aria-hidden="true" />}
+              />
+              <span className="member-relations-name">{member.username}</span>
+            </button>
+            {canRemove && (
+              <span className="member-relations-action">
+                <ConfirmPopover
+                  title={
+                    tab === 'following'
+                      ? `确认取消对 ${member.username} 的关注？`
+                      : `确认取消屏蔽 ${member.username}？`
+                  }
+                  description={
+                    tab === 'following'
+                      ? '取消后将不再在特别关注列表中保留该用户'
+                      : '取消后可再次看到该用户的相关内容'
+                  }
+                  confirmText={removeLabel}
+                  disabled={busy}
+                  onConfirm={() => onRemove(member.memberId)}
+                >
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    icon={<RemoveIcon aria-hidden="true" />}
+                    loading={removing}
+                    disabled={busy && !removing}
+                    aria-label={`${removeLabel} ${member.username}`}
+                    title={removeLabel}
+                  />
+                </ConfirmPopover>
+              </span>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

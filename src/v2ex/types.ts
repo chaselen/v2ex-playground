@@ -409,6 +409,8 @@ export type MemberContentTabKey = 'topics' | 'replies' | MemberTopicTabKey
  * 特别关注的用户
  */
 export interface FollowingMember {
+  /** 用户编号；页面未提供时为 0 */
+  memberId: number
   /** 用户头像地址 */
   avatar: string
   /** 用户名 */
@@ -419,6 +421,8 @@ export interface FollowingMember {
  * 屏蔽的用户
  */
 export interface BlockedMember {
+  /** 用户编号 */
+  memberId: number
   /** 用户头像地址 */
   avatar: string
   /** 用户名 */

@@ -193,6 +193,22 @@ export class MemberPanelController
     return this.mutateMemberRelation('unblock')
   }
 
+  /**
+   * 从本人页关系列表取消特别关注
+   * @param memberId 用户编号
+   */
+  rpc_unfollowListedMember(memberId: number) {
+    return this.mutateListedMemberRelation('unfollow', memberId)
+  }
+
+  /**
+   * 从本人页关系列表取消屏蔽
+   * @param memberId 用户编号
+   */
+  rpc_unblockListedMember(memberId: number) {
+    return this.mutateListedMemberRelation('unblock', memberId)
+  }
+
   /** 加载用户标签内容 */
   rpc_loadMemberTab(message: { tab: MemberContentTabKey; page?: number }) {
     return this.loadMemberContent(message.tab, message.page)
@@ -293,6 +309,49 @@ export class MemberPanelController
     this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
       logger.error('用户面板图标更新失败', err)
+    )
+    this.render(this.profile)
+    return this.profile
+  }
+
+  /**
+   * 更新本人页关系列表中的用户，并刷新关注/屏蔽列表
+   * @param action 取消关注或取消屏蔽
+   * @param memberId 用户编号
+   */
+  private async mutateListedMemberRelation(
+    action: 'unfollow' | 'unblock',
+    memberId: number
+  ): Promise<MemberProfile> {
+    if (!this.isSelf) {
+      throw new Error('仅本人页可管理关注与屏蔽列表')
+    }
+    if (!(await G.V2ex.ensureAuthenticated())) {
+      throw new LoginRequiredError(`${getMemberRelationLabel(action)}前请先登录`)
+    }
+    if (!Number.isInteger(memberId) || memberId <= 0) {
+      throw new Error('未找到用户编号，无法更新用户关系')
+    }
+
+    await updateMemberRelation(action, memberId)
+
+    try {
+      await G.V2ex.getAccountOverview({ force: true })
+    } catch (err) {
+      logger.error('关系列表更新后刷新账户概览失败', err, {
+        memberId,
+        action
+      })
+    }
+
+    const relationMembers = await this.loadRelationMembers()
+    const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
+    const content = this.profile?.content || (await G.V2ex.getMemberContent(this.username))
+    this.profile = this.createProfile(
+      member,
+      content,
+      relationMembers.followingMembers,
+      relationMembers.blockedMembers
     )
     this.render(this.profile)
     return this.profile

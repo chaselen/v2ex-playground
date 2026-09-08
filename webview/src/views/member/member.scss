@@ -127,7 +127,7 @@
 
 .member-relations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: 8px;
 }
 
@@ -135,20 +135,41 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  gap: 9px;
-  padding: 8px 10px;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
   border: 1px solid transparent;
   border-radius: var(--v2ex-radius-sm);
   color: var(--v2ex-webview-fg);
   background: var(--v2ex-webview-bg);
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--v2ex-link-soft-border);
+    background: var(--v2ex-hover-bg);
+
+    .member-relations-action {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+.member-relations-open {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+  gap: 9px;
+  padding: 4px 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
   font: inherit;
   text-align: left;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--v2ex-link-soft-border);
     color: var(--v2ex-hover-fg);
-    background: var(--v2ex-hover-bg);
   }
 
   &:focus-visible {
@@ -162,6 +183,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.member-relations-action {
+  flex: 0 0 auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+@media (hover: none) {
+  .member-relations-action {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .member-relations-empty {

@@ -62,11 +62,11 @@ describe('parseFollowingMembers', () => {
         <div class="box">
           <div class="cell"><span class="fade">我关注的人</span></div>
           <div class="cell">
-            <a href="/member/alice"><img class="avatar" src="//cdn.v2ex.com/alice.png" alt="alice"></a>&nbsp;
+            <a href="/member/alice"><img class="avatar" data-uid="11" src="//cdn.v2ex.com/alice.png" alt="alice"></a>&nbsp;
             <a href="/member/alice">alice</a>
           </div>
           <div class="inner">
-            <a href="/member/bob"><img class="avatar" src="//cdn.v2ex.com/bob.png" alt="bob"></a>&nbsp;
+            <a href="/member/bob"><img class="avatar" data-uid="22" src="//cdn.v2ex.com/bob.png" alt="bob"></a>&nbsp;
             <a href="/member/bob">bob</a>
           </div>
         </div>
@@ -75,10 +75,12 @@ describe('parseFollowingMembers', () => {
 
     expect(parseFollowingMembers($)).toEqual([
       {
+        memberId: 11,
         avatar: '//cdn.v2ex.com/alice.png',
         username: 'alice'
       },
       {
+        memberId: 22,
         avatar: '//cdn.v2ex.com/bob.png',
         username: 'bob'
       }

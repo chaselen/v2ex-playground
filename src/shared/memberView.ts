@@ -38,6 +38,10 @@ export interface MemberPanelRpcCommands
   unfollowMember(): MemberProfile
   blockMember(): MemberProfile
   unblockMember(): MemberProfile
+  /** 从本人页关系列表取消特别关注 */
+  unfollowListedMember(memberId: number): MemberProfile
+  /** 从本人页关系列表取消屏蔽 */
+  unblockListedMember(memberId: number): MemberProfile
 }
 
 /**
