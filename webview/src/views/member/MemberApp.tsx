@@ -439,7 +439,6 @@ export default function MemberApp() {
                             ? '取消后将不再在特别关注列表中保留该用户'
                             : '加入后可在特别关注列表中快速找到该用户'
                         }
-                        confirmText={profile.member.isFollowing ? '取消关注' : '加入关注'}
                         disabled={Boolean(memberAction && memberAction !== 'following')}
                         onConfirm={() => mutateMemberAction('following')}
                       >
@@ -462,7 +461,6 @@ export default function MemberApp() {
                             ? '取消后将恢复显示该用户的相关内容'
                             : '屏蔽后将不再显示该用户的相关内容'
                         }
-                        confirmText={profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
                         danger={!profile.member.isBlocked}
                         disabled={Boolean(memberAction && memberAction !== 'blocking')}
                         onConfirm={() => mutateMemberAction('blocking')}
@@ -649,7 +647,6 @@ function renderRelationMembers(options: {
                       ? '取消后将不再在特别关注列表中保留该用户'
                       : '取消后可再次看到该用户的相关内容'
                   }
-                  confirmText={removeLabel}
                   disabled={busy}
                   onConfirm={() => onRemove(member.memberId)}
                 >
@@ -802,7 +799,6 @@ function renderTopics(
                 <ConfirmPopover
                   title={`确认取消忽略「${topic.title}」？`}
                   description="取消后该主题将重新出现在普通浏览流中"
-                  confirmText="取消忽略"
                   disabled={ignoredActions.busy}
                   onConfirm={() => ignoredActions.onUnignore(topic.id)}
                 >

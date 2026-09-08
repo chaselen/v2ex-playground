@@ -384,7 +384,6 @@ export default function TopicDetailView({
         ) : (
           <ConfirmPopover
             title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
-            confirmText="确认"
             cancelText="取消"
             onConfirm={() => thankReply(reply.replyId)}
           >
@@ -503,7 +502,6 @@ export default function TopicDetailView({
 
             <ConfirmPopover
               title={topic.isIgnored ? '确定撤销对这个主题的忽略？' : '确定不想再看到这个主题？'}
-              confirmText="确认"
               cancelText="取消"
               onConfirm={() =>
                 requestTopicAction(
@@ -552,7 +550,6 @@ export default function TopicDetailView({
             {topic.canThank && !topic.isThanked && (
               <ConfirmPopover
                 title="你确定要向本主题创建者发送谢意？"
-                confirmText="确认"
                 cancelText="取消"
                 onConfirm={() => requestTopicAction(thankTopic, setThankingTopic)}
               >

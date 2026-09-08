@@ -225,7 +225,6 @@ export default function RecentBrowseApp() {
           <ConfirmPopover
             title="删除这条浏览记录？"
             description="删除后不可恢复"
-            confirmText="删除"
             danger
             disabled={clearing || deletingTopicId !== undefined}
             onConfirm={() => deleteRecentBrowse(topic.topicId)}
@@ -302,7 +301,6 @@ export default function RecentBrowseApp() {
             <ConfirmPopover
               title="清空最近浏览？"
               description="清空后不可恢复"
-              confirmText="清空"
               danger
               disabled={!data?.totalCount || loading || clearing || deletingTopicId !== undefined}
               onConfirm={clearRecentBrowse}

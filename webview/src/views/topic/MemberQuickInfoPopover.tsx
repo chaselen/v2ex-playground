@@ -176,7 +176,6 @@ export default function MemberQuickInfoPopover({
                             ? '取消后将恢复显示该用户的相关内容'
                             : '屏蔽后将不再显示该用户的相关内容'
                         }
-                        confirmText={member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
                         danger={!member.isBlocked}
                         disabled={updatingBlock}
                         onConfirm={handleToggleBlock}

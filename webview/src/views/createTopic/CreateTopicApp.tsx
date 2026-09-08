@@ -301,7 +301,6 @@ export default function CreateTopicApp() {
               align="end"
               title="确认发布这个主题？"
               description="发布后 5 分钟内可在 V2EX 网页修改标题、正文或节点"
-              confirmText="发布主题"
               disabled={!canPublish}
               onConfirm={publishTopic}
             >

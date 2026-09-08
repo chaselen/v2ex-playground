@@ -262,7 +262,6 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
           <ConfirmPopover
             title={`确定删除“${data.label}”节点？`}
             description="删除后该节点将从自定义节点列表中移除"
-            confirmText="删除"
             cancelText="取消"
             danger
             onConfirm={() => {
@@ -286,7 +285,6 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
           <ConfirmPopover
             title={`确定取消收藏“${data.label}”节点？`}
             description="取消后该节点将从收藏节点列表中移除"
-            confirmText="取消收藏"
             cancelText="保留"
             danger
             onConfirm={() => (data.itemKey ? onCancelCollectNode?.(data.itemKey) : undefined)}
