@@ -40,7 +40,8 @@ a {
   color: var(--v2ex-link-fg);
   text-decoration: none;
 
-  &:hover {
+  &:hover,
+  &[data-member-quick-info-hover] {
     color: var(--v2ex-link-hover-fg);
   }
 

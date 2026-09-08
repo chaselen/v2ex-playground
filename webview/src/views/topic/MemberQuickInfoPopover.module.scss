@@ -5,6 +5,13 @@
   gap: 6px;
 }
 
+.virtualTrigger {
+  display: block;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
 .card {
   width: 280px;
   padding: 12px;

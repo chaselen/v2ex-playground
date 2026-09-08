@@ -1,5 +1,6 @@
 import type { WebviewCommonRpcCommands } from '@extension/shared/webview'
 import { createVsCodeClient } from './vscode'
+import { getMemberUsernameFromHref } from './memberLink'
 import { getV2exTopicId, isV2exHostname } from './topicLink'
 
 /** 站内链接导航使用的 VS Code 通信客户端 */
@@ -97,7 +98,7 @@ function resolveLinkNavigationTarget(
     return { type: 'topic', topicId, title: title || options.topicTitle }
   }
 
-  const username = extractPathValue(internalPath, 'member')
+  const username = getMemberUsernameFromHref(href, document.baseURI)
   if (username) {
     return { type: 'member', username }
   }
@@ -161,7 +162,7 @@ function resolveLinkUrl(href: string, baseUrl: string = document.baseURI): URL |
  * @param href 链接地址
  * @param segment 路径段
  */
-function extractPathValue(href: string, segment: 'member' | 'go'): string {
+function extractPathValue(href: string, segment: 'go'): string {
   const value = href.match(new RegExp(`^/${segment}/([^/]+)/?$`))?.[1]
   if (!value) {
     return ''

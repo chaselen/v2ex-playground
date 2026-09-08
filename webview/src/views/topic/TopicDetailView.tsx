@@ -33,6 +33,7 @@ import {
 } from '@/components/ui'
 import { mergeClassNames } from '@/components/ui/utils'
 import ReplyComposer, { type ReplyComposerHandle } from './ReplyComposer'
+import MemberQuickInfoHoverLayer from './MemberQuickInfoHoverLayer'
 import MemberQuickInfoPopover from './MemberQuickInfoPopover'
 import ReplyLoginPrompt from './ReplyLoginPrompt'
 import { FloatingActions, floatingActionStyles } from './FloatingActions'
@@ -104,6 +105,8 @@ export default function TopicDetailView({
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
   const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>(initialReplyViewMode)
   const replyComposerRef = useRef<ReplyComposerHandle>(null)
+  /** 话题详情根节点，供内容区用户链接悬停浮层委托事件 */
+  const [topicRoot, setTopicRoot] = useState<HTMLElement | null>(null)
   const replyTree = useMemo(() => buildReplyTree(topic.replies), [topic.replies])
   const replies =
     replyViewMode === 'nested'
@@ -610,7 +613,7 @@ export default function TopicDetailView({
 
   return (
     <>
-      <article className={className}>
+      <article ref={setTopicRoot} className={className}>
         <header className="topic-header">
           <h1>{topic.title}</h1>
           {showAvatar && renderMemberAvatar(topic.authorName, topic.authorAvatar, 'large')}
@@ -792,6 +795,16 @@ export default function TopicDetailView({
             />
           ))}
       </article>
+
+      <MemberQuickInfoHoverLayer
+        container={topicRoot}
+        scrollContainerRef={scrollContainerRef}
+        dismissKey={`${topic.id}:${topic.replyCurrentPage}`}
+        loadMemberInfo={controller.loadMemberQuickInfo}
+        blockMember={controller.blockMember}
+        unblockMember={controller.unblockMember}
+        openMember={username => void controller.openMember(username)}
+      />
 
       {floatingActionsContainer && floatingActions
         ? createPortal(floatingActions, floatingActionsContainer)

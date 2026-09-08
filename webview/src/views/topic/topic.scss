@@ -15,7 +15,8 @@
   padding: 24px;
   margin: 0 auto;
 
-  a:hover {
+  a:hover,
+  a[data-member-quick-info-hover] {
     text-decoration: underline;
   }
 }

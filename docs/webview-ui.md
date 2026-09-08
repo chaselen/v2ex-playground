@@ -36,6 +36,22 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - 收起态对内容区设置 `inert` 与 `aria-hidden`，避免键盘和辅助技术进入被裁切的链接、图片预览与隐藏图片占位；CSS `pointer-events: none` 作为指针兜底。展开按钮在内容区外，自行 `stopPropagation`
 - 实现见 `webview/src/views/topic/CollapsibleReplyContent.tsx` 与 `collapsibleReply.ts`
 
+## 用户快速信息
+
+话题页作者名和头像由 `MemberQuickInfoPopover` 直接包裹。正文、附言、回复和回复预览里的 `@用户` 来自 V2EX HTML，经 `dangerouslySetInnerHTML` 插入为 `/member/{username}` 链接，不能逐个包成 React 树。
+
+设计取舍：在 `TopicDetailView` 根节点上对 `.topic-content a` 做 pointerover 委托，用单个 `MemberQuickInfoPopover` 的 `position: fixed` 幽灵触发器对齐当前链接。不要把 HTML 解析成 React，也不要在 `contentEnhancement` 里为每个链接挂 React root。主面板与预览弹窗各自挂一层，避免两个详情实例抢同一个浮层。
+
+边界：
+
+- 用户名解析复用 `getMemberUsernameFromHref()`，与站内链接导航同一套 `/member/{username}` 规则；实现见 `webview/src/core/memberLink.ts`
+- 已由 React 包裹的作者名 / 头像通过 `data-member-quick-info-trigger` 排除
+- 收起的长回复带 `inert`，不会触发
+- Dialog 等带 `transform` 的祖先会成为 `fixed` 包含块，幽灵触发器不能直接使用 viewport 矩形
+- 幽灵触发器盖住链接后原生 `:hover` 会丢失；悬停期间给原链接打上 `data-member-quick-info-hover`，沿用 hover 下划线与链接色
+- 滚动或窗口尺寸变化时关闭浮层，避免锚点矩形失效
+- 实现见 `webview/src/views/topic/MemberQuickInfoHoverLayer.tsx` 与 `memberQuickInfoHover.ts`
+
 ## 加载骨架
 
 - 页面首次加载且没有可展示内容时使用 `PageSkeleton` 的对应变体；已有内容上的刷新、分页和提交继续使用局部加载状态

@@ -1,16 +1,30 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode
+} from 'react'
 import { UserRound } from 'lucide-react'
 import { Avatar, Button, ConfirmPopover, HoverCard, Spinner, Tag, Toast } from '@/components/ui'
 import { mergeClassNames } from '@/components/ui/utils'
 import UserBadge from '@/components/UserBadge'
+import { MEMBER_QUICK_INFO_TRIGGER_ATTR } from './memberQuickInfoHover'
 import type { MemberQuickInfo, TopicMemberRelationTarget } from '@extension/shared/webview'
 import styles from './MemberQuickInfoPopover.module.scss'
 
 export interface MemberQuickInfoPopoverProps {
   /** 用户名 */
   username: string
-  /** 触发元素 */
-  children: ReactNode
+  /** 触发元素；与 `anchor` 二选一 */
+  children?: ReactNode
+  /** 原生 DOM 锚点，用于 HTML 内容中的用户链接 */
+  anchor?: HTMLElement
+  /** 虚拟锚点在未打开浮层时指针离开，或浮层关闭 */
+  onAnchorDismiss?: () => void
   /** 加载用户快速信息 */
   loadMemberInfo: (username: string) => Promise<MemberQuickInfo>
   /** 屏蔽用户 */
@@ -22,11 +36,39 @@ export interface MemberQuickInfoPopoverProps {
 }
 
 /**
+ * 计算幽灵触发器对齐原生锚点所需的 fixed 坐标
+ *
+ * Dialog 等带 transform 的祖先会成为 fixed 包含块，不能直接使用 viewport 矩形。
+ *
+ * @param anchor 原生锚点
+ * @param trigger 已设为 position:fixed 的触发器
+ */
+function getVirtualTriggerStyle(anchor: HTMLElement, trigger: HTMLElement): CSSProperties {
+  const anchorRect = anchor.getBoundingClientRect()
+  const currentTop = trigger.style.top
+  const currentLeft = trigger.style.left
+  trigger.style.top = '0px'
+  trigger.style.left = '0px'
+  const originRect = trigger.getBoundingClientRect()
+  trigger.style.top = currentTop
+  trigger.style.left = currentLeft
+
+  return {
+    top: anchorRect.top - originRect.top,
+    left: anchorRect.left - originRect.left,
+    width: anchorRect.width,
+    height: anchorRect.height
+  }
+}
+
+/**
  * 用户快速信息浮层
  */
 export default function MemberQuickInfoPopover({
   username,
   children,
+  anchor,
+  onAnchorDismiss,
   loadMemberInfo,
   blockMember,
   unblockMember,
@@ -38,7 +80,10 @@ export default function MemberQuickInfoPopover({
   const [error, setError] = useState('')
   /** 当前用户屏蔽关系操作是否进行中 */
   const [updatingBlock, setUpdatingBlock] = useState(false)
+  /** 幽灵触发器对齐原生锚点的 fixed 坐标 */
+  const [virtualStyle, setVirtualStyle] = useState<CSSProperties>()
   const requestIdRef = useRef(0)
+  const triggerRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     requestIdRef.current += 1
@@ -47,10 +92,45 @@ export default function MemberQuickInfoPopover({
     setError('')
     setUpdatingBlock(false)
 
+    if (visible) {
+      requestMemberInfo().catch(err => console.error(err))
+    }
+
     return () => {
       requestIdRef.current += 1
     }
   }, [username])
+
+  useLayoutEffect(() => {
+    if (!anchor) {
+      setVirtualStyle(undefined)
+      return
+    }
+
+    const trigger = triggerRef.current
+    if (!trigger) {
+      return
+    }
+
+    setVirtualStyle(getVirtualTriggerStyle(anchor, trigger))
+  }, [anchor])
+
+  useLayoutEffect(() => {
+    if (!anchor || !virtualStyle) {
+      return
+    }
+
+    const trigger = triggerRef.current
+    if (!trigger) {
+      return
+    }
+
+    /* 幽灵节点是在指针已位于链接上时插入的，浏览器不一定补发 pointerenter */
+    trigger.dispatchEvent(
+      new PointerEvent('pointerenter', { bubbles: false, pointerType: 'mouse' })
+    )
+    trigger.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))
+  }, [anchor, virtualStyle])
 
   /**
    * 按需加载用户资料
@@ -86,6 +166,31 @@ export default function MemberQuickInfoPopover({
     if (nextVisible && !member && !loading && !error) {
       requestMemberInfo().catch(err => console.error(err))
     }
+    if (!nextVisible && anchor) {
+      onAnchorDismiss?.()
+    }
+  }
+
+  /**
+   * 虚拟触发器点击时打开完整资料
+   * @param event 点击事件
+   */
+  function handleVirtualTriggerClick(event: MouseEvent<HTMLSpanElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+    handleOpenMember()
+  }
+
+  /**
+   * 虚拟触发器在浮层尚未打开时指针离开，卸掉幽灵节点
+   * @param event 指针事件
+   */
+  function handleVirtualTriggerPointerLeave(event: PointerEvent<HTMLSpanElement>) {
+    if (event.pointerType === 'touch' || visible) {
+      return
+    }
+
+    onAnchorDismiss?.()
   }
 
   /**
@@ -93,6 +198,9 @@ export default function MemberQuickInfoPopover({
    */
   function handleOpenMember() {
     setVisible(false)
+    if (anchor) {
+      onAnchorDismiss?.()
+    }
     openMember(member?.username || username)
   }
 
@@ -230,7 +338,29 @@ export default function MemberQuickInfoPopover({
       open={visible}
       onOpenChange={handleVisibleChange}
     >
-      <span className={styles.trigger}>{children}</span>
+      <span
+        ref={triggerRef}
+        className={mergeClassNames(styles.trigger, anchor && styles.virtualTrigger)}
+        style={
+          anchor
+            ? {
+                position: 'fixed',
+                top: virtualStyle?.top ?? 0,
+                left: virtualStyle?.left ?? 0,
+                width: virtualStyle?.width ?? 0,
+                height: virtualStyle?.height ?? 0,
+                zIndex: 1
+              }
+            : undefined
+        }
+        tabIndex={anchor ? -1 : undefined}
+        aria-hidden={anchor ? true : undefined}
+        {...{ [MEMBER_QUICK_INFO_TRIGGER_ATTR]: '' }}
+        onClick={anchor ? handleVirtualTriggerClick : undefined}
+        onPointerLeave={anchor ? handleVirtualTriggerPointerLeave : undefined}
+      >
+        {anchor ? null : children}
+      </span>
     </HoverCard>
   )
 }
