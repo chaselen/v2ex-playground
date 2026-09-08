@@ -39,14 +39,41 @@
   align-items: center;
   gap: 6px;
 
-  strong {
+  .usernameButton {
     min-width: 0;
     flex: 1;
     overflow: hidden;
     font-size: 15px;
+    font-weight: bold;
+    text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
+
+.avatarButton,
+.usernameButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 2px;
+  }
+}
+
+.avatarButton {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: 4px;
+}
+
+.usernameButton:hover {
+  text-decoration: underline;
 }
 
 .meta {

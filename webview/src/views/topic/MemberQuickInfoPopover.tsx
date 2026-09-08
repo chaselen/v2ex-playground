@@ -265,15 +265,28 @@ export default function MemberQuickInfoPopover({
           {!loading && !error && member && (
             <>
               <header className={styles.header}>
-                <Avatar
-                  shape="square"
-                  src={member.avatar}
-                  alt={member.username}
-                  fallback={<UserRound aria-hidden="true" />}
-                />
+                <button
+                  type="button"
+                  className={styles.avatarButton}
+                  aria-label={`打开 ${member.username} 的用户资料`}
+                  onClick={handleOpenMember}
+                >
+                  <Avatar
+                    shape="square"
+                    src={member.avatar}
+                    alt={member.username}
+                    fallback={<UserRound aria-hidden="true" />}
+                  />
+                </button>
                 <div className={styles.heading}>
                   <div className={styles.usernameRow}>
-                    <strong>{member.username}</strong>
+                    <button
+                      type="button"
+                      className={styles.usernameButton}
+                      onClick={handleOpenMember}
+                    >
+                      {member.username}
+                    </button>
                     {member.isPro && <UserBadge pro />}
                     {!member.isSelf && typeof member.isBlocked === 'boolean' && (
                       <ConfirmPopover
