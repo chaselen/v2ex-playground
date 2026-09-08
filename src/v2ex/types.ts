@@ -416,6 +416,16 @@ export interface FollowingMember {
 }
 
 /**
+ * 屏蔽的用户
+ */
+export interface BlockedMember {
+  /** 用户头像地址 */
+  avatar: string
+  /** 用户名 */
+  username: string
+}
+
+/**
  * 用户基本信息
  */
 export interface MemberInfo {
@@ -505,6 +515,8 @@ export interface MemberProfile {
   content: MemberContent
   /** 当前登录用户的特别关注列表，仅本人页提供 */
   followingMembers?: FollowingMember[]
+  /** 当前登录用户的屏蔽列表，仅本人页提供 */
+  blockedMembers?: BlockedMember[]
 }
 
 /** SoV2EX 搜索结果主题信息 */

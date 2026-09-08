@@ -3,6 +3,50 @@ import { parseCoinBalance } from './balance'
 import type { AccountOverview, FollowingMember } from '../types'
 
 /**
+ * 从首页 HTML 脚本中解析屏蔽用户编号
+ *
+ * 登录后首页会注入 `const blocked = [id, ...];`，未登录或不存在该声明时返回空列表
+ * @param html 首页 HTML
+ */
+export function parseBlockedMemberIds(html: string): number[] {
+  return parseScriptIdArray(html, 'blocked')
+}
+
+/**
+ * 从首页 HTML 脚本中解析忽略的主题编号
+ *
+ * 登录后首页会注入 `const ignored_topics = [id, ...];`，未登录或不存在该声明时返回空列表
+ * @param html 首页 HTML
+ */
+export function parseIgnoredTopicIds(html: string): number[] {
+  return parseScriptIdArray(html, 'ignored_topics')
+}
+
+/**
+ * 解析首页脚本中的正整数编号数组
+ * @param html 首页 HTML
+ * @param name 脚本常量名
+ */
+function parseScriptIdArray(html: string, name: string): number[] {
+  const match = html.match(new RegExp(`const\\s+${name}\\s*=\\s*\\[([^\\]]*)\\]`))
+  if (!match) {
+    return []
+  }
+
+  const ids: number[] = []
+  const seen = new Set<number>()
+  for (const part of match[1].split(',')) {
+    const id = Number(part.trim())
+    if (!Number.isInteger(id) || id <= 0 || seen.has(id)) {
+      continue
+    }
+    seen.add(id)
+    ids.push(id)
+  }
+  return ids
+}
+
+/**
  * 从 HTML 中解析在线人数
  * @param $ cheerio 实例
  */

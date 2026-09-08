@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Heart, Inbox, RefreshCw, UserRound } from 'lucide-react'
+import { Heart, Inbox, RefreshCw, UserRound, UserX } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -17,6 +17,8 @@ import {
   ConfirmPopover,
   Empty,
   Pagination,
+  RadioGroup,
+  RadioGroupItem,
   Tag,
   Tabs,
   TabsContent,
@@ -24,6 +26,8 @@ import {
   TabsTrigger
 } from '@/components/ui'
 import type {
+  BlockedMember,
+  FollowingMember,
   MemberContentTabKey,
   MemberPanelRpcCommands,
   MemberPanelViewState,
@@ -40,6 +44,9 @@ type MemberRequestCommand = 'loadMemberTab' | 'loadMemberPage'
 
 /** 用户关系操作类型 */
 type MemberAction = 'following' | 'blocking'
+
+/** 本人页关系列表分段 */
+type MemberRelationTab = 'following' | 'blocked'
 
 /** 用户页固定标签 */
 const memberTabs: Array<{ key: MemberContentTabKey; label: string }> = [
@@ -67,6 +74,8 @@ export default function MemberApp() {
   })
   const [activeTab, setActiveTab] = useState<MemberContentTabKey>('topics')
   const [loadingContent, setLoadingContent] = useState(false)
+  /** 本人页关系列表当前分段 */
+  const [relationTab, setRelationTab] = useState<MemberRelationTab>('following')
   /** 当前用户关系操作 */
   const [memberAction, setMemberAction] = useState<MemberAction>()
   /** 用户关系操作错误 */
@@ -393,40 +402,47 @@ export default function MemberApp() {
             />
           )}
 
-          {state.isSelf && profile.followingMembers && (
-            <section className="member-following" aria-labelledby="member-following-title">
-              <header className="member-following-header">
-                <h2 id="member-following-title" className="member-following-title">
-                  <Heart aria-hidden="true" />
-                  <span>我关注的人</span>
-                  <Tag className="member-following-count">{profile.followingMembers.length}</Tag>
-                </h2>
+          {state.isSelf && profile.followingMembers && profile.blockedMembers && (
+            <section className="member-relations" aria-label="关注与屏蔽">
+              <header className="member-relations-header">
+                <RadioGroup
+                  aria-label="用户关系列表"
+                  className="member-relations-tabs"
+                  value={relationTab}
+                  variant="segmented"
+                  onValueChange={value => setRelationTab(value as MemberRelationTab)}
+                >
+                  <RadioGroupItem
+                    value="following"
+                    label={
+                      <span className="member-relations-tab-label">
+                        <Heart aria-hidden="true" />
+                        <span>我关注的人({profile.followingMembers.length})</span>
+                      </span>
+                    }
+                  />
+                  <RadioGroupItem
+                    value="blocked"
+                    label={
+                      <span className="member-relations-tab-label">
+                        <UserX aria-hidden="true" />
+                        <span>我屏蔽的人({profile.blockedMembers.length})</span>
+                      </span>
+                    }
+                  />
+                </RadioGroup>
               </header>
-              {profile.followingMembers.length ? (
-                <div className="member-following-grid">
-                  {profile.followingMembers.map(member => (
-                    <button
-                      className="member-following-item"
-                      key={member.username}
-                      type="button"
-                      title={`打开 ${member.username} 的个人页`}
-                      onClick={() => openMember(member.username)}
-                    >
-                      <Avatar
-                        size="small"
-                        src={member.avatar}
-                        alt={member.username}
-                        fallback={<UserRound aria-hidden="true" />}
-                      />
-                      <span className="member-following-name">{member.username}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="member-following-empty">
-                  在其他用户的个人页点击“加入特别关注”后，会显示在这里
-                </div>
-              )}
+              {relationTab === 'following'
+                ? renderRelationMembers(
+                    profile.followingMembers,
+                    '在其他用户的个人页点击“加入特别关注”后，会显示在这里',
+                    openMember
+                  )
+                : renderRelationMembers(
+                    profile.blockedMembers,
+                    '暂无屏蔽用户。在其他用户的个人页点击“屏蔽用户”后，会显示在这里',
+                    openMember
+                  )}
             </section>
           )}
 
@@ -464,6 +480,44 @@ export default function MemberApp() {
         </article>
       )}
     </SimpleBar>
+  )
+}
+
+/**
+ * 渲染本人页关系用户网格
+ * @param members 关系用户列表
+ * @param emptyText 空状态文案
+ * @param openMember 打开用户
+ */
+function renderRelationMembers(
+  members: Array<FollowingMember | BlockedMember>,
+  emptyText: string,
+  openMember: (username: string) => void
+) {
+  if (!members.length) {
+    return <div className="member-relations-empty">{emptyText}</div>
+  }
+
+  return (
+    <div className="member-relations-grid">
+      {members.map(member => (
+        <button
+          className="member-relations-item"
+          key={member.username}
+          type="button"
+          title={`打开 ${member.username} 的个人页`}
+          onClick={() => openMember(member.username)}
+        >
+          <Avatar
+            size="small"
+            src={member.avatar}
+            alt={member.username}
+            fallback={<UserRound aria-hidden="true" />}
+          />
+          <span className="member-relations-name">{member.username}</span>
+        </button>
+      ))}
+    </div>
   )
 }
 

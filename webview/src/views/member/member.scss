@@ -97,7 +97,7 @@
   margin-top: 14px;
 }
 
-.member-following {
+.member-relations {
   padding: 14px;
   margin-top: 16px;
   border: 1px solid var(--v2ex-border);
@@ -105,36 +105,33 @@
   background: var(--v2ex-widget-bg);
 }
 
-.member-following-header {
+.member-relations-header {
   margin-bottom: 12px;
 }
 
-.member-following-title {
-  display: flex;
-  gap: 7px;
+.member-relations-tabs {
+  width: 100%;
+}
+
+.member-relations-tab-label {
+  display: inline-flex;
+  gap: 6px;
   align-items: center;
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.4;
 
   svg {
-    width: 16px;
-    height: 16px;
-    color: var(--v2ex-link-fg);
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
   }
 }
 
-.member-following-count {
-  flex: 0 0 auto;
-}
-
-.member-following-grid {
+.member-relations-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 8px;
 }
 
-.member-following-item {
+.member-relations-item {
   display: flex;
   align-items: center;
   min-width: 0;
@@ -160,14 +157,14 @@
   }
 }
 
-.member-following-name {
+.member-relations-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.member-following-empty {
+.member-relations-empty {
   padding: 14px 8px 4px;
   color: var(--v2ex-muted-fg);
   font-size: 13px;

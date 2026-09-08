@@ -10,6 +10,7 @@ import {
 } from '@/controllers/WebviewCommonController'
 import { LoginRequiredError } from '@/v2ex'
 import type {
+  BlockedMember,
   FollowingMember,
   MemberContent,
   MemberContentTabKey,
@@ -218,8 +219,13 @@ export class MemberPanelController
       G.V2ex.getMemberContent(this.username)
     ])
     this.isSelf = await this.resolveIsSelf(member.username)
-    const followingMembers = this.isSelf ? await this.loadFollowingMembers() : undefined
-    this.profile = this.createProfile(member, content, followingMembers)
+    const relationMembers = this.isSelf ? await this.loadRelationMembers() : undefined
+    this.profile = this.createProfile(
+      member,
+      content,
+      relationMembers?.followingMembers,
+      relationMembers?.blockedMembers
+    )
     this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
       logger.error('用户面板图标更新失败', err)
@@ -297,17 +303,32 @@ export class MemberPanelController
    * @param member 用户基本信息
    * @param content 用户活动内容
    * @param followingMembers 特别关注列表
+   * @param blockedMembers 屏蔽列表
    */
   private createProfile(
     member: MemberInfo,
     content: MemberContent,
-    followingMembers = this.profile?.followingMembers
+    followingMembers = this.profile?.followingMembers,
+    blockedMembers = this.profile?.blockedMembers
   ): MemberProfile {
     return {
       member,
       content,
-      followingMembers
+      followingMembers,
+      blockedMembers
     }
+  }
+
+  /** 获取本人页的特别关注与屏蔽列表 */
+  private async loadRelationMembers(): Promise<{
+    followingMembers: FollowingMember[]
+    blockedMembers: BlockedMember[]
+  }> {
+    const [followingMembers, blockedMembers] = await Promise.all([
+      this.loadFollowingMembers(),
+      this.loadBlockedMembers()
+    ])
+    return { followingMembers, blockedMembers }
   }
 
   /** 获取本人页的特别关注列表 */
@@ -316,6 +337,16 @@ export class MemberPanelController
       return await G.V2ex.getFollowingMembers()
     } catch (err) {
       logger.error('特别关注列表加载失败', err, { username: this.username })
+      return []
+    }
+  }
+
+  /** 获取本人页的屏蔽列表 */
+  private async loadBlockedMembers(): Promise<BlockedMember[]> {
+    try {
+      return await G.V2ex.getBlockedMembers()
+    } catch (err) {
+      logger.error('屏蔽列表加载失败', err, { username: this.username })
       return []
     }
   }

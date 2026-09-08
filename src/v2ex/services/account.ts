@@ -5,7 +5,9 @@ import { getConfigUrl, isV2exUrl } from '../clientUtils'
 import {
   isSameAccountOverview,
   parseAccountOverview,
+  parseBlockedMemberIds,
   parseFollowingMembers,
+  parseIgnoredTopicIds,
   parseOnlineCount
 } from '../parsers/account'
 import { parseBalance, parseLatestDailySignInReward } from '../parsers/balance'
@@ -17,6 +19,7 @@ import {
   type AccountOverview,
   type AccountOverviewChangedHandler,
   type BalanceDetail,
+  type BlockedMember,
   type DailySignInResult,
   type DailySignInReward,
   type DailySignInStatus,
@@ -25,6 +28,18 @@ import {
   type Topic,
   type V2exNotification
 } from '../types'
+
+/** 成员 API 返回的列表展示字段 */
+interface MemberShowApiInfo {
+  /** 用户名 */
+  username?: unknown
+  /** 常规尺寸头像 */
+  avatar_normal?: unknown
+  /** 大尺寸头像 */
+  avatar_large?: unknown
+  /** 迷你头像 */
+  avatar_mini?: unknown
+}
 
 /** 会返回账户概览的 V2EX 页面路径 */
 const isAccountOverviewPath = picomatch([
@@ -137,6 +152,73 @@ export class AccountService {
   async getFollowingMembers(): Promise<FollowingMember[]> {
     const { data: html } = await this.session.get<string>('/my/following')
     return parseFollowingMembers(cheerio.load(html))
+  }
+
+  /**
+   * 从首页脚本读取屏蔽用户与忽略主题编号
+   *
+   * 登录后 `/?tab=all` 会注入 `blocked` 与 `ignored_topics` 数组
+   */
+  async getHomeScriptPreferences(): Promise<{
+    blockedMemberIds: number[]
+    ignoredTopicIds: number[]
+  }> {
+    const { data: html } = await this.session.get<string>('/?tab=all')
+    return {
+      blockedMemberIds: parseBlockedMemberIds(html),
+      ignoredTopicIds: parseIgnoredTopicIds(html)
+    }
+  }
+
+  /**
+   * 获取当前登录用户忽略的主题编号
+   */
+  async getIgnoredTopicIds(): Promise<number[]> {
+    const { ignoredTopicIds } = await this.getHomeScriptPreferences()
+    return ignoredTopicIds
+  }
+
+  /**
+   * 获取当前登录用户屏蔽的用户
+   *
+   * 从首页脚本读取 `blocked` 编号列表，再逐个请求成员 API 补齐头像与用户名
+   */
+  async getBlockedMembers(): Promise<BlockedMember[]> {
+    const { blockedMemberIds } = await this.getHomeScriptPreferences()
+    if (!blockedMemberIds.length) {
+      return []
+    }
+
+    const members = await Promise.all(
+      blockedMemberIds.map(async memberId => {
+        try {
+          return await this.getMemberListItemById(memberId)
+        } catch {
+          return undefined
+        }
+      })
+    )
+
+    return members.filter((member): member is BlockedMember => !!member)
+  }
+
+  /**
+   * 按用户编号获取关系列表所需的用户摘要
+   * @param memberId 用户编号
+   */
+  private async getMemberListItemById(memberId: number): Promise<BlockedMember> {
+    const { data } = await this.session.get<MemberShowApiInfo>('/api/members/show.json', {
+      params: { id: memberId }
+    })
+    const username = typeof data.username === 'string' ? data.username.trim() : ''
+    if (!username) {
+      throw new Error(`未找到编号为 ${memberId} 的用户`)
+    }
+
+    return {
+      username,
+      avatar: pickMemberAvatar(data)
+    }
   }
 
   /** 获取提醒列表 */
@@ -298,6 +380,19 @@ function createEmptyAccountOverview(): AccountOverview {
     silver: 0,
     bronze: 0
   }
+}
+
+/**
+ * 从成员 API 中选取列表展示头像
+ * @param member 成员 API 响应
+ */
+function pickMemberAvatar(member: MemberShowApiInfo): string {
+  for (const value of [member.avatar_normal, member.avatar_large, member.avatar_mini]) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim()
+    }
+  }
+  return ''
 }
 
 /** 归一化页码 */

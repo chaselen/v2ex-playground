@@ -1,6 +1,11 @@
 import * as cheerio from 'cheerio/slim'
 import { describe, expect, it } from 'vitest'
-import { parseAccountOverview, parseFollowingMembers } from './account'
+import {
+  parseAccountOverview,
+  parseBlockedMemberIds,
+  parseFollowingMembers,
+  parseIgnoredTopicIds
+} from './account'
 
 describe('parseAccountOverview', () => {
   it('解析账户用户名和签名', () => {
@@ -86,5 +91,51 @@ describe('parseFollowingMembers', () => {
     )
 
     expect(parseFollowingMembers($)).toEqual([])
+  })
+})
+
+describe('parseBlockedMemberIds', () => {
+  it('解析首页脚本中的屏蔽用户编号', () => {
+    const html = `
+      <script>
+        const blocked = [350370,367256];
+        const ignored_topics = [893822];
+      </script>
+    `
+
+    expect(parseBlockedMemberIds(html)).toEqual([350370, 367256])
+  })
+
+  it('忽略无效编号并保持去重后的顺序', () => {
+    const html = 'const blocked = [12, 0, 12, -3, 34, ];'
+
+    expect(parseBlockedMemberIds(html)).toEqual([12, 34])
+  })
+
+  it('在缺少 blocked 声明时返回空列表', () => {
+    expect(parseBlockedMemberIds('<script>const ignored_topics = [1];</script>')).toEqual([])
+  })
+})
+
+describe('parseIgnoredTopicIds', () => {
+  it('解析首页脚本中的忽略主题编号', () => {
+    const html = `
+      <script>
+        const blocked = [350370,367256];
+        const ignored_topics = [893822, 10001];
+      </script>
+    `
+
+    expect(parseIgnoredTopicIds(html)).toEqual([893822, 10001])
+  })
+
+  it('忽略无效编号并保持去重后的顺序', () => {
+    const html = 'const ignored_topics = [12, 0, 12, -3, 34, ];'
+
+    expect(parseIgnoredTopicIds(html)).toEqual([12, 34])
+  })
+
+  it('在缺少 ignored_topics 声明时返回空列表', () => {
+    expect(parseIgnoredTopicIds('<script>const blocked = [1];</script>')).toEqual([])
   })
 })

@@ -1,6 +1,7 @@
 import type { MemberContentTabKey, MemberProfile } from '../v2ex/types'
 import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 export type {
+  BlockedMember,
   FollowingMember,
   MemberContentTabKey,
   MemberProfile,

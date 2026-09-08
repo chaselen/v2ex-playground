@@ -18,6 +18,7 @@ import type {
   DailySignInResult,
   DailySignInReward,
   DailySignInStatus,
+  BlockedMember,
   FollowingMember,
   LoginExpiredHandler,
   MemberContent,
@@ -382,6 +383,26 @@ export class V2exClient {
   /** 获取当前登录用户特别关注的用户 */
   getFollowingMembers(): Promise<FollowingMember[]> {
     return this.account.getFollowingMembers()
+  }
+
+  /**
+   * 从首页脚本读取屏蔽用户与忽略主题编号
+   */
+  getHomeScriptPreferences(): Promise<{
+    blockedMemberIds: number[]
+    ignoredTopicIds: number[]
+  }> {
+    return this.account.getHomeScriptPreferences()
+  }
+
+  /** 获取当前登录用户忽略的主题编号 */
+  getIgnoredTopicIds(): Promise<number[]> {
+    return this.account.getIgnoredTopicIds()
+  }
+
+  /** 获取当前登录用户屏蔽的用户 */
+  getBlockedMembers(): Promise<BlockedMember[]> {
+    return this.account.getBlockedMembers()
   }
 
   /**
