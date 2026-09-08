@@ -1,6 +1,5 @@
 import vscode from 'vscode'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
-import type { MemberInfo } from '@/v2ex'
 import G from '@/global'
 import Config from '@/config'
 import { uploadImage } from '@/core/imageUpload'
@@ -25,9 +24,14 @@ import {
   TopicPanelViewState,
   TopicPanelWebviewEvents,
   TopicActionTarget,
+  TopicMemberRelationTarget,
+  MemberQuickInfo,
   OpenTopicPayload,
   WebviewRpcController
 } from '@/shared/webview'
+
+/** 用户屏蔽关系操作 */
+type MemberBlockAction = 'block' | 'unblock'
 
 /**
  * 话题面板外部依赖
@@ -91,7 +95,7 @@ export class TopicPanelController
   private viewState: TopicPanelViewState = { status: 'loading' }
 
   /** 用户快速信息请求缓存 */
-  private readonly memberQuickInfoCache = new Map<string, Promise<MemberInfo>>()
+  private readonly memberQuickInfoCache = new Map<string, Promise<MemberQuickInfo>>()
 
   /** 回复翻页请求序号 */
   private replyPageRequestId = 0
@@ -174,6 +178,7 @@ export class TopicPanelController
    * 登录态变化后刷新话题
    */
   refreshForAuthChange() {
+    this.memberQuickInfoCache.clear()
     this.refreshTopic().catch(err => {
       logger.error('话题登录态刷新失败', err, { topicId: this.topicId })
     })
@@ -357,11 +362,21 @@ export class TopicPanelController
     return this.loadMemberQuickInfo(username)
   }
 
+  /** 屏蔽用户 */
+  rpc_blockMember(target: TopicMemberRelationTarget) {
+    return this.mutateMemberBlock('block', target)
+  }
+
+  /** 取消屏蔽用户 */
+  rpc_unblockMember(target: TopicMemberRelationTarget) {
+    return this.mutateMemberBlock('unblock', target)
+  }
+
   /**
    * 加载用户快速信息
    * @param username 用户名
    */
-  private loadMemberQuickInfo(username: string): Promise<MemberInfo> {
+  private loadMemberQuickInfo(username: string): Promise<MemberQuickInfo> {
     const normalizedUsername = username.trim()
     const cacheKey = normalizedUsername.toLowerCase()
     const cached = this.memberQuickInfoCache.get(cacheKey)
@@ -369,12 +384,91 @@ export class TopicPanelController
       return cached
     }
 
-    const request = G.V2ex.getMemberInfo(normalizedUsername).catch(err => {
+    const request = this.resolveMemberQuickInfo(normalizedUsername).catch(err => {
       this.memberQuickInfoCache.delete(cacheKey)
       throw err
     })
     this.memberQuickInfoCache.set(cacheKey, request)
     return request
+  }
+
+  /**
+   * 加载用户快速信息并补充本人标记
+   * @param username 用户名
+   */
+  private async resolveMemberQuickInfo(username: string): Promise<MemberQuickInfo> {
+    const [member, authenticatedUsername] = await Promise.all([
+      G.V2ex.getMemberInfo(username),
+      this.resolveAuthenticatedUsername()
+    ])
+    return {
+      ...member,
+      isSelf:
+        !!authenticatedUsername &&
+        normalizeMemberUsername(member.username) === normalizeMemberUsername(authenticatedUsername)
+    }
+  }
+
+  /** 获取当前已验证用户名 */
+  private async resolveAuthenticatedUsername(): Promise<string | undefined> {
+    const authenticatedUsername = G.V2ex.getAuthenticatedUsername()
+    if (authenticatedUsername || !G.V2ex.hasLoginSession()) {
+      return authenticatedUsername
+    }
+
+    try {
+      if (await G.V2ex.ensureAuthenticated()) {
+        return G.V2ex.getAuthenticatedUsername()
+      }
+    } catch (err) {
+      logger.debug('加载用户快速资料时确认登录态失败', err)
+    }
+    return undefined
+  }
+
+  /**
+   * 更新用户屏蔽关系
+   * @param action 屏蔽关系操作
+   * @param target 用户关系操作目标
+   */
+  private async mutateMemberBlock(action: MemberBlockAction, target: TopicMemberRelationTarget) {
+    if (
+      !target ||
+      !Number.isInteger(target.memberId) ||
+      target.memberId <= 0 ||
+      typeof target.username !== 'string' ||
+      !target.username.trim()
+    ) {
+      throw new Error('未找到用户信息，无法更新用户关系')
+    }
+
+    if (!(await G.V2ex.ensureAuthenticated())) {
+      throw new LoginRequiredError(`${action === 'block' ? '屏蔽用户' : '取消屏蔽用户'}前请先登录`)
+    }
+
+    const username = target.username.trim()
+    if (
+      normalizeMemberUsername(G.V2ex.getAuthenticatedUsername()) ===
+      normalizeMemberUsername(username)
+    ) {
+      throw new Error('不能更新自己的屏蔽状态')
+    }
+
+    if (action === 'block') {
+      await G.V2ex.blockMember(target.memberId)
+    } else {
+      await G.V2ex.unblockMember(target.memberId)
+    }
+
+    this.memberQuickInfoCache.clear()
+    try {
+      await G.V2ex.getAccountOverview({ force: true })
+    } catch (err) {
+      logger.error('话题侧用户关系更新后刷新账户概览失败', err, {
+        memberId: target.memberId,
+        action
+      })
+    }
   }
 
   /**
@@ -528,4 +622,9 @@ function normalizeTopicId(topicId: number | string): number {
 function normalizeReplyPage(replyPage?: number): number {
   const normalizedReplyPage = Number(replyPage || 1)
   return Number.isFinite(normalizedReplyPage) && normalizedReplyPage > 0 ? normalizedReplyPage : 1
+}
+
+/** 归一化用户名用于比较 */
+function normalizeMemberUsername(username?: string): string {
+  return username?.trim().toLocaleLowerCase() || ''
 }

@@ -2,8 +2,13 @@ import { useMemo, useRef } from 'react'
 import { useLatestRequest } from '@/hooks/useLatestRequest'
 import { createVsCodeClient } from '@/core/vscode'
 import { mergeTopicMutationResult } from './topicDetailState'
-import type { MemberInfo, TopicDetail } from '@extension/v2ex/types'
-import type { TopicActionTarget, TopicPanelRpcCommands } from '@extension/shared/webview'
+import type { TopicDetail } from '@extension/v2ex/types'
+import type {
+  MemberQuickInfo,
+  TopicActionTarget,
+  TopicMemberRelationTarget,
+  TopicPanelRpcCommands
+} from '@extension/shared/webview'
 
 /** 话题详情 VS Code 通信客户端 */
 const vscode = createVsCodeClient<TopicPanelRpcCommands>()
@@ -59,7 +64,11 @@ export interface TopicDetailController {
   /** 打开用户面板 */
   openMember(username: string): Promise<void>
   /** 加载用户快速信息 */
-  loadMemberQuickInfo(username: string): Promise<MemberInfo>
+  loadMemberQuickInfo(username: string): Promise<MemberQuickInfo>
+  /** 屏蔽用户 */
+  blockMember(target: TopicMemberRelationTarget): Promise<void>
+  /** 取消屏蔽用户 */
+  unblockMember(target: TopicMemberRelationTarget): Promise<void>
   /** 打开当前话题节点 */
   openNode(): Promise<void>
   /** 打开标签主题面板 */
@@ -147,6 +156,8 @@ export default function useTopicDetailController(
       loadReplyPage: replyPage => applyViewResult(() => loadReplyPage(replyPage)),
       openMember: username => vscode.openMember(username),
       loadMemberQuickInfo: username => vscode.loadMemberQuickInfo(username),
+      blockMember: target => vscode.blockMember(target),
+      unblockMember: target => vscode.unblockMember(target),
       openNode: () => vscode.openNode(topic.node),
       openTag: tag => vscode.openTag(tag)
     }

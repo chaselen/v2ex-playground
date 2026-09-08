@@ -261,6 +261,8 @@ export default function TopicDetailView({
       <MemberQuickInfoPopover
         username={username}
         loadMemberInfo={controller.loadMemberQuickInfo}
+        blockMember={controller.blockMember}
+        unblockMember={controller.unblockMember}
         openMember={username => void controller.openMember(username)}
       >
         {link}
@@ -278,6 +280,8 @@ export default function TopicDetailView({
       <MemberQuickInfoPopover
         username={username}
         loadMemberInfo={controller.loadMemberQuickInfo}
+        blockMember={controller.blockMember}
+        unblockMember={controller.unblockMember}
         openMember={username => void controller.openMember(username)}
       >
         <button

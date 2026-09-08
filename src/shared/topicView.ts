@@ -9,6 +9,21 @@ export interface TopicActionTarget {
   /** 当前回复页 */
   replyPage?: number
 }
+
+/** 话题内用户快速信息 */
+export interface MemberQuickInfo extends MemberInfo {
+  /** 当前登录用户是否为该用户 */
+  isSelf: boolean
+}
+
+/** 话题内用户关系操作目标 */
+export interface TopicMemberRelationTarget {
+  /** 用户编号 */
+  memberId: number
+  /** 用户名 */
+  username: string
+}
+
 /**
  * 发往 webview 的话题页面状态
  */
@@ -78,7 +93,17 @@ export interface TopicPanelRpcCommands
   /** 加载当前话题回复页并返回最新详情 */
   loadReplyPage(replyPage: number): TopicDetail
   /** 加载用户快速信息 */
-  loadMemberQuickInfo(username: string): MemberInfo
+  loadMemberQuickInfo(username: string): MemberQuickInfo
+  /**
+   * 屏蔽用户
+   * @param target 用户关系操作目标
+   */
+  blockMember(target: TopicMemberRelationTarget): void
+  /**
+   * 取消屏蔽用户
+   * @param target 用户关系操作目标
+   */
+  unblockMember(target: TopicMemberRelationTarget): void
 }
 
 /**
