@@ -97,7 +97,7 @@ describe('parseFollowingMembers', () => {
 })
 
 describe('parseBlockedMemberIds', () => {
-  it('解析首页脚本中的屏蔽用户编号', () => {
+  it('解析页面脚本中的屏蔽用户编号', () => {
     const html = `
       <script>
         const blocked = [350370,367256];
@@ -120,7 +120,7 @@ describe('parseBlockedMemberIds', () => {
 })
 
 describe('parseIgnoredTopicIds', () => {
-  it('解析首页脚本中的忽略主题编号', () => {
+  it('解析页面脚本中的忽略主题编号', () => {
     const html = `
       <script>
         const blocked = [350370,367256];

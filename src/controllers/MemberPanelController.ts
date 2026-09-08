@@ -27,6 +27,9 @@ import type {
 /** 用户关系操作 */
 type MemberRelationAction = 'follow' | 'unfollow' | 'block' | 'unblock'
 
+/** 已忽略主题列表每页数量 */
+const IGNORED_TOPICS_PAGE_SIZE = 20
+
 /**
  * 用户面板控制器
  */
@@ -209,6 +212,14 @@ export class MemberPanelController
     return this.mutateListedMemberRelation('unblock', memberId)
   }
 
+  /**
+   * 从本人页已忽略列表取消忽略主题
+   * @param topicId 主题编号
+   */
+  rpc_unignoreListedTopic(topicId: number) {
+    return this.unignoreListedTopic(topicId)
+  }
+
   /** 加载用户标签内容 */
   rpc_loadMemberTab(message: { tab: MemberContentTabKey; page?: number }) {
     return this.loadMemberContent(message.tab, message.page)
@@ -240,7 +251,8 @@ export class MemberPanelController
       member,
       content,
       relationMembers?.followingMembers,
-      relationMembers?.blockedMembers
+      relationMembers?.blockedMembers,
+      relationMembers?.ignoredTopicIds
     )
     this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
@@ -267,9 +279,92 @@ export class MemberPanelController
    * @param page 页码
    */
   private async loadMemberContent(tab: MemberContentTabKey, page = 1): Promise<MemberProfile> {
+    if (tab === 'ignored') {
+      return this.loadIgnoredTopicsContent(page)
+    }
+
     const content = await G.V2ex.getMemberContent(this.username, { tab, page })
     const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
     this.profile = this.createProfile(member, content)
+    this.panel.title = formatPanelTitle(this.profile.member.username)
+    return this.profile
+  }
+
+  /**
+   * 加载本人页已忽略主题列表
+   *
+   * 优先复用本人页已缓存的 `ignoredTopicIds`，避免重复读取页面脚本；
+   * 整页刷新会经 `loadBlockedAndIgnored` 重新拉取编号。
+   * @param page 页码
+   */
+  private async loadIgnoredTopicsContent(page = 1): Promise<MemberProfile> {
+    if (!this.isSelf) {
+      throw new Error('仅本人页可查看已忽略主题')
+    }
+
+    const ignoredTopicIds =
+      this.profile?.ignoredTopicIds ?? toIgnoredTopicDisplayOrder(await G.V2ex.getIgnoredTopicIds())
+    return this.applyIgnoredTopicsContent(ignoredTopicIds, page)
+  }
+
+  /**
+   * 从本人页已忽略列表取消忽略，并刷新当前页内容
+   * @param topicId 主题编号
+   */
+  private async unignoreListedTopic(topicId: number): Promise<MemberProfile> {
+    if (!this.isSelf) {
+      throw new Error('仅本人页可管理已忽略主题')
+    }
+    if (!(await G.V2ex.ensureAuthenticated())) {
+      throw new LoginRequiredError('取消忽略前请先登录')
+    }
+    if (!Number.isInteger(topicId) || topicId <= 0) {
+      throw new Error('未找到主题编号，无法取消忽略')
+    }
+
+    await G.V2ex.cancelIgnoreTopic(topicId)
+
+    const ignoredTopicIds = (this.profile?.ignoredTopicIds ?? []).filter(id => id !== topicId)
+    const currentPage = this.profile?.content.tab === 'ignored' ? this.profile.content.page : 1
+    const profile = await this.applyIgnoredTopicsContent(ignoredTopicIds, currentPage)
+    this.render(profile)
+    return profile
+  }
+
+  /**
+   * 按忽略主题编号构建当前页内容并写回资料
+   * @param ignoredTopicIds 展示顺序的忽略主题编号
+   * @param page 页码
+   */
+  private async applyIgnoredTopicsContent(
+    ignoredTopicIds: number[],
+    page: number
+  ): Promise<MemberProfile> {
+    const {
+      page: currentPage,
+      pageTopicIds,
+      totalCount,
+      totalPage
+    } = paginateIds(ignoredTopicIds, page, IGNORED_TOPICS_PAGE_SIZE)
+    const topics = await G.V2ex.getTopicsByIds(pageTopicIds)
+    const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
+    const content: MemberContent = {
+      tab: 'ignored',
+      page: currentPage,
+      totalPage,
+      totalCount,
+      topics,
+      replies: [],
+      hidden: false,
+      message: ''
+    }
+    this.profile = this.createProfile(
+      member,
+      content,
+      this.profile?.followingMembers,
+      this.profile?.blockedMembers,
+      ignoredTopicIds
+    )
     this.panel.title = formatPanelTitle(this.profile.member.username)
     return this.profile
   }
@@ -351,7 +446,8 @@ export class MemberPanelController
       member,
       content,
       relationMembers.followingMembers,
-      relationMembers.blockedMembers
+      relationMembers.blockedMembers,
+      relationMembers.ignoredTopicIds
     )
     this.render(this.profile)
     return this.profile
@@ -363,31 +459,39 @@ export class MemberPanelController
    * @param content 用户活动内容
    * @param followingMembers 特别关注列表
    * @param blockedMembers 屏蔽列表
+   * @param ignoredTopicIds 忽略主题编号
    */
   private createProfile(
     member: MemberInfo,
     content: MemberContent,
     followingMembers = this.profile?.followingMembers,
-    blockedMembers = this.profile?.blockedMembers
+    blockedMembers = this.profile?.blockedMembers,
+    ignoredTopicIds = this.profile?.ignoredTopicIds
   ): MemberProfile {
     return {
       member,
       content,
       followingMembers,
-      blockedMembers
+      blockedMembers,
+      ignoredTopicIds
     }
   }
 
-  /** 获取本人页的特别关注与屏蔽列表 */
+  /** 获取本人页的特别关注、屏蔽与忽略主题编号 */
   private async loadRelationMembers(): Promise<{
     followingMembers: FollowingMember[]
     blockedMembers: BlockedMember[]
+    ignoredTopicIds: number[]
   }> {
-    const [followingMembers, blockedMembers] = await Promise.all([
+    const [followingMembers, relationLists] = await Promise.all([
       this.loadFollowingMembers(),
-      this.loadBlockedMembers()
+      this.loadBlockedAndIgnored()
     ])
-    return { followingMembers, blockedMembers }
+    return {
+      followingMembers,
+      blockedMembers: relationLists.blockedMembers,
+      ignoredTopicIds: relationLists.ignoredTopicIds
+    }
   }
 
   /** 获取本人页的特别关注列表 */
@@ -400,13 +504,23 @@ export class MemberPanelController
     }
   }
 
-  /** 获取本人页的屏蔽列表 */
-  private async loadBlockedMembers(): Promise<BlockedMember[]> {
+  /** 获取本人页的屏蔽列表与忽略主题编号 */
+  private async loadBlockedAndIgnored(): Promise<{
+    blockedMembers: BlockedMember[]
+    ignoredTopicIds: number[]
+  }> {
     try {
-      return await G.V2ex.getBlockedMembers()
+      const { blockedMembers, ignoredTopicIds } = await G.V2ex.getBlockedMembersAndIgnoredTopicIds()
+      return {
+        blockedMembers,
+        ignoredTopicIds: toIgnoredTopicDisplayOrder(ignoredTopicIds)
+      }
     } catch (err) {
-      logger.error('屏蔽列表加载失败', err, { username: this.username })
-      return []
+      logger.error('屏蔽与忽略列表加载失败', err, { username: this.username })
+      return {
+        blockedMembers: [],
+        ignoredTopicIds: []
+      }
     }
   }
 
@@ -425,6 +539,44 @@ export class MemberPanelController
     return (
       normalizeMemberUsername(authenticatedUsername) === normalizeMemberUsername(memberUsername)
     )
+  }
+}
+
+/**
+ * 页面脚本中的 `ignored_topics` 为先忽略在前；展示改为新忽略在前
+ * @param topicIds 脚本中的忽略主题编号
+ */
+function toIgnoredTopicDisplayOrder(topicIds: number[]): number[] {
+  return topicIds.slice().reverse()
+}
+
+/**
+ * 对编号列表做应用层分页
+ * @param ids 全量编号
+ * @param page 页码
+ * @param pageSize 每页数量
+ */
+function paginateIds(
+  ids: number[],
+  page: number,
+  pageSize: number
+): {
+  page: number
+  totalPage: number
+  totalCount: number
+  pageTopicIds: number[]
+} {
+  const safePageSize = Math.max(1, Math.floor(pageSize) || IGNORED_TOPICS_PAGE_SIZE)
+  const totalCount = ids.length
+  const totalPage = Math.max(Math.ceil(totalCount / safePageSize), 1)
+  const safePage = Math.min(Math.max(1, Math.floor(page) || 1), totalPage)
+  const start = (safePage - 1) * safePageSize
+
+  return {
+    page: safePage,
+    totalPage,
+    totalCount,
+    pageTopicIds: ids.slice(start, start + safePageSize)
   }
 }
 

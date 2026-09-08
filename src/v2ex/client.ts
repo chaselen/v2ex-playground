@@ -386,23 +386,57 @@ export class V2exClient {
   }
 
   /**
-   * 从首页脚本读取屏蔽用户与忽略主题编号
+   * 从登录态页面脚本读取屏蔽用户与忽略主题编号
+   *
+   * 返回顺序均为站点原始顺序：先屏蔽 / 先忽略在前
    */
-  getHomeScriptPreferences(): Promise<{
+  getBlockedAndIgnoredIds(): Promise<{
     blockedMemberIds: number[]
     ignoredTopicIds: number[]
   }> {
-    return this.account.getHomeScriptPreferences()
+    return this.account.getBlockedAndIgnoredIds()
   }
 
-  /** 获取当前登录用户忽略的主题编号 */
+  /**
+   * 获取当前登录用户忽略的主题编号
+   *
+   * 返回站点原始顺序：先忽略在前
+   */
   getIgnoredTopicIds(): Promise<number[]> {
     return this.account.getIgnoredTopicIds()
   }
 
-  /** 获取当前登录用户屏蔽的用户 */
+  /**
+   * 一次请求同时返回屏蔽用户摘要与忽略主题编号
+   *
+   * `blockedMembers` / `ignoredTopicIds` 均为站点原始顺序：先屏蔽 / 先忽略在前。
+   * `blockedMembers` 在成员 API 查不到或失败时会跳过对应编号，长度可能短于脚本 `blocked`
+   */
+  getBlockedMembersAndIgnoredTopicIds(): Promise<{
+    blockedMembers: BlockedMember[]
+    ignoredTopicIds: number[]
+  }> {
+    return this.account.getBlockedMembersAndIgnoredTopicIds()
+  }
+
+  /**
+   * 获取当前登录用户屏蔽的用户
+   *
+   * 返回顺序与脚本一致：先屏蔽在前。
+   * 成员不存在或请求失败时跳过该编号，结果长度可能小于脚本中的 `blocked` 原始数量
+   */
   getBlockedMembers(): Promise<BlockedMember[]> {
     return this.account.getBlockedMembers()
+  }
+
+  /**
+   * 按主题编号列表补齐主题摘要
+   *
+   * 逐个请求 `/api/topics/show.json`；单个失败时跳过该编号，保持入参顺序
+   * @param topicIds 主题编号
+   */
+  getTopicsByIds(topicIds: number[]): Promise<Topic[]> {
+    return this.account.getTopicsByIds(topicIds)
   }
 
   /**

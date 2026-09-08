@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio/slim'
 import type { AxiosResponse } from 'axios'
 import picomatch from 'picomatch'
+import dayjs, { BEIJING_UTC_OFFSET } from '@/core/dayjs'
 import { getConfigUrl, isV2exUrl } from '../clientUtils'
 import {
   isSameAccountOverview,
@@ -29,18 +30,64 @@ import {
   type V2exNotification
 } from '../types'
 
-/** 成员 API 返回的列表展示字段 */
+/**
+ * 成员 API `/api/members/show.json` 成功响应字段
+ *
+ * 成功时 `status` 为 `"found"`；用户不存在时返回
+ * `{ status: "error", message: "Object Not Found", ... }`。
+ */
 interface MemberShowApiInfo {
   /** 用户编号 */
-  id?: unknown
+  id: number
   /** 用户名 */
-  username?: unknown
+  username: string
+  /** 查询状态；成功时为 found */
+  status: 'found'
   /** 常规尺寸头像 */
-  avatar_normal?: unknown
+  avatar_normal: string
   /** 大尺寸头像 */
-  avatar_large?: unknown
+  avatar_large: string
   /** 迷你头像 */
-  avatar_mini?: unknown
+  avatar_mini: string
+}
+
+/** 成员 API 用户不存在时的错误响应 */
+interface MemberShowApiError {
+  /** 错误状态 */
+  status: 'error'
+  /** 错误信息 */
+  message: string
+}
+
+/**
+ * 主题 API `/api/topics/show.json?id=` 单条成功响应字段
+ *
+ * 主题不存在时接口返回 `[]`；有结果时这些字段均会给出。
+ * `last_reply_by` 无回复时为空字符串。
+ */
+interface TopicShowApiInfo {
+  /** 主题编号 */
+  id: number
+  /** 标题 */
+  title: string
+  /** 回复数 */
+  replies: number
+  /** 创建时间 Unix 秒 */
+  created: number
+  /** 最后回复用户名；无回复时为空字符串 */
+  last_reply_by: string
+  /** 作者 */
+  member: {
+    /** 用户名 */
+    username: string
+  }
+  /** 节点 */
+  node: {
+    /** 节点 name */
+    name: string
+    /** 节点标题 */
+    title: string
+  }
 }
 
 /** 会返回账户概览的 V2EX 页面路径 */
@@ -157,11 +204,12 @@ export class AccountService {
   }
 
   /**
-   * 从首页脚本读取屏蔽用户与忽略主题编号
+   * 从登录态页面脚本读取屏蔽用户与忽略主题编号
    *
-   * 登录后 `/?tab=all` 会注入 `blocked` 与 `ignored_topics` 数组
+   * 登录后多个页面会注入 `blocked` 与 `ignored_topics` 数组；此处请求 `/?tab=all` 作为读取入口。
+   * 返回顺序均为站点原始顺序：先屏蔽 / 先忽略在前。
    */
-  async getHomeScriptPreferences(): Promise<{
+  async getBlockedAndIgnoredIds(): Promise<{
     blockedMemberIds: number[]
     ignoredTopicIds: number[]
   }> {
@@ -174,19 +222,74 @@ export class AccountService {
 
   /**
    * 获取当前登录用户忽略的主题编号
+   *
+   * 返回站点原始顺序：先忽略在前
    */
   async getIgnoredTopicIds(): Promise<number[]> {
-    const { ignoredTopicIds } = await this.getHomeScriptPreferences()
+    const { ignoredTopicIds } = await this.getBlockedAndIgnoredIds()
     return ignoredTopicIds
   }
 
   /**
    * 获取当前登录用户屏蔽的用户
    *
-   * 从首页脚本读取 `blocked` 编号列表，再逐个请求成员 API 补齐头像与用户名
+   * 从页面脚本读取 `blocked` 编号列表，再逐个请求成员 API 补齐头像与用户名。
+   * 返回顺序与脚本一致：先屏蔽在前。
+   * 成员不存在（`status: "error"`，如已注销）或请求失败时跳过该编号，
+   * 因此结果长度可能小于脚本中的 `blocked` 原始数量。
    */
   async getBlockedMembers(): Promise<BlockedMember[]> {
-    const { blockedMemberIds } = await this.getHomeScriptPreferences()
+    const { blockedMembers } = await this.getBlockedMembersAndIgnoredTopicIds()
+    return blockedMembers
+  }
+
+  /**
+   * 一次请求同时返回屏蔽用户摘要与忽略主题编号
+   *
+   * `blockedMembers` / `ignoredTopicIds` 均为站点原始顺序：先屏蔽 / 先忽略在前。
+   * `blockedMembers` 在成员 API 查不到或失败时会跳过对应编号，长度可能短于脚本 `blocked`；
+   * `ignoredTopicIds` 仍为脚本原始编号列表，不因后续主题详情失败而缩短。
+   */
+  async getBlockedMembersAndIgnoredTopicIds(): Promise<{
+    blockedMembers: BlockedMember[]
+    ignoredTopicIds: number[]
+  }> {
+    const { blockedMemberIds, ignoredTopicIds } = await this.getBlockedAndIgnoredIds()
+    return {
+      blockedMembers: await this.resolveBlockedMembers(blockedMemberIds),
+      ignoredTopicIds
+    }
+  }
+
+  /**
+   * 按主题编号列表补齐主题摘要
+   *
+   * 逐个请求 `/api/topics/show.json`；单个失败时跳过该编号，不中断整表，并保持入参顺序
+   * @param topicIds 主题编号
+   */
+  async getTopicsByIds(topicIds: number[]): Promise<Topic[]> {
+    if (!topicIds.length) {
+      return []
+    }
+
+    const topics = await Promise.all(
+      topicIds.map(async topicId => {
+        try {
+          return await this.getTopicListItemById(topicId)
+        } catch {
+          return undefined
+        }
+      })
+    )
+
+    return topics.filter((topic): topic is Topic => !!topic)
+  }
+
+  /**
+   * 按屏蔽用户编号补齐头像与用户名
+   * @param blockedMemberIds 屏蔽用户编号
+   */
+  private async resolveBlockedMembers(blockedMemberIds: number[]): Promise<BlockedMember[]> {
     if (!blockedMemberIds.length) {
       return []
     }
@@ -209,21 +312,67 @@ export class AccountService {
    * @param memberId 用户编号
    */
   private async getMemberListItemById(memberId: number): Promise<BlockedMember> {
-    const { data } = await this.session.get<MemberShowApiInfo>('/api/members/show.json', {
-      params: { id: memberId }
-    })
-    const username = typeof data.username === 'string' ? data.username.trim() : ''
+    const { data } = await this.session.get<MemberShowApiInfo | MemberShowApiError>(
+      '/api/members/show.json',
+      {
+        params: { id: memberId }
+      }
+    )
+    if (!isMemberShowApiInfo(data)) {
+      throw new Error(`未找到编号为 ${memberId} 的用户`)
+    }
+
+    const username = data.username.trim()
     if (!username) {
       throw new Error(`未找到编号为 ${memberId} 的用户`)
     }
 
-    const resolvedMemberId =
-      typeof data.id === 'number' && Number.isInteger(data.id) && data.id > 0 ? data.id : memberId
-
     return {
-      memberId: resolvedMemberId,
+      memberId: data.id > 0 ? data.id : memberId,
       username,
       avatar: pickMemberAvatar(data)
+    }
+  }
+
+  /**
+   * 按主题编号获取忽略列表所需的主题摘要
+   * @param topicId 主题编号
+   */
+  private async getTopicListItemById(topicId: number): Promise<Topic> {
+    const { data } = await this.session.get<TopicShowApiInfo[]>('/api/topics/show.json', {
+      params: { id: topicId }
+    })
+    const item = Array.isArray(data) ? data[0] : undefined
+    if (!item) {
+      throw new Error(`未找到编号为 ${topicId} 的主题`)
+    }
+
+    const title = item.title.trim()
+    if (!title) {
+      throw new Error(`未找到编号为 ${topicId} 的主题`)
+    }
+
+    const nodeName = item.node.name.trim()
+    const nodeTitle = item.node.title.trim()
+    const authorName = item.member.username.trim()
+    const lastReplyUser = item.last_reply_by.trim()
+    const publishedAt = dayjs
+      .unix(item.created)
+      .utcOffset(BEIJING_UTC_OFFSET)
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    return {
+      id: item.id > 0 ? item.id : topicId,
+      title,
+      node: {
+        name: nodeName,
+        title: nodeTitle || nodeName
+      },
+      authorName: authorName || undefined,
+      replies: Math.max(0, Math.floor(item.replies)),
+      displayTime: publishedAt,
+      publishedAt,
+      lastReplyUser: lastReplyUser || undefined
     }
   }
 
@@ -389,13 +538,32 @@ function createEmptyAccountOverview(): AccountOverview {
 }
 
 /**
+ * 判断成员 API 响应是否为成功用户资料
+ *
+ * 成功与失败响应都带 `status`：成功为 `"found"`，失败为 `"error"`。
+ * @param data 成员 API 响应
+ */
+function isMemberShowApiInfo(
+  data: MemberShowApiInfo | MemberShowApiError
+): data is MemberShowApiInfo {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    data.status !== 'error' &&
+    'username' in data &&
+    typeof data.username === 'string'
+  )
+}
+
+/**
  * 从成员 API 中选取列表展示头像
  * @param member 成员 API 响应
  */
 function pickMemberAvatar(member: MemberShowApiInfo): string {
   for (const value of [member.avatar_normal, member.avatar_large, member.avatar_mini]) {
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim()
+    const avatar = value.trim()
+    if (avatar) {
+      return avatar
     }
   }
   return ''

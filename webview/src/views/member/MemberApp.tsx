@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Heart, HeartOff, Inbox, RefreshCw, UserCheck, UserRound, UserX } from 'lucide-react'
+import { Eye, Heart, HeartOff, Inbox, RefreshCw, UserCheck, UserRound, UserX } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -61,6 +61,28 @@ const memberTabs: Array<{ key: MemberContentTabKey; label: string }> = [
 ]
 
 /**
+ * 获取当前用户页可见内容标签
+ * @param isSelf 是否本人页
+ * @param ignoredTopicCount 已忽略主题数量
+ */
+function getVisibleMemberTabs(
+  isSelf: boolean,
+  ignoredTopicCount: number
+): Array<{ key: MemberContentTabKey; label: string }> {
+  if (!isSelf) {
+    return memberTabs
+  }
+
+  return [
+    ...memberTabs,
+    {
+      key: 'ignored',
+      label: `已忽略(${ignoredTopicCount})`
+    }
+  ]
+}
+
+/**
  * 用户页面应用
  */
 export default function MemberApp() {
@@ -83,6 +105,8 @@ export default function MemberApp() {
     tab: MemberRelationTab
     memberId: number
   }>()
+  /** 本人页已忽略列表正在取消忽略的主题编号 */
+  const [unignoringTopicId, setUnignoringTopicId] = useState<number>()
   /** 用户关系操作错误 */
   const [memberActionError, setMemberActionError] = useState('')
   const scrollRef = useRef<SimpleBarCore | null>(null)
@@ -121,7 +145,7 @@ export default function MemberApp() {
    * @param action 用户关系操作
    */
   async function mutateMemberAction(action: MemberAction) {
-    if (!profile || memberAction || listedMemberAction) {
+    if (!profile || memberAction || listedMemberAction || unignoringTopicId) {
       return
     }
 
@@ -163,7 +187,7 @@ export default function MemberApp() {
    * @param memberId 用户编号
    */
   async function mutateListedMember(tab: MemberRelationTab, memberId: number) {
-    if (!profile || memberAction || listedMemberAction || memberId <= 0) {
+    if (!profile || memberAction || listedMemberAction || unignoringTopicId || memberId <= 0) {
       return
     }
 
@@ -187,6 +211,35 @@ export default function MemberApp() {
       setMemberActionError(err instanceof Error ? err.message : '操作失败')
     } finally {
       setListedMemberAction(undefined)
+    }
+  }
+
+  /**
+   * 从本人页已忽略列表取消忽略主题
+   * @param topicId 主题编号
+   */
+  async function unignoreListedTopic(topicId: number) {
+    if (!profile || memberAction || listedMemberAction || unignoringTopicId || topicId <= 0) {
+      return
+    }
+
+    setUnignoringTopicId(topicId)
+    setMemberActionError('')
+    try {
+      const nextProfile = await vscode.unignoreListedTopic(topicId)
+      profileCacheRef.current.clear()
+      cacheProfile(nextProfile)
+      setState(currentState => ({
+        ...currentState,
+        status: 'member',
+        profile: nextProfile,
+        message: '',
+        showRefresh: true
+      }))
+    } catch (err) {
+      setMemberActionError(err instanceof Error ? err.message : '操作失败')
+    } finally {
+      setUnignoringTopicId(undefined)
     }
   }
 
@@ -290,6 +343,7 @@ export default function MemberApp() {
       })
       setMemberAction(undefined)
       setListedMemberAction(undefined)
+      setUnignoringTopicId(undefined)
       setMemberActionError('')
       if (nextState.profile?.content.tab) {
         cacheProfile(nextState.profile)
@@ -311,6 +365,9 @@ export default function MemberApp() {
       scrollRef.current?.recalculate()
     }
   }, [profile])
+
+  /** 当前可见内容标签；本人页追加「已忽略」 */
+  const visibleTabs = getVisibleMemberTabs(state.isSelf, profile?.ignoredTopicIds?.length ?? 0)
 
   return (
     <SimpleBar ref={scrollRef} className="member-scroll" role="main" autoHide={false}>
@@ -477,7 +534,7 @@ export default function MemberApp() {
                     members: profile.followingMembers,
                     emptyText: '在其他用户的个人页点击“加入特别关注”后，会显示在这里',
                     listedMemberAction,
-                    busy: Boolean(memberAction || listedMemberAction),
+                    busy: Boolean(memberAction || listedMemberAction || unignoringTopicId),
                     openMember,
                     onRemove: memberId => mutateListedMember('following', memberId)
                   })
@@ -486,7 +543,7 @@ export default function MemberApp() {
                     members: profile.blockedMembers,
                     emptyText: '暂无屏蔽用户。在其他用户的个人页点击“屏蔽用户”后，会显示在这里',
                     listedMemberAction,
-                    busy: Boolean(memberAction || listedMemberAction),
+                    busy: Boolean(memberAction || listedMemberAction || unignoringTopicId),
                     openMember,
                     onRemove: memberId => mutateListedMember('blocked', memberId)
                   })}
@@ -502,13 +559,13 @@ export default function MemberApp() {
               }
             >
               <TabsList>
-                {memberTabs.map(tab => (
+                {visibleTabs.map(tab => (
                   <TabsTrigger value={tab.key} key={tab.key}>
                     {tab.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
-              {memberTabs.map(tab => (
+              {visibleTabs.map(tab => (
                 <TabsContent value={tab.key} key={tab.key}>
                   {tab.key === activeTab
                     ? renderContent(
@@ -517,7 +574,12 @@ export default function MemberApp() {
                         loadingContent,
                         loadPage,
                         openTopic,
-                        openMember
+                        openMember,
+                        {
+                          busy: Boolean(memberAction || listedMemberAction || unignoringTopicId),
+                          unignoringTopicId,
+                          onUnignore: unignoreListedTopic
+                        }
                       )
                     : null}
                 </TabsContent>
@@ -619,6 +681,16 @@ function getProfileCacheKey(tab: MemberContentTabKey, page: number): string {
   return `${tab}:${page}`
 }
 
+/** 已忽略列表操作选项 */
+interface IgnoredTopicActions {
+  /** 是否有其他关系/忽略操作进行中 */
+  busy: boolean
+  /** 正在取消忽略的主题编号 */
+  unignoringTopicId?: number
+  /** 取消忽略主题 */
+  onUnignore: (topicId: number) => void | Promise<void>
+}
+
 /**
  * 渲染用户页内容
  * @param profile 用户资料
@@ -627,6 +699,7 @@ function getProfileCacheKey(tab: MemberContentTabKey, page: number): string {
  * @param loadPage 加载页码
  * @param openTopic 打开话题
  * @param openMember 打开用户
+ * @param ignoredActions 已忽略列表操作
  */
 function renderContent(
   profile: MemberProfile,
@@ -634,7 +707,8 @@ function renderContent(
   loading: boolean,
   loadPage: (page: number) => void,
   openTopic: (topicId: number, title: string) => void,
-  openMember: (username: string) => void
+  openMember: (username: string) => void,
+  ignoredActions?: IgnoredTopicActions
 ) {
   const content = profile.content
 
@@ -651,7 +725,7 @@ function renderContent(
     return renderReplies(profile, loading, loadPage)
   }
 
-  return renderTopics(profile, loading, loadPage, openTopic, openMember)
+  return renderTopics(profile, loading, loadPage, openTopic, openMember, ignoredActions)
 }
 
 /**
@@ -661,22 +735,37 @@ function renderContent(
  * @param loadPage 加载页码
  * @param openTopic 打开话题
  * @param openMember 打开用户
+ * @param ignoredActions 已忽略列表操作
  */
 function renderTopics(
   profile: MemberProfile,
   loading: boolean,
   loadPage: (page: number) => void,
   openTopic: (topicId: number, title: string) => void,
-  openMember: (username: string) => void
+  openMember: (username: string) => void,
+  ignoredActions?: IgnoredTopicActions
 ) {
   const content = profile.content
+  const canUnignore = content.tab === 'ignored' && ignoredActions
 
   if (!content.topics.length) {
     return (
       <div className="member-content-state">
         <Empty
-          title={content.hidden ? '主题列表已隐藏' : '暂无主题'}
-          description={content.hidden ? content.message : undefined}
+          title={
+            content.hidden
+              ? '主题列表已隐藏'
+              : content.tab === 'ignored'
+                ? '暂无忽略的主题'
+                : '暂无主题'
+          }
+          description={
+            content.hidden
+              ? content.message
+              : content.tab === 'ignored'
+                ? '在话题页点击“忽略主题”后，会显示在这里'
+                : undefined
+          }
           icon={<Inbox aria-hidden="true" />}
         />
       </div>
@@ -686,15 +775,51 @@ function renderTopics(
   return (
     <>
       <div className="member-topic-list">
-        {content.topics.map(topic => (
-          <TopicListItem
-            key={topic.id}
-            topic={topic}
-            onOpenTopic={topic => openTopic(topic.id, topic.title)}
-            onOpenMember={openMember}
-            onOpenNode={node => vscode.openNode(node)}
-          />
-        ))}
+        {content.topics.map(topic => {
+          const topicItem = (
+            <TopicListItem
+              topic={topic}
+              showAuthor={content.tab === 'ignored'}
+              onOpenTopic={item => openTopic(item.id, item.title)}
+              onOpenMember={openMember}
+              onOpenNode={node => vscode.openNode(node)}
+            />
+          )
+
+          if (!canUnignore || !ignoredActions) {
+            return (
+              <div key={topic.id} className="member-topic-item">
+                {topicItem}
+              </div>
+            )
+          }
+
+          const removing = ignoredActions.unignoringTopicId === topic.id
+          return (
+            <div className="member-ignored-item" key={topic.id}>
+              <div className="member-ignored-main">{topicItem}</div>
+              <span className="member-ignored-action">
+                <ConfirmPopover
+                  title={`确认取消忽略「${topic.title}」？`}
+                  description="取消后该主题将重新出现在普通浏览流中"
+                  confirmText="取消忽略"
+                  disabled={ignoredActions.busy}
+                  onConfirm={() => ignoredActions.onUnignore(topic.id)}
+                >
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    icon={<Eye aria-hidden="true" />}
+                    loading={removing}
+                    disabled={ignoredActions.busy && !removing}
+                    aria-label={`取消忽略 ${topic.title}`}
+                    title="取消忽略"
+                  />
+                </ConfirmPopover>
+              </span>
+            </div>
+          )
+        })}
       </div>
       {renderMemberPagination(content, loading, loadPage)}
     </>

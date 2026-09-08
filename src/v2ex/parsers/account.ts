@@ -3,28 +3,30 @@ import { parseCoinBalance } from './balance'
 import type { AccountOverview, FollowingMember } from '../types'
 
 /**
- * 从首页 HTML 脚本中解析屏蔽用户编号
+ * 从页面 HTML 脚本中解析屏蔽用户编号
  *
- * 登录后首页会注入 `const blocked = [id, ...];`，未登录或不存在该声明时返回空列表
- * @param html 首页 HTML
+ * 登录后多个页面会注入 `const blocked = [id, ...];`，未登录或不存在该声明时返回空列表。
+ * 数组为站点原始顺序（先屏蔽在前）；展示层如需「新屏蔽在前」需自行反转。
+ * @param html 页面 HTML
  */
 export function parseBlockedMemberIds(html: string): number[] {
   return parseScriptIdArray(html, 'blocked')
 }
 
 /**
- * 从首页 HTML 脚本中解析忽略的主题编号
+ * 从页面 HTML 脚本中解析忽略的主题编号
  *
- * 登录后首页会注入 `const ignored_topics = [id, ...];`，未登录或不存在该声明时返回空列表
- * @param html 首页 HTML
+ * 登录后多个页面会注入 `const ignored_topics = [id, ...];`，未登录或不存在该声明时返回空列表。
+ * 数组为站点原始顺序（先忽略在前）；展示层如需「新忽略在前」需自行反转。
+ * @param html 页面 HTML
  */
 export function parseIgnoredTopicIds(html: string): number[] {
   return parseScriptIdArray(html, 'ignored_topics')
 }
 
 /**
- * 解析首页脚本中的正整数编号数组
- * @param html 首页 HTML
+ * 解析页面脚本中的正整数编号数组
+ * @param html 页面 HTML
  * @param name 脚本常量名
  */
 function parseScriptIdArray(html: string, name: string): number[] {

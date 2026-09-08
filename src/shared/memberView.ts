@@ -42,6 +42,8 @@ export interface MemberPanelRpcCommands
   unfollowListedMember(memberId: number): MemberProfile
   /** 从本人页关系列表取消屏蔽 */
   unblockListedMember(memberId: number): MemberProfile
+  /** 从本人页已忽略列表取消忽略主题 */
+  unignoreListedTopic(topicId: number): MemberProfile
 }
 
 /**

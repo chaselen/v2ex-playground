@@ -402,8 +402,8 @@ export interface V2exNotification {
 /** 用户页话题分类标签 */
 export type MemberTopicTabKey = 'qna' | 'tech' | 'play' | 'jobs' | 'deals' | 'city'
 
-/** 用户页内容标签 */
-export type MemberContentTabKey = 'topics' | 'replies' | MemberTopicTabKey
+/** 用户页内容标签；`ignored` 仅本人页，数据来自忽略主题编号而非成员页路径 */
+export type MemberContentTabKey = 'topics' | 'replies' | MemberTopicTabKey | 'ignored'
 
 /**
  * 特别关注的用户
@@ -521,6 +521,8 @@ export interface MemberProfile {
   followingMembers?: FollowingMember[]
   /** 当前登录用户的屏蔽列表，仅本人页提供 */
   blockedMembers?: BlockedMember[]
+  /** 当前登录用户忽略的主题编号，仅本人页提供，用于「已忽略」标签计数 */
+  ignoredTopicIds?: number[]
 }
 
 /** SoV2EX 搜索结果主题信息 */

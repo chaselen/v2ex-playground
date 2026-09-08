@@ -41,7 +41,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - [话题已读状态](docs/topic-read.md) — 已读存储、同窗口即时更新，以及多窗口在焦点/可见时重读并对已加载列表补已读
 - [自定义节点](docs/custom-nodes.md) — 全量节点 API、QuickPick 收藏数展示与存储字段
 - [创作新主题](docs/create-topic.md) — `/write` 发布契约、节点选择复用、草稿隔离、预览与发布跳转
-- [屏蔽用户列表](docs/blocked-members.md) — 首页 `blocked` / `ignored_topics` 脚本编号、成员 API 补齐资料，以及本人页分段展示边界
+- [屏蔽用户与忽略主题](docs/blocked-members.md) — 登录态页面脚本中的 `blocked` / `ignored_topics` 编号、成员 / 主题 API 补齐资料，以及本人页分段与「已忽略」标签边界
 - [Webview RPC 通信](docs/webview-rpc.md) — 消息协议、约定式控制器、事件推送和安全边界
 - [Webview UI 与主题](docs/webview-ui.md) — Radix 原语、Lucide 图标、VS Code 语义变量和组件扩展约束
 - 修改上述文档涉及的代码逻辑时，必须同步更新对应文档；新增需要长期维护的关键实现规则或设计取舍时，应在 `docs/` 中补充文档，并在此处添加引用
