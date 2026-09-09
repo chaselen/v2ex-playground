@@ -38,6 +38,8 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 
 ## 用户快速信息
 
+用户资料浮层的首选宽度由外层 HoverCard 控制，内部卡片跟随可用宽度收缩；窄视口中头像区和用户名操作行允许换行，避免屏蔽和完整资料按钮越过浮层边界。
+
 话题页作者名和头像由 `MemberQuickInfoPopover` 直接包裹。正文、附言、回复和回复预览里的 `@用户` 来自 V2EX HTML，经 `dangerouslySetInnerHTML` 插入为 `/member/{username}` 链接，不能逐个包成 React 树。
 
 设计取舍：在 `TopicDetailView` 根节点上对 `.topic-content a` 做 pointerover 委托，用单个 `MemberQuickInfoPopover` 的 `position: fixed` 幽灵触发器对齐当前链接。不要把 HTML 解析成 React，也不要在 `contentEnhancement` 里为每个链接挂 React root。主面板与预览弹窗各自挂一层，避免两个详情实例抢同一个浮层。

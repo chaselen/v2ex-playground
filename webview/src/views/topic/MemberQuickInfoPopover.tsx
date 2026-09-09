@@ -244,6 +244,7 @@ export default function MemberQuickInfoPopover({
 
   return (
     <HoverCard
+      className={styles.popover}
       content={
         <div className={styles.card} role="group" aria-label={`${username} 的用户资料`}>
           {loading && (

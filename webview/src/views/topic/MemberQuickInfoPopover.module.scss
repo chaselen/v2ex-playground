@@ -12,14 +12,22 @@
   pointer-events: auto;
 }
 
+/* 外层浮层承担首选宽度，内容跟随碰撞边界收缩 */
+.popover {
+  width: 302px;
+}
+
 .card {
-  width: 280px;
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 12px;
   color: var(--v2ex-webview-fg);
 }
 
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -28,20 +36,21 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  flex: 1;
+  flex: 1 1 140px;
   min-width: 0;
   gap: 4px;
 }
 
 .usernameRow {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
   align-items: center;
   gap: 6px;
 
   .usernameButton {
     min-width: 0;
-    flex: 1;
+    flex: 1 1 80px;
     overflow: hidden;
     font-size: 15px;
     font-weight: bold;
