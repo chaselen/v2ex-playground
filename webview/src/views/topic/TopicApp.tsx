@@ -144,6 +144,12 @@ export default function TopicApp() {
     return () => document.removeEventListener('error', onImageError, true)
   }, [])
 
+  useEffect(() => {
+    if (!topic) {
+      setShowShareDialog(false)
+    }
+  }, [topic])
+
   /** 绑定 SimpleBar 实例，并同步真正的滚动容器 */
   function bindSimpleBar(instance: SimpleBarCore | null) {
     topicScrollRef.current = instance?.getScrollElement() ?? null
@@ -215,6 +221,7 @@ export default function TopicApp() {
       />
       {topic && (
         <TopicShareDialog
+          key={topic.id}
           open={showShareDialog}
           replyViewMode={replyViewMode}
           topic={topic}

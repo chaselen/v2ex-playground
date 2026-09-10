@@ -297,12 +297,64 @@
   border-left: 1px solid var(--v2ex-border);
 }
 
+.controlsHeader {
+  display: flex;
+  min-width: 0;
+  min-height: 22px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .controlsTitle {
   margin: 0;
   color: var(--v2ex-content-fg);
   font-size: 16px;
   font-weight: 600;
   line-height: 1.4;
+  white-space: nowrap;
+}
+
+.imageStatus,
+.imageWarning {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.imageStatusSlot {
+  display: flex;
+  min-width: 0;
+  min-height: 18px;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.imageStatus span,
+.imageWarning span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imageStatus {
+  color: var(--v2ex-muted-fg);
+
+  :global(.v2ex-spinner) {
+    flex: none;
+    margin-top: 2px;
+  }
+}
+
+.imageWarning {
+  color: var(--v2ex-danger-fg);
 }
 
 .replyOptions {

@@ -14,7 +14,11 @@
 
 话题面板只将分享图缓存目录加入 `localResourceRoots`。扩展侧使用 `webview.asWebviewUri()` 将缓存文件转换为 Webview 资源 URI，RPC 默认只返回原始地址到资源 URI 的映射，避免传输和长期保存大体积 base64 字符串。不要为了分享图放宽整个全局存储目录的访问范围。
 
-预览阶段使用资源 URI。生成前，Webview 临时读取卡片中的资源 URI 并转换为 data URL，移除 `img[srcset]` 与 `picture source[srcset]`，并确保截图 DOM 中不保留 HTTP(S) 图片地址，避免截图引擎从 Webview Origin 重新请求第三方图片。若 React 尚未提交资源 URI，或预下载失败导致 DOM 中仍是原始 HTTP(S) 地址，Webview 不得尝试读取该地址，应直接通过同一 RPC 请求 `dataUrl` 格式。扩展侧从已有缓存文件生成内容，缓存不存在时允许重新下载；单张图片仍然失败则使用透明占位图。截图结束后恢复资源 URI 和响应式图片属性，data URL 不进入 React 长期状态。
+预览阶段使用资源 URI。资源 URI 就绪前，Webview 只渲染透明占位图，不直接请求原始 HTTP(S) 图片。生成前，Webview 临时读取卡片中的资源 URI 并转换为 data URL，移除 `img[srcset]` 与 `picture source[srcset]`，并确保截图 DOM 中不保留 HTTP(S) 图片地址，避免截图引擎从 Webview Origin 重新请求第三方图片。若 React 尚未提交资源 URI，或预下载失败导致 DOM 中仍是原始 HTTP(S) 地址，Webview 不得尝试读取该地址，应直接通过同一 RPC 请求 `dataUrl` 格式。扩展侧从已有缓存文件生成内容，缓存不存在时允许重新下载；单张图片仍然失败则使用透明占位图。截图结束后恢复资源 URI 和响应式图片属性，data URL 不进入 React 长期状态。
+
+图片源优先使用 `data-preview-src`，并兼容 `img[srcset]` 与 `picture source[srcset]` 中的候选地址。分享弹窗记录已失败的图片，避免在选项切换或预览重渲染时无限重复请求；生成图片前允许对失败图片进行一次重试，仍失败时保留透明占位图并提示用户。
+
+扩展侧分享图片下载使用最多 12 张的滑动并发池，单张图片限制为 10 MiB，并在请求和重定向时拒绝 URL 中明确的本机、内网及特殊主机地址。任意图片完成后会立即补充下一张，不等待同批其他图片；图片下载失败只影响对应图片，不中断其他图片或整张分享图。
 
 ## PNG 生成与保存
 

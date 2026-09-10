@@ -14,6 +14,10 @@ interface CacheRemoteImageFileOptions {
   signal?: AbortSignal
   /** 缓存进度回调 */
   onProgress?: (message: string) => void
+  /** 响应体最大字节数 */
+  maxBytes?: number
+  /** 请求前及重定向前的地址校验 */
+  validateUrl?: (imageSrc: string) => void | Promise<void>
 }
 
 /** 已缓存的远程图片 */
@@ -23,6 +27,9 @@ interface CachedRemoteImageFile {
   /** 是否命中已有缓存 */
   cached: boolean
 }
+
+/** 受校验的远程图片最多跟随的重定向次数 */
+const MAX_VALIDATED_IMAGE_REDIRECTS = 5
 
 /**
  * 获取扩展文件缓存目录
@@ -67,10 +74,7 @@ export async function cacheRemoteImageFile(
   }
 
   options.onProgress?.('请求图片')
-  const res = await http.get(options.imageSrc, {
-    responseType: 'arraybuffer',
-    signal: options.signal
-  })
+  const res = await requestRemoteImage(options)
   const imageBuffer = Buffer.from(res.data)
 
   options.onProgress?.('识别图片类型')
@@ -85,6 +89,47 @@ export async function cacheRemoteImageFile(
   const imageUri = Uri.joinPath(cacheDirUri, `${cacheKey}.${fileType.ext}`)
   await vscode.workspace.fs.writeFile(imageUri, imageBuffer)
   return { uri: imageUri, cached: false }
+}
+
+/**
+ * 请求远程图片并在需要时逐跳校验重定向地址
+ * @param options 缓存参数
+ */
+async function requestRemoteImage(options: CacheRemoteImageFileOptions) {
+  let requestUrl = options.imageSrc
+
+  for (let redirectCount = 0; ; redirectCount += 1) {
+    await options.validateUrl?.(requestUrl)
+    const response = await http.get(requestUrl, {
+      responseType: 'arraybuffer',
+      signal: options.signal,
+      ...(options.maxBytes === undefined
+        ? {}
+        : {
+            maxContentLength: options.maxBytes,
+            maxBodyLength: options.maxBytes
+          }),
+      ...(options.validateUrl
+        ? {
+            maxRedirects: 0,
+            validateStatus: (status: number) => status >= 200 && status < 400
+          }
+        : {})
+    })
+
+    if (!options.validateUrl || response.status < 300 || response.status >= 400) {
+      return response
+    }
+
+    const location = response.headers.location
+    if (typeof location !== 'string' || !location) {
+      throw new Error('远程图片重定向地址无效')
+    }
+    if (redirectCount >= MAX_VALIDATED_IMAGE_REDIRECTS) {
+      throw new Error('远程图片重定向次数过多')
+    }
+    requestUrl = new URL(location, requestUrl).toString()
+  }
 }
 
 /**

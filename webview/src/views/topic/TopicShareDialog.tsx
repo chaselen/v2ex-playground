@@ -7,6 +7,7 @@ import UserBadge from '@/components/UserBadge'
 import { Button, Dialog, Empty, RadioGroup, RadioGroupItem, Spinner, Toast } from '@/components/ui'
 import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
+import { getShareImageSourceCandidates } from '@/core/shareImageSources'
 import {
   buildReplyTree,
   getReplyChildrenClassName,
@@ -33,6 +34,12 @@ const SHARE_IMAGE_LOAD_TIMEOUT_MS = 5000
 interface LoadShareImagesOptions {
   /** 返回格式 */
   format?: 'resourceUri' | 'dataUrl'
+}
+
+/** 分享图片预加载选项 */
+interface EmbedShareImagesOptions {
+  /** 是否重试此前加载失败的图片 */
+  retryFailed?: boolean
 }
 
 /** 话题分享弹窗属性 */
@@ -77,13 +84,26 @@ export default function TopicShareDialog({
   const [firstPageReplies, setFirstPageReplies] = useState<TopicReply[]>()
   const [loadingReplies, setLoadingReplies] = useState(false)
   const [embeddedImages, setEmbeddedImages] = useState<Record<string, string>>({})
+  const [failedImageSources, setFailedImageSources] = useState<Set<string>>(() => new Set<string>())
+  const [loadingImages, setLoadingImages] = useState(false)
   const [qrCode, setQrCode] = useState('')
   const [saving, setSaving] = useState(false)
   const [copying, setCopying] = useState(false)
   const [copyingLink, setCopyingLink] = useState(false)
   const generating = saving || copying
+  const embeddedImagesRef = useRef<Record<string, string>>({})
+  const failedImageSourcesRef = useRef(new Set<string>())
+  const pendingImageLoadRef = useRef<Promise<void> | undefined>(undefined)
+  const mountedRef = useRef(true)
   const topicLink = `https://www.v2ex.com/t/${topic.id}`
   const hasTopicContent = Boolean(topic.content)
+  const shareImageSources = useMemo(
+    () => getShareImageSources(),
+    [firstPageReplies, showAppends, showReplies, topic]
+  )
+  const failedImageCount = shareImageSources.filter(imageSrc =>
+    failedImageSources.has(imageSrc)
+  ).length
   const shareReplies = useMemo(() => {
     if (!firstPageReplies) {
       return []
@@ -103,6 +123,13 @@ export default function TopicShareDialog({
       void enhanceCodeBlocks(card)
     }
   })
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -146,10 +173,18 @@ export default function TopicShareDialog({
       throw new Error('分享图尚未准备完成')
     }
 
-    const [, captureImages] = await Promise.all([document.fonts.ready, embedShareImages()])
+    const [, captureImages] = await Promise.all([
+      document.fonts.ready,
+      embedShareImages({ retryFailed: true })
+    ])
     await enhanceCodeBlocks(card)
-    const restoreImages = await inlineShareImagesForCapture(card, captureImages)
+    let restoreImages: (() => void) | undefined
     try {
+      restoreImages = await inlineShareImagesForCapture(
+        card,
+        captureImages,
+        failedImageSourcesRef.current
+      )
       const pixelRatio = calculateShareImagePixelRatio(card.scrollHeight)
       const { snapdom } = await import('@zumer/snapdom')
       return await snapdom.toBlob(card, {
@@ -164,13 +199,52 @@ export default function TopicShareDialog({
       })
     } finally {
       // data URL 只服务于本次截图，完成后恢复轻量资源 URI
-      restoreImages()
+      restoreImages?.()
     }
   }
 
-  /** 将当前分享内容中的远程图片转换为可嵌入图片 */
-  async function embedShareImages() {
-    const imageSources = Array.from(
+  /**
+   * 将当前分享内容中的远程图片转换为可嵌入图片
+   * @param options 图片预加载选项
+   */
+  async function embedShareImages(options: EmbedShareImagesOptions = {}) {
+    const pendingLoad = pendingImageLoadRef.current
+    if (pendingLoad) {
+      await pendingLoad
+    }
+
+    const imageSources = shareImageSources.filter(
+      imageSrc =>
+        !embeddedImagesRef.current[imageSrc] &&
+        (options.retryFailed || !failedImageSourcesRef.current.has(imageSrc))
+    )
+    if (!imageSources.length) {
+      return { ...embeddedImagesRef.current }
+    }
+
+    const loadTask = loadMissingShareImages(imageSources)
+    pendingImageLoadRef.current = loadTask
+    if (mountedRef.current) {
+      setLoadingImages(true)
+    }
+
+    try {
+      await loadTask
+    } finally {
+      if (pendingImageLoadRef.current === loadTask) {
+        pendingImageLoadRef.current = undefined
+      }
+      if (mountedRef.current) {
+        setLoadingImages(false)
+      }
+    }
+
+    return { ...embeddedImagesRef.current }
+  }
+
+  /** 获取当前分享内容中的远程图片地址 */
+  function getShareImageSources() {
+    return Array.from(
       new Set(
         [
           topic.authorAvatar,
@@ -184,29 +258,54 @@ export default function TopicShareDialog({
                 ...getHtmlImageSources(reply.content)
               ])
             : [])
-        ].filter(imageSrc => imageSrc && !embeddedImages[imageSrc])
+        ]
+          .map(imageSrc => imageSrc.trim())
+          .filter(imageSrc => imageSrc && isRemoteShareImageSource(imageSrc))
       )
     )
-    if (!imageSources.length) {
-      return embeddedImages
-    }
-
-    const loadedImages: Record<string, string> = {}
-    for (let index = 0; index < imageSources.length; index += SHARE_IMAGE_BATCH_SIZE) {
-      Object.assign(
-        loadedImages,
-        await loadImages(imageSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE))
-      )
-    }
-    setEmbeddedImages(current => ({ ...current, ...loadedImages }))
-    await waitForAnimationFrame()
-    return { ...embeddedImages, ...loadedImages }
   }
 
-  /** 截图前临时内联分享图片并返回恢复函数 */
+  /**
+   * 加载缺失的分享图片并记录单张结果
+   * @param imageSources 待加载的图片地址
+   */
+  async function loadMissingShareImages(imageSources: string[]) {
+    for (let index = 0; index < imageSources.length; index += SHARE_IMAGE_BATCH_SIZE) {
+      const batch = imageSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE)
+      let loadedImages: Record<string, string> = {}
+      try {
+        loadedImages = await loadImages(batch)
+      } catch {
+        // 单批 RPC 失败时仍保留其他图片，并在截图阶段使用透明占位图
+      }
+
+      const successfulSources = batch.filter(imageSrc => Boolean(loadedImages[imageSrc]))
+      const failedSources = batch.filter(imageSrc => !loadedImages[imageSrc])
+      const nextEmbeddedImages = { ...embeddedImagesRef.current, ...loadedImages }
+      const nextFailedSources = new Set(failedImageSourcesRef.current)
+      failedSources.forEach(imageSrc => nextFailedSources.add(imageSrc))
+      successfulSources.forEach(imageSrc => nextFailedSources.delete(imageSrc))
+
+      embeddedImagesRef.current = nextEmbeddedImages
+      failedImageSourcesRef.current = nextFailedSources
+      if (mountedRef.current) {
+        setEmbeddedImages(nextEmbeddedImages)
+        setFailedImageSources(nextFailedSources)
+      }
+      await waitForAnimationFrame()
+    }
+  }
+
+  /**
+   * 截图前临时内联分享图片并返回恢复函数
+   * @param card 分享卡片根节点
+   * @param captureImages 已加载的图片地址映射
+   * @param failedSources 已确认加载失败的图片地址
+   */
   async function inlineShareImagesForCapture(
     card: HTMLElement,
-    captureImages: Record<string, string>
+    captureImages: Record<string, string>,
+    failedSources: ReadonlySet<string>
   ) {
     // 图片在预览中可见不代表 SnapDOM 能从 Webview Origin 再次读取其地址
     const images = Array.from(card.querySelectorAll<HTMLImageElement>('img[data-share-image-src]'))
@@ -244,15 +343,19 @@ export default function TopicShareDialog({
 
     const fallbackSources = imageEntries
       .map(([originalSrc]) => originalSrc)
-      .filter(originalSrc => !inlineImages[originalSrc])
+      .filter(originalSrc => !inlineImages[originalSrc] && !failedSources.has(originalSrc))
     // 部分宿主不允许 fetch Webview 资源 URI，此时由扩展侧读取同一缓存文件
     for (let index = 0; index < fallbackSources.length; index += SHARE_IMAGE_BATCH_SIZE) {
-      Object.assign(
-        inlineImages,
-        await loadImages(fallbackSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE), {
-          format: 'dataUrl'
-        })
-      )
+      try {
+        Object.assign(
+          inlineImages,
+          await loadImages(fallbackSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE), {
+            format: 'dataUrl'
+          })
+        )
+      } catch {
+        // 单批回退失败时保留透明占位图，避免中断整张分享图
+      }
     }
 
     // 保存当前属性，截图完成后不能让临时 data URL 污染 React 管理的预览 DOM
@@ -263,27 +366,33 @@ export default function TopicShareDialog({
       src: element.getAttribute('src'),
       srcset: element.getAttribute('srcset')
     }))
-    images.forEach(image => {
-      image.src = inlineImages[image.dataset.shareImageSrc || ''] || TRANSPARENT_IMAGE
-    })
-    // picture/source 可能覆盖 img.src，必须一并移除响应式远程候选地址
-    card.querySelectorAll<HTMLImageElement>('img').forEach(image => {
-      image.removeAttribute('srcset')
-      if (/^https?:/i.test(image.getAttribute('src') || '')) {
-        image.src = TRANSPARENT_IMAGE
-      }
-    })
-    card.querySelectorAll<HTMLSourceElement>('source').forEach(source => {
-      source.removeAttribute('srcset')
-    })
-    // 等待 data URL 解码完成，避免 SnapDOM 克隆到尚未就绪的图片节点
-    await waitForShareImages(card)
-
-    return () => {
+    const restore = () => {
       previousSources.forEach(({ element, src, srcset }) => {
         restoreAttribute(element, 'src', src)
         restoreAttribute(element, 'srcset', srcset)
       })
+    }
+
+    try {
+      images.forEach(image => {
+        image.src = inlineImages[image.dataset.shareImageSrc || ''] || TRANSPARENT_IMAGE
+      })
+      // picture/source 可能覆盖 img.src，必须一并移除响应式远程候选地址
+      card.querySelectorAll<HTMLImageElement>('img').forEach(image => {
+        image.removeAttribute('srcset')
+        if (/^https?:/i.test(image.getAttribute('src') || '')) {
+          image.src = TRANSPARENT_IMAGE
+        }
+      })
+      card.querySelectorAll<HTMLSourceElement>('source').forEach(source => {
+        source.removeAttribute('srcset')
+      })
+      // 等待 data URL 解码完成，避免 SnapDOM 克隆到尚未就绪的图片节点
+      await waitForShareImages(card)
+      return restore
+    } catch (err) {
+      restore()
+      throw err
     }
   }
 
@@ -363,8 +472,8 @@ export default function TopicShareDialog({
           <span className={styles.cardReplyAuthor}>
             {reply.userAvatar && (
               <img
-                src={embeddedImages[reply.userAvatar] || reply.userAvatar}
-                data-share-image-src={reply.userAvatar}
+                src={getShareImageDisplaySrc(reply.userAvatar, embeddedImages, failedImageSources)}
+                data-share-image-src={reply.userAvatar.trim()}
                 alt=""
               />
             )}
@@ -386,7 +495,7 @@ export default function TopicShareDialog({
         </header>
         <EnhancedHtmlContent
           className={`topic-content reply-content ${styles.cardContent}`}
-          html={embedHtmlImages(reply.content, embeddedImages)}
+          html={embedHtmlImages(reply.content, embeddedImages, failedImageSources)}
         />
         {shareReplyViewMode === 'nested' && reply.children.length > 0 && (
           <div
@@ -424,8 +533,12 @@ export default function TopicShareDialog({
                   <span className={styles.cardAuthor}>
                     {topic.authorAvatar && (
                       <img
-                        src={embeddedImages[topic.authorAvatar] || topic.authorAvatar}
-                        data-share-image-src={topic.authorAvatar}
+                        src={getShareImageDisplaySrc(
+                          topic.authorAvatar,
+                          embeddedImages,
+                          failedImageSources
+                        )}
+                        data-share-image-src={topic.authorAvatar.trim()}
                         alt=""
                       />
                     )}
@@ -438,7 +551,7 @@ export default function TopicShareDialog({
               {hasTopicContent ? (
                 <EnhancedHtmlContent
                   className={`topic-content ${styles.cardContent}`}
-                  html={embedHtmlImages(topic.content, embeddedImages)}
+                  html={embedHtmlImages(topic.content, embeddedImages, failedImageSources)}
                 />
               ) : (
                 <section className={`topic-empty-content ${styles.cardEmptyContent}`}>
@@ -457,7 +570,9 @@ export default function TopicShareDialog({
                         <span>第 {index + 1} 条附言</span>
                         {append.time && <span className="append-time">{append.time}</span>}
                       </h2>
-                      <EnhancedHtmlContent html={embedHtmlImages(append.content, embeddedImages)} />
+                      <EnhancedHtmlContent
+                        html={embedHtmlImages(append.content, embeddedImages, failedImageSources)}
+                      />
                     </section>
                   ))}
                 </div>
@@ -486,7 +601,26 @@ export default function TopicShareDialog({
         </SimpleBar>
 
         <aside className={styles.controls}>
-          <h2 className={styles.controlsTitle}>分享选项</h2>
+          <div className={styles.controlsHeader}>
+            <h2 className={styles.controlsTitle}>分享选项</h2>
+            <div className={styles.imageStatusSlot} aria-live="polite">
+              {loadingImages && (
+                <div className={styles.imageStatus} role="status">
+                  <Spinner aria-hidden="true" />
+                  <span>图片加载中</span>
+                </div>
+              )}
+              {!loadingImages && failedImageCount > 0 && (
+                <div
+                  className={styles.imageWarning}
+                  role="status"
+                  title="生成分享图时，失败图片将使用透明占位图"
+                >
+                  <span>{failedImageCount} 张图片失败</span>
+                </div>
+              )}
+            </div>
+          </div>
           <div className={styles.linkField}>
             <input aria-label="话题链接" readOnly value={topicLink} />
             <Button
@@ -560,7 +694,7 @@ export default function TopicShareDialog({
           )}
           <div className={styles.actions}>
             <Button
-              disabled={loadingReplies || generating}
+              disabled={loadingReplies || generating || loadingImages}
               icon={<Download aria-hidden="true" />}
               loading={saving}
               onClick={() => void saveImage()}
@@ -568,7 +702,7 @@ export default function TopicShareDialog({
               保存为图片
             </Button>
             <Button
-              disabled={loadingReplies || generating}
+              disabled={loadingReplies || generating || loadingImages}
               icon={<Copy aria-hidden="true" />}
               loading={copying}
               variant="primary"
@@ -627,31 +761,46 @@ async function waitForShareImages(card: HTMLElement) {
   await Promise.allSettled(images.map(waitForShareImage))
 }
 
-/** 等待单张分享图片完成解码 */
+/**
+ * 等待单张分享图片完成解码
+ * @param image 图片元素
+ */
 function waitForShareImage(image: HTMLImageElement) {
   return new Promise<void>((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error('分享图片加载超时')),
       SHARE_IMAGE_LOAD_TIMEOUT_MS
     )
-    image
-      .decode()
+    Promise.resolve()
+      .then(() => image.decode())
       .then(resolve, reject)
       .finally(() => clearTimeout(timer))
   })
 }
 
-/** 收集 HTML 中需要嵌入分享图的图片地址 */
+/**
+ * 收集 HTML 中需要嵌入分享图的图片地址
+ * @param html 原始 HTML
+ */
 function getHtmlImageSources(html: string) {
   const template = document.createElement('template')
   template.innerHTML = normalizeHtml(html)
-  return Array.from(template.content.querySelectorAll<HTMLImageElement>('img'))
-    .map(image => image.getAttribute('src') || '')
-    .filter(Boolean)
+  return Array.from(template.content.querySelectorAll<HTMLImageElement>('img')).flatMap(
+    getShareImageCandidates
+  )
 }
 
-/** 将已下载图片替换进分享内容 HTML */
-function embedHtmlImages(html: string, embeddedImages: Record<string, string>) {
+/**
+ * 将已下载图片替换进分享内容 HTML
+ * @param html 原始 HTML
+ * @param embeddedImages 已加载的图片地址映射
+ * @param failedImageSources 已确认加载失败的图片地址
+ */
+function embedHtmlImages(
+  html: string,
+  embeddedImages: Record<string, string>,
+  failedImageSources: ReadonlySet<string>
+) {
   const normalizedHtml = normalizeHtml(html)
   if (!normalizedHtml.includes('<img')) {
     return normalizedHtml
@@ -660,7 +809,17 @@ function embedHtmlImages(html: string, embeddedImages: Record<string, string>) {
   const template = document.createElement('template')
   template.innerHTML = normalizedHtml
   template.content.querySelectorAll<HTMLImageElement>('img').forEach(image => {
-    const imageSrc = image.getAttribute('src') || ''
+    const imageSources = getShareImageCandidates(image)
+    const embeddedSource = imageSources.find(imageSrc => embeddedImages[imageSrc])
+    const directSource = imageSources.find(imageSrc => !isRemoteShareImageSource(imageSrc))
+    const imageSrc = embeddedSource || directSource || imageSources[0] || ''
+    if (!imageSrc) {
+      image.removeAttribute('data-share-image-src')
+      image.removeAttribute('data-share-image-failed')
+      image.removeAttribute('srcset')
+      return
+    }
+
     image.dataset.shareImageSrc = imageSrc
     image.removeAttribute('srcset')
     image
@@ -669,12 +828,75 @@ function embedHtmlImages(html: string, embeddedImages: Record<string, string>) {
       .forEach(source => {
         source.removeAttribute('srcset')
       })
-    const embeddedImage = embeddedImages[imageSrc]
+    const embeddedImage = embeddedSource ? embeddedImages[embeddedSource] : undefined
     if (!embeddedImage) {
+      if (failedImageSources.has(imageSrc)) {
+        image.dataset.shareImageFailed = 'true'
+        image.removeAttribute('data-share-image-pending')
+        image.src = TRANSPARENT_IMAGE
+      } else if (isRemoteShareImageSource(imageSrc)) {
+        image.removeAttribute('data-share-image-failed')
+        image.dataset.shareImagePending = 'true'
+        image.src = TRANSPARENT_IMAGE
+      } else {
+        image.removeAttribute('data-share-image-failed')
+        image.removeAttribute('data-share-image-pending')
+      }
       return
     }
 
+    image.removeAttribute('data-share-image-failed')
+    image.removeAttribute('data-share-image-pending')
     image.src = embeddedImage
   })
   return template.innerHTML
+}
+
+/**
+ * 获取图片元素中的全部分享图片候选地址
+ * @param image 图片元素
+ */
+function getShareImageCandidates(image: HTMLImageElement) {
+  const pictureSrcsets = Array.from(
+    image.closest('picture')?.querySelectorAll<HTMLSourceElement>('source[srcset]') || []
+  ).map(source => source.getAttribute('srcset'))
+  return getShareImageSourceCandidates({
+    previewSrc: image.getAttribute('data-preview-src'),
+    src: image.getAttribute('src'),
+    srcset: image.getAttribute('srcset'),
+    pictureSrcsets
+  })
+}
+
+/**
+ * 判断是否需要由扩展侧下载的远程图片
+ * @param imageSrc 图片地址
+ */
+function isRemoteShareImageSource(imageSrc: string) {
+  try {
+    const url = new URL(imageSrc, document.baseURI)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 获取分享图预览使用的图片地址
+ * @param imageSrc 原始图片地址
+ * @param embeddedImages 已加载的图片地址映射
+ * @param failedImageSources 已确认加载失败的图片地址
+ */
+function getShareImageDisplaySrc(
+  imageSrc: string,
+  embeddedImages: Record<string, string>,
+  failedImageSources: ReadonlySet<string>
+) {
+  const normalizedSrc = imageSrc.trim()
+  return (
+    embeddedImages[normalizedSrc] ||
+    (failedImageSources.has(normalizedSrc) || isRemoteShareImageSource(normalizedSrc)
+      ? TRANSPARENT_IMAGE
+      : normalizedSrc)
+  )
 }

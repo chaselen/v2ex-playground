@@ -58,11 +58,51 @@ describe('loadTopicShareImages', () => {
 
     expect(mocks.cacheRemoteImageFile).toHaveBeenCalledWith({
       imageSrc: 'https://cdn.v2ex.com/avatar/test.png',
-      cacheDirName: 'topic-share-images'
+      cacheDirName: 'topic-share-images',
+      maxBytes: 10 * 1024 * 1024,
+      validateUrl: expect.any(Function)
     })
     expect(result).toEqual({
       '//cdn.v2ex.com/avatar/test.png': 'vscode-webview://share/test.png'
     })
+  })
+
+  test('does not require local DNS resolution for public image hosts', async () => {
+    const webview = {
+      asWebviewUri: vi.fn(() => ({ toString: () => 'vscode-webview://share/test.png' }))
+    }
+    await loadTopicShareImages(['https://cdn.v2ex.com/avatar/test.png'], webview as never)
+
+    const requestOptions = mocks.cacheRemoteImageFile.mock.calls[0][0] as {
+      validateUrl: (imageSrc: string) => void
+    }
+    expect(() => requestOptions.validateUrl('https://cdn.v2ex.com/avatar/test.png')).not.toThrow()
+  })
+
+  test('rejects local image addresses before a network request', async () => {
+    mocks.cacheRemoteImageFile.mockImplementation(
+      async ({
+        imageSrc,
+        validateUrl
+      }: {
+        imageSrc: string
+        validateUrl?: (imageSrc: string) => void | Promise<void>
+      }) => {
+        await validateUrl?.(imageSrc)
+        return { uri: {}, cached: false }
+      }
+    )
+    const webview = {
+      asWebviewUri: vi.fn(() => ({ toString: () => 'vscode-webview://share/test.png' }))
+    }
+    const result = await loadTopicShareImages(
+      ['https://127.0.0.1/private.png', 'https://[::1]/private.png'],
+      webview as never
+    )
+
+    expect(result).toEqual({})
+    expect(mocks.cacheRemoteImageFile).toHaveBeenCalledTimes(2)
+    expect(mocks.loggerWarn).toHaveBeenCalledTimes(2)
   })
 
   test('uses the default resource URI format when RPC serializes options as null', async () => {
@@ -117,6 +157,33 @@ describe('loadTopicShareImages', () => {
       'https://cdn.v2ex.com/avatar/success.png': 'vscode-webview://share/success.png'
     })
     expect(mocks.loggerWarn).toHaveBeenCalledOnce()
+  })
+
+  test('refills the rolling concurrency pool as soon as an image finishes', async () => {
+    const imageSources = Array.from(
+      { length: 13 },
+      (_, index) => `https://cdn.v2ex.com/avatar/rolling-${index}.png`
+    )
+    const resolvers = new Map<string, (value: { uri: object; cached: boolean }) => void>()
+    mocks.cacheRemoteImageFile.mockImplementation(
+      ({ imageSrc }: { imageSrc: string }) =>
+        new Promise(resolve => {
+          resolvers.set(imageSrc, resolve)
+        })
+    )
+    const webview = {
+      asWebviewUri: vi.fn(() => ({ toString: () => 'vscode-webview://share/rolling.png' }))
+    }
+
+    const loading = loadTopicShareImages(imageSources, webview as never)
+    await vi.waitFor(() => expect(mocks.cacheRemoteImageFile).toHaveBeenCalledTimes(12))
+    expect(resolvers.has(imageSources[12])).toBe(false)
+
+    resolvers.get(imageSources[0])?.({ uri: {}, cached: false })
+    await vi.waitFor(() => expect(mocks.cacheRemoteImageFile).toHaveBeenCalledTimes(13))
+
+    resolvers.forEach(resolve => resolve({ uri: {}, cached: false }))
+    await loading
   })
 
   test('deduplicates concurrent downloads and releases the in-memory task afterward', async () => {

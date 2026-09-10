@@ -310,8 +310,13 @@ export function proxyImgurImageSrc(imageSrc: string): string {
 /**
  * 应用图片展示地址
  * @param img 图片元素
+ * @param showImages 是否显示图片
  */
 function applyImageDisplaySrc(img: HTMLImageElement, showImages: boolean) {
+  if (isShareImagePlaceholder(img)) {
+    return
+  }
+
   const originalSrc = img.dataset.previewSrc || img.currentSrc || img.src
   const displaySrc = getImageDisplaySrc(originalSrc)
   img.dataset.previewSrc = displaySrc
@@ -325,6 +330,14 @@ function applyImageDisplaySrc(img: HTMLImageElement, showImages: boolean) {
 
   img.removeAttribute('src')
   img.removeAttribute('srcset')
+}
+
+/**
+ * 判断分享图片是否仍处于加载失败或等待状态
+ * @param img 图片元素
+ */
+function isShareImagePlaceholder(img: HTMLImageElement) {
+  return img.dataset.shareImagePending === 'true' || img.dataset.shareImageFailed === 'true'
 }
 
 /**
