@@ -43,6 +43,7 @@ a {
   &:hover,
   &[data-member-quick-info-hover] {
     color: var(--v2ex-link-hover-fg);
+    text-decoration: underline;
   }
 
   // 鼠标按住链接时不显示浏览器默认焦点框，保留键盘 focus-visible 样式
