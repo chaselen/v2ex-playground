@@ -503,38 +503,18 @@ export default function TopicDetailView({
               </Button>
             )}
 
-            <ConfirmPopover
-              title={topic.isIgnored ? '确定撤销对这个主题的忽略？' : '确定不想再看到这个主题？'}
-              cancelText="取消"
-              onConfirm={() =>
-                requestTopicAction(
-                  topic.isIgnored ? cancelIgnoreTopic : ignoreTopic,
-                  setUpdatingIgnore
-                )
-              }
-            >
-              <span className={isFloating ? floatingActionStyles.popconfirmTrigger : undefined}>
-                {isFloating ? (
-                  <Tooltip
-                    className={floatingTooltipClass}
-                    content={topic.isIgnored ? '取消忽略' : '忽略主题'}
-                    side="left"
-                  >
-                    <Button
-                      aria-label={topic.isIgnored ? '取消忽略' : '忽略主题'}
-                      className={mergeClassNames(
-                        floatingButtonClass,
-                        topic.isIgnored && floatingActionStyles.buttonActive
-                      )}
-                      icon={
-                        topic.isIgnored ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />
-                      }
-                      loading={updatingIgnore}
-                      size={buttonSize}
-                      variant="ghost"
-                    />
-                  </Tooltip>
-                ) : (
+            {!isFloating && (
+              <ConfirmPopover
+                title={topic.isIgnored ? '确定撤销对这个主题的忽略？' : '确定不想再看到这个主题？'}
+                cancelText="取消"
+                onConfirm={() =>
+                  requestTopicAction(
+                    topic.isIgnored ? cancelIgnoreTopic : ignoreTopic,
+                    setUpdatingIgnore
+                  )
+                }
+              >
+                <span>
                   <Button
                     aria-label={topic.isIgnored ? '取消忽略' : '忽略主题'}
                     icon={
@@ -546,9 +526,9 @@ export default function TopicDetailView({
                   >
                     {topic.isIgnored ? '取消忽略' : '忽略主题'}
                   </Button>
-                )}
-              </span>
-            </ConfirmPopover>
+                </span>
+              </ConfirmPopover>
+            )}
 
             {topic.canThank && !topic.isThanked && (
               <ConfirmPopover
