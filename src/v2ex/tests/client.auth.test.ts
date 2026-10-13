@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 import type { LoginCookieStore } from '../client'
 import type { V2exSession, V2exSessionOptions } from '../session'
 import { TwoFactorRequiredError, type CheckCookieResult } from '../types'
@@ -65,11 +66,34 @@ function getSessionOptions(session: V2exSession): V2exSessionOptions {
   return (session as unknown as { options: V2exSessionOptions }).options
 }
 
+/** 注入响应 adapter，保留实际 Axios 配置合并和 Session 拦截器 */
+function setAdapter(
+  client: V2exClient,
+  adapter: (config: InternalAxiosRequestConfig) => {
+    status: number
+    headers?: Record<string, string>
+    data?: string
+  }
+): void {
+  const http = (getClientSession(client) as unknown as { http: AxiosInstance }).http
+  http.defaults.adapter = async config => ({
+    config,
+    statusText: 'OK',
+    headers: {},
+    data: '',
+    ...adapter(config)
+  })
+}
+
 describe('V2exClient authentication', () => {
   beforeEach(() => {
     checkCookieMock.mockReset()
     submitTwoFactorCodeMock.mockReset()
     submitTwoFactorCodeMock.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   test('gets only persistable login cookies', () => {
@@ -372,4 +396,257 @@ describe('V2exClient authentication', () => {
     expect(client.getAuthenticatedUsername()).toBe('CurrentUser')
     expect(client.isAuthenticated()).toBe(true)
   })
+
+  test('restores the previous persisted cookie when candidate saving is canceled and logout fails', async () => {
+    let stored = 'A2=old'
+    const started = createDeferred<void>(),
+      saving = createDeferred<void>()
+    const save = vi.fn(async (cookie: string) => {
+      if (!cookie) throw new Error('deletion failed')
+      if (cookie === 'A2=new') {
+        started.resolve()
+        await saving.promise
+      }
+      stored = cookie
+    })
+    checkCookieMock
+      .mockResolvedValueOnce({ isValid: true, username: 'OldUser' })
+      .mockResolvedValueOnce({ isValid: true, username: 'NewUser' })
+    const client = await V2exClient.create({ loginCookieStore: { load: async () => stored, save } })
+    await client.ensureAuthenticated()
+    getClientSession(client).setCookie('A2=old; A2O=runtime-only')
+
+    const switching = client.switchLoginCookie('A2=new')
+    await started.promise
+    const logout = client.logout().catch(error => error)
+    saving.resolve()
+
+    await expect(switching).resolves.toBe('canceled')
+    expect(await logout).toBeInstanceOf(Error)
+    expect(stored).toBe('A2=old')
+    expect(client.getLoginCookie()).toBe('A2=old; A2O=runtime-only')
+    expect(client.getAuthenticatedUsername()).toBe('OldUser')
+    expect(save.mock.calls.map(([cookie]) => cookie)).toEqual(['A2=new', 'A2=old', ''])
+    client.dispose()
+  })
+
+  test('reports failed rollback instead of returning a successful cancellation', async () => {
+    let stored = 'A2=old'
+    const started = createDeferred<void>(),
+      saving = createDeferred<void>()
+    checkCookieMock.mockResolvedValue({ isValid: true, username: 'NewUser' })
+    const client = await V2exClient.create({
+      loginCookieStore: {
+        load: async () => stored,
+        save: async cookie => {
+          if (cookie !== 'A2=new') throw new Error('storage unavailable')
+          started.resolve()
+          await saving.promise
+          stored = cookie
+        }
+      }
+    })
+    const switching = client.switchLoginCookie('A2=new')
+    const result = expect(switching).rejects.toThrow('恢复原登录凭据失败')
+    await started.promise
+    const logout = client.logout().catch(error => error)
+    saving.resolve()
+    await result
+    expect(await logout).toBeInstanceOf(Error)
+    expect(client.getLoginCookie()).toBe('A2=old')
+    expect(stored).toBe('A2=new')
+  })
+
+  test('persists authentication cookies renewed during the initial homepage validation', async () => {
+    const { store, save, load } = createLoginCookieStore('A2=valid; A2O=old')
+    checkCookieMock
+      .mockImplementationOnce(async session => {
+        session.setCookie('A2=valid; A2O=renewed; V2EX_LANG=zhcn')
+        return { isValid: true, username: 'User' }
+      })
+      .mockResolvedValue({ isValid: true, username: 'User' })
+    const client = await V2exClient.create({ loginCookieStore: store })
+    await expect(client.ensureAuthenticated()).resolves.toBe(true)
+    expect(save).toHaveBeenCalledWith('A2=valid; A2O=renewed')
+    expect(await load()).toBe('A2=valid; A2O=renewed')
+    const restarted = await V2exClient.create({ loginCookieStore: store })
+    await expect(restarted.ensureAuthenticated()).resolves.toBe(true)
+    expect(save).toHaveBeenCalledOnce()
+  })
+
+  test('coalesces ordinary authentication cookie updates and ignores internal cookies', async () => {
+    vi.useFakeTimers()
+    const { store, save, load } = createLoginCookieStore('A2=valid; A2O=old')
+    checkCookieMock.mockResolvedValue({ isValid: true, username: 'User' })
+    const client = await V2exClient.create({ loginCookieStore: store })
+    await client.ensureAuthenticated()
+    let response = 0
+    setAdapter(client, () => ({
+      status: 200,
+      headers: {
+        'set-cookie':
+          ++response <= 2
+            ? `A2O=renewed-${response}; Domain=.v2ex.com; Path=/`
+            : 'V2EX_LANG=zhcn; Path=/'
+      }
+    }))
+    await getClientSession(client).get('/')
+    await getClientSession(client).get('/')
+    expect(save).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(save).toHaveBeenCalledOnce()
+    expect(await load()).toBe('A2=valid; A2O=renewed-2')
+    await getClientSession(client).get('/')
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(save).toHaveBeenCalledOnce()
+    client.dispose()
+  })
+
+  test('does not persist ordinary cookie updates before the account is validated', async () => {
+    vi.useFakeTimers()
+    const { store, save } = createLoginCookieStore('A2=valid')
+    const client = await V2exClient.create({ loginCookieStore: store })
+    setAdapter(client, () => ({
+      status: 200,
+      headers: { 'set-cookie': 'A2O=renewed; Domain=.v2ex.com; Path=/' }
+    }))
+    await getClientSession(client).get('/')
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(save).not.toHaveBeenCalled()
+    client.dispose()
+  })
+
+  test('keeps a successful retried request successful when credential saving and its notification fail', async () => {
+    vi.useFakeTimers()
+    const { store, save, load } = createLoginCookieStore('A2=valid')
+    const notify = vi.fn(() => {
+      throw new Error('notification unavailable')
+    })
+    const client = await V2exClient.create({
+      loginCookieStore: store,
+      onCredentialSaveFailed: notify,
+      onTwoFactorRequired: async verification => {
+        await verification.submitCode('123456')
+        return true
+      }
+    })
+    submitTwoFactorCodeMock.mockImplementation(async session =>
+      session.setCookie('A2=valid; A2O=verified')
+    )
+    save.mockRejectedValueOnce(new Error('storage unavailable'))
+    let requests = 0
+    setAdapter(client, () =>
+      ++requests === 1
+        ? { status: 302, headers: { location: '/2fa' } }
+        : { status: 200, data: 'business completed' }
+    )
+
+    await expect(
+      getClientSession(client).get('/notifications', {
+        maxRedirects: 0,
+        validateStatus: status => status < 400
+      })
+    ).resolves.toMatchObject({ data: 'business completed' })
+    expect(notify).toHaveBeenCalledOnce()
+    expect(save).toHaveBeenCalledOnce()
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(save).toHaveBeenCalledTimes(2)
+    expect(await load()).toBe('A2=valid; A2O=verified')
+    client.dispose()
+  })
+
+  test('retries failed login expiration cleanup without repeating the expiration notification', async () => {
+    vi.useFakeTimers()
+    const { store, save, load } = createLoginCookieStore('A2=old')
+    const expired = vi.fn(),
+      failed = vi.fn()
+    const client = await V2exClient.create({
+      loginCookieStore: store,
+      onLoginExpired: expired,
+      onCredentialSaveFailed: failed
+    })
+    save.mockRejectedValueOnce(new Error('storage unavailable'))
+
+    await expect(getClientSession(client).expireLogin()).rejects.toThrow('storage unavailable')
+    expect(client.hasLoginSession()).toBe(false)
+    expect(expired).toHaveBeenCalledOnce()
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(save).toHaveBeenCalledTimes(2)
+    expect(await load()).toBe('')
+    expect(expired).toHaveBeenCalledOnce()
+    expect(failed).toHaveBeenCalledOnce()
+    await getClientSession(client).expireLogin()
+    expect(save).toHaveBeenCalledTimes(2)
+    client.dispose()
+  })
+
+  test('failed logout cannot stop a pending expired-credential cleanup', async () => {
+    vi.useFakeTimers()
+    const { store, save, load } = createLoginCookieStore('A2=old')
+    const expired = vi.fn()
+    const client = await V2exClient.create({ loginCookieStore: store, onLoginExpired: expired })
+    save
+      .mockRejectedValueOnce(new Error('storage unavailable'))
+      .mockRejectedValueOnce(new Error('storage unavailable'))
+    await expect(getClientSession(client).expireLogin()).rejects.toThrow('storage unavailable')
+    await expect(client.logout()).rejects.toThrow('storage unavailable')
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(await load()).toBe('')
+    expect(save).toHaveBeenCalledTimes(3)
+    expect(expired).toHaveBeenCalledOnce()
+    client.dispose()
+  })
+
+  test('failed logout resumes saving renewed credentials while preserving the verified account', async () => {
+    vi.useFakeTimers()
+    const { store, save, load } = createLoginCookieStore('A2=valid')
+    checkCookieMock.mockResolvedValue({ isValid: true, username: 'User' })
+    const client = await V2exClient.create({ loginCookieStore: store })
+    await client.ensureAuthenticated()
+    setAdapter(client, () => ({
+      status: 200,
+      headers: { 'set-cookie': 'A2O=renewed; Domain=.v2ex.com; Path=/' }
+    }))
+    await getClientSession(client).get('/')
+    save.mockRejectedValueOnce(new Error('storage unavailable'))
+    await expect(client.logout()).rejects.toThrow('storage unavailable')
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(client.getAuthenticatedUsername()).toBe('User')
+    expect(await load()).toBe('A2=valid; A2O=renewed')
+    expect(save).toHaveBeenCalledTimes(2)
+    client.dispose()
+  })
+
+  test('an old expiration retry cannot delete a newly committed login', async () => {
+    vi.useFakeTimers()
+    const { store, save, load } = createLoginCookieStore('A2=old')
+    const client = await V2exClient.create({ loginCookieStore: store })
+    save.mockRejectedValueOnce(new Error('storage unavailable'))
+    await expect(getClientSession(client).expireLogin()).rejects.toThrow('storage unavailable')
+    checkCookieMock.mockResolvedValue({ isValid: true, username: 'NewUser' })
+    await expect(client.switchLoginCookie('A2=new')).resolves.toBe('authenticated')
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(save).toHaveBeenCalledTimes(2)
+    expect(await load()).toBe('A2=new')
+    expect(client.getAuthenticatedUsername()).toBe('NewUser')
+    client.dispose()
+  })
+
+  test.each(['logout', 'dispose'] as const)(
+    '%s cancels a pending ordinary cookie save',
+    async action => {
+      vi.useFakeTimers()
+      const { store, save, load } = createLoginCookieStore('A2=valid')
+      checkCookieMock.mockResolvedValue({ isValid: true, username: 'User' })
+      const client = await V2exClient.create({ loginCookieStore: store })
+      await client.ensureAuthenticated()
+      setAdapter(client, () => ({ status: 200, headers: { 'set-cookie': 'A2O=renewed; Path=/' } }))
+      await getClientSession(client).get('/')
+      await client[action]()
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(save).toHaveBeenCalledTimes(action === 'logout' ? 1 : 0)
+      expect(await load()).toBe(action === 'logout' ? '' : 'A2=valid')
+      client.dispose()
+    }
+  )
 })

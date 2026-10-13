@@ -177,9 +177,10 @@ describe('topic tag parsing', () => {
 
 describe('topic ignore state parsing', () => {
   it.each([
-    ['忽略主题', false],
-    ['取消忽略', true]
-  ])('parses %s as isIgnored=%s', (action, isIgnored) => {
+    ['忽略主题', false, true],
+    ['取消忽略', true, true],
+    ['', false, false]
+  ])('parses %s as isIgnored=%s', (action, isIgnored, canIgnore) => {
     const $ = cheerio.load(`
       <div id="Main">
         <div class="box">
@@ -204,5 +205,6 @@ describe('topic ignore state parsing', () => {
     `)
 
     expect(parseTopicMeta($, 1, 'https://www.v2ex.com').isIgnored).toBe(isIgnored)
+    expect(parseTopicMeta($, 1, 'https://www.v2ex.com').canIgnore).toBe(canIgnore)
   })
 })

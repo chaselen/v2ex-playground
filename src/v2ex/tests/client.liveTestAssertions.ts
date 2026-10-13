@@ -79,6 +79,7 @@ export function expectTopicDetail(detail: TopicDetail) {
   expect(Array.isArray(detail.appends)).toBe(true)
   expect(detail.collectCount).toEqual(expect.any(Number))
   expect(detail.thankCount).toEqual(expect.any(Number))
+  expect(detail.canIgnore).toEqual(expect.any(Boolean))
   expect(detail.replyCount).toEqual(expect.any(Number))
   expect(detail.replyCurrentPage).toEqual(expect.any(Number))
   expect(detail.replyCurrentPage).toBeGreaterThanOrEqual(1)

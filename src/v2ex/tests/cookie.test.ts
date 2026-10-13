@@ -21,7 +21,7 @@ describe('normalizeLoginCookie', () => {
     expect(normalizeLoginCookie(cookie)).toBe(`${a2Cookie}; ${a2oCookie}`)
   })
 
-  test('keeps the latest A2O when CookieJar returns multiple matching cookies', () => {
+  test('uses the last A2O when user input contains duplicate cookie names', () => {
     const cookie = `${a2Cookie}; A2O=expired; ${a2oCookie}`
 
     expect(normalizeLoginCookie(cookie)).toBe(`${a2Cookie}; ${a2oCookie}`)

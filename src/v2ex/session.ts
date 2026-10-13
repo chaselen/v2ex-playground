@@ -1,9 +1,9 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { parseCookie } from 'cookie'
 import picomatch from 'picomatch'
-import { CookieJar } from 'tough-cookie'
+import { CookieJar, MemoryCookieStore, type Cookie } from 'tough-cookie'
 import { installHttpFailureLogging, type HttpFailureHandler } from '@/core/httpFailureLogging'
-import { normalizeLoginCookie } from './cookie'
+import { loginCookieName, normalizeLoginCookie, twoFactorCookieName } from './cookie'
 import {
   findCookieHeaderName,
   getConfigUrl,
@@ -47,6 +47,9 @@ const isRedirectCheckPath = picomatch([
   '/t/*'
 ])
 
+/** 随 Axios 配置合并保留的两步验证重试标记 */
+type TwoFactorRequestConfig = AxiosResponse['config'] & { v2exTwoFactorRetried?: boolean }
+
 /** V2EX 会话配置 */
 export interface V2exSessionOptions {
   onLoginExpired?: LoginExpiredHandler
@@ -65,12 +68,14 @@ export class V2exSession {
   /** Axios 请求客户端，仅由 Session 内部使用 */
   private readonly http: AxiosInstance
 
-  private readonly cookieJar = new CookieJar()
+  private readonly cookieStore = new MemoryCookieStore()
+  private readonly cookieJar = new CookieJar(this.cookieStore)
   /** 当前登录会话是否已经通知失效 */
   private loginExpiredNotified = true
+  /** 登录失效后的清理是否已完成；失败时允许重新清理 */
+  private loginExpirationCompleted = true
   /** 当前登录失效清理任务 */
   private loginExpirationTask?: Promise<void>
-  private readonly twoFactorRetriedConfigs = new WeakSet<object>()
   private readonly responseHandlers = new Set<V2exResponseHandler>()
 
   constructor(
@@ -106,7 +111,8 @@ export class V2exSession {
   /** 替换当前会话 Cookie */
   setCookie(cookie: string): void {
     this.loginExpiredNotified = !cookie
-    if (cookie) this.loginExpirationTask = undefined
+    this.loginExpirationCompleted = !cookie
+    this.loginExpirationTask = undefined
     this.cookieJar.removeAllCookiesSync()
     if (cookie) this.writeCookie(cookie, this.baseUrl)
   }
@@ -202,18 +208,40 @@ export class V2exSession {
     if (!setCookie) return
     const cookies = Array.isArray(setCookie) ? setCookie : [setCookie]
     cookies.forEach(cookie => {
-      if (typeof cookie === 'string') this.cookieJar.setCookieSync(cookie, responseUrl)
+      if (typeof cookie !== 'string') return
+      const written = this.cookieJar.setCookieSync(cookie, responseUrl)
+      if (written && (written.key === loginCookieName || written.key === twoFactorCookieName)) {
+        this.removeConflictingLoginCookies(written)
+      }
+    })
+  }
+
+  /** 保留服务端本次写入的认证 Cookie，删除其他域或路径中的同名旧值 */
+  private removeConflictingLoginCookies(written: Cookie): void {
+    // MemoryCookieStore 的回调同步执行，合并完成后请求头只包含一个认证值
+    this.cookieStore.getAllCookies((error, cookies) => {
+      if (error) throw error
+      for (const cookie of cookies || []) {
+        if (
+          cookie.key !== written.key ||
+          (cookie.domain === written.domain && cookie.path === written.path)
+        )
+          continue
+        this.cookieStore.removeCookie(cookie.domain!, cookie.path!, cookie.key, error => {
+          if (error) throw error
+        })
+      }
     })
   }
 
   /** 处理两步验证响应并重试原请求 */
   private async handleTwoFactorResponse(response: AxiosResponse): Promise<AxiosResponse> {
     if (!this.isTwoFactorResponse(response)) return response
-    const config = response.config
-    if (this.twoFactorRetriedConfigs.has(config)) {
+    const config: TwoFactorRequestConfig = response.config
+    if (config.v2exTwoFactorRetried) {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
-    this.twoFactorRetriedConfigs.add(config)
+    config.v2exTwoFactorRetried = true
     if (!(await this.options.onTwoFactorRequired?.())) {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
@@ -235,7 +263,7 @@ export class V2exSession {
   /** 判断响应是否要求两步验证 */
   private isTwoFactorResponse(response: AxiosResponse): boolean {
     const requestUrl = getConfigUrl(response.config, this.baseUrl)
-    if (!isV2exUrl(requestUrl)) return false
+    if (!isV2exUrl(requestUrl) || requestUrl.pathname === '/2fa') return false
     const location = getHeader(response.headers, 'location')
     if (location && response.status >= 300 && response.status < 400) {
       return isV2exPath(new URL(location, requestUrl), '/2fa')
@@ -247,42 +275,58 @@ export class V2exSession {
   /** 检查受保护页面的异常重定向 */
   private async checkRedirectFromResponse(response: AxiosResponse): Promise<void> {
     const requestUrl = getConfigUrl(response.config, this.baseUrl)
-    if (!isV2exUrl(requestUrl) || !hasFollowedRedirect(response)) return
-    const responseUrl = new URL(getResponseUrl(response, this.baseUrl))
-    if (isV2exPath(responseUrl, '/2fa')) {
+    if (!isV2exUrl(requestUrl)) return
+    const location = getHeader(response.headers, 'location')
+    const explicitRedirect = location && response.status >= 300 && response.status < 400
+    if (!explicitRedirect && !hasFollowedRedirect(response)) return
+    const responseUrl = explicitRedirect
+      ? new URL(location, requestUrl)
+      : new URL(getResponseUrl(response, this.baseUrl))
+    if (isV2exPath(responseUrl, '/2fa') && requestUrl.pathname !== '/2fa') {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
-    if (!isRedirectCheckPath(requestUrl.pathname)) return
-    if (isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) return
-
-    if (response.request.path.indexOf('/signin') >= 0) {
-      await this.expireLogin()
-      throw new LoginRequiredError('你要查看的页面需要先登录')
+    if (isV2exPath(responseUrl, '/signin') && requestUrl.pathname !== '/signin') {
+      // 清理失败仍按登录失效结束请求，凭据清理由客户端继续重试
+      await this.expireLogin().catch(() => undefined)
+      throw new LoginRequiredError(
+        requestUrl.pathname === '/write' ? '创作新主题需要先登录' : '你要查看的页面需要先登录'
+      )
     }
-    if (response.request.path === '/') {
-      if (this.getCookie()) throw new Error('您无权访问此页面')
-      throw new LoginRequiredError('你要查看的页面需要先登录')
-    }
-    if (response.request.path.indexOf('/restricted') === 0) {
+    if (isV2exPath(responseUrl, '/restricted') && requestUrl.pathname !== '/restricted') {
       throw new AccountRestrictedError(
         '访问受限，详情请查看 <a href="https://www.v2ex.com/restricted">https://www.v2ex.com/restricted</a>'
       )
     }
+    if (explicitRedirect || !isRedirectCheckPath(requestUrl.pathname)) return
+    if (isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) return
+    if (isV2exPath(responseUrl, '/')) {
+      if (this.getLoginCookie()) throw new Error('您无权访问此页面')
+      throw new LoginRequiredError('你要查看的页面需要先登录')
+    }
     throw new Error('未知错误')
   }
 
-  /** 清空会话并通知登录失效，同一会话只执行一次 */
+  /** 清空失效会话；并发清理共用任务，失败后允许重试 */
   async expireLogin(): Promise<void> {
-    if (this.loginExpiredNotified) {
+    if (this.loginExpirationTask) {
       await this.loginExpirationTask
       return
     }
-    this.loginExpiredNotified = true
-    this.setCookie('')
-    const task = Promise.resolve(this.options.onLoginExpired?.())
+    if (this.loginExpirationCompleted) return
+    if (!this.loginExpiredNotified) {
+      this.setCookie('')
+      this.loginExpirationCompleted = false
+    }
+    let task: Promise<void>
+    try {
+      task = Promise.resolve(this.options.onLoginExpired?.())
+    } catch (error) {
+      task = Promise.reject(error)
+    }
     this.loginExpirationTask = task
     try {
       await task
+      if (this.loginExpirationTask === task) this.loginExpirationCompleted = true
     } finally {
       if (this.loginExpirationTask === task) {
         this.loginExpirationTask = undefined

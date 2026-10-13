@@ -6,6 +6,22 @@ import { expectNode, expectTopic, expectTopicDetail } from './client.liveTestAss
 const client = new V2exClient(process.env.V2EX_COOKIE)
 
 describe.sequential('V2exClient topics', () => {
+  const capabilityTest = process.env.V2EX_COOKIE ? test : test.skip
+  capabilityTest(
+    'gets ignore capabilities for own and other authenticated topic pages',
+    async () => {
+      await client.refreshAuthentication()
+      const username = client.getAuthenticatedUsername()!.toLowerCase()
+      for (const topicId of [703733, 61465]) {
+        const topic = await client.getTopicDetail(topicId)
+        expect(topic.canIgnore).toBe(topic.authorName.toLowerCase() !== username)
+        if (!topic.canIgnore) {
+          await expect(client.ignoreTopic(topicId)).rejects.toThrow('当前主题不支持忽略')
+        }
+      }
+    }
+  )
+
   test('gets topics by tab and updates the online count', async () => {
     const topics = await client.getTopicListByTab('tech')
     const onlineCount = await client.getOnlineCount()

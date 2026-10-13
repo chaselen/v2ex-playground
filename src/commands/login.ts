@@ -4,7 +4,7 @@ import { logger } from '@/core/logger'
 
 /**
  * 登录逻辑
- * @returns 返回是否成功登录成功
+ * @returns 登录操作结果
  */
 export default async function login(): Promise<LoginResult> {
   let cookie = await vscode.window.showInputBox({
@@ -20,34 +20,42 @@ export default async function login(): Promise<LoginResult> {
   }
   cookie = (cookie || '').trim()
 
-  // 清除cookie
-  if (!cookie) {
-    await G.V2ex.logout()
-    logger.info('已退出登录')
-    return LoginResult.logout
-  }
+  try {
+    // 清除cookie
+    if (!cookie) {
+      await G.V2ex.logout()
+      logger.info('已退出登录')
+      return LoginResult.logout
+    }
 
-  const result = await vscode.window.withProgress(
-    {
-      title: '正在登录',
-      location: vscode.ProgressLocation.Notification
-    },
-    () => G.V2ex.switchLoginCookie(cookie)
-  )
+    const result = await vscode.window.withProgress(
+      {
+        title: '正在登录',
+        location: vscode.ProgressLocation.Notification
+      },
+      () => G.V2ex.switchLoginCookie(cookie)
+    )
 
-  if (result === 'canceled') {
-    logger.info('登录已取消或被其他认证操作取代，原登录状态未变更')
-    return LoginResult.cancel
-  }
-  if (result === 'invalid') {
-    logger.warn('登录失败，Cookie 无效')
-    vscode.window.showErrorMessage('登录失败，Cookie 格式不正确或已失效，请确认内容包含有效的 A2')
+    if (result === 'canceled') {
+      logger.info('登录已取消或被其他认证操作取代')
+      return LoginResult.cancel
+    }
+    if (result === 'invalid') {
+      logger.warn('登录失败，Cookie 无效')
+      vscode.window.showErrorMessage('登录失败，Cookie 格式不正确或已失效，请确认内容包含有效的 A2')
+      return LoginResult.failed
+    }
+
+    logger.info('登录成功')
+    vscode.window.showInformationMessage('登录成功')
+    return LoginResult.success
+  } catch (error) {
+    logger.error('登录操作失败', error)
+    void vscode.window.showErrorMessage(
+      error instanceof Error ? error.message : '登录操作失败，请稍后重试'
+    )
     return LoginResult.failed
   }
-
-  logger.info('登录成功')
-  vscode.window.showInformationMessage('登录成功')
-  return LoginResult.success
 }
 
 /**

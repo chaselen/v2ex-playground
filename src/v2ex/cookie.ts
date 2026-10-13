@@ -47,8 +47,8 @@ export function normalizeLoginCookie(input: string | undefined): string {
 /**
  * 从 Cookie 头中获取指定名称的最后一个值
  *
- * 服务器更新认证 Cookie 时，旧路径或域名范围的同名 Cookie 可能仍保留在 CookieJar 中。
- * Cookie 请求头会按创建顺序排列，最后一个值是最新写入的认证状态。
+ * 用户输入出现重复名称时采用最后一项。字符串不包含作用域或更新时间，
+ * 运行时同名认证 Cookie 的冲突由 Session 合并，不通过排列顺序判断新旧。
  */
 function getLastCookieValue(cookie: string, name: string): string | undefined {
   let value: string | undefined

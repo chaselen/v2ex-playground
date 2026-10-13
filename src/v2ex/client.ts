@@ -7,6 +7,7 @@ import { SearchService } from './services/search'
 import { TopicService } from './services/topic'
 import { V2exSession } from './session'
 import { normalizeLoginCookie } from './cookie'
+import { getConfigUrl } from './clientUtils'
 import { TwoFactorRequiredError } from './types'
 import type {
   AccountOverview,
@@ -39,6 +40,12 @@ import type {
   V2exNotification
 } from './types'
 
+/** 普通响应中的认证 Cookie 更新合并为最多每分钟一次保存 */
+const LOGIN_COOKIE_SAVE_DELAY = 60_000
+
+/** 凭据保存或失效清理失败后的重试间隔 */
+const LOGIN_COOKIE_SAVE_RETRY_DELAY = 30_000
+
 /** 登录 Cookie 持久化存储 */
 export interface LoginCookieStore {
   /** 读取持久化登录 Cookie */
@@ -60,6 +67,8 @@ export interface V2exClientOptions {
   onTwoFactorRequired?: TwoFactorRequiredHandler
   /** HTTP 请求失败回调 */
   onHttpFailure?: HttpFailureHandler
+  /** 后台凭据保存失败通知，不改变已完成业务操作的结果 */
+  onCredentialSaveFailed?: (error: unknown) => void
 }
 
 /** V2EX 对外客户端门面 */
@@ -102,6 +111,16 @@ export class V2exClient {
   /** 凭据写入队列 */
   private credentialMutation = Promise.resolve()
 
+  /** 最近一次成功持久化的登录 Cookie */
+  private persistedLoginCookie: string
+  /** 合并普通更新或重试失败清理的定时任务 */
+  private credentialSaveTimer?: ReturnType<typeof setTimeout>
+  /** 当前保存失败是否已经通知，成功保存后重置 */
+  private credentialSaveFailureNotified = false
+  /** 当前已通知失效的认证修订号 */
+  private loginExpirationRevision?: number
+  private disposed = false
+
   /** 客户端配置 */
   private readonly options: V2exClientOptions
 
@@ -121,6 +140,7 @@ export class V2exClient {
    */
   constructor(initialCookie?: string, options: V2exClientOptions = {}) {
     this.options = options
+    this.persistedLoginCookie = normalizeLoginCookie(initialCookie)
     this.session = new V2exSession(initialCookie, {
       onLoginExpired: () => this.handleLoginExpired(),
       onTwoFactorRequired: () => this.handleTwoFactorRequired(),
@@ -135,6 +155,18 @@ export class V2exClient {
     this.nodes = new NodeService(this.session, this.baseUrl)
     this.searchService = new SearchService(this.session)
     this.twoFactorVerification = this.createTwoFactorVerification()
+    this.session.onResponse(response => {
+      if (getConfigUrl(response.config, this.baseUrl).pathname === '/2fa') return
+      if (this.isAuthenticated() && this.getLoginCookie() !== this.persistedLoginCookie) {
+        this.scheduleCredentialSave(LOGIN_COOKIE_SAVE_DELAY)
+      }
+    })
+  }
+
+  /** 释放凭据保存和清理重试任务 */
+  dispose(): void {
+    this.disposed = true
+    this.clearCredentialSaveTimer()
   }
 
   /**
@@ -203,9 +235,20 @@ export class V2exClient {
 
     const committed = await this.enqueueCredentialMutation(async () => {
       if (this.authRevision !== revision) return false
-      const candidateCookie = candidate.getLoginCookie()
-      await this.options.loginCookieStore?.save(candidateCookie)
+      const previousCookie = this.options.loginCookieStore
+        ? normalizeLoginCookie(await this.options.loginCookieStore.load())
+        : this.persistedLoginCookie
       if (this.authRevision !== revision) return false
+      const candidateCookie = candidate.getLoginCookie()
+      await this.saveLoginCookie(candidateCookie)
+      if (this.authRevision !== revision) {
+        try {
+          await this.saveLoginCookie(previousCookie)
+        } catch (error) {
+          throw new Error('登录已取消，但恢复原登录凭据失败，请重新登录', { cause: error })
+        }
+        return false
+      }
       this.replaceLoginCookie(candidateCookie, result.username)
       return true
     })
@@ -214,13 +257,24 @@ export class V2exClient {
 
   /** 主动退出登录 */
   async logout(): Promise<void> {
+    this.clearCredentialSaveTimer()
     const revision = ++this.authRevision
     this.twoFactorVerification = this.createTwoFactorVerification()
-    await this.enqueueCredentialMutation(async () => {
-      await this.options.loginCookieStore?.save('')
-      if (this.authRevision !== revision) return
-      this.clearAuthentication()
-    })
+    try {
+      await this.enqueueCredentialMutation(async () => {
+        await this.saveLoginCookie('')
+        if (this.authRevision !== revision) return
+        this.clearAuthentication()
+      })
+    } catch (error) {
+      if (
+        this.loginExpirationRevision !== undefined ||
+        (this.isAuthenticated() && this.getLoginCookie() !== this.persistedLoginCookie)
+      ) {
+        this.scheduleCredentialSave(LOGIN_COOKIE_SAVE_RETRY_DELAY)
+      }
+      throw error
+    }
   }
 
   /**
@@ -640,11 +694,12 @@ export class V2exClient {
     const result = await this.auth.checkCookie()
     if (this.authRevision !== revision) return this.isAuthenticated()
     if (!result.isValid) {
-      await this.session.expireLogin()
+      await this.session.expireLogin().catch(() => undefined)
       return false
     }
     this.authenticatedUsername = result.username
-    return true
+    await this.persistLoginCookie(revision)
+    return this.isAuthenticated()
   }
 
   /** 处理当前业务会话的两步验证 */
@@ -656,13 +711,7 @@ export class V2exClient {
 
   /** 两步验证完成且原请求重试成功后持久化最新登录 Cookie */
   private async handleTwoFactorVerified(): Promise<void> {
-    const revision = this.authRevision
-    const loginCookie = this.getLoginCookie()
-    if (!loginCookie) return
-    await this.enqueueCredentialMutation(async () => {
-      if (this.authRevision !== revision) return
-      await this.options.loginCookieStore?.save(loginCookie)
-    })
+    await this.persistLoginCookie(this.authRevision)
   }
 
   /** 创建只作用于当前认证状态的两步验证操作 */
@@ -683,13 +732,28 @@ export class V2exClient {
 
   /** 登录失效后清理认证状态和持久化凭据 */
   private async handleLoginExpired(): Promise<void> {
-    this.invalidateAuthentication()
+    const firstExpiration = this.loginExpirationRevision === undefined
+    if (firstExpiration) {
+      this.invalidateAuthentication()
+      this.loginExpirationRevision = this.authRevision
+    }
+    const revision = this.authRevision
     try {
       await this.enqueueCredentialMutation(async () => {
-        await this.options.loginCookieStore?.save('')
+        if (this.authRevision !== revision) throw new Error('登录状态已更新，失效凭据清理稍后重试')
+        await this.saveLoginCookie('')
       })
+      if (this.authRevision === revision) this.clearCredentialSaveTimer()
+    } catch (error) {
+      if (this.authRevision === revision) this.notifyCredentialSaveFailure(error)
+      if (this.loginExpirationRevision !== undefined) {
+        this.scheduleCredentialSave(LOGIN_COOKIE_SAVE_RETRY_DELAY)
+      }
+      throw error
     } finally {
-      await this.options.onLoginExpired?.()
+      if (firstExpiration && this.loginExpirationRevision === revision) {
+        await this.options.onLoginExpired?.()
+      }
     }
   }
 
@@ -699,6 +763,8 @@ export class V2exClient {
    * @param username 已验证用户名
    */
   private replaceLoginCookie(cookie: string, username: string): void {
+    this.clearCredentialSaveTimer()
+    this.loginExpirationRevision = undefined
     this.authRevision += 1
     this.session.setCookie(cookie)
     this.authenticatedUsername = username
@@ -721,9 +787,68 @@ export class V2exClient {
 
   /** 清理认证派生状态 */
   private invalidateAuthenticationState(): void {
+    this.clearCredentialSaveTimer()
+    this.loginExpirationRevision = undefined
     this.authenticatedUsername = undefined
     this.account.reset()
     this.twoFactorVerification = this.createTwoFactorVerification()
+  }
+
+  /** 保存已确认的认证 Cookie；失败单独通知并重试，不覆盖业务结果 */
+  private async persistLoginCookie(revision: number): Promise<void> {
+    if (!this.options.loginCookieStore || this.disposed || this.authRevision !== revision) return
+    this.clearCredentialSaveTimer()
+    try {
+      await this.enqueueCredentialMutation(async () => {
+        if (this.authRevision !== revision) return
+        const cookie = this.getLoginCookie()
+        if (!cookie || cookie === this.persistedLoginCookie) return
+        await this.saveLoginCookie(cookie)
+      })
+    } catch (error) {
+      if (this.authRevision !== revision) return
+      this.notifyCredentialSaveFailure(error)
+      this.scheduleCredentialSave(LOGIN_COOKIE_SAVE_RETRY_DELAY)
+    }
+  }
+
+  /** 在凭据写入队列内更新存储及其成功快照 */
+  private async saveLoginCookie(cookie: string): Promise<void> {
+    await this.options.loginCookieStore?.save(cookie)
+    this.persistedLoginCookie = cookie
+    this.credentialSaveFailureNotified = false
+  }
+
+  /** 合并认证 Cookie 更新；失效状态下重试清理 */
+  private scheduleCredentialSave(delay: number): void {
+    if (!this.options.loginCookieStore || this.disposed || this.credentialSaveTimer) return
+    const revision = this.authRevision
+    this.credentialSaveTimer = setTimeout(() => {
+      this.credentialSaveTimer = undefined
+      if (this.authRevision !== revision) return
+      if (this.loginExpirationRevision !== undefined) {
+        void this.session.expireLogin().catch(() => undefined)
+      } else {
+        void this.persistLoginCookie(revision)
+      }
+    }, delay)
+    this.credentialSaveTimer.unref()
+  }
+
+  private clearCredentialSaveTimer(): void {
+    if (this.credentialSaveTimer) clearTimeout(this.credentialSaveTimer)
+    this.credentialSaveTimer = undefined
+  }
+
+  /** 同一轮保存失败只通知一次，通知异常不能影响已经成功的请求 */
+  private notifyCredentialSaveFailure(error: unknown): void {
+    if (this.credentialSaveFailureNotified) return
+    this.credentialSaveFailureNotified = true
+    try {
+      this.options.onCredentialSaveFailed?.(error)
+    } catch {
+      // 凭据重试继续执行，不让通知回调改写业务请求结果
+    }
   }
 
   /**

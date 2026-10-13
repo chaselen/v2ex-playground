@@ -9,8 +9,6 @@ import {
 } from '../parsers/topic'
 import { getResponseUrl } from '../clientUtils'
 import {
-  AccountRestrictedError,
-  LoginRequiredError,
   type CreateTopicInput,
   type CreateTopicResult,
   type PreviewContentTarget,
@@ -104,7 +102,6 @@ export class TopicService {
       { responseType: 'text' }
     )
     const responseUrl = new URL(getResponseUrl(response, this.baseUrl))
-    await this.ensureCreateResponseAvailable(responseUrl)
     const topicId = parseTopicIdByLink(responseUrl.toString())
     if (topicId) {
       return { topicId, title }
@@ -181,11 +178,16 @@ export class TopicService {
 
   /** 忽略话题 */
   async ignore(topicId: number): Promise<void> {
+    const topic = await this.getDetail(topicId)
+    if (topic.isIgnored) return
+    if (!topic.canIgnore) throw new Error('当前主题不支持忽略')
     await this.updateTopicAction(`/ignore/topic/${topicId}`, '忽略主题失败')
   }
 
   /** 取消忽略话题 */
   async cancelIgnore(topicId: number): Promise<void> {
+    const topic = await this.getDetail(topicId)
+    if (!topic.isIgnored) return
     await this.updateTopicAction(`/unignore/topic/${topicId}`, '取消忽略失败')
   }
 
@@ -197,17 +199,6 @@ export class TopicService {
       validateStatus: status => status >= 200 && status < 400
     })
     if (response.status !== 302) throw new Error(errorMessage)
-  }
-
-  /** 检查发布主题后的跳转结果 */
-  private async ensureCreateResponseAvailable(responseUrl: URL): Promise<void> {
-    if (responseUrl.pathname === '/signin') {
-      await this.session.expireLogin()
-      throw new LoginRequiredError('创作新主题需要先登录')
-    }
-    if (responseUrl.pathname === '/restricted') {
-      throw new AccountRestrictedError('当前账号访问受限，无法创作新主题')
-    }
   }
 }
 

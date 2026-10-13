@@ -82,6 +82,7 @@ export class TopicPanelController
     thankCount: 0,
     isCollected: false,
     isIgnored: false,
+    canIgnore: false,
     isThanked: false,
     canThank: true,
     collectParamT: null,

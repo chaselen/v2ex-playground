@@ -10,7 +10,7 @@
 - `V2exSession` 负责 V2EX HTTP 请求、运行时 CookieJar、响应 `Set-Cookie`、重定向识别和请求遇到 2FA 后的重试
 - `LoginCredentialStore` 负责通过 VS Code `SecretStorage` 读取和保存登录凭据，并迁移旧版 `globalState['cookie']`
 
-`LoginCredentialStore` 通过最小的 `LoginCookieStore` 接口注入，只提供 `load()` 和 `save(cookie)`。两步验证 UI 通过 `onTwoFactorRequired(verification)` 注入，客户端只向其提供 `verification.submitCode(code)`。因此客户端不依赖 VS Code 扩展上下文、Webview Controller 或全局状态，`TwoFactorPanelController` 也不读取全局客户端。
+`LoginCredentialStore` 通过最小的 `LoginCookieStore` 接口注入，只提供 `load()` 和 `save(cookie)`。两步验证 UI 通过 `onTwoFactorRequired(verification)` 注入，客户端只向其提供 `verification.submitCode(code)`。后台凭据保存失败通过 `onCredentialSaveFailed(error)` 通知扩展，由扩展记录日志并显示提示。因此客户端不依赖 VS Code 扩展上下文、Webview Controller 或全局状态，`TwoFactorPanelController` 也不读取全局客户端。
 
 领域 Service 只依赖 `V2exSession`，不读写 SecretStorage，也不维护登录状态。认证状态仅由 `V2exClient` 维护。
 
@@ -35,7 +35,7 @@
 
 扩展入口通过 `V2exClient.create({ loginCookieStore, ...options })` 创建客户端。该异步工厂先从凭据存储读取登录 Cookie，再用它建立正式业务 Session。启动检查完成前，存在持久化 Cookie 不代表已经登录；UI 只能以 `isAuthenticated()` 或 `getAuthenticatedUsername()` 的结果为准。
 
-`refreshAuthentication()` 请求 V2EX 首页并解析当前用户名。明确解析到未登录状态时进入统一的登录失效清理；网络错误或无法识别的页面结构会继续抛错，不会删除凭据。`ensureAuthenticated()` 用于普通受保护功能，避免每次调用都重复检查首页。
+`refreshAuthentication()` 请求 V2EX 首页并解析当前用户名。明确解析到未登录状态时进入统一的登录失效清理；网络错误或无法识别的页面结构会继续抛错，不会删除凭据。首页确认账号后立即保存本次响应更新的 A2/A2O。`ensureAuthenticated()` 用于普通受保护功能，避免每次调用都重复检查首页。
 
 启动检查因临时网络错误失败时，主面板和话题页可以在仍有登录 Cookie 的前提下保留登录态 UI，避免把“尚未验证”错误展示为“未登录”。受保护数据读取仍通过 `ensureAuthenticated()` 验证，话题写操作则以服务端响应为准；服务端明确重定向到 `/signin` 时继续走统一的登录失效清理。
 
@@ -48,9 +48,11 @@ CookieJar 保存当前进程中的完整 V2EX Cookie。请求只向适用的 V2E
 SecretStorage 只持久化规范化后的 A2/A2O：
 
 - 用户输入可以是完整 Cookie、A2/A2O 片段或单独的 A2 值，提交前统一规范化
-- 普通响应中的内部 Cookie 只保留在运行时，不写入 SecretStorage
+- 普通响应中的内部 Cookie 只保留在运行时，不写入 SecretStorage；已验证账号的 A2/A2O 更新合并为最多每分钟一次保存，每次执行读取最新运行时值，与最近成功保存值相同则跳过
 - 2FA 成功且触发请求重试成功后，新的 A2O 已写入 CookieJar，再显式保存当前登录 Cookie
 - 退出或登录失效时删除 SecretStorage 中的凭据
+
+后台保存失败不改变已经完成的业务操作结果，通过独立回调提示并在 30 秒后重试。同一轮失败只通知一次，成功保存后允许下一轮失败重新通知。重试复用凭据写入队列并检查认证修订号；切号、退出或 `dispose()` 会取消旧定时任务。扩展将客户端加入生命周期订阅，在停用时释放定时任务。
 
 `LoginCredentialStore.load()` 优先使用有效的 SecretStorage 数据。旧版 `globalState['cookie']` 只参与一次迁移；读取后会清理遗留值，损坏或包含多余字段的数据也会按 A2/A2O 重新规范化。
 
@@ -58,7 +60,9 @@ SecretStorage 只持久化规范化后的 A2/A2O：
 
 持久化 Cookie 恢复到 CookieJar 时，A2/A2O 使用 V2EX 服务端的 `Domain=.v2ex.com; Path=/` 作用域。
 
-**踩坑：** 如果在 `https://www.v2ex.com` 上仅写入 `A2O=value`，CookieJar 会创建 host-only 的 `www.v2ex.com` Cookie。V2EX `/2fa` 成功响应下发的 `A2O` 使用 `Domain=.v2ex.com; Path=/`，两者作用域不同而会同时存在。持久化时应取最后一个（最新写入的）认证值，并在下次恢复时采用服务端作用域，才能让后续 `Set-Cookie` 正确覆盖旧值。
+**踩坑：** 在 `https://www.v2ex.com` 上仅写入 `A2O=value` 会创建 host-only Cookie，与 `Domain=.v2ex.com; Path=/` 的同名值并存。CookieJar 按路径和创建顺序排列请求头，更新已有值会保留创建顺序，所以最后一项不一定是最近更新的值。
+
+Session 接收有效的 A2/A2O `Set-Cookie` 后，以本次服务端写入为准，删除其他域或路径中的同名旧值；过期删除响应也清除冲突值。内部 Cookie 保留各自作用域。字符串规范化只对用户输入的重复名称采用最后一项，不承担运行时 Cookie 新旧判断。
 
 ## 登录、切号与候选会话
 
@@ -67,10 +71,12 @@ SecretStorage 只持久化规范化后的 A2/A2O：
 1. 规范化用户输入，只保留 A2/A2O
 2. 创建具有独立 CookieJar 的候选 Session
 3. 在候选 Session 中检查首页，并按需完成 2FA
-4. 验证成功后保存候选 Session 的 A2/A2O
+4. 在凭据写入队列中读取并记住提交前的持久化值，再保存候选 Session 的 A2/A2O
 5. 一次性替换正式 Session Cookie，并记录候选检查得到的用户名
 
 候选 Cookie 无效、用户取消 2FA 或验证抛错时，当前业务 Session、用户名和持久化凭据保持不变。候选提交前会确认正式认证状态仍与开始验证时一致；其他登录切换或主动退出已经生效时，该候选返回取消，不能覆盖较新的状态。
+
+候选保存期间修订号改变时，在同一写入队列中恢复提交前的持久化值，恢复成功才返回取消。恢复失败会明确抛错并要求重新登录，登录命令显示该错误并返回失败，不能把尚未恢复的凭据状态报告为普通取消。恢复值来自存储读取，不使用可能已被普通响应更新的运行时 Cookie。
 
 候选隔离保证尚未确认的新 Cookie 不会污染当前账号。登录成功后调用方继续使用现有 `V2exClient`，无需重新绑定各领域 Service。
 
@@ -80,18 +86,26 @@ SecretStorage 只持久化规范化后的 A2/A2O：
 
 同一验证流程可以复用已打开的面板；另一个流程开始时可以替换旧面板。用户取消时保留原登录状态，并由触发请求按既有错误路径结束。
 
-正式业务请求完成 2FA 且原请求重试成功后，客户端会把运行时 CookieJar 中更新后的 A2/A2O 保存到 SecretStorage。普通 `Set-Cookie` 不触发持久化写入。
+正式业务请求完成 2FA 且原请求重试成功后，客户端会立即保存更新后的 A2/A2O；保存失败单独通知并重试，业务请求仍返回已经完成的结果。验证码提交响应不触发普通更新的定时保存。普通业务响应中已验证账号的认证 Cookie 更新按上述合并策略保存。
+
+每个触发请求最多重试一次，重试标记保存在 Axios 配置字段中，随配置合并保留。不能用 config 对象身份限制重试，因为 Axios 会为重试创建新的配置对象。
+
+验证码提交自身不触发新的验证交互；成功契约为 302 跳转到 V2EX 首页，其他跳转或问题页面会拒绝提交。跳转到 `/signin` 仍走统一失效清理，不能仅凭 302 向 UI 报告验证成功。
 
 ## 登录失效与退出
 
 登录失效主要来自两类信号：
 
 - 首页检查明确得到未登录结果
-- 受保护页面重定向到 `/signin`
+- 请求显式或自动重定向到 `/signin`，包括关闭自动重定向的收藏、关注、屏蔽等写操作及 `/write`
 
-它们最终进入同一个清理流程：清空正式 Session Cookie、已验证用户名和持久化 A2/A2O，再通知扩展刷新相关页面并提示重新登录。清理过程是幂等的；同一轮并发失败可以复用或等待正在进行的清理，不应重复删除凭据或重复发送失效通知。
+它们最终进入同一个清理流程：先清空正式 Session Cookie 和已验证用户名，再删除持久化 A2/A2O，并通知扩展刷新相关页面和提示重新登录。同一轮并发失败共用清理任务，失效通知仅执行一次。删除失败时保留待清理状态并在 30 秒后重试，不重复使认证状态失效或弹出登录失效提示。受保护请求仍抛出 `LoginRequiredError`，首页认证返回未登录，存储故障通过独立保存失败提示报告。
+
+Session 使用显式 Location 或最终 URL 的 pathname 判断落点，不从底层 request.path 做子串判断。`/restricted` 是账号受限；受保护内容自动回退到首页时，有登录凭据表示无权访问，无凭据表示需要登录；首页查询参数不改变判定。关闭自动重定向的写操作正常返回首页属于成功跳转，不能套用内容页回退规则。发布主题的失效清理也由 Session 处理。
 
 `logout()` 属于主动操作：调用开始时先使尚未提交的候选登录失效，持久化凭据删除成功后再清空运行时状态。SecretStorage 删除失败时保留当前运行时登录，避免本次运行与重启后的状态相互矛盾。退出完成后，后续业务请求以未登录状态执行。
+
+退出开始和运行时清空分别增加认证修订号，使候选提交作废，并阻止退出过程中发出的首页检查恢复用户名。若退出前会话已经失效，退出删除失败仍继续该会话的清理重试；若当前账号仍已验证且存在尚未保存的认证 Cookie 更新，删除失败后恢复该更新的保存任务，保持原运行时登录。
 
 ## 并发边界
 
@@ -128,7 +142,10 @@ SecretStorage 只持久化规范化后的 A2/A2O：
 - 候选 Cookie 成功后一次性提交，失败或取消不改变当前账号
 - 并发候选只有一个可以提交，退出或其他切换生效后旧候选不能覆盖当前状态
 - 候选登录 2FA 与正式业务 2FA 分别使用正确的 Session
-- 正式业务 2FA 成功且重试原请求后持久化更新的 A2O，普通响应不持久化内部 Cookie
-- 首页检查和受保护页面重定向触发的登录失效只清理、通知一次
+- 正式业务 2FA 成功且重试原请求后持久化 A2O，保存失败不掩盖业务成功；普通认证 Cookie 更新合并保存，内部 Cookie 不持久化
+- 候选保存被打断后恢复原持久化值，恢复失败明确抛错
+- Axios 配置合并后仍限制 2FA 为一次重试
+- 显式与自动登录重定向共用清理，清理失败可重试，失效通知只执行一次
+- 认证 Cookie 的域或路径冲突合并，服务端过期删除不回退到旧值
 - 普通在途请求可以自然完成，不要求通过全局会话守卫取消
 - 在签到发起 `redeem` 前或等待其返回时切号，流程返回失败；旧用户名任务不更新缓存、不重试、不通知

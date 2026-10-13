@@ -6,7 +6,7 @@ import {
 } from 'axios'
 import { describe, expect, test, vi } from 'vitest'
 import { V2exSession } from '../session'
-import { LoginRequiredError, TwoFactorRequiredError } from '../types'
+import { AccountRestrictedError, LoginRequiredError, TwoFactorRequiredError } from '../types'
 
 /** 会话响应测试需要访问的内部方法 */
 interface SessionInternals {
@@ -176,5 +176,162 @@ describe('V2exSession authentication responses', () => {
     await expect(internals.handleResponse(response)).rejects.toBeInstanceOf(TwoFactorRequiredError)
     expect(twoFactorHandler).toHaveBeenCalledOnce()
     expect(request).toHaveBeenCalledOnce()
+  })
+
+  test.each([
+    '/favorite/topic/1',
+    '/unfavorite/node/90',
+    '/ignore/topic/1',
+    '/follow/2',
+    '/block/2',
+    '/write'
+  ])('expires credentials for an unfollowed signin redirect from %s', async path => {
+    const expired = vi.fn()
+    const session = new V2exSession('A2=expired', { onLoginExpired: expired })
+    const internals = session as unknown as SessionInternals
+    const response = createLoginRedirectResponse(internals)
+    response.config.url = path
+    response.status = 302
+    response.headers = { location: '/signin?next=%2F' }
+    response.request = { path, _redirectable: { _redirectCount: 0 } }
+
+    await expect(internals.handleResponse(response)).rejects.toBeInstanceOf(LoginRequiredError)
+    expect(expired).toHaveBeenCalledOnce()
+    expect(session.getLoginCookie()).toBe('')
+  })
+
+  test('accepts a successful write redirect to the homepage', async () => {
+    const session = new V2exSession('A2=valid')
+    const internals = session as unknown as SessionInternals
+    const response = createLoginRedirectResponse(internals)
+    response.config.url = '/favorite/topic/1'
+    response.status = 302
+    response.headers = { location: '/?tab=all' }
+    response.request = { path: '/favorite/topic/1' }
+    await expect(internals.handleResponse(response)).resolves.toBe(response)
+    expect(session.getLoginCookie()).toBe('A2=valid')
+  })
+
+  test('classifies restricted redirects independently from login expiration', async () => {
+    const expired = vi.fn()
+    const session = new V2exSession('A2=valid', { onLoginExpired: expired })
+    const internals = session as unknown as SessionInternals
+    const response = createLoginRedirectResponse(internals)
+    response.config.url = '/write'
+    response.status = 302
+    response.headers = { location: '/restricted?reason=1' }
+    await expect(internals.handleResponse(response)).rejects.toBeInstanceOf(AccountRestrictedError)
+    expect(expired).not.toHaveBeenCalled()
+    expect(session.getLoginCookie()).toBe('A2=valid')
+  })
+
+  test('uses the final pathname rather than signin text in the request path', async () => {
+    const expired = vi.fn()
+    const session = new V2exSession('A2=valid', { onLoginExpired: expired })
+    const internals = session as unknown as SessionInternals
+    const response = createLoginRedirectResponse(internals)
+    response.config.url = '/t/1'
+    response.request.path = '/other?next=/signin'
+    response.request.res.responseUrl = 'https://www.v2ex.com/other?next=/signin'
+    await expect(internals.handleResponse(response)).rejects.toThrow('未知错误')
+    expect(expired).not.toHaveBeenCalled()
+    expect(session.getLoginCookie()).toBe('A2=valid')
+  })
+
+  test.each([
+    ['A2=valid', '您无权访问此页面'],
+    ['V2EX_LANG=zhcn', '你要查看的页面需要先登录']
+  ])('classifies homepage redirects with queries for %s', async (cookie, message) => {
+    const session = new V2exSession(cookie)
+    const internals = session as unknown as SessionInternals
+    const response = createLoginRedirectResponse(internals)
+    response.request.path = '/?tab=all'
+    response.request.res.responseUrl = 'https://www.v2ex.com/?tab=all'
+    await expect(internals.handleResponse(response)).rejects.toThrow(message)
+  })
+
+  test('limits repeated two-factor redirects through actual Axios config merging', async () => {
+    const required = vi.fn(async () => true)
+    const session = new V2exSession('A2=valid', { onTwoFactorRequired: required })
+    const internals = session as unknown as SessionInternals
+    const adapter = vi.fn(async config => ({
+      config,
+      data: '',
+      headers: { location: '/2fa' },
+      status: 302,
+      statusText: 'Found'
+    }))
+    internals.http.defaults.adapter = adapter
+
+    await expect(
+      session.get('/notifications', {
+        maxRedirects: 0,
+        validateStatus: status => status < 400
+      })
+    ).rejects.toBeInstanceOf(TwoFactorRequiredError)
+    expect(adapter).toHaveBeenCalledTimes(2)
+    expect(required).toHaveBeenCalledOnce()
+  })
+
+  test('retries failed expiration cleanup and shares the concurrent retry task', async () => {
+    const cleanup = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('storage unavailable'))
+      .mockResolvedValue(undefined)
+    const session = new V2exSession('A2=expired', { onLoginExpired: cleanup })
+    await expect(session.expireLogin()).rejects.toThrow('storage unavailable')
+    await Promise.all([session.expireLogin(), session.expireLogin()])
+    expect(cleanup).toHaveBeenCalledTimes(2)
+    expect(session.getLoginCookie()).toBe('')
+  })
+
+  test('preserves LoginRequiredError when expiration cleanup fails', async () => {
+    const session = new V2exSession('A2=expired', {
+      onLoginExpired: () => {
+        throw new Error('storage unavailable')
+      }
+    })
+    const internals = session as unknown as SessionInternals
+    await expect(
+      internals.handleResponse(createLoginRedirectResponse(internals))
+    ).rejects.toBeInstanceOf(LoginRequiredError)
+  })
+
+  test('keeps only the newly written authentication cookie across domains and paths', () => {
+    const session = new V2exSession('A2=valid; A2O=domain-old; V2EX_LANG=zhcn')
+    const internals = session as unknown as SessionInternals
+    internals.handleBeforeRedirect(
+      'https://www.v2ex.com/',
+      {},
+      {
+        'set-cookie': ['A2O=host-old; Path=/', 'A2O=path-old; Path=/2fa']
+      },
+      'https://www.v2ex.com/2fa'
+    )
+    internals.handleBeforeRedirect(
+      'https://www.v2ex.com/',
+      {},
+      {
+        'set-cookie': 'A2O=domain-latest; Domain=.v2ex.com; Path=/'
+      },
+      'https://www.v2ex.com/2fa'
+    )
+    expect(session.getCookie()).toBe('A2=valid; V2EX_LANG=zhcn; A2O=domain-latest')
+    expect(session.getCookie('https://www.v2ex.com/2fa').match(/A2O=/g)).toHaveLength(1)
+    expect(session.getLoginCookie()).toBe('A2=valid; A2O=domain-latest')
+  })
+
+  test('an expired authentication cookie also removes conflicting old values', () => {
+    const session = new V2exSession('A2=valid; A2O=old')
+    const internals = session as unknown as SessionInternals
+    internals.handleBeforeRedirect(
+      'https://www.v2ex.com/',
+      {},
+      {
+        'set-cookie': 'A2O=; Path=/; Max-Age=0'
+      },
+      'https://www.v2ex.com/2fa'
+    )
+    expect(session.getLoginCookie()).toBe('A2=valid')
   })
 })

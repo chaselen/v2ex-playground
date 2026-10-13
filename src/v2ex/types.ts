@@ -129,6 +129,8 @@ export interface TopicDetail {
   isCollected: boolean
   /** 是否已忽略 */
   isIgnored: boolean
+  /** 服务端页面是否提供忽略或取消忽略入口 */
+  canIgnore: boolean
   /** 是否已感谢 */
   isThanked: boolean
   /** 是否能发送感谢（自己的帖子不能发送感谢） */

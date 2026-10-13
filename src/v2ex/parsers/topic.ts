@@ -114,6 +114,7 @@ export function parseTopicMeta(
     thankCount: 0,
     isCollected: false,
     isIgnored: false,
+    canIgnore: false,
     isThanked: false,
     canThank: true,
     collectParamT: null,
@@ -169,6 +170,7 @@ export function parseTopicMeta(
       .filter((_, element) => /^(忽略主题|取消忽略)$/.test($(element).text().trim()))
       .first()
     topic.isIgnored = ignoreButton.text().trim() === '取消忽略'
+    topic.canIgnore = ignoreButton.length > 0
     topic.canThank = topicButtons.children('#topic_thank').length > 0
     topic.isThanked = topicButtons.find('.topic_thanked').length > 0
   }

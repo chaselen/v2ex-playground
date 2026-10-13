@@ -1,7 +1,8 @@
 import * as cheerio from 'cheerio/slim'
 import { parseAccountOverview } from '../parsers/account'
+import { getHeader, isV2exPath } from '../clientUtils'
 import type { V2exSession } from '../session'
-import type { CheckCookieResult } from '../types'
+import { LoginRequiredError, type CheckCookieResult } from '../types'
 
 /** V2EX 认证领域服务 */
 export class AuthService {
@@ -16,7 +17,13 @@ export class AuthService {
   /** 检查当前 Cookie 是否有效 */
   async checkCookie(): Promise<CheckCookieResult> {
     if (!this.session.getCookie()) return { isValid: false }
-    const { data: html } = await this.session.get<string>('/')
+    let html: string
+    try {
+      html = (await this.session.get<string>('/')).data
+    } catch (error) {
+      if (error instanceof LoginRequiredError) return { isValid: false }
+      throw error
+    }
     const $ = cheerio.load(html)
     const overview = parseAccountOverview($)
     if (overview?.username) {
@@ -40,7 +47,13 @@ export class AuthService {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       validateStatus: status => status >= 200 && status < 400
     })
-    if (response.status === 302) return
+    const location = getHeader(response.headers, 'location')
+    if (
+      response.status === 302 &&
+      location &&
+      isV2exPath(new URL(location, this.session.baseUrl), '/')
+    )
+      return
     const problem = cheerio
       .load(response.data)('.problem')
       .first()

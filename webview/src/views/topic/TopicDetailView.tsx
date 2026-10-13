@@ -509,7 +509,7 @@ export default function TopicDetailView({
               </Button>
             )}
 
-            {!isFloating && (
+            {!isFloating && topic.canIgnore && (
               <ConfirmPopover
                 title={topic.isIgnored ? '确定撤销对这个主题的忽略？' : '确定不想再看到这个主题？'}
                 cancelText="取消"

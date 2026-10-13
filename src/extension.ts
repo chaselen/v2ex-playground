@@ -45,9 +45,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     },
     onTwoFactorRequired: requestTwoFactorVerification,
+    onCredentialSaveFailed: error => {
+      logger.error('登录凭据保存失败，将自动重试', error)
+      void vscode.window.showWarningMessage(
+        'V2EX 登录凭据保存失败，将自动重试。已完成的操作无需重复提交。'
+      )
+    },
     onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
   })
   G.V2ex = client
+  context.subscriptions.push(client)
 
   // 刷新登录状态，并在登录有效时尝试自动签到
   const refreshLoginAndAutoSignIn = async () => {
