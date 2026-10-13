@@ -19,6 +19,7 @@ import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import NodeButton from '@/components/NodeButton'
 import UserBadge from '@/components/UserBadge'
 import CollapsibleReplyContent from './CollapsibleReplyContent'
+import { getReplyDisplayContent } from './replyContent'
 import {
   Avatar,
   Button,
@@ -310,8 +311,13 @@ export default function TopicDetailView({
    * 渲染单条回复及其子回复
    * @param reply 回复节点
    * @param depth 当前深度，根为 0；用于限制楼中楼视觉缩进
+   * @param parent 直接父回复，用于隐藏匹配的开头引用
    */
-  function renderReply(reply: TopicReplyNode, depth = 0) {
+  function renderReply(reply: TopicReplyNode, depth = 0, parent?: TopicReplyNode) {
+    const displayContent = getReplyDisplayContent(
+      reply.content,
+      replyViewMode === 'nested' ? parent : undefined
+    )
     return (
       <div className="reply-item" key={reply.replyId}>
         <div className="reply-layout">
@@ -334,10 +340,10 @@ export default function TopicDetailView({
                 <span className="floor">{reply.floor}</span>
               </div>
             </div>
-            <CollapsibleReplyContent contentKey={reply.content} showImages={showImages}>
+            <CollapsibleReplyContent contentKey={displayContent} showImages={showImages}>
               <EnhancedHtmlContent
                 className="topic-content reply-content"
-                html={reply.content}
+                html={displayContent}
                 showImages={showImages}
                 onTopicPreview={onTopicPreview}
               />
@@ -352,7 +358,7 @@ export default function TopicDetailView({
               'reply-children--max-indent'
             )}
           >
-            {reply.children.map(child => renderReply(child, depth + 1))}
+            {reply.children.map(child => renderReply(child, depth + 1, reply))}
           </div>
         )}
       </div>

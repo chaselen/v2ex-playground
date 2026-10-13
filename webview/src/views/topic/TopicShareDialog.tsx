@@ -15,6 +15,7 @@ import {
   type TopicReplyNode
 } from './replyTree'
 import styles from './TopicShareDialog.module.scss'
+import { getReplyDisplayContent } from './replyContent'
 import v2exIcon from '../../../../resources/favicon.png'
 import type { TopicDetail, TopicReply } from '@extension/v2ex/types'
 
@@ -462,8 +463,13 @@ export default function TopicShareDialog({
    * 渲染单条分享回复及其子回复
    * @param reply 回复节点
    * @param depth 当前深度，根为 0；用于限制楼中楼视觉缩进
+   * @param parent 直接父回复，用于隐藏匹配的开头引用
    */
-  function renderShareReply(reply: TopicReplyNode, depth = 0) {
+  function renderShareReply(reply: TopicReplyNode, depth = 0, parent?: TopicReplyNode) {
+    const displayContent = getReplyDisplayContent(
+      reply.content,
+      shareReplyViewMode === 'nested' ? parent : undefined
+    )
     // 页面未提供数量时仍需体现当前用户已发送的感谢
     const thankCount = Math.max(reply.thanks, reply.thanked ? 1 : 0)
     return (
@@ -495,7 +501,7 @@ export default function TopicShareDialog({
         </header>
         <EnhancedHtmlContent
           className={`topic-content reply-content ${styles.cardContent}`}
-          html={embedHtmlImages(reply.content, embeddedImages, failedImageSources)}
+          html={embedHtmlImages(displayContent, embeddedImages, failedImageSources)}
         />
         {shareReplyViewMode === 'nested' && reply.children.length > 0 && (
           <div
@@ -505,7 +511,7 @@ export default function TopicShareDialog({
               styles.cardReplyChildrenMaxIndent
             )}
           >
-            {reply.children.map(child => renderShareReply(child, depth + 1))}
+            {reply.children.map(child => renderShareReply(child, depth + 1, reply))}
           </div>
         )}
       </article>

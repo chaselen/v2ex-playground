@@ -16,9 +16,16 @@ V2EX 帖子页面返回的是按楼层排列的回复列表。回复数据包含
 ## 代码位置
 
 - 算法实现：`webview/src/views/topic/replyTree.ts`
+- 开头父回复引用展示转换：`webview/src/views/topic/replyContent.ts`
 - 页面渲染与模式切换：`webview/src/views/topic/TopicApp.tsx`、`TopicDetailView.tsx`
 - 嵌套回复样式：`webview/src/views/topic/topic.scss`
 - 分享图楼中楼渲染：`webview/src/views/topic/TopicShareDialog.tsx`
+
+## 开头父回复引用
+
+楼中楼模式下，嵌套回复通过 `getReplyDisplayContent()` 隐藏正文开头与直接父回复一致的 `@用户名`，紧随其后的 `#楼层` 保留显示，便于定位回复对象。例如 `@alice #12 同意` 显示为 `#12 同意`。无楼层的单用户引用也可隐藏。话题页、站内话题预览与分享图共用规则，仅转换展示 HTML，不改写原始回复数据或回复树输入；普通列表与根回复保持原文，评论自身的楼层号继续显示。
+
+识别范围为原生纯文本 / 用户链接引用及 Markdown 首段 `<p>` 中的同类引用，保留其后的正文结构。不同用户、不同楼层、开头连续多人引用、纯引用回复以及代码块、引用块或其他无法安全识别的结构保持原文。正文中的其他用户提及与楼层引用保持完整。
 
 ## 视觉缩进上限
 
