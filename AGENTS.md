@@ -29,16 +29,18 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 - 依赖统一放在 `devDependencies`；运行时依赖由构建工具打包，扩展不分发 `node_modules`
 - 格式以 `.oxfmtrc.json` 为准；修改后只格式化涉及文件，并检查 diff
 
-| 命令                                        | 用途                                                          |
-| ------------------------------------------- | ------------------------------------------------------------- |
-| `npm run watch`                             | 监听两侧构建与类型检查                                        |
-| `npm run check:extension` / `check:webview` | 对应侧类型检查；`npm run check` 检查两侧                      |
-| `npm run build:extension` / `build:webview` | 对应侧生产构建；`npm run build` 构建两侧                      |
-| `npm test -- <test-files>`                  | 指定 Vitest 测试；`npm test` 包含真实访问外部服务的 live 测试 |
-| `npm run format -- <changed-files>`         | 增量格式化；`format:check` 检查格式                           |
-| `npm run preview:theme`                     | 打开主题回归页                                                |
-| `npm run vscode:prepublish`                 | 完整类型检查与生产构建，不包含测试                            |
-| `npm run vscode:package` / `vscode:publish` | 打包 VSIX / 发布 Marketplace                                  |
+| 命令                                        | 用途                                                              |
+| ------------------------------------------- | ----------------------------------------------------------------- |
+| `npm run watch`                             | 监听两侧构建与类型检查                                            |
+| `npm run check:extension` / `check:webview` | 对应侧类型检查；`npm run check` 检查两侧                          |
+| `npm run build:extension` / `build:webview` | 对应侧生产构建；`npm run build` 构建两侧                          |
+| `npm test -- <test-files>`                  | 指定 Vitest 测试；`npm test` 包含真实访问外部服务的 live 测试     |
+| `npm run test:unit`                         | 运行非 live 测试，不访问真实外部服务                              |
+| `npm run test:live`                         | 运行 live 测试，需网络可达；部分用例需要登录 Cookie，包含真实签到 |
+| `npm run format -- <changed-files>`         | 增量格式化；`format:check` 检查格式                               |
+| `npm run preview:theme`                     | 打开主题回归页                                                    |
+| `npm run vscode:prepublish`                 | 完整类型检查与生产构建，不包含测试                                |
+| `npm run vscode:package` / `vscode:publish` | 打包 VSIX / 发布 Marketplace                                      |
 
 ## 修改与验证
 
