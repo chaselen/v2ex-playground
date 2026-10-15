@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Send, SquarePen } from 'lucide-react'
+import { ChevronDown, MapPin, Send, SquarePen } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import {
   Alert,
@@ -209,7 +209,12 @@ export default function CreateTopicApp() {
           <section className="create-topic-card">
             <div className="create-topic-field">
               <div className="create-topic-field-heading">
-                <label htmlFor="create-topic-title">主题标题</label>
+                <label htmlFor="create-topic-title">
+                  <span className="create-topic-required" aria-hidden="true">
+                    *
+                  </span>
+                  主题标题
+                </label>
                 <span className="create-topic-count">
                   {draft.title.length} / {titleMaxLength}
                 </span>
@@ -222,12 +227,9 @@ export default function CreateTopicApp() {
                 maxLength={titleMaxLength}
                 placeholder="用一句清晰的话概括主题"
                 disabled={formDisabled}
-                aria-describedby="create-topic-title-hint"
+                aria-required="true"
                 onValueChange={value => updateDraft('title', value)}
               />
-              <p id="create-topic-title-hint" className="create-topic-field-hint">
-                标题已经能够表达完整内容时，正文可以留空
-              </p>
             </div>
 
             <ReplyComposer
@@ -238,7 +240,7 @@ export default function CreateTopicApp() {
               value={draft.content}
               maxLength={contentMaxLength}
               rows={11}
-              placeholder="可以在正文中补充更多细节，也可以留空"
+              placeholder="可以在正文中补充更多细节；标题已经能够表达完整内容时，正文可以留空"
               previewEmptyText="目前还没有输入任何可以被预览的内容"
               previewAriaLabel="生成主题预览"
               previewRequiresContent={false}
@@ -274,9 +276,9 @@ export default function CreateTopicApp() {
             <div className="create-topic-node-field">
               <div className="create-topic-node-label">
                 <strong>发布到节点</strong>
-                <span>选择最符合主题内容的讨论区</span>
               </div>
               <Button
+                className="create-topic-node-select"
                 icon={
                   draft.node ? (
                     <Avatar
@@ -293,26 +295,31 @@ export default function CreateTopicApp() {
                 disabled={formDisabled}
                 onClick={() => void selectNode()}
               >
-                {draft.node ? `${draft.node.title} / ${draft.node.name}` : '选择节点'}
+                <span className="create-topic-node-title">{draft.node?.title || '选择节点'}</span>
+                {draft.node && <span className="create-topic-node-name">{draft.node.name}</span>}
+                <ChevronDown className="create-topic-node-chevron" aria-hidden="true" />
               </Button>
             </div>
-            <ConfirmPopover
-              side="top"
-              align="end"
-              title="确认发布这个主题？"
-              description="发布后 5 分钟内可在 V2EX 网页修改标题、正文或节点"
-              disabled={!canPublish}
-              onConfirm={publishTopic}
-            >
-              <Button
-                variant="primary"
-                icon={<Send aria-hidden="true" />}
-                loading={publishing}
+            <div className="create-topic-publish">
+              <ConfirmPopover
+                side="top"
+                align="end"
+                title="确认发布这个主题？"
+                description="发布后 5 分钟内可在 V2EX 网页修改标题、正文或节点"
                 disabled={!canPublish}
+                onConfirm={publishTopic}
               >
-                发布主题
-              </Button>
-            </ConfirmPopover>
+                <Button
+                  className="create-topic-publish-button"
+                  variant="primary"
+                  icon={<Send aria-hidden="true" />}
+                  loading={publishing}
+                  disabled={!canPublish}
+                >
+                  发布主题
+                </Button>
+              </ConfirmPopover>
+            </div>
           </section>
         </div>
       </main>
