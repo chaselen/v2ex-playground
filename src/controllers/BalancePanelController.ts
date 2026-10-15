@@ -115,7 +115,7 @@ export class BalancePanelController
       this.postViewState({ status: 'loading' })
     }
 
-    this.detail = await G.V2ex.getBalance(this.detail?.page || 1)
+    this.detail = await G.V2ex.account.getBalance(this.detail?.page || 1)
     this.render(this.detail)
   }
 
@@ -136,7 +136,7 @@ export class BalancePanelController
    * @param page 页码
    */
   private async loadPage(page: number): Promise<BalanceDetail> {
-    this.detail = await G.V2ex.getBalance(page)
+    this.detail = await G.V2ex.account.getBalance(page)
     return this.detail
   }
 

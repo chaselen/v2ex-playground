@@ -1,4 +1,4 @@
-import { getHelpSlug } from '@/v2ex/parsers/help'
+import { getTopicLink, getMemberLink, getNodeLink, getTagLink, getHelpSlug } from '@/v2ex'
 import { HelpPanelController } from '@/controllers/HelpPanelController'
 import Config from '@/config'
 import { MemberPanelController } from '@/controllers/MemberPanelController'
@@ -10,7 +10,6 @@ import { TagPanelController } from '@/controllers/TagPanelController'
 import { NodePanelController } from '@/controllers/NodePanelController'
 import { CreateTopicPanelController } from '@/controllers/CreateTopicPanelController'
 import type { OpenNodePayload, OpenTopicPayload } from '@/shared/webview'
-import G from '@/global'
 
 /**
  * 存放用户页面的控制器
@@ -60,7 +59,7 @@ const panelDeps = {
  * @param username 用户名
  */
 export function openMember(username: string) {
-  const memberKey = G.V2ex.getMemberLink(username)
+  const memberKey = getMemberLink(username)
 
   // 如果控制器已经存在，则直接激活
   let controller = memberPanels[memberKey]
@@ -94,7 +93,7 @@ export function openTopic(topic: OpenTopicPayload) {
     throw new Error('打开话题面板缺少必要参数')
   }
 
-  const topicKey = G.V2ex.getTopicLinkById(topicId)
+  const topicKey = getTopicLink(topicId)
 
   // 如果控制器已经存在，则直接激活
   let controller = topicPanels[topicKey]
@@ -128,7 +127,7 @@ export function openTag(tag: string) {
     throw new Error('打开标签面板缺少必要参数')
   }
 
-  const tagKey = G.V2ex.getTagLink(tagName)
+  const tagKey = getTagLink(tagName)
   let controller = tagPanels[tagKey]
   if (controller) {
     controller.reveal()
@@ -160,7 +159,7 @@ export function openNode(node: OpenNodePayload) {
   }
 
   const title = node.title?.trim() || nodeName
-  const nodeKey = G.V2ex.getNodeLink(nodeName)
+  const nodeKey = getNodeLink(nodeName)
   let controller = nodePanels[nodeKey]
   if (controller) {
     controller.reveal()

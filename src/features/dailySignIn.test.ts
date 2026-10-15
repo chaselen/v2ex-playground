@@ -51,9 +51,11 @@ vi.mock('@/global', () => ({
       }
     },
     V2ex: {
-      dailySignIn: mocks.dailySignIn,
       getAuthenticatedUsername: mocks.getAuthenticatedUsername,
-      getDailySignInStatus: mocks.getDailySignInStatus
+      account: {
+        dailySignIn: mocks.dailySignIn,
+        getDailySignInStatus: mocks.getDailySignInStatus
+      }
     }
   }
 }))

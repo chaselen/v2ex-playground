@@ -1,6 +1,6 @@
+import { getTopicLink } from '@/v2ex'
 import { EOL } from 'node:os'
 import vscode from 'vscode'
-import G from '@/global'
 import { openExternal } from '@/features/openExternal'
 
 /**
@@ -8,7 +8,7 @@ import { openExternal } from '@/features/openExternal'
  * @param topicId 话题 id
  */
 export function copyTopicLink(topicId: string | number) {
-  void vscode.env.clipboard.writeText(G.V2ex.getTopicLinkById(topicId))
+  void vscode.env.clipboard.writeText(getTopicLink(topicId))
 }
 
 /**
@@ -17,7 +17,7 @@ export function copyTopicLink(topicId: string | number) {
  * @param title 话题标题
  */
 export function copyTopicTitleLink(topicId: string | number, title: string) {
-  const link = G.V2ex.getTopicLinkById(topicId)
+  const link = getTopicLink(topicId)
   void vscode.env.clipboard.writeText(`${title}${EOL}${link}`)
 }
 
@@ -26,5 +26,5 @@ export function copyTopicTitleLink(topicId: string | number, title: string) {
  * @param topicId 话题 id
  */
 export function viewTopicInBrowser(topicId: string | number) {
-  openExternal(G.V2ex.getTopicLinkById(topicId))
+  openExternal(getTopicLink(topicId))
 }

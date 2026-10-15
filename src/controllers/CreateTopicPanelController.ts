@@ -176,7 +176,7 @@ export class CreateTopicPanelController
     if (!this.nodes.some(node => node.name === input.nodeName)) {
       throw new Error('所选节点不在最新节点列表中，请重新选择')
     }
-    const result = await G.V2ex.createTopic(input)
+    const result = await G.V2ex.topics.create(input)
     if (this.username) {
       await clearCreateTopicDraft(this.username)
     }
@@ -185,7 +185,7 @@ export class CreateTopicPanelController
 
   /** 预览新主题正文 */
   rpc_previewTopic(payload: { content: string; syntax: CreateTopicInput['syntax'] }) {
-    return G.V2ex.previewContent(payload.content, payload.syntax, 'topic')
+    return G.V2ex.topics.previewContent(payload.content, payload.syntax, 'topic')
   }
 
   /** 上传正文图片 */
@@ -209,7 +209,7 @@ export class CreateTopicPanelController
         throw new LoginRequiredError('创作新主题需要先登录')
       }
       this.username = G.V2ex.getAuthenticatedUsername() || ''
-      this.nodes = await G.V2ex.getAllNodes()
+      this.nodes = await G.V2ex.nodes.getAll()
       const savedDraft = this.username ? getCreateTopicDraft(this.username) : undefined
       const draft = normalizeDraft(
         savedDraft || {

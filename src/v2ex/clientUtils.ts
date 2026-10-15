@@ -1,28 +1,14 @@
 import type { AxiosResponse } from 'axios'
+import { V2EX_BASE_URL, isV2exUrl } from './links'
 
-/** V2EX 基础链接 */
-const v2exBaseUrl = 'https://www.v2ex.com'
-
-/**
- * 判断链接是否属于 V2EX
- * @param url 待判断链接
- * @example
- * isV2exUrl(new URL('https://www.v2ex.com/t/1')) // true
- * isV2exUrl(new URL('http://www.v2ex.com/t/1')) // false
- */
-export function isV2exUrl(url: URL): boolean {
-  return url.protocol === 'https:' && (url.host === 'v2ex.com' || url.host.endsWith('.v2ex.com'))
+/** 会话 Cookie 与认证处理仅信任 HTTPS 原站地址，独立于通用链接识别规则 */
+export function isV2exSessionUrl(url: URL): boolean {
+  return url.protocol === 'https:' && isV2exUrl(url)
 }
 
-/**
- * 判断链接是否为指定 V2EX 路径
- * @param url 待判断链接
- * @param path 目标路径
- * @example
- * isV2exPath(new URL('https://www.v2ex.com/2fa'), '/2fa') // true
- */
-export function isV2exPath(url: URL, path: string): boolean {
-  return isV2exUrl(url) && url.pathname === path
+/** 在 HTTPS 会话边界内精确匹配认证重定向路径 */
+export function isV2exSessionPath(url: URL, path: string): boolean {
+  return isV2exSessionUrl(url) && url.pathname === path
 }
 
 /**
@@ -33,7 +19,7 @@ export function isV2exPath(url: URL, path: string): boolean {
  * getConfigUrl({ url: '/balance' }, 'https://www.v2ex.com').toString()
  * // 'https://www.v2ex.com/balance'
  */
-export function getConfigUrl(config: AxiosResponse['config'], baseUrl = v2exBaseUrl): URL {
+export function getConfigUrl(config: AxiosResponse['config'], baseUrl = V2EX_BASE_URL): URL {
   return new URL(config.url || '', config.baseURL || baseUrl)
 }
 
@@ -44,7 +30,7 @@ export function getConfigUrl(config: AxiosResponse['config'], baseUrl = v2exBase
  *
  * 优先读取 Node 请求对象中的最终响应链接，缺失时回退到请求配置
  */
-export function getResponseUrl(response: AxiosResponse, baseUrl = v2exBaseUrl): string {
+export function getResponseUrl(response: AxiosResponse, baseUrl = V2EX_BASE_URL): string {
   return (
     response.request?.res?.responseUrl ||
     response.request?._redirectable?._currentUrl ||

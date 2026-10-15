@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { getHelpSlug, parseHelpPage } from './help'
+import { parseHelpPage } from './help'
 
 describe('help page parser', () => {
   test('extracts dynamic navigation and filters executable content', () => {
@@ -44,7 +44,5 @@ describe('help page parser', () => {
   })
   test('rejects unexpected pages instead of rendering them as help', () => {
     expect(() => parseHelpPage('<h1>登录</h1>', 'home')).toThrow('无法解析')
-    expect(getHelpSlug('/help/currency')).toBe('currency')
-    expect(getHelpSlug('/help/../../settings')).toBeUndefined()
   })
 })

@@ -1,8 +1,9 @@
+import { getTopicLink, AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import vscode from 'vscode'
 import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
 import { showNodeQuickPick } from '@/features/nodeQuickPick'
 import type { TopicManagementAction, TopicManagementInput } from '@/v2ex'
-import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
+
 import G from '@/global'
 import Config from '@/config'
 import { uploadImage } from '@/core/imageUpload'
@@ -117,7 +118,7 @@ export class TopicPanelController
   constructor(input: OpenTopicPayload, deps: TopicPanelDeps) {
     super(deps)
     const topicId = normalizeTopicId(input.topicId)
-    this.key = G.V2ex.getTopicLinkById(topicId)
+    this.key = getTopicLink(topicId)
     this.topicId = topicId
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
@@ -306,7 +307,7 @@ export class TopicPanelController
 
   /** 复用全量节点选择器 */
   async rpc_pickTopicManagementNode(currentNodeName?: string) {
-    const node = await showNodeQuickPick(await G.V2ex.getAllNodes(), {
+    const node = await showNodeQuickPick(await G.V2ex.nodes.getAll(), {
       title: '移动主题',
       placeHolder: '选择目标节点',
       currentNodeName: currentNodeName || this.detail.node.name,
@@ -320,7 +321,7 @@ export class TopicPanelController
 
   /** 检查主话题作者权限并读取初始化数据，目标由控制器固定 */
   rpc_prepareTopicManagement(action: TopicManagementAction) {
-    return G.V2ex.prepareTopicManagement(this.topicId, action)
+    return G.V2ex.topics.prepareManagement(this.topicId, action)
   }
 
   /** 提交后更新标题、最近浏览和主话题状态 */
@@ -328,7 +329,7 @@ export class TopicPanelController
     if (this.managingTopic) throw new Error('主题操作正在提交，请稍候')
     this.managingTopic = true
     try {
-      await G.V2ex.manageTopic(this.topicId, payload)
+      await G.V2ex.topics.manage(this.topicId, payload)
       try {
         await this.reloadTopic(false)
       } catch {
@@ -342,32 +343,32 @@ export class TopicPanelController
 
   /** 主题与附言均使用主题正文预览 */
   rpc_previewTopicManagement(payload: { content: string; syntax: 'default' | 'markdown' }) {
-    return G.V2ex.previewContent(payload.content, payload.syntax, 'topic')
+    return G.V2ex.topics.previewContent(payload.content, payload.syntax, 'topic')
   }
 
   /** 收藏话题 */
   rpc_collectTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.collectTopic(topicId))
+    return this.runTopicMutation(target, topicId => G.V2ex.topics.collect(topicId))
   }
 
   /** 取消收藏话题 */
   rpc_cancelCollectTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.cancelCollectTopic(topicId))
+    return this.runTopicMutation(target, topicId => G.V2ex.topics.cancelCollect(topicId))
   }
 
   /** 忽略话题 */
   rpc_ignoreTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.ignoreTopic(topicId))
+    return this.runTopicMutation(target, topicId => G.V2ex.topics.ignore(topicId))
   }
 
   /** 取消忽略话题 */
   rpc_cancelIgnoreTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.cancelIgnoreTopic(topicId))
+    return this.runTopicMutation(target, topicId => G.V2ex.topics.cancelIgnore(topicId))
   }
 
   /** 感谢话题创建者 */
   rpc_thankTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.thankTopic(topicId))
+    return this.runTopicMutation(target, topicId => G.V2ex.topics.thankTopic(topicId))
   }
 
   /** 提交话题回复 */
@@ -446,7 +447,7 @@ export class TopicPanelController
    */
   private async resolveMemberQuickInfo(username: string): Promise<MemberQuickInfo> {
     const [member, authenticatedUsername] = await Promise.all([
-      G.V2ex.getMemberInfo(username),
+      G.V2ex.members.getInfo(username),
       this.resolveAuthenticatedUsername()
     ])
     return {
@@ -503,14 +504,14 @@ export class TopicPanelController
     }
 
     if (action === 'block') {
-      await G.V2ex.blockMember(target.memberId)
+      await G.V2ex.members.block(target.memberId)
     } else {
-      await G.V2ex.unblockMember(target.memberId)
+      await G.V2ex.members.unblock(target.memberId)
     }
 
     this.memberQuickInfoCache.clear()
     try {
-      await G.V2ex.getAccountOverview({ force: true })
+      await G.V2ex.account.getAccountOverview({ force: true })
     } catch (err) {
       logger.error('话题侧用户关系更新后刷新账户概览失败', err, {
         memberId: target.memberId,
@@ -532,14 +533,17 @@ export class TopicPanelController
     const replyPage = normalizeReplyPage(target.replyPage)
 
     await task(topicId)
-    const detail = await G.V2ex.getTopicDetail(topicId, replyPage)
+    const detail = await G.V2ex.topics.getDetail(topicId, replyPage)
 
     if (topicId === this.topicId) {
       if (replyPage === this.detail.replyCurrentPage) {
         this.detail = detail
         this.render(detail)
       } else {
-        const panelDetail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
+        const panelDetail = await G.V2ex.topics.getDetail(
+          this.topicId,
+          this.detail.replyCurrentPage
+        )
         this.detail = panelDetail
         this.render(panelDetail)
       }
@@ -559,7 +563,7 @@ export class TopicPanelController
       })
     }
 
-    const detail = await G.V2ex.getTopicDetail(this.topicId, this.detail.replyCurrentPage)
+    const detail = await G.V2ex.topics.getDetail(this.topicId, this.detail.replyCurrentPage)
     this.detail = detail
     updateRecentBrowseTopic(detail).catch(err =>
       logger.error('最近浏览详情保存失败', err, { topicId: detail.id })
@@ -592,7 +596,7 @@ export class TopicPanelController
       throw new Error('请输入回复内容')
     }
 
-    return G.V2ex.previewContent(content, 'default', 'reply')
+    return G.V2ex.topics.previewContent(content, 'default', 'reply')
   }
 
   /**
@@ -602,7 +606,7 @@ export class TopicPanelController
   private loadTopicPreview(message: { topicId: string | number; replyPage?: number }) {
     const topicId = normalizeTopicId(message.topicId)
     const replyPage = normalizeReplyPage(message.replyPage)
-    return G.V2ex.getTopicDetail(topicId, replyPage)
+    return G.V2ex.topics.getDetail(topicId, replyPage)
   }
 
   /**
@@ -614,7 +618,9 @@ export class TopicPanelController
       throw new Error('请输入回复内容')
     }
 
-    return this.runTopicMutation(message, topicId => G.V2ex.postReply(topicId, message.content))
+    return this.runTopicMutation(message, topicId =>
+      G.V2ex.topics.postReply(topicId, message.content)
+    )
   }
 
   /**
@@ -626,7 +632,7 @@ export class TopicPanelController
       throw new Error('缺少回复 id')
     }
 
-    return this.runTopicMutation(message, () => G.V2ex.thankReply(message.replyId))
+    return this.runTopicMutation(message, () => G.V2ex.topics.thankReply(message.replyId))
   }
 
   /**
@@ -640,7 +646,7 @@ export class TopicPanelController
     }
 
     const requestId = ++this.replyPageRequestId
-    const detail = await G.V2ex.getTopicDetail(this.topicId, replyPage)
+    const detail = await G.V2ex.topics.getDetail(this.topicId, replyPage)
     if (requestId !== this.replyPageRequestId) {
       return detail
     }

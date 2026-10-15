@@ -1,3 +1,4 @@
+import { getTagLink } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
 import { logger } from '@/core/logger'
@@ -41,7 +42,7 @@ export class TagPanelController
   constructor(tag: string, deps: WebviewNavigationDeps) {
     super(deps)
     this.tag = normalizeTag(tag)
-    this.key = G.V2ex.getTagLink(this.tag)
+    this.key = getTagLink(this.tag)
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
       title: this.tag,
@@ -95,7 +96,7 @@ export class TagPanelController
     this.postViewState({ status: 'loading', data: this.viewState.data })
 
     try {
-      const data = await G.V2ex.getTopicListByTag(this.tag)
+      const data = await G.V2ex.topics.getListByTag(this.tag)
       this.postViewState({ status: 'result', data })
     } catch (err) {
       logger.error('标签主题加载失败', err, { tag: this.tag })

@@ -224,7 +224,7 @@ export async function getDailySignInStatus(): Promise<DailySignInData> {
   }
 
   try {
-    const status = await G.V2ex.getDailySignInStatus()
+    const status = await G.V2ex.account.getDailySignInStatus()
     // 签到页显示已领取即视为当前任务日已签到；任务尚未刷新时页面仍会停留在上一任务日
     const signedIn = status.signedIn
     // 领域层 reward.date 已是任务日；仅今日/昨日写入本地完成缓存
@@ -357,7 +357,7 @@ async function runDailySignInWithRetry(
  */
 async function runDailySignIn(username: string): Promise<DailySignInData> {
   try {
-    const { result, reward, rewardDate } = await G.V2ex.dailySignIn()
+    const { result, reward, rewardDate } = await G.V2ex.account.dailySignIn()
     // 领域层在缺少奖励流水时可能返回 0；UI 与缓存只接受有效正数
     const normalizedReward = reward > 0 ? reward : undefined
     // rewardDate 为任务日；success / repetitive 且属于近两日时写入本地完成记录

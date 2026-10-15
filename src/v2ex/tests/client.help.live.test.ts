@@ -6,15 +6,15 @@ describe('V2exClient help', () => {
   test('loads the official help index and a linked article', async () => {
     const client = new V2exClient()
     try {
-      const home = await client.getHelpPage()
+      const home = await client.help.getPage()
       expect(home.title).toBe('站点帮助首页')
       expect(home.navigation.some(item => item.slug === 'currency')).toBe(true)
       expect(home.html).toContain('/help/currency')
-      const article = await client.getHelpPage('currency')
+      const article = await client.help.getPage('currency')
       expect(article.title).toContain('虚拟货币')
       expect(article.html.length).toBeGreaterThan(100)
       expect(article.html).toMatch(/<img[^>]+mod@2x\.png[^>]+width="30"[^>]+height="14"/)
-      const node = await client.getHelpPage('node')
+      const node = await client.help.getPage('node')
       expect(node.html.match(/style="height: 24px"/g)).toHaveLength(3)
       expect(article.navigation.length).toBeGreaterThan(1)
     } finally {
@@ -27,10 +27,10 @@ describe('official help directory coverage', () => {
   test('parses every linked help page and preserves its in-page anchors', async () => {
     const client = new V2exClient()
     try {
-      const home = await client.getHelpPage()
+      const home = await client.help.getPage()
       // 目录动态读取，原站新增主题时自动纳入覆盖
       for (const item of home.navigation) {
-        const page = item.slug === 'home' ? home : await client.getHelpPage(item.slug)
+        const page = item.slug === 'home' ? home : await client.help.getPage(item.slug)
         expect(page.title, item.slug).not.toBe('')
         expect(
           page.navigation.some(link => link.slug === item.slug),

@@ -421,10 +421,8 @@ export interface FollowingMember {
   username: string
 }
 
-/**
- * 屏蔽的用户
- */
-export interface BlockedMember {
+/** 用户编号、用户名与头像摘要 */
+export interface MemberSummary {
   /** 用户编号 */
   memberId: number
   /** 用户头像地址 */
@@ -432,6 +430,9 @@ export interface BlockedMember {
   /** 用户名 */
   username: string
 }
+
+/** 屏蔽的用户 */
+export type BlockedMember = MemberSummary
 
 /**
  * 用户基本信息
@@ -511,22 +512,6 @@ export interface MemberContentOptions {
   tab?: MemberContentTabKey
   /** 页码 */
   page?: number
-}
-
-/**
- * 用户页资料
- */
-export interface MemberProfile {
-  /** 用户基本信息 */
-  member: MemberInfo
-  /** 当前内容 */
-  content: MemberContent
-  /** 当前登录用户的特别关注列表，仅本人页提供 */
-  followingMembers?: FollowingMember[]
-  /** 当前登录用户的屏蔽列表，仅本人页提供 */
-  blockedMembers?: BlockedMember[]
-  /** 当前登录用户忽略的主题编号，仅本人页提供，用于「已忽略」标签计数 */
-  ignoredTopicIds?: number[]
 }
 
 /** SoV2EX 搜索结果主题信息 */

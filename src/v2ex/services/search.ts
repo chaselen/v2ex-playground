@@ -6,7 +6,7 @@ export class SearchService {
   constructor(private readonly session: V2exSession) {}
 
   /** 搜索 V2EX 内容 */
-  async search(params: SoV2exSearchParams): Promise<SoV2exSearchResult> {
+  async query(params: SoV2exSearchParams): Promise<SoV2exSearchResult> {
     const { data } = await this.session.get<{
       took?: unknown
       timed_out?: unknown

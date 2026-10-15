@@ -1,9 +1,10 @@
+import { getTagLink, parseTopicIdByLink } from '../links'
 import * as cheerio from 'cheerio/slim'
+import dayjs, { BEIJING_UTC_OFFSET } from '@/core/dayjs'
 import { parsePagerTotalPage } from '../parsers/common'
 import {
   parseReplies,
   parseTagTopicList,
-  parseTopicIdByLink,
   parseTopicListCells,
   parseTopicMeta
 } from '../parsers/topic'
@@ -24,27 +25,43 @@ import {
 } from '../types'
 import type { V2exSession } from '../session'
 
+/**
+ * 主题 API `/api/topics/show.json?id=` 单条成功响应字段
+ *
+ * 主题不存在时接口返回 `[]`；有结果时这些字段均会给出。
+ * `last_reply_by` 无回复时为空字符串。
+ */
+interface TopicShowApiInfo {
+  /** 主题编号 */
+  id: number
+  /** 标题 */
+  title: string
+  /** 回复数 */
+  replies: number
+  /** 创建时间 Unix 秒 */
+  created: number
+  /** 最后回复用户名；无回复时为空字符串 */
+  last_reply_by: string
+  /** 作者 */
+  member: {
+    /** 用户名 */
+    username: string
+  }
+  /** 节点 */
+  node: {
+    /** 节点 name */
+    name: string
+    /** 节点标题 */
+    title: string
+  }
+}
+
 /** V2EX 话题领域服务 */
 export class TopicService {
   constructor(
     private readonly session: V2exSession,
     private readonly baseUrl: string
   ) {}
-
-  /** 根据话题 id 获取话题链接 */
-  getLink(topicId: string | number): string {
-    return `${this.baseUrl}/t/${topicId}`
-  }
-
-  /** 根据标签名称获取标签页链接 */
-  getTagLink(tag: string): string {
-    return `${this.baseUrl}/tag/${encodeURIComponent(normalizeTag(tag))}`
-  }
-
-  /** 从链接中提取话题 id */
-  getIdByLink(topicLink: string): number | undefined {
-    return parseTopicIdByLink(topicLink)
-  }
 
   /** 根据首页标签获取话题列表 */
   async getListByTab(tab: string): Promise<Topic[]> {
@@ -55,10 +72,9 @@ export class TopicService {
 
   /** 根据标签获取话题列表 */
   async getListByTag(tag: string): Promise<TagTopicList> {
-    const normalizedTag = normalizeTag(tag)
-    const { data: html } = await this.session.get<string>(
-      `/tag/${encodeURIComponent(normalizedTag)}`
-    )
+    const tagLink = getTagLink(tag, this.baseUrl)
+    const normalizedTag = tag.trim()
+    const { data: html } = await this.session.get<string>(tagLink)
     const $ = cheerio.load(html)
     return parseTagTopicList($, normalizedTag)
   }
@@ -73,6 +89,72 @@ export class TopicService {
     topic.replyTotalPage = parsePagerTotalPage($)
     topic.replyCurrentPage = Math.min(replyPage, topic.replyTotalPage)
     return topic
+  }
+
+  /**
+   * 按主题编号列表补齐主题摘要
+   *
+   * 逐个请求 `/api/topics/show.json`；单个失败时跳过该编号，不中断整表，并保持入参顺序
+   * @param topicIds 主题编号
+   */
+  async getByIds(topicIds: number[]): Promise<Topic[]> {
+    if (!topicIds.length) {
+      return []
+    }
+
+    const topics = await Promise.all(
+      topicIds.map(async topicId => {
+        try {
+          return await this.getTopicListItemById(topicId)
+        } catch {
+          return undefined
+        }
+      })
+    )
+
+    return topics.filter((topic): topic is Topic => !!topic)
+  }
+
+  /**
+   * 按主题编号获取主题摘要
+   * @param topicId 主题编号
+   */
+  private async getTopicListItemById(topicId: number): Promise<Topic> {
+    const { data } = await this.session.get<TopicShowApiInfo[]>('/api/topics/show.json', {
+      params: { id: topicId }
+    })
+    const item = Array.isArray(data) ? data[0] : undefined
+    if (!item) {
+      throw new Error(`未找到编号为 ${topicId} 的主题`)
+    }
+
+    const title = item.title.trim()
+    if (!title) {
+      throw new Error(`未找到编号为 ${topicId} 的主题`)
+    }
+
+    const nodeName = item.node.name.trim()
+    const nodeTitle = item.node.title.trim()
+    const authorName = item.member.username.trim()
+    const lastReplyUser = item.last_reply_by.trim()
+    const publishedAt = dayjs
+      .unix(item.created)
+      .utcOffset(BEIJING_UTC_OFFSET)
+      .format('YYYY-MM-DD HH:mm:ss')
+
+    return {
+      id: item.id > 0 ? item.id : topicId,
+      title,
+      node: {
+        name: nodeName,
+        title: nodeTitle || nodeName
+      },
+      authorName: authorName || undefined,
+      replies: Math.max(0, Math.floor(item.replies)),
+      displayTime: publishedAt,
+      publishedAt,
+      lastReplyUser: lastReplyUser || undefined
+    }
   }
 
   /** 创作新主题 */
@@ -268,15 +350,6 @@ export class TopicService {
 /** 归一化页码 */
 function normalizePage(page?: number): number {
   return Number.isFinite(page) ? Math.max(1, Math.floor(Number(page))) : 1
-}
-
-/** 归一化标签名称 */
-function normalizeTag(tag: string): string {
-  const normalizedTag = tag.trim()
-  if (!normalizedTag) {
-    throw new Error('标签名称不能为空')
-  }
-  return normalizedTag
 }
 
 /** 规范化话题正文语法 */

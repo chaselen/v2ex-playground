@@ -21,7 +21,7 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 | `docs/`                              | 外部契约、设计取舍、已知边界与回归样本                             |
 | `html/` / `out/`                     | Vite / esbuild 构建产物，不手工编辑                                |
 
-`src/v2ex/client.ts` 是门面，`session.ts` 负责 HTTP、Cookie、重定向和认证处理；请求与领域逻辑放在 `services/`，HTML 解析放在 `parsers/`。业务模块不复制请求或解析逻辑。
+`src/v2ex/client.ts` 管理会话与认证，并通过 `topics`、`members`、`nodes`、`account`、`search`、`help` 暴露领域 API；认证服务和领域内部生命周期操作不对外公开。`session.ts` 负责 HTTP、Cookie、重定向和认证处理；请求与领域逻辑放在 `services/`，HTML 解析放在 `parsers/`。`links.ts` 集中不依赖会话的站点判断、路径解析与链接生成函数，外部通过 `index.ts` 使用。业务模块不复制请求或解析逻辑。
 
 ## 环境与常用命令
 

@@ -1,6 +1,8 @@
 import * as cheerio from 'cheerio/slim'
 import { parseCoinBalance } from './balance'
-import type { AccountOverview, FollowingMember } from '../types'
+import { parsePagerTotalPage } from './common'
+import { parseTopicListCells } from './topic'
+import type { AccountOverview, FollowingMember, Topic } from '../types'
 
 /**
  * 从页面 HTML 脚本中解析屏蔽用户编号
@@ -199,4 +201,12 @@ export function isSameAccountOverview(
     overview.silver === oldOverview.silver &&
     overview.bronze === oldOverview.bronze
   )
+}
+
+/** 解析收藏与特别关注页面最后一个主内容区的话题列表 */
+export function parseAccountTopics($: cheerio.CheerioAPI): { totalPage: number; list: Topic[] } {
+  return {
+    totalPage: parsePagerTotalPage($),
+    list: parseTopicListCells($, $('#Main > .box').last().children('.cell.item'))
+  }
 }

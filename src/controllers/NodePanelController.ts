@@ -1,3 +1,4 @@
+import { getNodeLink, LoginRequiredError } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
 import { logger } from '@/core/logger'
@@ -8,7 +9,7 @@ import {
   WebviewCommonController,
   type WebviewNavigationDeps
 } from '@/controllers/WebviewCommonController'
-import { LoginRequiredError } from '@/v2ex'
+
 import { notifyCollectionNodesChanged } from '@/features/nodeCollection'
 import type {
   NodePanelRpcCommands,
@@ -58,7 +59,7 @@ export class NodePanelController
   constructor(nodeName: string, title: string, deps: NodePanelNavigationDeps) {
     super(deps)
     this.nodeName = nodeName
-    this.key = G.V2ex.getNodeLink(this.nodeName)
+    this.key = getNodeLink(this.nodeName)
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
       title,
@@ -150,13 +151,13 @@ export class NodePanelController
     }
 
     if (collect) {
-      await G.V2ex.collectNode(this.nodeName)
+      await G.V2ex.nodes.collect(this.nodeName)
     } else {
-      await G.V2ex.cancelCollectNode(this.nodeName)
+      await G.V2ex.nodes.cancelCollect(this.nodeName)
     }
 
     try {
-      await G.V2ex.getAccountOverview({ force: true })
+      await G.V2ex.account.getAccountOverview({ force: true })
     } catch (err) {
       logger.error('节点收藏后刷新账户概览失败', err, { nodeName: this.nodeName })
     }
@@ -179,7 +180,7 @@ export class NodePanelController
     })
 
     try {
-      const result = await G.V2ex.getTopicListByNode(this.nodeName, nextPage)
+      const result = await G.V2ex.nodes.getTopics(this.nodeName, nextPage)
       const data: NodePanelTopicList = {
         node: result.node,
         page: nextPage,

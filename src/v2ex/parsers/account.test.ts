@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio/slim'
 import { describe, expect, it } from 'vitest'
 import {
   parseAccountOverview,
+  parseAccountTopics,
   parseBlockedMemberIds,
   parseFollowingMembers,
   parseIgnoredTopicIds
@@ -139,5 +140,23 @@ describe('parseIgnoredTopicIds', () => {
 
   it('在缺少 ignored_topics 声明时返回空列表', () => {
     expect(parseIgnoredTopicIds('<script>const blocked = [1];</script>')).toEqual([])
+  })
+})
+
+describe('parseAccountTopics', () => {
+  it('只读取最后一个主内容区，保留收藏列表的回复数和分页', () => {
+    const $ = cheerio.load(`
+      <div id="Main">
+        <div class="box"><div class="cell item"><a class="topic-link" href="/t/1">其他列表</a></div></div>
+        <div class="box">
+          <div class="cell item"><a class="topic-link" href="/t/2">收藏主题</a><span class="count_orange">3</span></div>
+          <div class="ps_container"><input class="page_input" max="4"></div>
+        </div>
+      </div>
+    `)
+    const result = parseAccountTopics($)
+    expect(result.totalPage).toBe(4)
+    expect(result.list).toHaveLength(1)
+    expect(result.list[0]).toMatchObject({ id: 2, title: '收藏主题', replies: 3 })
   })
 })

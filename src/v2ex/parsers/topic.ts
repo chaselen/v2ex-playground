@@ -1,19 +1,8 @@
+import { parseTopicIdByLink } from '../links'
 import * as cheerio from 'cheerio/slim'
 import dayjs from '@/core/dayjs'
 import { getV2exTimeSpan, type CheerioSelection } from './common'
 import type { Node, TagTopicList, Topic, TopicDetail, TopicReply } from '../types'
-
-/**
- * 从链接中提取主题id
- * @param topicLink 主题链接
- * @example "/t/1136705#reply50" -> 1136705
- * @example "https://www.v2ex.com/t/703733#reply12" -> 703733
- * @returns 主题id
- */
-export function parseTopicIdByLink(topicLink: string): number | undefined {
-  const match = topicLink.match(/t\/(\d+)/)
-  return match ? Number(match[1]) : undefined
-}
 
 /**
  * 解析话题列表项

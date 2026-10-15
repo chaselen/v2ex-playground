@@ -1,6 +1,7 @@
+import { parseTopicIdByLink } from '../links'
 import * as cheerio from 'cheerio/slim'
 import { parsePagerTotalPage, type CheerioSelection } from './common'
-import { parseTopicIdByLink, parseTopicListCells } from './topic'
+import { parseTopicListCells } from './topic'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberReply } from '../types'
 
 /**

@@ -1,7 +1,13 @@
 import * as cheerio from 'cheerio/slim'
 import { parseMemberContent, parseMemberInfo } from '../parsers/member'
 import type { V2exSession } from '../session'
-import type { MemberContent, MemberContentOptions, MemberContentTabKey, MemberInfo } from '../types'
+import type {
+  MemberContent,
+  MemberContentOptions,
+  MemberContentTabKey,
+  MemberInfo,
+  MemberSummary
+} from '../types'
 
 /** V2EX 用户 API 中的资料字段 */
 interface MemberApiInfo {
@@ -9,6 +15,35 @@ interface MemberApiInfo {
   tagline?: unknown
   /** 用户简介 */
   bio?: unknown
+}
+
+/**
+ * 成员 API `/api/members/show.json` 成功响应字段
+ *
+ * 成功时 `status` 为 `"found"`；用户不存在时返回
+ * `{ status: "error", message: "Object Not Found", ... }`。
+ */
+interface MemberShowApiInfo {
+  /** 用户编号 */
+  id: number
+  /** 用户名 */
+  username: string
+  /** 查询状态；成功时为 found */
+  status: 'found'
+  /** 常规尺寸头像 */
+  avatar_normal: string
+  /** 大尺寸头像 */
+  avatar_large: string
+  /** 迷你头像 */
+  avatar_mini: string
+}
+
+/** 成员 API 用户不存在时的错误响应 */
+interface MemberShowApiError {
+  /** 错误状态 */
+  status: 'error'
+  /** 错误信息 */
+  message: string
 }
 
 /** 用户页支持的内容标签 */
@@ -25,15 +60,7 @@ const memberContentTabs = new Set<MemberContentTabKey>([
 
 /** V2EX 用户领域服务 */
 export class MemberService {
-  constructor(
-    private readonly session: V2exSession,
-    private readonly baseUrl: string
-  ) {}
-
-  /** 根据用户名获取用户主页链接 */
-  getLink(username: string): string {
-    return `${this.baseUrl}/member/${username}`
-  }
+  constructor(private readonly session: V2exSession) {}
 
   /** 获取用户基本信息 */
   async getInfo(username: string): Promise<MemberInfo> {
@@ -49,6 +76,33 @@ export class MemberService {
       ...member,
       tagline: normalizeApiText(apiResponse.data.tagline, member.tagline),
       bio: normalizeApiText(apiResponse.data.bio)
+    }
+  }
+
+  /**
+   * 按用户编号获取用户名与头像摘要
+   * @param memberId 用户编号
+   */
+  async getSummaryById(memberId: number): Promise<MemberSummary> {
+    const { data } = await this.session.get<MemberShowApiInfo | MemberShowApiError>(
+      '/api/members/show.json',
+      {
+        params: { id: memberId }
+      }
+    )
+    if (!isMemberShowApiInfo(data)) {
+      throw new Error(`未找到编号为 ${memberId} 的用户`)
+    }
+
+    const username = data.username.trim()
+    if (!username) {
+      throw new Error(`未找到编号为 ${memberId} 的用户`)
+    }
+
+    return {
+      memberId: data.id > 0 ? data.id : memberId,
+      username,
+      avatar: pickMemberAvatar(data)
     }
   }
 
@@ -151,4 +205,36 @@ function normalizeMemberId(memberId: number): number {
  */
 function normalizeApiText(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback
+}
+
+/**
+ * 判断成员 API 响应是否为成功用户资料
+ *
+ * 成功与失败响应都带 `status`：成功为 `"found"`，失败为 `"error"`。
+ * @param data 成员 API 响应
+ */
+function isMemberShowApiInfo(
+  data: MemberShowApiInfo | MemberShowApiError
+): data is MemberShowApiInfo {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    data.status !== 'error' &&
+    'username' in data &&
+    typeof data.username === 'string'
+  )
+}
+
+/**
+ * 从成员 API 中选取列表展示头像
+ * @param member 成员 API 响应
+ */
+function pickMemberAvatar(member: MemberShowApiInfo): string {
+  for (const value of [member.avatar_normal, member.avatar_large, member.avatar_mini]) {
+    const avatar = value.trim()
+    if (avatar) {
+      return avatar
+    }
+  }
+  return ''
 }

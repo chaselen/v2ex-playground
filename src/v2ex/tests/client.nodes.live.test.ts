@@ -5,7 +5,7 @@ import { expectNode } from './client.liveTestAssertions'
 describe('V2exClient nodes', () => {
   test('gets all nodes from official JSON API', async () => {
     const client = new V2exClient()
-    const nodes = await client.getAllNodes()
+    const nodes = await client.nodes.getAll()
 
     expect(nodes.length).toBeGreaterThan(1000)
     expectNode(nodes[0])
@@ -24,7 +24,7 @@ describe('V2exClient nodes', () => {
     expect(typeof programmer?.collectCount).toBe('number')
     expect(typeof programmer?.topicCount).toBe('number')
 
-    const cached = await client.getAllNodes()
+    const cached = await client.nodes.getAll()
     expect(cached).toBe(nodes)
   })
 })

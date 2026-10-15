@@ -4,7 +4,7 @@ import { expectSearchResult, expectSearchSource } from './client.liveTestAsserti
 
 describe('V2exClient search', () => {
   test('searches SoV2EX', async () => {
-    const result = await new V2exClient().search({
+    const result = await new V2exClient().search.query({
       q: 'vscode',
       from: 0,
       size: 20,

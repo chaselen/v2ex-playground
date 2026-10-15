@@ -1,14 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import { V2exClient } from '../client'
 import { normalizeLoginCookie } from '../cookie'
+import { V2exSession } from '../session'
 
 describe('V2exClient authentication', () => {
   const v2exCookie = process.env.V2EX_COOKIE
   const authTest = v2exCookie ? test : test.skip
-
-  test('gets once token', async () => {
-    await expect(new V2exClient().getOnce()).resolves.toMatch(/^\d+$/)
-  })
 
   authTest('refreshes the authenticated session with V2EX_COOKIE', async () => {
     const client = new V2exClient(v2exCookie)
@@ -39,5 +36,11 @@ describe('V2exClient authentication', () => {
     } finally {
       client.dispose()
     }
+  })
+})
+
+describe('V2exSession authentication', () => {
+  test('gets once token', async () => {
+    await expect(new V2exSession().getOnce()).resolves.toMatch(/^\d+$/)
   })
 })

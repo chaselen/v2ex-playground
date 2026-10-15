@@ -11,37 +11,10 @@ import { normalizeLoginCookie } from './cookie'
 import { getConfigUrl } from './clientUtils'
 import { TwoFactorRequiredError } from './types'
 import type {
-  AccountOverview,
-  AccountOverviewChangedHandler,
-  BalanceDetail,
   CheckCookieResult,
-  CreateTopicInput,
-  CreateTopicResult,
-  DailySignInResult,
-  DailySignInReward,
-  DailySignInStatus,
-  BlockedMember,
-  FollowingMember,
   LoginExpiredHandler,
-  MemberContent,
-  MemberContentOptions,
-  MemberInfo,
-  Node,
-  NodeTopicList,
-  OnlineCountChangedHandler,
-  PreviewContentTarget,
-  SoV2exSearchParams,
-  SoV2exSearchResult,
-  TagTopicList,
-  Topic,
-  TopicDetail,
-  TopicManagementAction,
-  TopicManagementState,
-  TopicManagementInput,
-  TopicSyntax,
   TwoFactorRequiredHandler,
-  TwoFactorVerification,
-  V2exNotification
+  TwoFactorVerification
 } from './types'
 
 /** 普通响应中的认证 Cookie 更新合并为最多每分钟一次保存 */
@@ -75,30 +48,29 @@ export interface V2exClientOptions {
   onCredentialSaveFailed?: (error: unknown) => void
 }
 
-/** V2EX 对外客户端门面 */
+/** 管理 V2EX 会话与认证，并提供共享会话的领域 API */
 export class V2exClient {
-  /** 获取原站帮助文档 */
-  getHelpPage(slug = 'home') {
-    return new HelpService(this.session).getPage(slug)
-  }
-
   /** V2EX 服务地址 */
   readonly baseUrl: string
 
   /** V2EX HTTP 与登录会话 */
   private readonly session: V2exSession
   /** 话题领域服务 */
-  private readonly topics: TopicService
+  readonly topics: TopicService
   /** 用户领域服务 */
-  private readonly members: MemberService
+  readonly members: MemberService
   /** 节点领域服务 */
-  private readonly nodes: NodeService
+  readonly nodes: NodeService
   /** 账户内容领域服务 */
-  private readonly account: AccountService
+  readonly account: Omit<AccountService, 'reset'>
+  /** 账户服务内部生命周期操作，不向业务调用方公开 */
+  private readonly accountService: AccountService
   /** 登录认证领域服务 */
   private readonly auth: AuthService
   /** SoV2EX 搜索领域服务 */
-  private readonly searchService: SearchService
+  readonly search: SearchService
+  /** 原站帮助领域服务 */
+  readonly help: HelpService
 
   /** 当前已验证用户名 */
   private authenticatedUsername?: string
@@ -158,11 +130,13 @@ export class V2exClient {
     })
     this.baseUrl = this.session.baseUrl
     this.auth = new AuthService(this.session)
-    this.account = new AccountService(this.session)
     this.topics = new TopicService(this.session, this.baseUrl)
-    this.members = new MemberService(this.session, this.baseUrl)
+    this.members = new MemberService(this.session)
+    this.accountService = new AccountService(this.session, this.members)
+    this.account = this.accountService
     this.nodes = new NodeService(this.session, this.baseUrl)
-    this.searchService = new SearchService(this.session)
+    this.search = new SearchService(this.session)
+    this.help = new HelpService(this.session)
     this.twoFactorVerification = this.createTwoFactorVerification()
     this.session.onResponse(response => {
       if (getConfigUrl(response.config, this.baseUrl).pathname === '/2fa') return
@@ -286,407 +260,6 @@ export class V2exClient {
     }
   }
 
-  /**
-   * 监听账户概览变化
-   * @param handler 账户概览变化回调
-   */
-  onAccountOverviewChanged(handler: AccountOverviewChangedHandler): { dispose: () => void } {
-    return this.account.onAccountOverviewChanged(handler)
-  }
-
-  /**
-   * 监听在线人数变化
-   * @param handler 在线人数变化回调
-   */
-  onOnlineCountChanged(handler: OnlineCountChangedHandler): { dispose: () => void } {
-    return this.account.onOnlineCountChanged(handler)
-  }
-
-  /**
-   * 根据话题 id 获取话题链接
-   * @param topicId 话题 id
-   * @example "703733" -> "https://www.v2ex.com/t/703733"
-   */
-  getTopicLinkById(topicId: string | number) {
-    return this.topics.getLink(topicId)
-  }
-
-  /**
-   * 获取 once 参数
-   * @returns once 参数
-   */
-  getOnce(): Promise<string> {
-    return this.session.getOnce()
-  }
-
-  /**
-   * 从链接中提取话题 id
-   * @param topicLink 话题链接
-   * @example "/t/1136705#reply50" -> 1136705
-   * @returns 话题 id
-   */
-  getTopicIdByLink(topicLink: string): number | undefined {
-    return this.topics.getIdByLink(topicLink)
-  }
-
-  /**
-   * 根据用户名获取用户主页链接
-   * @param username 用户名
-   */
-  getMemberLink(username: string) {
-    return this.members.getLink(username)
-  }
-
-  /**
-   * 获取用户基本信息
-   * @param username 用户名
-   */
-  getMemberInfo(username: string): Promise<MemberInfo> {
-    return this.members.getInfo(username)
-  }
-
-  /**
-   * 获取用户活动内容
-   * @param username 用户名
-   * @param options 获取选项
-   */
-  getMemberContent(username: string, options: MemberContentOptions = {}): Promise<MemberContent> {
-    return this.members.getContent(username, options)
-  }
-
-  /**
-   * 加入用户特别关注
-   * @param memberId 用户编号
-   */
-  followMember(memberId: number): Promise<void> {
-    return this.members.follow(memberId)
-  }
-
-  /**
-   * 取消用户特别关注
-   * @param memberId 用户编号
-   */
-  unfollowMember(memberId: number): Promise<void> {
-    return this.members.unfollow(memberId)
-  }
-
-  /**
-   * 屏蔽用户
-   * @param memberId 用户编号
-   */
-  blockMember(memberId: number): Promise<void> {
-    return this.members.block(memberId)
-  }
-
-  /**
-   * 取消屏蔽用户
-   * @param memberId 用户编号
-   */
-  unblockMember(memberId: number): Promise<void> {
-    return this.members.unblock(memberId)
-  }
-
-  /**
-   * 根据首页标签获取话题列表
-   * @param tab 标签
-   */
-  getTopicListByTab(tab: string): Promise<Topic[]> {
-    return this.topics.getListByTab(tab)
-  }
-
-  /**
-   * 获取标签页链接
-   * @param tag 标签名称
-   */
-  getTagLink(tag: string): string {
-    return this.topics.getTagLink(tag)
-  }
-
-  /**
-   * 根据标签获取话题列表
-   * @param tag 标签名称
-   */
-  getTopicListByTag(tag: string): Promise<TagTopicList> {
-    return this.topics.getListByTag(tag)
-  }
-
-  /**
-   * 根据节点 name 获取节点页链接
-   * @param nodeName 节点 name
-   */
-  getNodeLink(nodeName: string): string {
-    return this.nodes.getLink(nodeName)
-  }
-
-  /**
-   * 根据节点获取话题列表
-   * @param nodeName 节点 name
-   * @param page 页码
-   */
-  getTopicListByNode(nodeName: string, page = 1): Promise<NodeTopicList> {
-    return this.nodes.getTopics(nodeName, page)
-  }
-
-  /**
-   * 获取已收藏话题
-   * @param page 页码
-   */
-  getCollectionTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
-    return this.account.getCollectionTopics(page)
-  }
-
-  /**
-   * 获取特别关注话题
-   * @param page 页码
-   */
-  getSpecialFollowingTopics(page = 1): Promise<{ totalPage: number; list: Topic[] }> {
-    return this.account.getSpecialFollowingTopics(page)
-  }
-
-  /** 获取当前登录用户特别关注的用户 */
-  getFollowingMembers(): Promise<FollowingMember[]> {
-    return this.account.getFollowingMembers()
-  }
-
-  /**
-   * 从登录态页面脚本读取屏蔽用户与忽略主题编号
-   *
-   * 返回顺序均为站点原始顺序：先屏蔽 / 先忽略在前
-   */
-  getBlockedAndIgnoredIds(): Promise<{
-    blockedMemberIds: number[]
-    ignoredTopicIds: number[]
-  }> {
-    return this.account.getBlockedAndIgnoredIds()
-  }
-
-  /**
-   * 获取当前登录用户忽略的主题编号
-   *
-   * 返回站点原始顺序：先忽略在前
-   */
-  getIgnoredTopicIds(): Promise<number[]> {
-    return this.account.getIgnoredTopicIds()
-  }
-
-  /**
-   * 一次请求同时返回屏蔽用户摘要与忽略主题编号
-   *
-   * `blockedMembers` / `ignoredTopicIds` 均为站点原始顺序：先屏蔽 / 先忽略在前。
-   * `blockedMembers` 在成员 API 查不到或失败时会跳过对应编号，长度可能短于脚本 `blocked`
-   */
-  getBlockedMembersAndIgnoredTopicIds(): Promise<{
-    blockedMembers: BlockedMember[]
-    ignoredTopicIds: number[]
-  }> {
-    return this.account.getBlockedMembersAndIgnoredTopicIds()
-  }
-
-  /**
-   * 获取当前登录用户屏蔽的用户
-   *
-   * 返回顺序与脚本一致：先屏蔽在前。
-   * 成员不存在或请求失败时跳过该编号，结果长度可能小于脚本中的 `blocked` 原始数量
-   */
-  getBlockedMembers(): Promise<BlockedMember[]> {
-    return this.account.getBlockedMembers()
-  }
-
-  /**
-   * 按主题编号列表补齐主题摘要
-   *
-   * 逐个请求 `/api/topics/show.json`；单个失败时跳过该编号，保持入参顺序
-   * @param topicIds 主题编号
-   */
-  getTopicsByIds(topicIds: number[]): Promise<Topic[]> {
-    return this.account.getTopicsByIds(topicIds)
-  }
-
-  /**
-   * 获取提醒消息列表
-   * @param page 页码
-   */
-  getNotifications(
-    page = 1
-  ): Promise<{ totalPage: number; totalCount: number; list: V2exNotification[] }> {
-    return this.account.getNotifications(page)
-  }
-
-  /** 删除提醒消息 */
-  deleteNotification(notificationId: number): Promise<void> {
-    return this.account.deleteNotification(notificationId)
-  }
-
-  /**
-   * 获取话题详情
-   * @param topicId 话题 id
-   * @param page 回复页码
-   */
-  getTopicDetail(topicId: number, page = 1): Promise<TopicDetail> {
-    return this.topics.getDetail(topicId, page)
-  }
-
-  /** 检查作者权限并读取管理初始化数据 */
-  prepareTopicManagement(
-    topicId: number,
-    action: TopicManagementAction
-  ): Promise<TopicManagementState> {
-    return this.topics.prepareManagement(topicId, action)
-  }
-
-  /** 修改、移动主题或添加附言 */
-  manageTopic(topicId: number, input: TopicManagementInput): Promise<void> {
-    return this.topics.manage(topicId, input)
-  }
-
-  /** 创作新主题 */
-  createTopic(input: CreateTopicInput): Promise<CreateTopicResult> {
-    return this.topics.create(input)
-  }
-
-  /**
-   * 获取账户概览
-   * @param options 获取选项
-   */
-  async getAccountOverview(options: { force?: boolean } = {}): Promise<AccountOverview> {
-    return this.account.getAccountOverview(options)
-  }
-
-  /**
-   * 获取在线人数
-   * @param options 获取选项
-   */
-  async getOnlineCount(options: { force?: boolean } = {}): Promise<number | undefined> {
-    return this.account.getOnlineCount(options)
-  }
-
-  /**
-   * 获取账户余额详情
-   * @param page 页码
-   */
-  getBalance(page = 1): Promise<BalanceDetail> {
-    return this.account.getBalance(page)
-  }
-
-  /**
-   * 提交回复
-   * @param topicId 话题 id
-   * @param content 回复内容
-   */
-  postReply(topicId: number, content: string): Promise<void> {
-    return this.topics.postReply(topicId, content)
-  }
-
-  /**
-   * 预览话题或回复内容
-   * @param text 预览内容
-   * @param syntax 预览语法
-   * @param target 预览目标
-   */
-  previewContent(text: string, syntax: TopicSyntax, target: PreviewContentTarget): Promise<string> {
-    return this.topics.previewContent(text, syntax, target)
-  }
-
-  /**
-   * 感谢回复者
-   * @param replyId 回复 id
-   */
-  thankReply(replyId: string): Promise<void> {
-    return this.topics.thankReply(replyId)
-  }
-
-  /**
-   * 感谢话题
-   * @param topicId 话题 id
-   */
-  thankTopic(topicId: number): Promise<void> {
-    return this.topics.thankTopic(topicId)
-  }
-
-  /** 获取全部节点 */
-  getAllNodes(): Promise<Node[]> {
-    return this.nodes.getAll()
-  }
-
-  /** 获取已收藏节点 */
-  getCollectionNodes(): Promise<Node[]> {
-    return this.nodes.getCollection()
-  }
-
-  /** 查询每日签到状态 */
-  getDailySignInStatus(): Promise<DailySignInStatus> {
-    return this.account.getDailySignInStatus()
-  }
-
-  /** 查询最新一条签到奖励 */
-  getDailySignInReward(): Promise<DailySignInReward | undefined> {
-    return this.account.getDailySignInReward()
-  }
-
-  /**
-   * 每日签到
-   * @returns 签到结果
-   */
-  dailySignIn(): Promise<DailySignInResult> {
-    return this.account.dailySignIn()
-  }
-
-  /**
-   * 收藏话题
-   * @param topicId 话题 id
-   */
-  collectTopic(topicId: number): Promise<void> {
-    return this.topics.collect(topicId)
-  }
-
-  /**
-   * 取消收藏话题
-   * @param topicId 话题 id
-   */
-  cancelCollectTopic(topicId: number): Promise<void> {
-    return this.topics.cancelCollect(topicId)
-  }
-
-  /**
-   * 忽略话题
-   * @param topicId 话题 id
-   */
-  ignoreTopic(topicId: number): Promise<void> {
-    return this.topics.ignore(topicId)
-  }
-
-  /**
-   * 取消忽略话题
-   * @param topicId 话题 id
-   */
-  cancelIgnoreTopic(topicId: number): Promise<void> {
-    return this.topics.cancelIgnore(topicId)
-  }
-
-  /**
-   * 收藏节点
-   * @param nodeName 节点 name
-   */
-  collectNode(nodeName: string): Promise<void> {
-    return this.nodes.collect(nodeName)
-  }
-
-  /**
-   * 取消收藏节点
-   * @param nodeName 节点 name
-   */
-  cancelCollectNode(nodeName: string): Promise<void> {
-    return this.nodes.cancelCollect(nodeName)
-  }
-
-  /**
-   * 使用 SoV2EX 搜索
-   * @param params 搜索参数
-   */
-  search(params: SoV2exSearchParams): Promise<SoV2exSearchResult> {
-    return this.searchService.search(params)
-  }
-
   /** 获取当前登录状态检查任务 */
   private getAuthenticationCheck(force = false): Promise<boolean> {
     const revision = this.authRevision
@@ -795,7 +368,7 @@ export class V2exClient {
     this.authRevision += 1
     this.session.setCookie(cookie)
     this.authenticatedUsername = username
-    this.account.reset()
+    this.accountService.reset()
     this.twoFactorVerification = this.createTwoFactorVerification()
   }
 
@@ -817,7 +390,7 @@ export class V2exClient {
     this.clearCredentialSaveTimer()
     this.loginExpirationRevision = undefined
     this.authenticatedUsername = undefined
-    this.account.reset()
+    this.accountService.reset()
     this.twoFactorVerification = this.createTwoFactorVerification()
   }
 

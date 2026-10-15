@@ -58,6 +58,6 @@ export class SearchPanelController
 
   /** 执行站内搜索 */
   rpc_search(params: SoV2exSearchParams) {
-    return G.V2ex.search(params)
+    return G.V2ex.search.query(params)
   }
 }

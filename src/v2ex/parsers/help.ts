@@ -1,10 +1,6 @@
 import * as cheerio from 'cheerio/slim'
 import type { HelpPage } from '../types'
-
-/** 从原站帮助路径提取主题，仅接受单一路径段 */
-export function getHelpSlug(path: string): string | undefined {
-  return path.match(/^\/help\/([a-z0-9-]+)\/?$/)?.[1]
-}
+import { getHelpSlug } from '../links'
 
 /** 解析帮助正文与目录；结构不匹配时显式报错，避免展示登录页或验证页 */
 export function parseHelpPage(html: string, slug: string): HelpPage {

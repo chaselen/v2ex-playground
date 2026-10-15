@@ -69,7 +69,7 @@ export class HelpPanelController
     const revision = ++this.revision
     this.post({ status: 'loading', slug, data: this.state.data })
     try {
-      const data = await G.V2ex.getHelpPage(slug)
+      const data = await G.V2ex.help.getPage(slug)
       if (revision !== this.revision) return
       this.panel.title = formatPanelTitle(data.title)
       this.post({ status: 'result', slug, data })

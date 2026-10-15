@@ -48,7 +48,7 @@ function expectLosslessTree(replies: TopicReply[], tree: TopicReplyNode[]) {
 
 describe.concurrent('buildReplyTree live V2EX topics', () => {
   it('1030787：正确处理多人引用后的单个楼层号', async () => {
-    const topic = await client.getTopicDetail(1030787)
+    const topic = await client.topics.getDetail(1030787)
     const tree = buildReplyTree(topic.replies, extractText)
 
     expect(topic.replies.length).toBeGreaterThanOrEqual(90)
@@ -59,8 +59,8 @@ describe.concurrent('buildReplyTree live V2EX topics', () => {
 
   it('1149556：高回复数低引用帖子保持无损', async () => {
     const [firstPage, secondPage] = await Promise.all([
-      client.getTopicDetail(1149556, 1),
-      client.getTopicDetail(1149556, 2)
+      client.topics.getDetail(1149556, 1),
+      client.topics.getDetail(1149556, 2)
     ])
 
     for (const topic of [firstPage, secondPage]) {
@@ -71,7 +71,7 @@ describe.concurrent('buildReplyTree live V2EX topics', () => {
   })
 
   it('95398：只有用户名的连续对话可以形成多层结构', async () => {
-    const topic = await client.getTopicDetail(95398)
+    const topic = await client.topics.getDetail(95398)
     const tree = buildReplyTree(topic.replies, extractText)
 
     expect(topic.replies.length).toBeGreaterThanOrEqual(60)
@@ -80,7 +80,7 @@ describe.concurrent('buildReplyTree live V2EX topics', () => {
   })
 
   it('919083：混合正确楼层、错误楼层和多人引用时保持无损', async () => {
-    const topic = await client.getTopicDetail(919083)
+    const topic = await client.topics.getDetail(919083)
     const tree = buildReplyTree(topic.replies, extractText)
 
     expect(topic.replies.length).toBeGreaterThanOrEqual(90)

@@ -43,6 +43,94 @@ function createLoginRedirectResponse(internals: SessionInternals): AxiosResponse
 }
 
 describe('V2exSession authentication responses', () => {
+  test.each(['/signin', '/2fa', '/restricted'])(
+    'does not attach cookies or process authentication on an HTTP request redirecting to %s',
+    async path => {
+      const expired = vi.fn()
+      const required = vi.fn(async () => true)
+      const verified = vi.fn()
+      const responseHandler = vi.fn()
+      const session = new V2exSession('A2=valid', {
+        onLoginExpired: expired,
+        onTwoFactorRequired: required,
+        onTwoFactorVerified: verified
+      })
+      session.onResponse(responseHandler)
+      const internals = session as unknown as SessionInternals
+      const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => ({
+        config,
+        data: '',
+        status: 302,
+        statusText: 'Found',
+        headers: { location: path, 'set-cookie': ['A2=insecure; Path=/'] }
+      }))
+      internals.http.defaults.adapter = adapter
+
+      await expect(
+        session.get('http://www.v2ex.com/notifications', {
+          maxRedirects: 0,
+          validateStatus: status => status < 400
+        })
+      ).resolves.toMatchObject({ status: 302 })
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(adapter.mock.calls[0][0].headers.get('Cookie')).toBeUndefined()
+      expect(session.getLoginCookie()).toBe('A2=valid')
+      expect(expired).not.toHaveBeenCalled()
+      expect(required).not.toHaveBeenCalled()
+      expect(verified).not.toHaveBeenCalled()
+      expect(responseHandler).not.toHaveBeenCalled()
+    }
+  )
+
+  test('strips cookies when an HTTPS request redirects to HTTP', () => {
+    const session = new V2exSession('A2=valid')
+    const internals = session as unknown as SessionInternals
+    const headers = { Cookie: 'A2=valid' }
+    internals.handleBeforeRedirect(
+      'http://www.v2ex.com/notifications',
+      headers,
+      { 'set-cookie': 'A2=refreshed; Path=/' },
+      'https://www.v2ex.com/'
+    )
+    expect(headers).not.toHaveProperty('Cookie')
+    expect(session.getLoginCookie()).toBe('A2=refreshed')
+  })
+
+  test('ignores HTTP Set-Cookie while preparing a redirect back to HTTPS', () => {
+    const session = new V2exSession('A2=valid')
+    const internals = session as unknown as SessionInternals
+    const headers: Record<string, unknown> = {}
+    internals.handleBeforeRedirect(
+      'https://www.v2ex.com/',
+      headers,
+      { 'set-cookie': 'A2=insecure; Path=/' },
+      'http://www.v2ex.com/'
+    )
+    expect(session.getLoginCookie()).toBe('A2=valid')
+    expect(headers.Cookie).toBe('A2=valid')
+  })
+
+  test.each(['/signin', '/2fa', '/restricted'])(
+    'does not treat an explicit HTTP %s redirect as an authentication response',
+    async path => {
+      const expired = vi.fn()
+      const required = vi.fn(async () => true)
+      const session = new V2exSession('A2=valid', {
+        onLoginExpired: expired,
+        onTwoFactorRequired: required
+      })
+      const internals = session as unknown as SessionInternals
+      const response = createLoginRedirectResponse(internals)
+      response.status = 302
+      response.headers = { location: `http://www.v2ex.com${path}` }
+      response.request = { path: '/notifications', _redirectable: { _redirectCount: 0 } }
+      await expect(internals.handleResponse(response)).resolves.toBe(response)
+      expect(session.getLoginCookie()).toBe('A2=valid')
+      expect(expired).not.toHaveBeenCalled()
+      expect(required).not.toHaveBeenCalled()
+    }
+  )
+
   test('clears and reports an expired login only once for concurrent responses', async () => {
     const loginExpiredHandler = vi.fn()
     const session = new V2exSession('A2=expired-cookie', {

@@ -99,11 +99,11 @@ export default class MainViewProvider
       this
     )
     this._accountOverviewChangedDisposable?.dispose()
-    this._accountOverviewChangedDisposable = G.V2ex.onAccountOverviewChanged(
+    this._accountOverviewChangedDisposable = G.V2ex.account.onAccountOverviewChanged(
       (overview, oldOverview) => this._handleAccountOverviewChanged(overview, oldOverview)
     )
     this._onlineCountChangedDisposable?.dispose()
-    this._onlineCountChangedDisposable = G.V2ex.onOnlineCountChanged(onlineCount =>
+    this._onlineCountChangedDisposable = G.V2ex.account.onOnlineCountChanged(onlineCount =>
       this._updateOnlineCountTitle(onlineCount)
     )
     this._dailySignInStatusDisposable?.dispose()
@@ -195,7 +195,7 @@ export default class MainViewProvider
 
   /** 删除当前账户的提醒消息 */
   rpc_deleteNotification(input: { notificationId: number }) {
-    return G.V2ex.deleteNotification(input.notificationId)
+    return G.V2ex.account.deleteNotification(input.notificationId)
   }
 
   /** 获取每日签到状态 */
@@ -371,7 +371,7 @@ export default class MainViewProvider
       return { nodes: [] }
     }
 
-    const nodes = await G.V2ex.getCollectionNodes()
+    const nodes = await G.V2ex.nodes.getCollection()
     return {
       nodes: toWebviewNodesWithAvatars(nodes)
     }
@@ -387,7 +387,7 @@ export default class MainViewProvider
 
     return {
       loggedIn: true,
-      accountOverview: await G.V2ex.getAccountOverview({ force: true })
+      accountOverview: await G.V2ex.account.getAccountOverview({ force: true })
     }
   }
 
@@ -408,9 +408,9 @@ export default class MainViewProvider
       let totalCount = 0
 
       if (tab === 'explore') {
-        topics = await G.V2ex.getTopicListByTab(itemKey)
+        topics = await G.V2ex.topics.getListByTab(itemKey)
       } else {
-        const res = await G.V2ex.getTopicListByNode(itemKey, page)
+        const res = await G.V2ex.nodes.getTopics(itemKey, page)
         topics = res.list
         totalPage = Math.max(res.totalPage || 1, 1)
         totalCount = Math.max(res.totalCount || 0, 0)
@@ -458,7 +458,7 @@ export default class MainViewProvider
         title: '获取节点信息',
         location: vscode.ProgressLocation.Notification
       },
-      () => G.V2ex.getAllNodes()
+      () => G.V2ex.nodes.getAll()
     )
 
     const customNodeNames = new Set(getCustomNodes().map(node => node.name))
@@ -494,8 +494,8 @@ export default class MainViewProvider
         location: vscode.ProgressLocation.Notification
       },
       async () => ({
-        allNodes: await G.V2ex.getAllNodes(),
-        collectionNodes: await G.V2ex.getCollectionNodes()
+        allNodes: await G.V2ex.nodes.getAll(),
+        collectionNodes: await G.V2ex.nodes.getCollection()
       })
     )
     const collectionNodeNames = new Set(collectionNodes.map(node => node.name))
@@ -510,10 +510,10 @@ export default class MainViewProvider
       return { nodes: toWebviewNodesWithAvatars(collectionNodes) }
     }
 
-    await G.V2ex.collectNode(select.name)
-    const nodes = await G.V2ex.getCollectionNodes()
+    await G.V2ex.nodes.collect(select.name)
+    const nodes = await G.V2ex.nodes.getCollection()
     try {
-      await G.V2ex.getAccountOverview({ force: true })
+      await G.V2ex.account.getAccountOverview({ force: true })
     } catch (err) {
       logger.error('主视图操作失败', err)
     }
@@ -539,9 +539,9 @@ export default class MainViewProvider
       throw new LoginRequiredError('取消收藏节点前请先登录')
     }
 
-    await G.V2ex.cancelCollectNode(nodeName)
+    await G.V2ex.nodes.cancelCollect(nodeName)
     try {
-      await G.V2ex.getAccountOverview({ force: true })
+      await G.V2ex.account.getAccountOverview({ force: true })
     } catch (err) {
       logger.error('主视图操作失败', err)
     }
@@ -581,8 +581,8 @@ export default class MainViewProvider
 
     const result =
       tab === 'topicCollection'
-        ? await G.V2ex.getCollectionTopics(page)
-        : await G.V2ex.getSpecialFollowingTopics(page)
+        ? await G.V2ex.account.getCollectionTopics(page)
+        : await G.V2ex.account.getSpecialFollowingTopics(page)
 
     return {
       tab,
@@ -606,7 +606,7 @@ export default class MainViewProvider
       }
     }
 
-    const result = await G.V2ex.getNotifications(page)
+    const result = await G.V2ex.account.getNotifications(page)
 
     return {
       page,

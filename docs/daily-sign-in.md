@@ -1,6 +1,6 @@
 # 每日签到的状态与边界
 
-签到编排在 `src/features/dailySignIn.ts`，请求在 `src/v2ex/services/account.ts`，余额解析在 `src/v2ex/parsers/balance.ts`。
+签到编排在 `src/features/dailySignIn.ts`，请求在 `src/v2ex/services/account.ts`，签到页面解析在 `src/v2ex/parsers/dailySignIn.ts`，余额解析在 `src/v2ex/parsers/balance.ts`。
 
 ## 页面状态与到账记录
 

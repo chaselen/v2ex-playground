@@ -1,3 +1,4 @@
+import { getMemberLink, LoginRequiredError } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
@@ -8,16 +9,16 @@ import {
   WebviewCommonController,
   type WebviewNavigationDeps
 } from '@/controllers/WebviewCommonController'
-import { LoginRequiredError } from '@/v2ex'
+
 import type {
   BlockedMember,
   FollowingMember,
   MemberContent,
   MemberContentTabKey,
-  MemberInfo,
-  MemberProfile
+  MemberInfo
 } from '@/v2ex'
 import type {
+  MemberProfile,
   MemberPanelRpcCommands,
   MemberPanelViewState,
   MemberPanelWebviewEvents,
@@ -69,7 +70,7 @@ export class MemberPanelController
   constructor(username: string, deps: WebviewNavigationDeps) {
     super(deps)
     this.username = username
-    this.key = G.V2ex.getMemberLink(this.username)
+    this.key = getMemberLink(this.username)
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
       title: this.username,
@@ -242,8 +243,8 @@ export class MemberPanelController
     }
 
     const [member, content] = await Promise.all([
-      G.V2ex.getMemberInfo(this.username),
-      G.V2ex.getMemberContent(this.username)
+      G.V2ex.members.getInfo(this.username),
+      G.V2ex.members.getContent(this.username)
     ])
     this.isSelf = await this.resolveIsSelf(member.username)
     const relationMembers = this.isSelf ? await this.loadRelationMembers() : undefined
@@ -283,8 +284,8 @@ export class MemberPanelController
       return this.loadIgnoredTopicsContent(page)
     }
 
-    const content = await G.V2ex.getMemberContent(this.username, { tab, page })
-    const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
+    const content = await G.V2ex.members.getContent(this.username, { tab, page })
+    const member = this.profile?.member || (await G.V2ex.members.getInfo(this.username))
     this.profile = this.createProfile(member, content)
     this.panel.title = formatPanelTitle(this.profile.member.username)
     return this.profile
@@ -303,7 +304,8 @@ export class MemberPanelController
     }
 
     const ignoredTopicIds =
-      this.profile?.ignoredTopicIds ?? toIgnoredTopicDisplayOrder(await G.V2ex.getIgnoredTopicIds())
+      this.profile?.ignoredTopicIds ??
+      toIgnoredTopicDisplayOrder(await G.V2ex.account.getIgnoredTopicIds())
     return this.applyIgnoredTopicsContent(ignoredTopicIds, page)
   }
 
@@ -322,7 +324,7 @@ export class MemberPanelController
       throw new Error('未找到主题编号，无法取消忽略')
     }
 
-    await G.V2ex.cancelIgnoreTopic(topicId)
+    await G.V2ex.topics.cancelIgnore(topicId)
 
     const ignoredTopicIds = (this.profile?.ignoredTopicIds ?? []).filter(id => id !== topicId)
     const currentPage = this.profile?.content.tab === 'ignored' ? this.profile.content.page : 1
@@ -346,8 +348,8 @@ export class MemberPanelController
       totalCount,
       totalPage
     } = paginateIds(ignoredTopicIds, page, IGNORED_TOPICS_PAGE_SIZE)
-    const topics = await G.V2ex.getTopicsByIds(pageTopicIds)
-    const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
+    const topics = await G.V2ex.topics.getByIds(pageTopicIds)
+    const member = this.profile?.member || (await G.V2ex.members.getInfo(this.username))
     const content: MemberContent = {
       tab: 'ignored',
       page: currentPage,
@@ -378,7 +380,7 @@ export class MemberPanelController
       throw new LoginRequiredError(`${getMemberRelationLabel(action)}前请先登录`)
     }
 
-    const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
+    const member = this.profile?.member || (await G.V2ex.members.getInfo(this.username))
     if (!member.memberId) {
       throw new Error('未找到用户编号，无法更新用户关系')
     }
@@ -386,7 +388,7 @@ export class MemberPanelController
     await updateMemberRelation(action, member.memberId)
 
     try {
-      await G.V2ex.getAccountOverview({ force: true })
+      await G.V2ex.account.getAccountOverview({ force: true })
     } catch (err) {
       logger.error('用户关系更新后刷新账户概览失败', err, {
         username: this.username,
@@ -395,10 +397,10 @@ export class MemberPanelController
     }
 
     const [nextMember, content] = await Promise.all([
-      G.V2ex.getMemberInfo(this.username),
+      G.V2ex.members.getInfo(this.username),
       this.profile?.content
         ? Promise.resolve(this.profile.content)
-        : G.V2ex.getMemberContent(this.username)
+        : G.V2ex.members.getContent(this.username)
     ])
     this.profile = this.createProfile(nextMember, content)
     this.panel.title = formatPanelTitle(this.profile.member.username)
@@ -431,7 +433,7 @@ export class MemberPanelController
     await updateMemberRelation(action, memberId)
 
     try {
-      await G.V2ex.getAccountOverview({ force: true })
+      await G.V2ex.account.getAccountOverview({ force: true })
     } catch (err) {
       logger.error('关系列表更新后刷新账户概览失败', err, {
         memberId,
@@ -440,8 +442,8 @@ export class MemberPanelController
     }
 
     const relationMembers = await this.loadRelationMembers()
-    const member = this.profile?.member || (await G.V2ex.getMemberInfo(this.username))
-    const content = this.profile?.content || (await G.V2ex.getMemberContent(this.username))
+    const member = this.profile?.member || (await G.V2ex.members.getInfo(this.username))
+    const content = this.profile?.content || (await G.V2ex.members.getContent(this.username))
     this.profile = this.createProfile(
       member,
       content,
@@ -497,7 +499,7 @@ export class MemberPanelController
   /** 获取本人页的特别关注列表 */
   private async loadFollowingMembers(): Promise<FollowingMember[]> {
     try {
-      return await G.V2ex.getFollowingMembers()
+      return await G.V2ex.account.getFollowingMembers()
     } catch (err) {
       logger.error('特别关注列表加载失败', err, { username: this.username })
       return []
@@ -510,7 +512,8 @@ export class MemberPanelController
     ignoredTopicIds: number[]
   }> {
     try {
-      const { blockedMembers, ignoredTopicIds } = await G.V2ex.getBlockedMembersAndIgnoredTopicIds()
+      const { blockedMembers, ignoredTopicIds } =
+        await G.V2ex.account.getBlockedMembersAndIgnoredTopicIds()
       return {
         blockedMembers,
         ignoredTopicIds: toIgnoredTopicDisplayOrder(ignoredTopicIds)
@@ -605,13 +608,13 @@ function getMemberRelationLabel(action: MemberRelationAction): string {
 function updateMemberRelation(action: MemberRelationAction, memberId: number): Promise<void> {
   switch (action) {
     case 'follow':
-      return G.V2ex.followMember(memberId)
+      return G.V2ex.members.follow(memberId)
     case 'unfollow':
-      return G.V2ex.unfollowMember(memberId)
+      return G.V2ex.members.unfollow(memberId)
     case 'block':
-      return G.V2ex.blockMember(memberId)
+      return G.V2ex.members.block(memberId)
     case 'unblock':
-      return G.V2ex.unblockMember(memberId)
+      return G.V2ex.members.unblock(memberId)
   }
 }
 

@@ -10,8 +10,8 @@ import {
   getHeader,
   getResponseUrl,
   hasFollowedRedirect,
-  isV2exPath,
-  isV2exUrl,
+  isV2exSessionUrl,
+  isV2exSessionPath,
   removeCookieHeader
 } from './clientUtils'
 import {
@@ -20,9 +20,7 @@ import {
   TwoFactorRequiredError,
   type LoginExpiredHandler
 } from './types'
-
-/** V2EX 服务地址 */
-export const V2EX_BASE_URL = 'https://www.v2ex.com'
+import { V2EX_BASE_URL } from './links'
 
 /** V2EX 登录 Cookie 的服务端作用域 */
 const V2EX_LOGIN_COOKIE_SCOPE = 'Domain=.v2ex.com; Path=/'
@@ -167,7 +165,7 @@ export class V2exSession {
     this.updateCookieFromHeaders(headers, responseUrl)
     const redirectUrl = new URL(redirectHref)
     removeCookieHeader(redirectHeaders)
-    if (isV2exUrl(redirectUrl)) {
+    if (isV2exSessionUrl(redirectUrl)) {
       redirectHeaders.Cookie = this.getCookie(redirectUrl.toString())
     }
   }
@@ -175,7 +173,7 @@ export class V2exSession {
   /** 为 V2EX 请求附加 Cookie */
   private attachCookieToRequest(config: AxiosResponse['config']): AxiosResponse['config'] {
     const requestUrl = getConfigUrl(config, this.baseUrl)
-    if (!isV2exUrl(requestUrl)) return config
+    if (!isV2exSessionUrl(requestUrl)) return config
     config.headers = config.headers || {}
     if (!findCookieHeaderName(config.headers)) {
       config.headers.Cookie = this.getCookie(requestUrl.toString())
@@ -185,7 +183,7 @@ export class V2exSession {
 
   /** 统一处理 V2EX 响应 */
   private async handleResponse(response: AxiosResponse): Promise<AxiosResponse> {
-    if (!isV2exUrl(getConfigUrl(response.config, this.baseUrl))) return response
+    if (!isV2exSessionUrl(getConfigUrl(response.config, this.baseUrl))) return response
     this.updateCookieFromResponse(response)
     const twoFactorResponse = await this.handleTwoFactorResponse(response)
     if (twoFactorResponse !== response) return twoFactorResponse
@@ -209,7 +207,7 @@ export class V2exSession {
 
   /** 从响应头更新 Cookie */
   private updateCookieFromHeaders(headers: Record<string, unknown>, responseUrl: string): void {
-    if (!isV2exUrl(new URL(responseUrl))) return
+    if (!isV2exSessionUrl(new URL(responseUrl))) return
     const setCookie = headers['set-cookie']
     if (!setCookie) return
     const cookies = Array.isArray(setCookie) ? setCookie : [setCookie]
@@ -260,7 +258,7 @@ export class V2exSession {
   /** 刷新重试请求配置中的 Cookie */
   private refreshConfigCookie(config: AxiosResponse['config']): void {
     const requestUrl = getConfigUrl(config, this.baseUrl)
-    if (!isV2exUrl(requestUrl)) return
+    if (!isV2exSessionUrl(requestUrl)) return
     config.headers = config.headers || {}
     const cookieHeaderName = findCookieHeaderName(config.headers) || 'Cookie'
     config.headers[cookieHeaderName] = this.getCookie(requestUrl.toString())
@@ -269,43 +267,43 @@ export class V2exSession {
   /** 判断响应是否要求两步验证 */
   private isTwoFactorResponse(response: AxiosResponse): boolean {
     const requestUrl = getConfigUrl(response.config, this.baseUrl)
-    if (!isV2exUrl(requestUrl) || requestUrl.pathname === '/2fa') return false
+    if (!isV2exSessionUrl(requestUrl) || requestUrl.pathname === '/2fa') return false
     const location = getHeader(response.headers, 'location')
     if (location && response.status >= 300 && response.status < 400) {
-      return isV2exPath(new URL(location, requestUrl), '/2fa')
+      return isV2exSessionPath(new URL(location, requestUrl), '/2fa')
     }
     if (!hasFollowedRedirect(response)) return false
-    return isV2exPath(new URL(getResponseUrl(response, this.baseUrl)), '/2fa')
+    return isV2exSessionPath(new URL(getResponseUrl(response, this.baseUrl)), '/2fa')
   }
 
   /** 检查受保护页面的异常重定向 */
   private async checkRedirectFromResponse(response: AxiosResponse): Promise<void> {
     const requestUrl = getConfigUrl(response.config, this.baseUrl)
-    if (!isV2exUrl(requestUrl)) return
+    if (!isV2exSessionUrl(requestUrl)) return
     const location = getHeader(response.headers, 'location')
     const explicitRedirect = location && response.status >= 300 && response.status < 400
     if (!explicitRedirect && !hasFollowedRedirect(response)) return
     const responseUrl = explicitRedirect
       ? new URL(location, requestUrl)
       : new URL(getResponseUrl(response, this.baseUrl))
-    if (isV2exPath(responseUrl, '/2fa') && requestUrl.pathname !== '/2fa') {
+    if (isV2exSessionPath(responseUrl, '/2fa') && requestUrl.pathname !== '/2fa') {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
-    if (isV2exPath(responseUrl, '/signin') && requestUrl.pathname !== '/signin') {
+    if (isV2exSessionPath(responseUrl, '/signin') && requestUrl.pathname !== '/signin') {
       // 清理失败仍按登录失效结束请求，凭据清理由客户端继续重试
       await this.expireLogin().catch(() => undefined)
       throw new LoginRequiredError(
         requestUrl.pathname === '/write' ? '创作新主题需要先登录' : '你要查看的页面需要先登录'
       )
     }
-    if (isV2exPath(responseUrl, '/restricted') && requestUrl.pathname !== '/restricted') {
+    if (isV2exSessionPath(responseUrl, '/restricted') && requestUrl.pathname !== '/restricted') {
       throw new AccountRestrictedError(
         '访问受限，详情请查看 <a href="https://www.v2ex.com/restricted">https://www.v2ex.com/restricted</a>'
       )
     }
     if (explicitRedirect || !isRedirectCheckPath(requestUrl.pathname)) return
-    if (isV2exUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) return
-    if (isV2exPath(responseUrl, '/')) {
+    if (isV2exSessionUrl(responseUrl) && responseUrl.pathname === requestUrl.pathname) return
+    if (isV2exSessionPath(responseUrl, '/')) {
       if (this.getLoginCookie()) throw new Error('您无权访问此页面')
       throw new LoginRequiredError('你要查看的页面需要先登录')
     }

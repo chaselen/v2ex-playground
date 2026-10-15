@@ -6,8 +6,8 @@ const client = new V2exClient()
 
 describe.sequential('V2exClient members', () => {
   test('gets member info and default activity from public member page', async () => {
-    const member = await client.getMemberInfo('livid')
-    const content = await client.getMemberContent('livid')
+    const member = await client.members.getInfo('livid')
+    const content = await client.members.getContent('livid')
 
     expect(member.username.toLowerCase()).toBe('livid')
     expect(member.memberId).toBe(1)
@@ -25,8 +25,15 @@ describe.sequential('V2exClient members', () => {
     expectTopic(content.topics[0])
   })
 
+  test('gets member summary by id through the public domain API', async () => {
+    await expect(client.members.getSummaryById(1)).resolves.toMatchObject({
+      memberId: 1,
+      username: 'Livid'
+    })
+  })
+
   test('distinguishes member tagline from bio', async () => {
-    const member = await client.getMemberInfo('loading')
+    const member = await client.members.getInfo('loading')
 
     expect(member.tagline).not.toBe('')
     expect(member.bio).not.toBe('')
@@ -35,7 +42,7 @@ describe.sequential('V2exClient members', () => {
   })
 
   test('handles hidden member topic list', async () => {
-    const hiddenTopics = await client.getMemberContent('suzhaharcan')
+    const hiddenTopics = await client.members.getContent('suzhaharcan')
 
     expect(hiddenTopics.hidden).toBe(true)
     expect(hiddenTopics.message).toMatch(/hidden|隐藏/)
@@ -43,7 +50,7 @@ describe.sequential('V2exClient members', () => {
   })
 
   test('gets member category topics', async () => {
-    const content = await client.getMemberContent('livid', { tab: 'qna' })
+    const content = await client.members.getContent('livid', { tab: 'qna' })
 
     expect(content.tab).toBe('qna')
     expect(content.topics.length).toBeGreaterThan(0)
@@ -52,7 +59,7 @@ describe.sequential('V2exClient members', () => {
   })
 
   test('gets paged member replies', async () => {
-    const replies = await client.getMemberContent('livid', { tab: 'replies', page: 2 })
+    const replies = await client.members.getContent('livid', { tab: 'replies', page: 2 })
 
     expect(replies.tab).toBe('replies')
     expect(replies.page).toBe(2)

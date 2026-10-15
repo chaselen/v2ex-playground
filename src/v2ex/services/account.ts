@@ -1,19 +1,20 @@
 import * as cheerio from 'cheerio/slim'
 import type { AxiosResponse } from 'axios'
 import picomatch from 'picomatch'
-import dayjs, { BEIJING_UTC_OFFSET } from '@/core/dayjs'
-import { getConfigUrl, isV2exUrl } from '../clientUtils'
+import { getConfigUrl, isV2exSessionUrl } from '../clientUtils'
 import {
   isSameAccountOverview,
   parseAccountOverview,
   parseBlockedMemberIds,
   parseFollowingMembers,
   parseIgnoredTopicIds,
-  parseOnlineCount
+  parseOnlineCount,
+  parseAccountTopics
 } from '../parsers/account'
 import { parseBalance, parseLatestDailySignInReward } from '../parsers/balance'
-import { parsePagerTotalPage } from '../parsers/common'
-import { parseTopicIdByLink, parseTopicListCells } from '../parsers/topic'
+import { parseNotifications } from '../parsers/notification'
+import { parseDailySignInPage } from '../parsers/dailySignIn'
+import type { MemberService } from './member'
 import type { V2exSession } from '../session'
 import {
   LoginRequiredError,
@@ -29,66 +30,6 @@ import {
   type Topic,
   type V2exNotification
 } from '../types'
-
-/**
- * 成员 API `/api/members/show.json` 成功响应字段
- *
- * 成功时 `status` 为 `"found"`；用户不存在时返回
- * `{ status: "error", message: "Object Not Found", ... }`。
- */
-interface MemberShowApiInfo {
-  /** 用户编号 */
-  id: number
-  /** 用户名 */
-  username: string
-  /** 查询状态；成功时为 found */
-  status: 'found'
-  /** 常规尺寸头像 */
-  avatar_normal: string
-  /** 大尺寸头像 */
-  avatar_large: string
-  /** 迷你头像 */
-  avatar_mini: string
-}
-
-/** 成员 API 用户不存在时的错误响应 */
-interface MemberShowApiError {
-  /** 错误状态 */
-  status: 'error'
-  /** 错误信息 */
-  message: string
-}
-
-/**
- * 主题 API `/api/topics/show.json?id=` 单条成功响应字段
- *
- * 主题不存在时接口返回 `[]`；有结果时这些字段均会给出。
- * `last_reply_by` 无回复时为空字符串。
- */
-interface TopicShowApiInfo {
-  /** 主题编号 */
-  id: number
-  /** 标题 */
-  title: string
-  /** 回复数 */
-  replies: number
-  /** 创建时间 Unix 秒 */
-  created: number
-  /** 最后回复用户名；无回复时为空字符串 */
-  last_reply_by: string
-  /** 作者 */
-  member: {
-    /** 用户名 */
-    username: string
-  }
-  /** 节点 */
-  node: {
-    /** 节点 name */
-    name: string
-    /** 节点标题 */
-    title: string
-  }
-}
 
 /** 会返回账户概览的 V2EX 页面路径 */
 const isAccountOverviewPath = picomatch([
@@ -119,7 +60,10 @@ export class AccountService {
   /** 在线人数变化监听器 */
   private readonly onlineCountChangedHandlers = new Set<OnlineCountChangedHandler>()
 
-  constructor(private readonly session: V2exSession) {
+  constructor(
+    private readonly session: V2exSession,
+    private readonly members: Pick<MemberService, 'getSummaryById'>
+  ) {
     this.session.onResponse(response => this.updateFromResponse(response))
   }
 
@@ -165,7 +109,7 @@ export class AccountService {
   private updateFromResponse(response: AxiosResponse): void {
     if (typeof response.data !== 'string') return
     const requestUrl = getConfigUrl(response.config, this.session.baseUrl)
-    if (!isV2exUrl(requestUrl)) return
+    if (!isV2exSessionUrl(requestUrl)) return
     const $ = cheerio.load(response.data)
     if (isAccountOverviewPath(requestUrl.pathname)) {
       const overview = parseAccountOverview($)
@@ -262,30 +206,6 @@ export class AccountService {
   }
 
   /**
-   * 按主题编号列表补齐主题摘要
-   *
-   * 逐个请求 `/api/topics/show.json`；单个失败时跳过该编号，不中断整表，并保持入参顺序
-   * @param topicIds 主题编号
-   */
-  async getTopicsByIds(topicIds: number[]): Promise<Topic[]> {
-    if (!topicIds.length) {
-      return []
-    }
-
-    const topics = await Promise.all(
-      topicIds.map(async topicId => {
-        try {
-          return await this.getTopicListItemById(topicId)
-        } catch {
-          return undefined
-        }
-      })
-    )
-
-    return topics.filter((topic): topic is Topic => !!topic)
-  }
-
-  /**
    * 按屏蔽用户编号补齐头像与用户名
    * @param blockedMemberIds 屏蔽用户编号
    */
@@ -297,7 +217,7 @@ export class AccountService {
     const members = await Promise.all(
       blockedMemberIds.map(async memberId => {
         try {
-          return await this.getMemberListItemById(memberId)
+          return await this.members.getSummaryById(memberId)
         } catch {
           return undefined
         }
@@ -307,75 +227,6 @@ export class AccountService {
     return members.filter((member): member is BlockedMember => !!member)
   }
 
-  /**
-   * 按用户编号获取关系列表所需的用户摘要
-   * @param memberId 用户编号
-   */
-  private async getMemberListItemById(memberId: number): Promise<BlockedMember> {
-    const { data } = await this.session.get<MemberShowApiInfo | MemberShowApiError>(
-      '/api/members/show.json',
-      {
-        params: { id: memberId }
-      }
-    )
-    if (!isMemberShowApiInfo(data)) {
-      throw new Error(`未找到编号为 ${memberId} 的用户`)
-    }
-
-    const username = data.username.trim()
-    if (!username) {
-      throw new Error(`未找到编号为 ${memberId} 的用户`)
-    }
-
-    return {
-      memberId: data.id > 0 ? data.id : memberId,
-      username,
-      avatar: pickMemberAvatar(data)
-    }
-  }
-
-  /**
-   * 按主题编号获取忽略列表所需的主题摘要
-   * @param topicId 主题编号
-   */
-  private async getTopicListItemById(topicId: number): Promise<Topic> {
-    const { data } = await this.session.get<TopicShowApiInfo[]>('/api/topics/show.json', {
-      params: { id: topicId }
-    })
-    const item = Array.isArray(data) ? data[0] : undefined
-    if (!item) {
-      throw new Error(`未找到编号为 ${topicId} 的主题`)
-    }
-
-    const title = item.title.trim()
-    if (!title) {
-      throw new Error(`未找到编号为 ${topicId} 的主题`)
-    }
-
-    const nodeName = item.node.name.trim()
-    const nodeTitle = item.node.title.trim()
-    const authorName = item.member.username.trim()
-    const lastReplyUser = item.last_reply_by.trim()
-    const publishedAt = dayjs
-      .unix(item.created)
-      .utcOffset(BEIJING_UTC_OFFSET)
-      .format('YYYY-MM-DD HH:mm:ss')
-
-    return {
-      id: item.id > 0 ? item.id : topicId,
-      title,
-      node: {
-        name: nodeName,
-        title: nodeTitle || nodeName
-      },
-      authorName: authorName || undefined,
-      replies: Math.max(0, Math.floor(item.replies)),
-      displayTime: publishedAt,
-      publishedAt,
-      lastReplyUser: lastReplyUser || undefined
-    }
-  }
-
   /** 获取提醒列表 */
   async getNotifications(page = 1): Promise<{
     totalPage: number
@@ -383,35 +234,7 @@ export class AccountService {
     list: V2exNotification[]
   }> {
     const { data: html } = await this.session.get<string>(`/notifications?p=${page}`)
-    const $ = cheerio.load(html)
-    const list: V2exNotification[] = []
-    $('#notifications > .cell[id^="n_"]').each((_, element) => {
-      const cell = $(element)
-      const avatar = cell.find('img.avatar').first()
-      const member = cell.find('a[href^="/member/"]').first()
-      const summary = cell.find('span.fade').first()
-      const topic = summary.find('a.topic-link').first()
-      const topicPath = topic.attr('href') || ''
-      const id = Number((cell.attr('id') || '').replace(/^n_/, '')) || 0
-      if (!id) return
-      list.push({
-        id,
-        avatar: avatar.attr('src') || '',
-        username: member.text().trim() || avatar.attr('alt') || '',
-        memberPath: member.attr('href') || '',
-        summaryHtml: summary.html()?.trim() || '',
-        topicId: topicPath ? parseTopicIdByLink(topicPath) : undefined,
-        topicTitle: topic.text().trim() || undefined,
-        topicPath: topicPath || undefined,
-        time: cell.find('span.snow').first().text().trim(),
-        payloadHtml: cell.find('.payload').first().html()?.trim() || ''
-      })
-    })
-    return {
-      totalPage: parsePagerTotalPage($),
-      totalCount: Number($('.header .fr strong.gray').first().text().trim() || 0),
-      list
-    }
+    return parseNotifications(cheerio.load(html))
   }
 
   /** 删除前获取最新 once，避免使用已被其他写操作消耗的页面令牌 */
@@ -435,7 +258,7 @@ export class AccountService {
   /** 查询每日签到状态 */
   async getDailySignInStatus(): Promise<DailySignInStatus> {
     const { data: html } = await this.session.get<string>('/mission/daily')
-    if (!cheerio.load(html)('.fa.fa-ok-sign').length) {
+    if (!parseDailySignInPage(cheerio.load(html)).signedIn) {
       return { signedIn: false }
     }
     return {
@@ -477,26 +300,19 @@ export class AccountService {
 
     try {
       const { data: html } = await this.session.get<string>('/mission/daily')
-      const $ = cheerio.load(html)
+      const { signedIn, once } = parseDailySignInPage(cheerio.load(html))
 
       // 记录领取前最新奖励，用任务日确认领取后是否产生了新流水
       const previousReward = await this.findDailySignInReward()
 
       // 签到页尚未刷新到新一天时，页面仍会显示已领取，最新奖励可能属于前一个任务日
-      // <span class="gray"><li class="fa fa-ok-sign" style="color: #0c0;"></li> &nbsp;每日登录奖励已领取</span>
-      if ($('.fa.fa-ok-sign').length) {
+      if (signedIn) {
         return {
           result: 'repetitive',
           reward: previousReward?.reward || 0,
           rewardDate: previousReward?.date
         }
       }
-
-      // 尚未签到，从领取按钮中解析本次请求所需的 once 参数
-      const once = $('input[value^="领取"]')
-        .first()
-        .attr('onclick')
-        ?.match(/\/mission\/daily\/redeem\?once=(\d+)/)?.[1]
 
       // 页面既没有已领取标记，也没有有效的领取入口
       if (!once) return failed
@@ -523,11 +339,7 @@ export class AccountService {
   /** 获取账户话题列表 */
   private async getTopicList(path: string, page: number) {
     const { data: html } = await this.session.get<string>(`${path}?p=${page}`)
-    const $ = cheerio.load(html)
-    return {
-      totalPage: parsePagerTotalPage($),
-      list: parseTopicListCells($, $('#Main > .box').last().children('.cell.item'))
-    }
+    return parseAccountTopics(cheerio.load(html))
   }
 }
 
@@ -546,38 +358,6 @@ function createEmptyAccountOverview(): AccountOverview {
     silver: 0,
     bronze: 0
   }
-}
-
-/**
- * 判断成员 API 响应是否为成功用户资料
- *
- * 成功与失败响应都带 `status`：成功为 `"found"`，失败为 `"error"`。
- * @param data 成员 API 响应
- */
-function isMemberShowApiInfo(
-  data: MemberShowApiInfo | MemberShowApiError
-): data is MemberShowApiInfo {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    data.status !== 'error' &&
-    'username' in data &&
-    typeof data.username === 'string'
-  )
-}
-
-/**
- * 从成员 API 中选取列表展示头像
- * @param member 成员 API 响应
- */
-function pickMemberAvatar(member: MemberShowApiInfo): string {
-  for (const value of [member.avatar_normal, member.avatar_large, member.avatar_mini]) {
-    const avatar = value.trim()
-    if (avatar) {
-      return avatar
-    }
-  }
-  return ''
 }
 
 /** 归一化页码 */

@@ -13,15 +13,6 @@ export class NodeService {
     private readonly baseUrl: string
   ) {}
 
-  /**
-   * 根据节点 name 获取节点页链接
-   * 节点 name 来自 `/go/{name}` 路径段，本身无需 URL 编码
-   * @param nodeName 节点 name
-   */
-  getLink(nodeName: string): string {
-    return `${this.baseUrl}/go/${nodeName}`
-  }
-
   /** 获取节点话题列表 */
   async getTopics(nodeName: string, page = 1): Promise<NodeTopicList> {
     const { data: html } = await this.session.get<string>(`/go/${nodeName}?p=${page}`)

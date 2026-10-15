@@ -35,7 +35,7 @@ export async function notifyCollectionNodesChanged(): Promise<void> {
       return
     }
 
-    const nodes = await G.V2ex.getCollectionNodes()
+    const nodes = await G.V2ex.nodes.getCollection()
     await dispatchCollectionNodesChanged({
       nodes: toWebviewNodesWithAvatars(nodes)
     })

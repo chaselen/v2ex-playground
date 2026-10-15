@@ -36,13 +36,6 @@ function createNodePageHtml(options: {
 }
 
 describe('NodeService', () => {
-  test('builds node links without encoding node names', () => {
-    const service = new NodeService({} as V2exSession, 'https://www.v2ex.com')
-    expect(service.getLink('programmer')).toBe('https://www.v2ex.com/go/programmer')
-    expect(service.getLink('vibe-coding')).toBe('https://www.v2ex.com/go/vibe-coding')
-    expect(service.getLink('0x10c')).toBe('https://www.v2ex.com/go/0x10c')
-  })
-
   test('maps topic and collection counts from all-nodes API', async () => {
     const get = vi.fn().mockResolvedValue({
       data: [

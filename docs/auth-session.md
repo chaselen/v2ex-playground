@@ -12,9 +12,9 @@
 
 `LoginCredentialStore` 通过最小的 `LoginCookieStore` 接口注入，只提供 `load()` 和 `save(cookie)`。两步验证 UI 通过 `onTwoFactorRequired(verification)` 注入，客户端只向其提供 `verification.submitCode(code)`。后台凭据保存失败通过 `onCredentialSaveFailed(error)` 通知扩展，由扩展记录日志并显示提示。因此客户端不依赖 VS Code 扩展上下文、Webview Controller 或全局状态，`TwoFactorPanelController` 也不读取全局客户端。
 
-领域 Service 只依赖 `V2exSession`，不读写 SecretStorage，也不维护登录状态。认证状态仅由 `V2exClient` 维护。
+领域 Service 共享 `V2exSession`，跨领域查询能力由 Client 显式注入，不读写 SecretStorage，也不维护登录状态。认证状态仅由 `V2exClient` 维护。客户端通过只读领域入口提供业务 API；账户入口的公开类型排除 `reset()`，缓存清理由客户端在认证状态变化时统一执行。各领域入口共享正式业务 Session，切换账号或退出后无需重新获取入口或绑定事件监听。
 
-`V2exSession.getOnce()` 通过当前会话请求 `/poll_once`，不缓存返回值；领域 Service 在提交前直接调用，`V2exClient.getOnce()` 作为对外门面委托给 Session。节点收藏和每日签到从提交前刚获取的页面解析令牌并立即使用，不保存到页面状态或长期缓存。
+`V2exSession.getOnce()` 通过当前会话请求 `/poll_once`，不缓存返回值；领域 Service 在提交前直接调用，令牌获取不向客户端业务调用方公开。节点收藏和每日签到从提交前刚获取的页面解析令牌并立即使用，不保存到页面状态或长期缓存。
 
 ## 对外认证 API
 
@@ -44,6 +44,8 @@
 进程重启后只恢复 A2/A2O，不持久化已验证用户名、布尔状态或 CookieJar 中的内部 Cookie。V2EX 后续响应会重新建立运行时所需的其他 Cookie。
 
 ## Cookie 的运行时与持久化
+
+通用 `isV2exUrl()` / `isV2exPath()` 识别 HTTP 与 HTTPS 链接；会话通过独立的 HTTPS 判断限制 Cookie 附加、写入和认证重定向处理。
 
 CookieJar 保存当前进程中的完整 V2EX Cookie。请求只向适用的 V2EX 地址附加 Cookie；SoV2EX 等外部地址不携带 V2EX Cookie。V2EX 响应和自动重定向中的 `Set-Cookie` 更新运行时 CookieJar，跨域重定向不会带出 V2EX Cookie。
 

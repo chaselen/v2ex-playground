@@ -17,10 +17,6 @@ vi.mock('../services/auth', () => ({
       return checkCookieMock(this.session)
     }
 
-    getOnce(): Promise<string> {
-      return Promise.resolve('once')
-    }
-
     submitTwoFactorCode(code: string): Promise<void> {
       return submitTwoFactorCodeMock(this.session, code)
     }
@@ -102,6 +98,66 @@ describe('V2exClient authentication', () => {
     expect(client.getLoginCookie()).toBe('A2=login; A2O=two-factor')
     expect(client.hasLoginSession()).toBe(true)
   })
+
+  test.each(['switch', 'logout', 'expire'] as const)(
+    'preserves domain references and subscriptions while clearing account caches on %s',
+    async action => {
+      checkCookieMock.mockResolvedValue({ isValid: true, username: 'OldUser' })
+      const client = new V2exClient('A2=old')
+      const account = client.account
+      const topics = client.topics
+      const onlineChanged = vi.fn()
+      const subscription = account.onOnlineCountChanged(onlineChanged)
+      const cookies: string[] = []
+      let username = 'OldUser'
+      let onlineCount = 42
+      setAdapter(client, config => {
+        cookies.push(String(config.headers.get('Cookie') || ''))
+        return {
+          status: 200,
+          data: `
+            <body><div id="Rightbar"><div class="box">
+              ${username ? `<a href="/member/${username}">${username}</a><div id="member-activity"></div>` : ''}
+            </div></div>
+            <div>${onlineCount} 人在线</div></body>
+          `
+        }
+      })
+      try {
+        await client.ensureAuthenticated()
+        await topics.getListByTab('all')
+        expect((await account.getAccountOverview()).username).toBe('OldUser')
+        expect(await account.getOnlineCount()).toBe(42)
+        expect(cookies).toHaveLength(1)
+        expect(cookies[0]).toContain('A2=old')
+
+        username = action === 'switch' ? 'NewUser' : ''
+        onlineCount = 24
+        if (action === 'switch') {
+          checkCookieMock.mockResolvedValue({ isValid: true, username })
+          await expect(client.switchLoginCookie('A2=new')).resolves.toBe('authenticated')
+        } else if (action === 'logout') {
+          await client.logout()
+        } else {
+          await getClientSession(client).expireLogin()
+        }
+
+        expect(client.account).toBe(account)
+        expect(client.topics).toBe(topics)
+        expect((await account.getAccountOverview()).username).toBe(username)
+        expect(await account.getOnlineCount()).toBe(24)
+        expect(cookies).toHaveLength(2)
+        expect(cookies[1]).not.toContain('A2=old')
+        if (action === 'switch') expect(cookies[1]).toContain('A2=new')
+        else expect(cookies[1]).not.toContain('A2=')
+        expect(onlineChanged).toHaveBeenNthCalledWith(1, 42, undefined)
+        expect(onlineChanged).toHaveBeenNthCalledWith(2, 24, undefined)
+      } finally {
+        subscription.dispose()
+        client.dispose()
+      }
+    }
+  )
 
   test('loads persisted credentials but waits for validation before marking authenticated', async () => {
     const { store, load } = createLoginCookieStore('A2=persisted')

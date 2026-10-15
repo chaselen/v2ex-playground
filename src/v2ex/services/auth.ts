@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio/slim'
 import { parseAccountOverview } from '../parsers/account'
-import { getHeader, isV2exPath } from '../clientUtils'
+import { getHeader, isV2exSessionPath } from '../clientUtils'
 import type { V2exSession } from '../session'
 import { LoginRequiredError, type CheckCookieResult } from '../types'
 
@@ -45,7 +45,7 @@ export class AuthService {
     if (
       response.status === 302 &&
       location &&
-      isV2exPath(new URL(location, this.session.baseUrl), '/')
+      isV2exSessionPath(new URL(location, this.session.baseUrl), '/')
     )
       return
     const problem = cheerio

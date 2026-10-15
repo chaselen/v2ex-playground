@@ -1,6 +1,6 @@
+import { parseTopicIdByLink } from '@/v2ex'
 import vscode from 'vscode'
 import { openTopic as openTopicPanel } from '@/features/panelNavigation'
-import G from '@/global'
 
 /**
  * 使用原生输入框获取帖子 ID 或链接并打开帖子面板
@@ -37,6 +37,6 @@ function parseTopicId(input: string): number | undefined {
     return Number.isSafeInteger(topicId) && topicId > 0 ? topicId : undefined
   }
 
-  const topicId = G.V2ex.getTopicIdByLink(normalizedInput)
+  const topicId = parseTopicIdByLink(normalizedInput)
   return topicId && Number.isSafeInteger(topicId) && topicId > 0 ? topicId : undefined
 }

@@ -38,7 +38,7 @@ describe('AuthService two-factor submission', () => {
     })
   })
 
-  test.each(['/2fa', '/other', 'https://example.com/'])(
+  test.each(['/2fa', '/other', 'https://example.com/', 'http://www.v2ex.com/'])(
     'rejects %s without reentering the verification callback',
     async location => {
       const { service, required, requests } = createAuthService(location)
