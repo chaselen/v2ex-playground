@@ -193,6 +193,11 @@ export default class MainViewProvider
     return this._handleGetMyNotifications(page)
   }
 
+  /** 删除当前账户的提醒消息 */
+  rpc_deleteNotification(input: { notificationId: number }) {
+    return G.V2ex.deleteNotification(input.notificationId)
+  }
+
   /** 获取每日签到状态 */
   rpc_getDailySignInStatus() {
     return this._handleGetDailySignInStatus()

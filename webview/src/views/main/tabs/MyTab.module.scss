@@ -388,6 +388,33 @@
   }
 }
 
+.my-notification-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.my-notification-delete {
+  margin-left: auto;
+  opacity: 0;
+  pointer-events: none;
+
+  .my-notification-item:hover &,
+  .my-notification-item:focus-within &,
+  &[data-state='open'],
+  &[aria-busy='true'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (hover: none) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .my-notification-avatar-link {
   align-self: start;
   width: 28px;

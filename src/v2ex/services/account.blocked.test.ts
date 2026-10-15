@@ -46,12 +46,15 @@ describe('AccountService blocked members', () => {
 
       throw new Error(`unexpected url: ${url}`)
     })
-    const service = new AccountService({
-      get,
-      onResponse: () => undefined,
-      baseUrl: 'https://www.v2ex.com',
-      getLoginCookie: () => ''
-    } as unknown as V2exSession)
+    const service = new AccountService(
+      {
+        get,
+        onResponse: () => undefined,
+        baseUrl: 'https://www.v2ex.com',
+        getLoginCookie: () => ''
+      } as unknown as V2exSession,
+      vi.fn()
+    )
 
     await expect(service.getBlockedMembers()).resolves.toEqual([
       {
@@ -101,12 +104,15 @@ describe('AccountService blocked members', () => {
 
       throw new Error(`unexpected url: ${url}`)
     })
-    const service = new AccountService({
-      get,
-      onResponse: () => undefined,
-      baseUrl: 'https://www.v2ex.com',
-      getLoginCookie: () => ''
-    } as unknown as V2exSession)
+    const service = new AccountService(
+      {
+        get,
+        onResponse: () => undefined,
+        baseUrl: 'https://www.v2ex.com',
+        getLoginCookie: () => ''
+      } as unknown as V2exSession,
+      vi.fn()
+    )
 
     await expect(service.getBlockedMembers()).resolves.toEqual([
       {
@@ -140,12 +146,15 @@ describe('AccountService blocked members', () => {
 
       throw new Error(`unexpected url: ${url}`)
     })
-    const service = new AccountService({
-      get,
-      onResponse: () => undefined,
-      baseUrl: 'https://www.v2ex.com',
-      getLoginCookie: () => ''
-    } as unknown as V2exSession)
+    const service = new AccountService(
+      {
+        get,
+        onResponse: () => undefined,
+        baseUrl: 'https://www.v2ex.com',
+        getLoginCookie: () => ''
+      } as unknown as V2exSession,
+      vi.fn()
+    )
 
     await expect(service.getBlockedMembers()).resolves.toEqual([
       {
@@ -170,12 +179,15 @@ describe('AccountService blocked members', () => {
       }
       throw new Error(`unexpected url: ${url}`)
     })
-    const service = new AccountService({
-      get,
-      onResponse: () => undefined,
-      baseUrl: 'https://www.v2ex.com',
-      getLoginCookie: () => ''
-    } as unknown as V2exSession)
+    const service = new AccountService(
+      {
+        get,
+        onResponse: () => undefined,
+        baseUrl: 'https://www.v2ex.com',
+        getLoginCookie: () => ''
+      } as unknown as V2exSession,
+      vi.fn()
+    )
 
     await expect(service.getBlockedAndIgnoredIds()).resolves.toEqual({
       blockedMemberIds: [350370],
@@ -207,12 +219,15 @@ describe('AccountService blocked members', () => {
 
       throw new Error(`unexpected url: ${url}`)
     })
-    const service = new AccountService({
-      get,
-      onResponse: () => undefined,
-      baseUrl: 'https://www.v2ex.com',
-      getLoginCookie: () => ''
-    } as unknown as V2exSession)
+    const service = new AccountService(
+      {
+        get,
+        onResponse: () => undefined,
+        baseUrl: 'https://www.v2ex.com',
+        getLoginCookie: () => ''
+      } as unknown as V2exSession,
+      vi.fn()
+    )
 
     await expect(service.getBlockedMembersAndIgnoredTopicIds()).resolves.toEqual({
       blockedMembers: [
@@ -258,12 +273,15 @@ describe('AccountService blocked members', () => {
 
       throw new Error(`unexpected url: ${url}`)
     })
-    const service = new AccountService({
-      get,
-      onResponse: () => undefined,
-      baseUrl: 'https://www.v2ex.com',
-      getLoginCookie: () => ''
-    } as unknown as V2exSession)
+    const service = new AccountService(
+      {
+        get,
+        onResponse: () => undefined,
+        baseUrl: 'https://www.v2ex.com',
+        getLoginCookie: () => ''
+      } as unknown as V2exSession,
+      vi.fn()
+    )
 
     await expect(service.getBlockedMembers()).resolves.toEqual([
       {
@@ -314,12 +332,15 @@ describe('AccountService blocked members', () => {
 
       throw new Error(`unexpected url: ${url}`)
     })
-    const service = new AccountService({
-      get,
-      onResponse: () => undefined,
-      baseUrl: 'https://www.v2ex.com',
-      getLoginCookie: () => ''
-    } as unknown as V2exSession)
+    const service = new AccountService(
+      {
+        get,
+        onResponse: () => undefined,
+        baseUrl: 'https://www.v2ex.com',
+        getLoginCookie: () => ''
+      } as unknown as V2exSession,
+      vi.fn()
+    )
 
     await expect(service.getTopicsByIds([3, 2, 1])).resolves.toEqual([
       {

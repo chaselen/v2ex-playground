@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type Ref } from 'react'
-import { CircleCheck, CircleHelp, Gift, Inbox, SquarePen, UserRound } from 'lucide-react'
+import { CircleCheck, CircleHelp, Gift, Inbox, SquarePen, Trash2, UserRound } from 'lucide-react'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import CurrencyBalance from '@/components/CurrencyBalance'
 import SimpleBar from 'simplebar-react'
@@ -10,6 +10,7 @@ import {
   Badge,
   Button,
   Empty,
+  ConfirmPopover,
   Progress,
   RadioGroup,
   RadioGroupItem,
@@ -173,6 +174,9 @@ export default function MyTab(props: MyTabProps) {
   const [notificationList, setNotificationList] = useState<MyNotificationListState>(
     createMyNotificationListState
   )
+  const [deletingNotification, setDeletingNotification] = useState<number | null>(null)
+  const [notificationDeleteError, setNotificationDeleteError] = useState<string | null>(null)
+  const notificationDeletePending = useRef(false)
   const [dailySignedIn, setDailySignedIn] = useState(false)
   const [dailySignInReward, setDailySignInReward] = useState<number>()
   const [dailySignInLoading, setDailySignInLoading] = useState(false)
@@ -309,6 +313,7 @@ export default function MyTab(props: MyTabProps) {
       specialFollowing: createMyTopicListState()
     })
     setNotificationList(createMyNotificationListState())
+    setNotificationDeleteError(null)
     setDailySignedIn(false)
     setDailySignInReward(undefined)
     setDailySignInLoading(false)
@@ -379,6 +384,7 @@ export default function MyTab(props: MyTabProps) {
    * @param page 页码
    */
   async function loadMyNotifications(page: number) {
+    setNotificationDeleteError(null)
     const requestSeq = notificationRequestSeq.current + 1
     notificationRequestSeq.current = requestSeq
 
@@ -525,6 +531,36 @@ export default function MyTab(props: MyTabProps) {
     })
   }
 
+  /** 删除成功后刷新列表，末页删空时退回上一页；账户切换后忽略旧操作结果 */
+  async function deleteNotification(notification: WebviewNotification) {
+    if (notificationDeletePending.current) return
+    notificationDeletePending.current = true
+    const accountKey = accountKeyRef.current
+    const page = notificationList.page
+    const nextPage = notificationList.notifications.length === 1 ? Math.max(1, page - 1) : page
+    setDeletingNotification(notification.id)
+    setNotificationDeleteError(null)
+    try {
+      await vscode.deleteNotification({ notificationId: notification.id })
+      if (accountKeyRef.current !== accountKey) return
+      notificationRequestSeq.current += 1
+      setNotificationList(current => ({
+        ...current,
+        page: nextPage,
+        notifications: current.notifications.filter(item => item.id !== notification.id),
+        totalCount: Math.max(0, current.totalCount - 1)
+      }))
+      await loadMyNotifications(nextPage)
+    } catch (err) {
+      if (accountKeyRef.current === accountKey) {
+        setNotificationDeleteError((err as Error).message)
+      }
+    } finally {
+      notificationDeletePending.current = false
+      setDeletingNotification(null)
+    }
+  }
+
   /**
    * 渲染消息行
    * @param notification 提醒消息
@@ -557,7 +593,27 @@ export default function MyTab(props: MyTabProps) {
                 __html: normalizeHtml(notification.summaryHtml)
               }}
             />
-            {!!notification.time && <time>{notification.time}</time>}
+            <div className={styles['my-notification-footer']}>
+              {!!notification.time && <time>{notification.time}</time>}
+              <ConfirmPopover
+                title="删除这条消息？"
+                confirmText="删除"
+                danger
+                disabled={notificationList.loading || deletingNotification !== null}
+                onConfirm={() => deleteNotification(notification)}
+              >
+                <Button
+                  variant="ghost"
+                  size="small"
+                  className={styles['my-notification-delete']}
+                  aria-label="删除消息"
+                  title="删除消息"
+                  loading={deletingNotification === notification.id}
+                  disabled={notificationList.loading || deletingNotification !== null}
+                  icon={<Trash2 aria-hidden="true" />}
+                />
+              </ConfirmPopover>
+            </div>
           </div>
           {!!notification.payloadHtml && (
             <div
@@ -670,6 +726,7 @@ export default function MyTab(props: MyTabProps) {
 
     return (
       <>
+        {notificationDeleteError && <p role="alert">删除失败：{notificationDeleteError}</p>}
         <div className={styles['my-notification-list']}>
           {state.notifications.map(renderNotificationItem)}
         </div>
@@ -679,7 +736,7 @@ export default function MyTab(props: MyTabProps) {
               currentPage={state.page}
               totalPage={state.totalPage}
               totalCount={state.totalCount}
-              disabled={state.loading}
+              disabled={state.loading || deletingNotification !== null}
               onPageChange={page => {
                 if (page !== state.page) {
                   void changeContentPage(() => loadMyNotifications(page))

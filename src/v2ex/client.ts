@@ -158,7 +158,7 @@ export class V2exClient {
     })
     this.baseUrl = this.session.baseUrl
     this.auth = new AuthService(this.session)
-    this.account = new AccountService(this.session)
+    this.account = new AccountService(this.session, () => this.getOnce())
     this.topics = new TopicService(this.session, this.baseUrl, () => this.auth.getOnce())
     this.members = new MemberService(this.session, this.baseUrl, () => this.auth.getOnce())
     this.nodes = new NodeService(this.session, this.baseUrl)
@@ -510,6 +510,11 @@ export class V2exClient {
     page = 1
   ): Promise<{ totalPage: number; totalCount: number; list: V2exNotification[] }> {
     return this.account.getNotifications(page)
+  }
+
+  /** 删除提醒消息 */
+  deleteNotification(notificationId: number): Promise<void> {
+    return this.account.deleteNotification(notificationId)
   }
 
   /**

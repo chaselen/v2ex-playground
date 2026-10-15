@@ -23,7 +23,7 @@ describe('AccountService authentication session', () => {
       onResponse: vi.fn()
     } as unknown as V2exSession
 
-    await expect(new AccountService(session).dailySignIn()).resolves.toEqual({
+    await expect(new AccountService(session, vi.fn()).dailySignIn()).resolves.toEqual({
       result: 'failed',
       reward: 0
     })
@@ -40,7 +40,7 @@ describe('AccountService authentication session', () => {
       getLoginCookie,
       onResponse: vi.fn()
     } as unknown as V2exSession
-    const service = new AccountService(session)
+    const service = new AccountService(session, vi.fn())
     const findDailySignInReward = vi
       .spyOn(
         service as unknown as {
@@ -71,7 +71,7 @@ describe('AccountService authentication session', () => {
       getLoginCookie: () => loginCookie,
       onResponse: vi.fn()
     } as unknown as V2exSession
-    const service = new AccountService(session)
+    const service = new AccountService(session, vi.fn())
     const findDailySignInReward = vi
       .spyOn(
         service as unknown as {
@@ -107,7 +107,7 @@ describe('AccountService authentication session', () => {
       getLoginCookie,
       onResponse: vi.fn()
     } as unknown as V2exSession
-    const service = new AccountService(session)
+    const service = new AccountService(session, vi.fn())
     vi.spyOn(
       service as unknown as {
         findDailySignInReward(): Promise<{ date: string; reward: number } | undefined>

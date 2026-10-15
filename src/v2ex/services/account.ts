@@ -119,7 +119,10 @@ export class AccountService {
   /** 在线人数变化监听器 */
   private readonly onlineCountChangedHandlers = new Set<OnlineCountChangedHandler>()
 
-  constructor(private readonly session: V2exSession) {
+  constructor(
+    private readonly session: V2exSession,
+    private readonly getOnce: () => Promise<string>
+  ) {
     this.session.onResponse(response => this.updateFromResponse(response))
   }
 
@@ -412,6 +415,17 @@ export class AccountService {
       totalCount: Number($('.header .fr strong.gray').first().text().trim() || 0),
       list
     }
+  }
+
+  /** 删除前获取最新 once，避免使用已被其他写操作消耗的页面令牌 */
+  async deleteNotification(notificationId: number): Promise<void> {
+    if (!Number.isSafeInteger(notificationId) || notificationId <= 0) {
+      throw new Error('无效的消息编号')
+    }
+    const once = await this.getOnce()
+    await this.session.post(
+      `/delete/notification/${notificationId}?once=${encodeURIComponent(once)}`
+    )
   }
 
   /** 获取余额详情 */

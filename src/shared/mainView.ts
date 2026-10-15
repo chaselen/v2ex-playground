@@ -268,6 +268,8 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
     page?: number
   }): MyTopicListData
   getMyNotifications(page?: number): MyNotificationListData
+  /** 删除提醒消息，成功后由调用方重新读取列表 */
+  deleteNotification(input: { notificationId: number }): void
   getDailySignInStatus(): WebviewDailySignInData
   dailySignIn(): WebviewDailySignInData
   addNode(): NodeListData
