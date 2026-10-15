@@ -24,9 +24,9 @@
   "contributes": {
     "commands": [
       {
-        "command": "v2ex.login",
-        "title": "登录V2EX",
-        "icon": "$(sign-in)"
+        "command": "v2ex.openTopic",
+        "title": "打开帖子",
+        "icon": "$(go-to-file)"
       },
       {
         "command": "v2ex.search",
@@ -34,19 +34,14 @@
         "icon": "$(search)"
       },
       {
-        "command": "v2ex.createTopic",
-        "title": "创作新主题",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "v2ex.openTopic",
-        "title": "打开帖子",
-        "icon": "$(go-to-file)"
-      },
-      {
         "command": "v2ex.recentBrowse",
         "title": "最近浏览",
         "icon": "$(history)"
+      },
+      {
+        "command": "v2ex.login",
+        "title": "登录V2EX",
+        "icon": "$(sign-in)"
       },
       {
         "command": "v2ex.settings",
@@ -54,15 +49,14 @@
         "icon": "$(gear)"
       },
       {
+        "command": "v2ex.createTopic",
+        "title": "创作新主题",
+        "icon": "$(edit)"
+      },
+      {
         "command": "v2ex.showLogs",
         "title": "查看日志",
         "category": "V2EX"
-      },
-      {
-        "command": "v2ex.help",
-        "title": "站点帮助",
-        "category": "V2EX",
-        "icon": "$(question)"
       }
     ],
     "viewsContainers": {
@@ -87,7 +81,7 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "v2ex.login",
+          "command": "v2ex.openTopic",
           "when": "false"
         },
         {
@@ -95,19 +89,19 @@
           "when": "false"
         },
         {
-          "command": "v2ex.createTopic",
-          "when": "false"
-        },
-        {
-          "command": "v2ex.openTopic",
-          "when": "false"
-        },
-        {
           "command": "v2ex.recentBrowse",
           "when": "false"
         },
         {
+          "command": "v2ex.login",
+          "when": "false"
+        },
+        {
           "command": "v2ex.settings",
+          "when": "false"
+        },
+        {
+          "command": "v2ex.createTopic",
           "when": "false"
         }
       ],
@@ -128,19 +122,14 @@
           "group": "navigation@2"
         },
         {
-          "command": "v2ex.settings",
-          "when": "view == v2ex-main",
-          "group": "more@1"
-        },
-        {
           "command": "v2ex.login",
           "when": "view == v2ex-main",
           "group": "more@0"
         },
         {
-          "command": "v2ex.help",
+          "command": "v2ex.settings",
           "when": "view == v2ex-main",
-          "group": "more@2"
+          "group": "more@1"
         }
       ]
     },

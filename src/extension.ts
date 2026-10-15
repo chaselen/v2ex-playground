@@ -7,7 +7,6 @@ import setting from '@/commands/setting'
 import openTopic from '@/commands/openTopic'
 import autoDailySignIn, { startDailySignInScheduler } from '@/features/dailySignIn'
 import {
-  openHelp,
   openRecentBrowse,
   openCreateTopic,
   openSearch,
@@ -104,8 +103,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     })
   )
-
-  context.subscriptions.push(vscode.commands.registerCommand('v2ex.help', () => openHelp()))
 
   // 注册页面与设置命令
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => openSearch()))
