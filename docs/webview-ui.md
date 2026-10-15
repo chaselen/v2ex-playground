@@ -1,113 +1,29 @@
 # Webview UI 与主题
 
-Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义、焦点管理、键盘行为和 Portal；视觉样式由项目维护，直接对接 VS Code Theme Color。
+## 主题边界
 
-## 组件分层
+`webview/src/styles/_vscode-theme.scss` 集中将宿主 Theme Color 映射为 `--v2ex-*`，共享组件和业务样式只消费语义变量。例外为主题回归页的 mock，以及 Side Bar 等宿主区域向语义变量的上下文重映射。
 
-- `webview/src/components/ui/` 封装 Button、Input、Select、DatePicker、Tabs、Dialog、Popover、Toast 等通用组件
-- 日期选择使用主题化 `DatePicker`（Radix Popover + 日历面板）。**踩坑：** 宿主 Chromium 原生 `input[type=date]` 日历无法跟随 VS Code 主题
-- 共享组件负责统一 DOM 语义、键盘行为和无障碍属性；业务页面只传递领域内容与状态，不复制 Radix Portal、焦点、键盘或浮层定位逻辑
-- 图标统一使用 `lucide-react`，装饰图标添加 `aria-hidden="true"`；纯图标按钮必须提供 `aria-label`
-- `Button` 禁用态保留当前 Variant 的背景和边框语义，再统一降低透明度；Primary、Secondary、Subtle、Ghost 和 Danger 各自保留独立禁用外观
-- Secondary 使用 `button.secondaryBackground` / `button.secondaryForeground` 配对；内容区低强调操作（如话题工具条的刷新/收藏/忽略/感谢）优先用 Subtle。**踩坑：** 部分亮色主题下 secondary 过深，用页面前景色配次级按钮底也会失配
-- 有背景的交互态必须 fg/bg 同族配对：选中态用 `--v2ex-active-fg` + `--v2ex-active-bg`；Ghost hover 用 `--v2ex-toolbar-hover-bg`（`toolbar.hoverBackground` 优先，回退 `list.hoverBackground`）；Ghost 按下用中性 `--v2ex-light-button-active-bg`，不用 `active-bg` 配页面字色
-- `--v2ex-hover-bg` 用于列表/树/菜单项等「行 hover」（`list.hoverBackground` 优先）；工具栏式透明 action 用 `--v2ex-toolbar-hover-bg`
-- `button.secondaryBackground` 只映射 Secondary 按钮，不作为「浅主色 / 通用表面」；低强调表面统一用 `--v2ex-light-button-*` 或 `--v2ex-link-soft-*`
-- Tabs 未选中 hover 使用 `--v2ex-toolbar-hover-bg`；选中指示器使用 `--v2ex-tab-indicator`（优先 `panelTitle.activeBorder`，回退 `--v2ex-progress-base`），与宿主底部 Panel 当前标题下划线同色；高对比主题优先 `contrastActiveBorder`
-- Progress 填充使用略浅的 `--v2ex-progress-fg`（`color-mix` 将 `--v2ex-progress-base` 与页面背景混合）；轨道用中性 `--v2ex-progress-track-bg`，不复用 secondary 按钮背景
-- 主面板 `main.scss` 可重映射 Side Bar 相关 `--v2ex-*`，但不得把 `--vscode-contrastBorder` 重新插回常规主题边框回退链；侧栏选中态 bg/fg 须同序回退（inactive → active → hover / 页面字色）
-- `ConfirmPopover` 默认在标题左侧显示警示图标，普通确认使用警告色、危险确认使用危险色；领域操作可通过 `titleIcon` 覆盖图标，传入 `null` 可隐藏
-- `Alert` 与 `ConfirmPopover` 的默认状态图标使用实心语义色外形，内部符号使用当前提示或浮层背景色，避免整图标实心填充遮住内部符号
-- 少量互斥视图或内容筛选的紧凑切换使用 `RadioGroup variant="segmented"`，外层使用低强调混合背景，选中项回到 Webview 页面背景（亮色：灰底白色选中；暗色：亮底深色选中）；组件保留 RadioGroup 的方向键与焦点语义。选项的悬浮状态标识通过 `RadioGroupItem` 的 `badge` 和 `badgeVariant` 传入。具有独立面板语义和键盘导航需求的内容分组使用 Tabs；普通表单选项使用默认单选样式
-- 横向 Tabs 在窄容器中通过 `TabsList overflowNavigation` 启用自动溢出导航；组件使用 ResizeObserver 检测可用宽度，仅在溢出时显示左右按钮，切换活动项时自动将其滚入可视区域
-- 页面特有的复杂布局可保留在页面 SCSS 中，通用组件状态统一写入 `webview/src/components/ui/ui.scss`
-- 领域组件可封装固定含义的共享控件（如 `UserBadge`）；仅改名或透传属性的包装层没有必要
-- 命令式通知统一使用 `Toast.info`、`Toast.success`、`Toast.warning` 和 `Toast.error`，每个使用通知的 Webview 入口只挂载一个 `ToastViewport`
+背景与前景必须成对回退。阅读区使用 `editor.background` 时配 `editor.foreground`；侧栏选中态的背景与字色必须采用相同的 active / inactive 回退顺序。Secondary 按钮色只用于该类按钮，不能当作通用浅色表面。
 
-## 长回复收起
+语义状态字色优先使用通用 foreground；`inputValidation.*` 仅作为背景、边框回退，避免部分主题中提示文字失去对比度。高对比 token 仅在高对比主题启用：Trae 等宿主可能注入空值或透明 contrast token，将其放到常规主题回退链最前会导致边框和 Tabs 指示器消失。
 
-话题页回复过长时默认收起，减少长图或大段内容占满阅读区：
+## 宿主与浮层限制
 
-- 仅作用于话题回复；正文、附言和分享图中的回复不启用
-- 判定以当前可见内容的实测高度为准：完整高度 ≥ 收起高度 + 100px 才折叠，避免临界抖动
-- 遵循 `v2ex.browse.showImagesInTopic`：按当前显示/隐藏图片后的实际高度判定；切换设置后就地重测，不重置用户已选择的展开/收起。仅回复 HTML 变化时恢复自动折叠
-- 使用 `ResizeObserver` 跟踪内容增高（如图片加载、代码高亮）；用户手动展开/收起后不再自动改写状态
-- 收起高度 280px，底部渐变遮罩与当前回复条目表面色对齐（`--v2ex-reply-surface`）；嵌套层不透明混合上一层表面，封顶行不改写该变量，沿用上一层缩进色。按钮文案为「展开回复」/「收起回复」，并设置 `aria-expanded`
-- 收起态对内容区设置 `inert` 与 `aria-hidden`，避免键盘和辅助技术进入被裁切的链接、图片预览与隐藏图片占位；CSS `pointer-events: none` 作为指针兜底。展开按钮在内容区外，自行 `stopPropagation`
-- 实现见 `webview/src/views/topic/CollapsibleReplyContent.tsx` 与 `collapsibleReply.ts`
+- Chromium 原生日期输入的弹出日历无法跟随宿主主题，日期选择使用共享 DatePicker
+- Radix 浮层使用 Portal，统一消费语义变量；Dialog 内触发的浮层必须高于 Dialog 内容，否则选项会被遮挡，点击落入下层控件
+- Tooltip、Popover、ConfirmPopover 组合时保留中间真实 DOM，避免多个 `asChild` 触发器竞争同一节点
+- SimpleBar 和 Tabs 内容区可能被键盘聚焦，整页容器不画焦点外框；按钮、链接等交互控件保留焦点描边
+- 动画遵循 `prefers-reduced-motion`，收起内容使用 `inert` 与无障碍隐藏，避免键盘进入被裁切的链接
 
-## 用户快速信息
+## HTML 内容中的用户浮层
 
-用户资料浮层的首选宽度由外层 HoverCard 控制，内部卡片跟随可用宽度收缩；窄视口中头像区和用户名操作行允许换行，避免屏蔽和完整资料按钮越过浮层边界。
+正文中的用户链接来自 HTML，采用根节点事件委托与单个浮层，不逐个挂载 React root。完整话题与预览分别维护实例，避免互相抢占状态。
 
-话题页作者名和头像由 `MemberQuickInfoPopover` 直接包裹。正文、附言、回复和回复预览里的 `@用户` 来自 V2EX HTML，经 `dangerouslySetInnerHTML` 插入为 `/member/{username}` 链接，不能逐个包成 React 树。
+Dialog 等带 transform 的祖先会改变 fixed 定位的包含块，浮层锚点不能直接套用视口矩形。幽灵触发器覆盖链接后会使原生 hover 丢失，悬停标记需保留原链接样式；滚动或尺寸变化时关闭浮层，避免锚点失效。实现见 `MemberQuickInfoHoverLayer.tsx` 与 `memberQuickInfoHover.ts`。
 
-设计取舍：在 `TopicDetailView` 根节点上对 `.topic-content a` 做 pointerover 委托，用单个 `MemberQuickInfoPopover` 的 `position: fixed` 幽灵触发器对齐当前链接。不要把 HTML 解析成 React，也不要在 `contentEnhancement` 里为每个链接挂 React root。主面板与预览弹窗各自挂一层，避免两个详情实例抢同一个浮层。
+## 布局与验证
 
-边界：
+骨架与真实页面对齐容器宽度、间距和响应式断点，内嵌骨架由父容器控制外层间距。话题、帮助等正文复用 `_topic-content.scss` 的 article mixin，避免分别维护富文本排版。
 
-- 用户名解析复用 `getMemberUsernameFromHref()`，与站内链接导航同一套 `/member/{username}` 规则；实现见 `webview/src/core/memberLink.ts`
-- 已由 React 包裹的作者名 / 头像通过 `data-member-quick-info-trigger` 排除
-- 收起的长回复带 `inert`，不会触发
-- Dialog 等带 `transform` 的祖先会成为 `fixed` 包含块，幽灵触发器不能直接使用 viewport 矩形
-- 幽灵触发器盖住链接后原生 `:hover` 会丢失；悬停期间给原链接打上 `data-member-quick-info-hover`，沿用 hover 下划线与链接色
-- 滚动或窗口尺寸变化时关闭浮层，避免锚点矩形失效
-- 实现见 `webview/src/views/topic/MemberQuickInfoHoverLayer.tsx` 与 `memberQuickInfoHover.ts`
-
-## 加载骨架
-
-- 页面首次加载且没有可展示内容时使用 `PageSkeleton` 的对应变体；已有内容上的刷新、分页和提交继续使用局部加载状态
-- 独立页面骨架必须与真实页面容器使用相同的最大宽度、padding 和响应式断点；嵌在真实容器或标签内容内的骨架使用 `width: 100%`，由父容器统一控制外层间距
-- 话题骨架同时用于独立话题页和话题预览，两处真实内容容器均为 `800px / 24px`，在 `480px` 及以下收窄为 `14px`；余额骨架在 `640px` 及以下为 `12px`，在 `420px` 及以下为 `8px`
-- 独立话题页与话题预览统一使用 SimpleBar，并将内部真实滚动节点传给话题详情；楼层定位、返回顶部等行为不得绑定 SimpleBar 的外层元素
-- SimpleBar 滚动容器默认 `tabindex="0"` 以支持空格 / PageDown。键盘操作会匹配 `:focus-visible`，必须去掉整页滚动容器的默认 outline，避免出现浏览器橙色焦点框；按钮、链接等交互控件仍使用 `:focus-visible` 描边
-- Tabs 内容区（`role="tabpanel"`）同样会被键盘聚焦。不要给整栏/整页布局容器画 `:focus-visible` 描边，否则空格翻页会在主面板等内容区出现整块焦点框；标签按钮和树节点等控件保留描边
-
-## 主题来源
-
-`webview/src/styles/_vscode-theme.scss` 是 **唯一** 将 VS Code Theme Color 映射为 `--v2ex-*` 语义变量的全局入口。共享组件、页面样式和业务 CSS Modules **优先且默认只使用** `--v2ex-*`。
-
-允许直接读取 `--vscode-*` 的例外：
-
-1. `_vscode-theme.scss` 内的映射定义本身
-2. `webview/theme.html` 回归页中模拟宿主 Theme Color 的 mock 赋值
-3. 宿主区域上下文重映射：例如主面板 `main.scss` 将 Side Bar 相关 token 再映射到 `--v2ex-*` 后，子样式仍只消费 `--v2ex-*`
-
-新增颜色时先补 `--v2ex-*` 映射，再在消费方引用；同一 `--vscode-*` 在页面中出现两次以上时，应升为语义变量。
-
-关键规则：
-
-- 文本、背景、输入框、边框、焦点、选择态和语义状态的 VS Code 回退链集中写在 `_vscode-theme.scss`
-- 页面底为 `editor.background`（`--v2ex-webview-bg`）时，长文阅读正文用 `--v2ex-content-fg`（`editor.foreground`，回退 `foreground`），与底同族配对；通用 UI chrome / 控件文案继续用 `--v2ex-webview-fg`（`foreground`）。话题页、话题预览、用户页默认继承 `--v2ex-content-fg`；侧栏主面板内容字仍用 `--v2ex-main-content-fg`（可回退到侧栏重映射后的 `--v2ex-webview-fg`）
-- 选中态 `--v2ex-active-bg` / `--v2ex-active-fg` 必须同序回退（全局：active → inactive → hover/页面字色；主面板侧栏列表：inactive → active → hover/页面字色）。**踩坑：** bg 走 inactive 而 fg 落到页面字色时，对比度会失效
-- 语义状态字色（`--v2ex-info-fg` / `warning-fg` / `danger-fg` / `success-fg`）优先通用 foreground（如 `textLink`、`errorForeground`、`editorWarning.foreground`、`testing.iconPassed`、`charts.*`）；`inputValidation.*` 只作 bg/border 回退，不作 Alert 通用字色优先源
-- Badge 缺省回退主按钮色（`badge.*` → primary button），不回退 `danger`；Tag 字色用 `--v2ex-webview-fg`（UI chip），不用 `--v2ex-content-fg`
-- 高对比主题：仅 `body.vscode-high-contrast` / `body.vscode-high-contrast-light` 启用 contrast 色；仅高对比才需要描边的控件使用 `var(--v2ex-hc-border, transparent)`（该变量只在高对比主题定义）。**踩坑：** 部分宿主（如 Trae）会注入空值或透明的 contrast token，若将其放在常规主题回退链最前，边框与 Tabs 指示器会消失
-- Tooltip、Popover、Select、DropdownMenu、Dialog 和 Toast 的 Portal 内容必须继承同一语义变量，不能使用固定明暗色
-- Tooltip / 浮层：`--v2ex-tooltip-bg` / `--v2ex-tooltip-fg`；菜单：`--v2ex-menu-*`；箭头必须与浮层使用相同的背景和边框色；箭头只为两条外露斜边描边，不绘制与浮层主体接触的底边，并向主体重叠 `1px` 避免抗锯齿产生可见接缝
-- 固定品牌色或实物色仅用于内容本身（例如货币图标）；交互状态色必须来自 `--v2ex-*`
-- 公共形状和动效使用 `--v2ex-radius-xs|sm|md|lg`、`--v2ex-motion-*`；宿主字体使用 `--v2ex-font-family` / `--v2ex-font-size`；代码块使用 `--v2ex-code-bg` / `--v2ex-code-font-family`
-- 链接色的弱强调衍生使用 `--v2ex-link-soft-*`（背景、边框、ring、fill）；业务页不重复 `color-mix(var(--v2ex-link-fg) …)`
-- 业务 SCSS 直接写 `var(--v2ex-*)`，不额外包一层 `$muted-color` / `$panel-border` 之类的 SCSS 别名
-- 动画必须在 `prefers-reduced-motion: reduce` 下关闭
-
-## 回归验证
-
-运行 `npm run preview:theme` 打开 `webview/theme.html`。页面集中展示基础组件、表单、分页、浮层、反馈和数据组件。修改共享组件或主题变量后至少检查：
-
-- 亮色、暗色、高对比和高对比亮色下的文本、边框、背景与焦点
-- disabled、hover、active 和 selected 状态
-- Tooltip、Popover、Select、DropdownMenu、ConfirmPopover、Dialog 和 Toast 的 Portal 内容
-- Tabs 指示器、OTP 焦点、菜单键盘导航和 Dialog 焦点管理
-
-涉及真实状态或宿主通信时，还要在扩展宿主中验证 Webview 的首次打开、隐藏恢复和对应业务交互。
-
-## 帮助页骨架
-
-帮助面板的 `help` 骨架与真实内容共享外层 1100px 容器和 24px 内边距，内部按 200px 目录与正文两列布局；640px 以下切为单列，外层内边距为 16px。切换帮助主题时立即更新目录选中态，并使用 `help-content` 骨架替换正文；该骨架与首次加载骨架共享正文占位结构。动态内容及导航规则见 [站点帮助](help.md)。
-
-话题与帮助正文统一复用 `_topic-content.scss` 的 `article` mixin，正文排版调整在此处维护；其他仅需要基础内容增强样式的页面继续使用 `base` mixin。
-
-## 对话框内的浮层
-
-Select、Tooltip、Popover、ConfirmPopover 和 DropdownMenu 通过 Portal 挂载到 `document.body`，层级统一为 1110，高于 Dialog 遮罩（1100）和内容（1101），低于 Toast（1200）和图片预览（1300/1301）。若普通浮层低于 Dialog，弹出的选项或确认按钮会被对话框内容遮挡，点击实际落到下层控件，导致无法切换选项或提交确认。
+修改共享组件或主题映射后，运行 `npm run preview:theme`，覆盖亮色、暗色、高对比、高对比亮色，检查文本对比度、交互状态、Portal 浮层和键盘焦点。涉及宿主通信时还需验证首次打开与隐藏恢复。

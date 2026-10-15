@@ -48,6 +48,7 @@ export default function TopicPreviewModal({
   onClose,
   onPreviewTopic
 }: TopicPreviewModalProps) {
+  // 预览独立保存详情，避免翻页和异步操作覆盖主话题状态
   const [state, setState] = useState<PreviewState>({ status: 'idle' })
   const [refreshing, setRefreshing] = useState(false)
   const [floatingActionsContainer, setFloatingActionsContainer] = useState<HTMLDivElement | null>(
@@ -63,7 +64,7 @@ export default function TopicPreviewModal({
   const topicRef = useRef(topic)
   topicRef.current = topic
 
-  /** 应用当前预览的话题详情 */
+  /** 仅更新仍在预览的同一话题，忽略切换目标后到达的操作结果 */
   const applyTopicChange = useCallback((nextTopic: TopicDetail) => {
     if (activeTopicIdRef.current === String(nextTopic.id)) {
       setState({ status: 'topic', topic: nextTopic })

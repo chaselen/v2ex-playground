@@ -596,7 +596,7 @@ export class TopicPanelController
   }
 
   /**
-   * 加载站内话题预览
+   * 加载站内话题预览；只读取详情，不写入最近浏览或替换主面板状态
    * @param message 预览请求
    */
   private loadTopicPreview(message: { topicId: string | number; replyPage?: number }) {
