@@ -33,9 +33,8 @@ describe('MemberService', () => {
       }
     })
     const service = new MemberService(
-      { get } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      async () => 'once-token'
+      { get, getOnce: async () => 'once-token' } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     const member = await service.getInfo('chaselen')
@@ -51,9 +50,8 @@ describe('MemberService', () => {
     const get = vi.fn().mockResolvedValue({ status: 302 })
     const getOnce = vi.fn().mockResolvedValue('once-token')
     const service = new MemberService(
-      { get } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      getOnce
+      { get, getOnce: getOnce } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     await service.follow(42)

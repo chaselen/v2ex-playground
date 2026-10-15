@@ -8,12 +8,6 @@ import { LoginRequiredError, type CheckCookieResult } from '../types'
 export class AuthService {
   constructor(private readonly session: V2exSession) {}
 
-  /** 获取一次性操作参数 */
-  async getOnce(): Promise<string> {
-    const { data } = await this.session.get<string>('/poll_once', { responseType: 'text' })
-    return data.trim()
-  }
-
   /** 检查当前 Cookie 是否有效 */
   async checkCookie(): Promise<CheckCookieResult> {
     if (!this.session.getCookie()) return { isValid: false }
@@ -41,7 +35,7 @@ export class AuthService {
   /** 提交两步验证码 */
   async submitTwoFactorCode(code: string): Promise<void> {
     if (!/^\d{6}$/.test(code)) throw new Error('请输入 6 位验证码')
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     const response = await this.session.post<string>('/2fa', new URLSearchParams({ code, once }), {
       maxRedirects: 0,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

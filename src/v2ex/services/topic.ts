@@ -28,8 +28,7 @@ import type { V2exSession } from '../session'
 export class TopicService {
   constructor(
     private readonly session: V2exSession,
-    private readonly baseUrl: string,
-    private readonly getOnce: () => Promise<string>
+    private readonly baseUrl: string
   ) {}
 
   /** 根据话题 id 获取话题链接 */
@@ -91,7 +90,7 @@ export class TopicService {
     }
     if (!nodeName) throw new Error('请选择主题节点')
 
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     const response = await this.session.post<string>(
       '/write',
       new URLSearchParams({
@@ -151,7 +150,7 @@ export class TopicService {
         body.set('title', input.title.trim())
       } else {
         if (!input.content.trim()) throw new Error('附言内容不能为空')
-        body.set('once', await this.getOnce())
+        body.set('once', await this.session.getOnce())
       }
       body.set('content', input.content)
       body.set('syntax', input.syntax === 'markdown' ? '1' : '0')
@@ -181,7 +180,7 @@ export class TopicService {
 
   /** 提交回复 */
   async postReply(topicId: number, content: string): Promise<void> {
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     await this.session.post(`/t/${topicId}`, new URLSearchParams({ content, once }))
   }
 
@@ -214,7 +213,7 @@ export class TopicService {
 
   /** 感谢回复 */
   async thankReply(replyId: string): Promise<void> {
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     const response = await this.session.post<ThankResponse>(`/thank/reply/${replyId}?once=${once}`)
     if (response.status !== 200 || !response.data.success) {
       throw new Error(response.data.message || '感谢回复失败')
@@ -223,7 +222,7 @@ export class TopicService {
 
   /** 感谢话题 */
   async thankTopic(topicId: number): Promise<void> {
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     const response = await this.session.post<ThankResponse>(`/thank/topic/${topicId}?once=${once}`)
     if (response.status !== 200 || !response.data.success) {
       throw new Error(response.data.message || '感谢帖子失败')
@@ -257,7 +256,7 @@ export class TopicService {
 
   /** 执行话题状态更新请求 */
   private async updateTopicAction(path: string, errorMessage: string): Promise<void> {
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     const response = await this.session.get<string>(`${path}?once=${once}`, {
       maxRedirects: 0,
       validateStatus: status => status >= 200 && status < 400

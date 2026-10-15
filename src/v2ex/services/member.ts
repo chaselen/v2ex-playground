@@ -27,8 +27,7 @@ const memberContentTabs = new Set<MemberContentTabKey>([
 export class MemberService {
   constructor(
     private readonly session: V2exSession,
-    private readonly baseUrl: string,
-    private readonly getOnce: () => Promise<string>
+    private readonly baseUrl: string
   ) {}
 
   /** 根据用户名获取用户主页链接 */
@@ -105,7 +104,7 @@ export class MemberService {
     errorMessage: string
   ): Promise<void> {
     const normalizedMemberId = normalizeMemberId(memberId)
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     const response = await this.session.get(`/${action}/${normalizedMemberId}?once=${once}`, {
       maxRedirects: 0,
       validateStatus: status => status >= 200 && status < 400

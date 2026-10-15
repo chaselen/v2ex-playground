@@ -14,6 +14,8 @@
 
 领域 Service 只依赖 `V2exSession`，不读写 SecretStorage，也不维护登录状态。认证状态仅由 `V2exClient` 维护。
 
+`V2exSession.getOnce()` 通过当前会话请求 `/poll_once`，不缓存返回值；领域 Service 在提交前直接调用，`V2exClient.getOnce()` 作为对外门面委托给 Session。节点收藏和每日签到从提交前刚获取的页面解析令牌并立即使用，不保存到页面状态或长期缓存。
+
 ## 对外认证 API
 
 扩展功能通过 `V2exClient` 使用以下 API：

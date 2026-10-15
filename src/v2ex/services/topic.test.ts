@@ -15,9 +15,8 @@ describe('TopicService topic ignore actions', () => {
       .mockResolvedValueOnce({ data: topicHtml('忽略主题') })
       .mockResolvedValueOnce({ status: 302 })
     const service = new TopicService(
-      { get } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      getOnce
+      { get, getOnce: getOnce } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     await service.ignore(893822)
@@ -36,9 +35,8 @@ describe('TopicService topic ignore actions', () => {
       .mockResolvedValueOnce({ data: topicHtml('取消忽略') })
       .mockResolvedValueOnce({ status: 302 })
     const service = new TopicService(
-      { get } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      getOnce
+      { get, getOnce: getOnce } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     await service.cancelIgnore(893822)
@@ -54,9 +52,8 @@ describe('TopicService topic ignore actions', () => {
     const getOnce = vi.fn()
     const get = vi.fn().mockResolvedValue({ data: topicHtml() })
     const service = new TopicService(
-      { get } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      getOnce
+      { get, getOnce: getOnce } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     await expect(service.ignore(703733)).rejects.toThrow('当前主题不支持忽略')
@@ -73,9 +70,8 @@ describe('TopicService topic ignore actions', () => {
       const getOnce = vi.fn()
       const get = vi.fn().mockResolvedValue({ data: topicHtml(action) })
       const service = new TopicService(
-        { get } as unknown as V2exSession,
-        'https://www.v2ex.com',
-        getOnce
+        { get, getOnce: getOnce } as unknown as V2exSession,
+        'https://www.v2ex.com'
       )
 
       await service[method](893822)

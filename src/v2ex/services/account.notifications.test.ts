@@ -5,13 +5,11 @@ import { AccountService } from './account'
 function setup() {
   const post = vi.fn().mockResolvedValue({ data: '' })
   const getOnce = vi.fn().mockResolvedValue('456')
-  const service = new AccountService(
-    {
-      post,
-      onResponse: () => undefined
-    } as unknown as V2exSession,
-    getOnce
-  )
+  const service = new AccountService({
+    post,
+    getOnce,
+    onResponse: () => undefined
+  } as unknown as V2exSession)
   return { service, post, getOnce }
 }
 

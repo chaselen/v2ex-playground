@@ -119,10 +119,7 @@ export class AccountService {
   /** 在线人数变化监听器 */
   private readonly onlineCountChangedHandlers = new Set<OnlineCountChangedHandler>()
 
-  constructor(
-    private readonly session: V2exSession,
-    private readonly getOnce: () => Promise<string>
-  ) {
+  constructor(private readonly session: V2exSession) {
     this.session.onResponse(response => this.updateFromResponse(response))
   }
 
@@ -422,7 +419,7 @@ export class AccountService {
     if (!Number.isSafeInteger(notificationId) || notificationId <= 0) {
       throw new Error('无效的消息编号')
     }
-    const once = await this.getOnce()
+    const once = await this.session.getOnce()
     await this.session.post(
       `/delete/notification/${notificationId}?once=${encodeURIComponent(once)}`
     )

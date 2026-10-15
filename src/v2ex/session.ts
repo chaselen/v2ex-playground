@@ -98,6 +98,12 @@ export class V2exSession {
     this.setupInterceptors()
   }
 
+  /** 获取当前会话的最新 once；提交前调用，不缓存令牌 */
+  async getOnce(): Promise<string> {
+    const { data } = await this.get<string>('/poll_once', { responseType: 'text' })
+    return data.trim()
+  }
+
   /** 获取当前会话 Cookie */
   getCookie(url = this.baseUrl): string {
     return this.cookieJar.getCookieStringSync(url)

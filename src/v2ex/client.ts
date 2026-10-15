@@ -158,9 +158,9 @@ export class V2exClient {
     })
     this.baseUrl = this.session.baseUrl
     this.auth = new AuthService(this.session)
-    this.account = new AccountService(this.session, () => this.getOnce())
-    this.topics = new TopicService(this.session, this.baseUrl, () => this.auth.getOnce())
-    this.members = new MemberService(this.session, this.baseUrl, () => this.auth.getOnce())
+    this.account = new AccountService(this.session)
+    this.topics = new TopicService(this.session, this.baseUrl)
+    this.members = new MemberService(this.session, this.baseUrl)
     this.nodes = new NodeService(this.session, this.baseUrl)
     this.searchService = new SearchService(this.session)
     this.twoFactorVerification = this.createTwoFactorVerification()
@@ -316,7 +316,7 @@ export class V2exClient {
    * @returns once 参数
    */
   getOnce(): Promise<string> {
-    return this.auth.getOnce()
+    return this.session.getOnce()
   }
 
   /**

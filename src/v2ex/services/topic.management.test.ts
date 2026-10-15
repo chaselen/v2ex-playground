@@ -15,9 +15,8 @@ function setup() {
     .mockResolvedValue({ data: '', request: { res: { responseUrl: 'https://www.v2ex.com/t/12' } } })
   const getOnce = vi.fn().mockResolvedValue('fresh')
   const service = new TopicService(
-    { get, post } as unknown as V2exSession,
-    'https://www.v2ex.com',
-    getOnce
+    { get, post, getOnce: getOnce } as unknown as V2exSession,
+    'https://www.v2ex.com'
   )
   return { service, get, post, getOnce }
 }

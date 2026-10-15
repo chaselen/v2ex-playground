@@ -17,9 +17,8 @@ describe('TopicService write', () => {
   test('posts the real write fields and returns the redirected topic id', async () => {
     const post = vi.fn().mockResolvedValue(createResponse('', 'https://www.v2ex.com/t/123456'))
     const service = new TopicService(
-      { post } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      vi.fn().mockResolvedValue('54321')
+      { post, getOnce: vi.fn().mockResolvedValue('54321') } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     await expect(
@@ -44,9 +43,8 @@ describe('TopicService write', () => {
   test('uses topic_content when previewing a new topic', async () => {
     const post = vi.fn().mockResolvedValue({ data: '<p>预览</p>' })
     const service = new TopicService(
-      { post } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      vi.fn()
+      { post, getOnce: vi.fn() } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     await expect(service.previewContent('正文', 'markdown', 'topic')).resolves.toBe('<p>预览</p>')
@@ -58,9 +56,8 @@ describe('TopicService write', () => {
   test('omits topic_content when previewing a reply', async () => {
     const post = vi.fn().mockResolvedValue({ data: '<p>预览</p>' })
     const service = new TopicService(
-      { post } as unknown as V2exSession,
-      'https://www.v2ex.com',
-      vi.fn()
+      { post, getOnce: vi.fn() } as unknown as V2exSession,
+      'https://www.v2ex.com'
     )
 
     await expect(service.previewContent('回复', 'default', 'reply')).resolves.toBe('<p>预览</p>')
