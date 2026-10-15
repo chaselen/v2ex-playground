@@ -97,6 +97,8 @@ export interface Topic {
 export interface TopicDetail {
   /** id */
   id: number
+  /** 服务端当前提供的作者管理入口 */
+  managementActions?: TopicManagementAction[]
   /** 标题 */
   title: string
   /** 节点 */
@@ -611,3 +613,24 @@ export interface HelpPage {
   html: string
   navigation: { slug: string; title: string }[]
 }
+
+/** 主题作者管理操作，权限以服务端页面为准 */
+export type TopicManagementAction = 'edit' | 'move' | 'append'
+
+/** 作者管理初始化数据；正文仅在编辑时从服务端读取原文 */
+export interface TopicManagementState {
+  /** 当前主题标题 */
+  title: string
+  /** 编辑时的原始正文，移动和附言初始化为空 */
+  content: string
+  /** 编辑时的原始语法，附言默认使用原生格式 */
+  syntax: TopicSyntax
+  /** 当前节点的 name */
+  nodeName: string
+}
+
+/** 固定的作者管理请求，语法与服务端数字枚举由领域层映射 */
+export type TopicManagementInput =
+  | { action: 'edit'; title: string; content: string; syntax: TopicSyntax }
+  | { action: 'move'; nodeName: string }
+  | { action: 'append'; content: string; syntax: TopicSyntax }

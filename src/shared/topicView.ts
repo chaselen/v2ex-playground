@@ -1,4 +1,11 @@
-import type { MemberInfo, TopicDetail } from '../v2ex/types'
+import type {
+  MemberInfo,
+  Node,
+  TopicDetail,
+  TopicManagementAction,
+  TopicManagementState,
+  TopicManagementInput
+} from '../v2ex/types'
 import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 export type { MemberInfo } from '../v2ex/types'
 
@@ -51,6 +58,14 @@ export interface TopicPanelViewState {
  */
 export interface TopicPanelRpcCommands
   extends WebviewCommonRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
+  /** 选择目标节点，返回展示信息 */
+  pickTopicManagementNode(currentNodeName?: string): Node | undefined
+  /** 检查当前主话题作者权限并读取初始化数据 */
+  prepareTopicManagement(action: TopicManagementAction): TopicManagementState
+  /** 提交主话题管理操作并返回最新详情 */
+  manageTopic(payload: TopicManagementInput): TopicDetail
+  /** 预览主题正文或附言 */
+  previewTopicManagement(payload: { content: string; syntax: 'default' | 'markdown' }): string
   /** 打开标签主题面板 */
   openTag(tag: string): void
   login(): void

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type RefObject } from 'react'
+import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ArrowDown,
@@ -74,6 +74,8 @@ export interface TopicDetailViewProps {
   onReplyViewModeChange?: (mode: ReplyViewMode) => void
   /** 打开站内话题预览 */
   onTopicPreview: OpenTopicPreview
+  /** 主面板作者管理操作 */
+  managementActions?: ReactNode
   /** 打开话题分享图 */
   onShare?: () => void
 }
@@ -94,7 +96,8 @@ export default function TopicDetailView({
   initialReplyViewMode = 'nested',
   onReplyViewModeChange,
   onTopicPreview,
-  onShare
+  onShare,
+  managementActions
 }: TopicDetailViewProps) {
   const { topic, showImages, showAvatar, canOperate } = controller
   const [loadingReplyPage, setLoadingReplyPage] = useState(false)
@@ -655,6 +658,7 @@ export default function TopicDetailView({
 
         {showTopicToolbar && (canOperate || onShare) && (
           <div className="topic-toolbar">
+            {managementActions}
             {renderTopicActionButtons('toolbar')}
             {onShare && (
               <Button

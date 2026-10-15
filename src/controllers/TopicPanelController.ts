@@ -1,4 +1,7 @@
 import vscode from 'vscode'
+import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
+import { showNodeQuickPick } from '@/features/nodeQuickPick'
+import type { TopicManagementAction, TopicManagementInput } from '@/v2ex'
 import { AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
 import G from '@/global'
 import Config from '@/config'
@@ -48,6 +51,9 @@ export class TopicPanelController
   extends WebviewCommonController<TopicPanelDeps>
   implements WebviewRpcController<TopicPanelRpcCommands>
 {
+  /** 防止同一面板重复提交作者管理操作 */
+  private managingTopic = false
+
   /** 话题面板缓存 key */
   readonly key: string
 
@@ -296,6 +302,47 @@ export class TopicPanelController
     options?: { format?: 'resourceUri' | 'dataUrl' } | null
   ) {
     return loadTopicShareImages(imageSources, this.panel.webview, options)
+  }
+
+  /** 复用全量节点选择器 */
+  async rpc_pickTopicManagementNode(currentNodeName?: string) {
+    const node = await showNodeQuickPick(await G.V2ex.getAllNodes(), {
+      title: '移动主题',
+      placeHolder: '选择目标节点',
+      currentNodeName: currentNodeName || this.detail.node.name,
+      countField: 'topicCount',
+      sortByCountDescending: true
+    })
+    return node
+      ? { name: node.name, title: node.title, avatar: getV2exNodeAvatarUrl(node.name) }
+      : undefined
+  }
+
+  /** 检查主话题作者权限并读取初始化数据，目标由控制器固定 */
+  rpc_prepareTopicManagement(action: TopicManagementAction) {
+    return G.V2ex.prepareTopicManagement(this.topicId, action)
+  }
+
+  /** 提交后更新标题、最近浏览和主话题状态 */
+  async rpc_manageTopic(payload: TopicManagementInput) {
+    if (this.managingTopic) throw new Error('主题操作正在提交，请稍候')
+    this.managingTopic = true
+    try {
+      await G.V2ex.manageTopic(this.topicId, payload)
+      try {
+        await this.reloadTopic(false)
+      } catch {
+        throw new Error('操作已提交，但刷新失败。请刷新主题核对结果，勿重复提交')
+      }
+      return this.detail
+    } finally {
+      this.managingTopic = false
+    }
+  }
+
+  /** 主题与附言均使用主题正文预览 */
+  rpc_previewTopicManagement(payload: { content: string; syntax: 'default' | 'markdown' }) {
+    return G.V2ex.previewContent(payload.content, payload.syntax, 'topic')
   }
 
   /** 收藏话题 */

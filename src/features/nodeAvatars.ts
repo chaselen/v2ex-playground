@@ -1,5 +1,5 @@
-import type { WebviewNode } from '@/shared/webview'
-import type { Node } from '@/v2ex'
+import type { WebviewNode } from '../shared/webview'
+import type { Node } from '../v2ex/types'
 
 /** V2EX 节点头像代理根地址 */
 const V2EX_NODE_AVATAR_PROXY_BASE = 'https://img.fuyou.tech/v2ex/node'

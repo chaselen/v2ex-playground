@@ -153,6 +153,10 @@ export function parseTopicMeta(
     })
   })
 
+  topic.managementActions = (['edit', 'move', 'append'] as const).filter(
+    action => headerMeta.find(`a[href="/${action}/topic/${topicId}"]`).length > 0
+  )
+
   const topicButtons = $('.topic_buttons')
   if (topicButtons.length) {
     const countStr = topicButtons.children('.topic_stats').text()

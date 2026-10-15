@@ -89,6 +89,7 @@ VS Code 扩展，入口 `src/extension.ts`。运行时代码在 `src/`，编译�
 - 回复树的真实页面集成测试位于 `src/v2ex/tests/replyTree.live.test.ts`；修改话题回复解析、分页合并或楼中楼算法时需运行该文件
 - 发布前或打包前运行 `npm test`、`npm run check` 和 `npm run build`
 - 手动验证按改动范围覆盖登录、两步验证、节点刷新、话题打开、用户打开、搜索、最近浏览、设置项和 Webview 行为
+- 仅在必要时进行真实发帖测试；确需发布测试帖时，必须发往[沙盒节点](https://www.v2ex.com/go/sandbox)，遵循[官方节点说明](https://www.v2ex.com/help/node)，避免测试内容干扰其他用户
 
 ## URI 与文件系统
 

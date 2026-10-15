@@ -35,6 +35,9 @@ import type {
   TagTopicList,
   Topic,
   TopicDetail,
+  TopicManagementAction,
+  TopicManagementState,
+  TopicManagementInput,
   TopicSyntax,
   TwoFactorRequiredHandler,
   TwoFactorVerification,
@@ -516,6 +519,19 @@ export class V2exClient {
    */
   getTopicDetail(topicId: number, page = 1): Promise<TopicDetail> {
     return this.topics.getDetail(topicId, page)
+  }
+
+  /** 检查作者权限并读取管理初始化数据 */
+  prepareTopicManagement(
+    topicId: number,
+    action: TopicManagementAction
+  ): Promise<TopicManagementState> {
+    return this.topics.prepareManagement(topicId, action)
+  }
+
+  /** 修改、移动主题或添加附言 */
+  manageTopic(topicId: number, input: TopicManagementInput): Promise<void> {
+    return this.topics.manage(topicId, input)
   }
 
   /** 创作新主题 */

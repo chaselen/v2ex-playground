@@ -8,6 +8,8 @@ import {
   parseTopicMeta
 } from '../parsers/topic'
 import { getResponseUrl } from '../clientUtils'
+import { parseTopicEditContent } from '../parsers/topicManagement'
+import type { TopicManagementAction, TopicManagementState, TopicManagementInput } from '../types'
 import {
   type CreateTopicInput,
   type CreateTopicResult,
@@ -113,6 +115,68 @@ export class TopicService {
       $('.problem').first().text().trim() ||
       $('.message').first().text().trim()
     throw new Error(errorMessage || '发布主题失败')
+  }
+
+  /** 仅编辑需要读取原始正文；移动和附言只检查当前权限 */
+  async prepareManagement(
+    topicId: number,
+    action: TopicManagementAction
+  ): Promise<TopicManagementState> {
+    const detail = await this.requireManagementAction(topicId, action)
+    const state: TopicManagementState = {
+      title: detail.title,
+      content: '',
+      syntax: 'default',
+      nodeName: detail.node.name
+    }
+    if (action === 'edit') {
+      const { data } = await this.session.get<string>(`/edit/topic/${topicId}`)
+      Object.assign(state, parseTopicEditContent(data, topicId))
+    }
+    return state
+  }
+
+  /** 按已核实的三个独立表单契约提交；只有附言携带 once */
+  async manage(topicId: number, input: TopicManagementInput): Promise<void> {
+    await this.requireManagementAction(topicId, input.action)
+    const body = new URLSearchParams()
+    if (input.action === 'move') {
+      if (!input.nodeName.trim()) throw new Error('请选择目标节点')
+      body.set('destination', input.nodeName.trim())
+    } else {
+      if (input.syntax !== 'default' && input.syntax !== 'markdown')
+        throw new Error('无效的文本标记语法')
+      if (input.action === 'edit') {
+        if (!input.title.trim()) throw new Error('主题标题不能为空')
+        body.set('title', input.title.trim())
+      } else {
+        if (!input.content.trim()) throw new Error('附言内容不能为空')
+        body.set('once', await this.getOnce())
+      }
+      body.set('content', input.content)
+      body.set('syntax', input.syntax === 'markdown' ? '1' : '0')
+    }
+    const response = await this.session.post<string>(`/${input.action}/topic/${topicId}`, body, {
+      responseType: 'text'
+    })
+    const url = new URL(getResponseUrl(response, this.baseUrl))
+    if (url.pathname !== `/t/${topicId}`) {
+      const $ = cheerio.load(response.data)
+      throw new Error(
+        $('.problem, #error_message, .message').first().text().trim() ||
+          $('#Main .inner').first().text().trim() ||
+          '操作未成功，请刷新主题后核对'
+      )
+    }
+  }
+
+  /** 权限以主题头部的服务端入口为准，写入时再次校验 */
+  private async requireManagementAction(topicId: number, action: TopicManagementAction) {
+    if (!['edit', 'move', 'append'].includes(action)) throw new Error('无效的主题操作')
+    const detail = await this.getDetail(topicId)
+    if (!detail.managementActions?.includes(action))
+      throw new Error('当前主题不支持此操作，请刷新后重试')
+    return detail
   }
 
   /** 提交回复 */

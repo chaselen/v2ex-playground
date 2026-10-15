@@ -107,3 +107,7 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 帮助面板的 `help` 骨架与真实内容共享外层 1100px 容器和 24px 内边距，内部按 200px 目录与正文两列布局；640px 以下切为单列，外层内边距为 16px。切换帮助主题时立即更新目录选中态，并使用 `help-content` 骨架替换正文；该骨架与首次加载骨架共享正文占位结构。动态内容及导航规则见 [站点帮助](help.md)。
 
 话题与帮助正文统一复用 `_topic-content.scss` 的 `article` mixin，正文排版调整在此处维护；其他仅需要基础内容增强样式的页面继续使用 `base` mixin。
+
+## 对话框内的浮层
+
+Select、Tooltip、Popover、ConfirmPopover 和 DropdownMenu 通过 Portal 挂载到 `document.body`，层级统一为 1110，高于 Dialog 遮罩（1100）和内容（1101），低于 Toast（1200）和图片预览（1300/1301）。若普通浮层低于 Dialog，弹出的选项或确认按钮会被对话框内容遮挡，点击实际落到下层控件，导致无法切换选项或提交确认。

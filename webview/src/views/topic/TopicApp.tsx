@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { FolderInput, MessageSquarePlus, Pencil } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { Alert, Button, Toast } from '@/components/ui'
@@ -9,9 +10,10 @@ import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import TopicPreviewModal from './TopicPreviewModal'
 import TopicShareDialog from './TopicShareDialog'
+import TopicManagementDialog, { topicManagementLabels } from './TopicManagementDialog'
 import type { ReplyViewMode } from './replyTree'
 import useTopicDetailController from './useTopicDetailController'
-import type { TopicDetail } from '@extension/v2ex/types'
+import type { TopicDetail, TopicManagementAction } from '@extension/v2ex/types'
 import type {
   TopicPanelRpcCommands,
   TopicPanelViewState,
@@ -20,6 +22,13 @@ import type {
 
 /** 话题面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<TopicPanelRpcCommands, TopicPanelWebviewEvents>()
+
+/** 作者管理按钮的操作图标 */
+const topicManagementIcons = {
+  edit: <Pencil aria-hidden="true" />,
+  move: <FolderInput aria-hidden="true" />,
+  append: <MessageSquarePlus aria-hidden="true" />
+}
 
 /**
  * 话题页面应用
@@ -36,6 +45,7 @@ export default function TopicApp() {
     canOperate: false
   })
   const [previewTopicId, setPreviewTopicId] = useState<string>()
+  const [managementAction, setManagementAction] = useState<TopicManagementAction>()
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>('nested')
   const topicScrollRef = useRef<HTMLElement | null>(null)
@@ -189,6 +199,19 @@ export default function TopicApp() {
       {state.status === 'topic' && topicController && (
         <TopicDetailView
           controller={topicController}
+          managementActions={
+            state.canOperate &&
+            topic?.managementActions?.map(action => (
+              <Button
+                key={action}
+                size="small"
+                icon={topicManagementIcons[action]}
+                onClick={() => setManagementAction(action)}
+              >
+                {topicManagementLabels[action]}
+              </Button>
+            ))
+          }
           initialReplyViewMode={replyViewMode}
           scrollContainerRef={topicScrollRef}
           onReplyViewModeChange={setReplyViewMode}
@@ -211,6 +234,14 @@ export default function TopicApp() {
       >
         {content}
       </TopicShareContextMenu>
+      {managementAction && topic && state.canOperate && (
+        <TopicManagementDialog
+          key={`${topic.id}:${managementAction}`}
+          action={managementAction}
+          currentNode={topic.node}
+          onClose={() => setManagementAction(undefined)}
+        />
+      )}
       <TopicPreviewModal
         topicId={previewTopicId}
         showImages={showImages}

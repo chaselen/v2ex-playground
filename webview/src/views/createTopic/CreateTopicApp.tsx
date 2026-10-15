@@ -1,9 +1,9 @@
+import NodeSelectButton from '@/components/NodeSelectButton'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Info, MapPin, Send, SquarePen } from 'lucide-react'
+import { Info, Send, SquarePen } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import {
   Alert,
-  Avatar,
   Button,
   ConfirmPopover,
   Input,
@@ -292,28 +292,11 @@ export default function CreateTopicApp() {
                 <strong>发布到节点</strong>
               </div>
               <div className="create-topic-node-tools">
-                <Button
-                  className="create-topic-node-select"
-                  icon={
-                    draft.node ? (
-                      <Avatar
-                        className="create-topic-node-avatar"
-                        src={draft.node.avatar}
-                        alt=""
-                        shape="square"
-                        fallback={<MapPin aria-hidden="true" />}
-                      />
-                    ) : (
-                      <MapPin aria-hidden="true" />
-                    )
-                  }
+                <NodeSelectButton
+                  node={draft.node}
                   disabled={formDisabled}
                   onClick={() => void selectNode()}
-                >
-                  <span className="create-topic-node-title">{draft.node?.title || '选择节点'}</span>
-                  {draft.node && <span className="create-topic-node-name">{draft.node.name}</span>}
-                  <ChevronDown className="create-topic-node-chevron" aria-hidden="true" />
-                </Button>
+                />
                 <a
                   className="create-topic-help-link"
                   href="https://www.v2ex.com/help/node"
@@ -328,7 +311,7 @@ export default function CreateTopicApp() {
                 side="top"
                 align="end"
                 title="确认发布这个主题？"
-                description="发布后 5 分钟内可在 V2EX 网页修改标题、正文或节点"
+                description="发布后 10 分钟内可在话题页修改标题、正文或节点，30 分钟后可添加附言"
                 disabled={!canPublish}
                 onConfirm={publishTopic}
               >

@@ -114,8 +114,8 @@ interface ReplyComposerProps {
   value?: string
   /** 受控正文变化回调 */
   onChange?: (content: string) => void
-  /** 最大正文长度 */
-  maxLength?: number
+  /** 最大正文长度，null 表示服务端未设置上限 */
+  maxLength?: number | null
   /** 编辑框默认行数 */
   rows?: number
   /** 编辑框占位文案 */
@@ -738,14 +738,15 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         >
           <Textarea
             value={value}
-            maxLength={maxLength}
+            maxLength={maxLength ?? undefined}
             rows={rows}
             placeholder={placeholder}
             disabled={disabled || posting || uploadingImage}
             onChange={event => updateContent(event.currentTarget.value)}
           />
           <span className={styles.characterCount}>
-            {value.length} / {maxLength}
+            {value.length}
+            {maxLength != null && ` / ${maxLength}`}
           </span>
           <div className={styles.uploadBar}>
             <button

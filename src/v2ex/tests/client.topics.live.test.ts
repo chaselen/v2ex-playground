@@ -22,6 +22,31 @@ describe.sequential('V2exClient topics', () => {
     }
   )
 
+  test('matches author management capabilities to the current server page', async () => {
+    const topicId = Number(process.env.V2EX_MANAGEMENT_TOPIC_ID) || 703733
+    const detail = await client.getTopicDetail(topicId)
+    const response = await fetch(`https://www.v2ex.com/t/${topicId}`, {
+      headers: {
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        ...(process.env.V2EX_COOKIE ? { Cookie: process.env.V2EX_COOKIE } : {})
+      }
+    })
+    expect(response.ok).toBe(true)
+    const $ = load(await response.text())
+    const actions = (['edit', 'move', 'append'] as const).filter(
+      action => $(`.header > .gray a[href="/${action}/topic/${topicId}"]`).length > 0
+    )
+    expect(detail.managementActions).toEqual(actions)
+    for (const action of actions) {
+      const state = await client.prepareTopicManagement(topicId, action)
+      expect(state.title).toBe(detail.title)
+      expect(state.nodeName).toBe(detail.node.name)
+      expect(state.syntax).toMatch(/^(default|markdown)$/)
+      expect(state).not.toHaveProperty('once')
+      expect(state).not.toHaveProperty('fields')
+    }
+  })
+
   test('gets topics by tab and updates the online count', async () => {
     const topics = await client.getTopicListByTab('tech')
     const onlineCount = await client.getOnlineCount()

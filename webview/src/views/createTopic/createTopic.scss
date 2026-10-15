@@ -145,12 +145,6 @@
   }
 }
 
-.create-topic-node-avatar {
-  width: 16px;
-  height: 16px;
-  border-radius: var(--v2ex-radius-xs);
-}
-
 .create-topic-composer {
   min-height: 360px;
   padding: 14px 20px 20px;
@@ -214,7 +208,7 @@
   border: 1px solid var(--v2ex-border);
   border-top: 0;
   border-radius: 0 0 var(--v2ex-radius-lg) var(--v2ex-radius-lg);
-  background: color-mix(in srgb, var(--v2ex-webview-fg) 3%, var(--v2ex-webview-bg));
+  background: var(--v2ex-webview-bg);
 }
 
 .create-topic-node-field {
@@ -223,40 +217,6 @@
   align-items: flex-start;
   flex-direction: column;
   gap: 8px;
-}
-
-.create-topic-node-select {
-  min-width: 180px;
-  max-width: 100%;
-  min-height: 32px;
-  padding: 5px 10px;
-
-  .v2ex-button__label {
-    display: flex;
-    min-width: 0;
-    flex: 1;
-    align-items: center;
-    gap: 10px;
-  }
-}
-
-.create-topic-node-title,
-.create-topic-node-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.create-topic-node-name {
-  color: var(--v2ex-muted-fg);
-}
-
-.create-topic-node-chevron {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  margin-left: auto;
-  color: var(--v2ex-muted-fg);
 }
 
 .create-topic-node-label {

@@ -1033,7 +1033,7 @@
 }
 
 .v2ex-select__content {
-  z-index: 1000;
+  z-index: 1110;
   width: var(--radix-select-trigger-width);
   max-height: min(320px, var(--radix-select-content-available-height));
   border: 1px solid var(--v2ex-border);
@@ -1223,7 +1223,7 @@
 .v2ex-tooltip,
 .v2ex-popover,
 .v2ex-menu {
-  z-index: 1000;
+  z-index: 1110;
   border: 1px solid var(--v2ex-border);
   color: var(--v2ex-tooltip-fg);
   background: var(--v2ex-tooltip-bg);

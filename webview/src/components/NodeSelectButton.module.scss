@@ -1,0 +1,57 @@
+.trigger {
+  align-self: flex-start;
+  min-width: 180px;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 5px 10px;
+
+  &:enabled {
+    color: var(--v2ex-input-fg);
+    background: var(--v2ex-input-bg);
+    border-color: var(--v2ex-hc-border, var(--v2ex-input-border));
+  }
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    color: var(--v2ex-input-fg);
+    background: var(--v2ex-input-bg);
+    border-color: var(--v2ex-focus-border);
+  }
+
+  &:focus-visible {
+    border-color: var(--v2ex-focus-border);
+  }
+
+  :global(.v2ex-button__label) {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+.avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--v2ex-radius-xs);
+}
+
+.title,
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name {
+  color: var(--v2ex-muted-fg);
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-left: auto;
+  color: var(--v2ex-muted-fg);
+}
