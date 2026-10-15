@@ -2,10 +2,25 @@ import { describe, expect, test } from 'vitest'
 import { load } from 'cheerio/slim'
 import { V2exClient } from '../client'
 import { expectNode, expectTopic, expectTopicDetail } from './client.liveTestAssertions'
+import { readFileSync } from 'node:fs'
 
 const client = new V2exClient(process.env.V2EX_COOKIE)
 
 describe.sequential('V2exClient topics', () => {
+  // 编辑权限会过期；仅显式指定具有快照测试原文的新沙盒主题时运行，测试本身不写入
+  const editFixtureTopicId = Number(process.env.V2EX_EDIT_FIXTURE_TOPIC_ID)
+  test.skipIf(!process.env.V2EX_COOKIE || !editFixtureTopicId)(
+    'reads known sandbox editor values through the facade',
+    async () => {
+      const fixture = JSON.parse(
+        readFileSync(new URL('../parsers/fixtures/topicManagement.json', import.meta.url), 'utf8')
+      )
+      const state = await client.topics.prepareManagement(editFixtureTopicId, 'edit')
+      expect(state).toMatchObject({ ...fixture.expected, nodeName: 'sandbox' })
+      expect(state.syntax).toMatch(/^(default|markdown)$/)
+    }
+  )
+
   const capabilityTest = process.env.V2EX_COOKIE ? test : test.skip
   capabilityTest(
     'gets ignore capabilities for own and other authenticated topic pages',

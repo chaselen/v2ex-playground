@@ -2,6 +2,11 @@ import { describe, expect, test, vi } from 'vitest'
 import { TopicService } from './topic'
 import type { V2exSession } from '../session'
 import type { TopicManagementInput } from '../types'
+import { readFileSync } from 'node:fs'
+
+const realEditFixture = JSON.parse(
+  readFileSync(new URL('../parsers/fixtures/topicManagement.json', import.meta.url), 'utf8')
+)
 
 const detail = `<div class="header"><h1>原标题</h1><a href="/go/sandbox">沙盒</a><small class="gray">
 <a href="/append/topic/12">APPEND</a><a href="/edit/topic/12">EDIT</a><a href="/move/topic/12">MOVE</a></small></div>`
@@ -22,6 +27,24 @@ function setup() {
 }
 
 describe('topic management', () => {
+  test.each(['markdown', 'default'] as const)(
+    'prepares the captured %s editor source without rendering or decoding it again',
+    async syntax => {
+      const { service, get } = setup()
+      get
+        .mockResolvedValueOnce({
+          data: detail.replaceAll('/12', `/${realEditFixture.topicId}`)
+        })
+        .mockResolvedValueOnce({ data: realEditFixture.forms[syntax] })
+
+      expect(await service.prepareManagement(realEditFixture.topicId, 'edit')).toEqual({
+        ...realEditFixture.expected,
+        syntax,
+        nodeName: 'sandbox'
+      })
+    }
+  )
+
   test.each(['append', 'move'] as const)(
     'prepares %s from permissions without requesting its form or once',
     async action => {
