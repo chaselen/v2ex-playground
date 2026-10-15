@@ -2,7 +2,7 @@ import { parseTopicIdByLink } from '../links'
 import * as cheerio from 'cheerio/slim'
 import dayjs from '@/core/dayjs'
 import { getV2exTimeSpan, type CheerioSelection } from './common'
-import type { Node, TagTopicList, Topic, TopicDetail, TopicReply } from '../types'
+import type { Node, TagTopicList, Topic, TopicDetail, TopicInfo, TopicReply } from '../types'
 
 /**
  * 解析话题列表项
@@ -142,6 +142,8 @@ export function parseTopicMeta(
     })
   })
 
+  topic.canViewInfo = headerMeta.find(`a[href="/t/${topicId}/info"]`).length > 0
+
   topic.managementActions = (['edit', 'move', 'append'] as const).filter(
     action => headerMeta.find(`a[href="/${action}/topic/${topicId}"]`).length > 0
   )
@@ -222,4 +224,21 @@ function getTopicReplyBox($: cheerio.CheerioAPI): CheerioSelection {
     topicBoxIndex = 2
   }
   return boxes.eq(topicBoxIndex)
+}
+
+/** 仅接受信息页表格，登录页、无权限页与重定向后的详情页不能视为成功 */
+export function parseTopicInfo(html: string, topicId: number): TopicInfo {
+  const $ = cheerio.load(html)
+  const fields: TopicInfo['fields'] = []
+  $('#Main .topic_content table tr').each((_, row) => {
+    const cells = $(row).children('td')
+    if (cells.length !== 2) return
+    const label = cells.eq(0).text().trim()
+    const value = cells.eq(1).text().trim()
+    if (label) fields.push({ label, value })
+  })
+  if (!fields.some(field => field.label === 'ID' && field.value === String(topicId))) {
+    throw new Error('无法读取帖子信息，请确认登录状态和访问权限后重试')
+  }
+  return { fields }
 }

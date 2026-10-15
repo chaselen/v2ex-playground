@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio/slim'
 import { describe, expect, it } from 'vitest'
-import { parseReplies, parseTagTopicList, parseTopicMeta } from './topic'
+import { parseReplies, parseTagTopicList, parseTopicMeta, parseTopicInfo } from './topic'
 
 describe('topic time parsing', () => {
   it('格式化发帖时间', () => {
@@ -206,5 +206,32 @@ describe('topic ignore state parsing', () => {
 
     expect(parseTopicMeta($, 1, 'https://www.v2ex.com').isIgnored).toBe(isIgnored)
     expect(parseTopicMeta($, 1, 'https://www.v2ex.com').canIgnore).toBe(canIgnore)
+  })
+})
+
+describe('parseTopicInfo', () => {
+  it('保留源站信息顺序、实体和完整时间', () => {
+    const html = `<div id="Main"><div class="topic_content"><table>
+      <tr><td>ID</td><td>703733</td></tr>
+      <tr><td>创建者</td><td><a href="/member/chaselen">chaselen</a></td></tr>
+      <tr><td>创建时间</td><td>2020-09-03 08:36:53 +08:00 · 2020 年 9 月 3 日</td></tr>
+      <tr><td>查看人数</td><td>2772</td></tr>
+      <tr><td>是否处于置顶状态</td><td>否</td></tr>
+    </table></div></div>`
+    expect(parseTopicInfo(html, 703733).fields).toEqual([
+      { label: 'ID', value: '703733' },
+      { label: '创建者', value: 'chaselen' },
+      { label: '创建时间', value: '2020-09-03 08:36:53 +08:00 · 2020 年 9 月 3 日' },
+      { label: '查看人数', value: '2772' },
+      { label: '是否处于置顶状态', value: '否' }
+    ])
+  })
+
+  it.each([
+    '<div id="Main">请先登录</div>',
+    '<div id="Main"><div class="topic_content">主题正文</div></div>',
+    '<div id="Main"><div class="topic_content"><table><tr><td>ID</td><td>1</td></tr></table></div></div>'
+  ])('拒绝登录页、详情页和其他主题信息', html => {
+    expect(() => parseTopicInfo(html, 703733)).toThrow('访问权限')
   })
 })

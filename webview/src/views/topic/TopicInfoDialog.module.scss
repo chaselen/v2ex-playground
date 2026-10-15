@@ -1,0 +1,85 @@
+.dialog {
+  width: min(620px, calc(100vw - 32px));
+}
+
+.fields {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--v2ex-control-border);
+  border-radius: var(--v2ex-radius-sm);
+}
+
+// 信息和骨架共用行尺寸，时间字段可自然换行
+.row {
+  display: grid;
+  grid-template-columns: 136px minmax(0, 1fr);
+  min-height: 42px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 22px;
+
+  & + & {
+    border-top: 1px solid var(--v2ex-control-border);
+  }
+
+  &:nth-child(odd) {
+    background: color-mix(in srgb, var(--v2ex-widget-fg) 3%, transparent);
+  }
+
+  dt {
+    color: var(--v2ex-muted-fg);
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+}
+
+.labelPlaceholder,
+.shortPlaceholder,
+.longPlaceholder {
+  height: 14px;
+  max-width: 100%;
+  margin: 4px 0;
+}
+
+.labelPlaceholder {
+  width: 76px;
+}
+
+.shortPlaceholder {
+  width: 96px;
+}
+
+.longPlaceholder {
+  width: 100%;
+}
+
+.valuePlaceholder {
+  min-width: 0;
+}
+
+.error {
+  display: grid;
+  min-height: 430px;
+  align-content: center;
+  justify-items: start;
+  gap: 16px;
+}
+
+@media (max-width: 520px) {
+  .row {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 12px;
+    padding-inline: 12px;
+
+    &:nth-child(4),
+    &:nth-child(5) {
+      min-height: 86px;
+    }
+  }
+}

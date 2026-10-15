@@ -1,4 +1,5 @@
 import type {
+  TopicInfo,
   MemberInfo,
   Node,
   TopicDetail,
@@ -58,6 +59,8 @@ export interface TopicPanelViewState {
  */
 export interface TopicPanelRpcCommands
   extends WebviewCommonRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
+  /** 加载源站话题信息 */
+  getTopicInfo(topicId: number): TopicInfo
   /** 选择目标节点，返回展示信息 */
   pickTopicManagementNode(currentNodeName?: string): Node | undefined
   /** 检查当前主话题作者权限并读取初始化数据 */

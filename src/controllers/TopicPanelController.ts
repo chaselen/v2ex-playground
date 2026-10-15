@@ -319,6 +319,12 @@ export class TopicPanelController
       : undefined
   }
 
+  /** 信息页的访问权限由源站校验，支持详情预览中的主题 */
+  rpc_getTopicInfo(topicId: number) {
+    if (!Number.isSafeInteger(topicId) || topicId <= 0) throw new Error('无效的话题编号')
+    return G.V2ex.topics.getInfo(topicId)
+  }
+
   /** 检查主话题作者权限并读取初始化数据，目标由控制器固定 */
   rpc_prepareTopicManagement(action: TopicManagementAction) {
     return G.V2ex.topics.prepareManagement(this.topicId, action)

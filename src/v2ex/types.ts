@@ -91,12 +91,20 @@ export interface Topic {
   lastReplyUser?: string
 }
 
+/** 源站话题信息页中的文本字段，保留站点标签和时间格式 */
+export interface TopicInfo {
+  /** 按源站顺序展示的信息 */
+  fields: { label: string; value: string }[]
+}
+
 /**
  * 话题详情
  */
 export interface TopicDetail {
   /** id */
   id: number
+  /** 服务端当前是否提供信息页入口 */
+  canViewInfo?: boolean
   /** 服务端当前提供的作者管理入口 */
   managementActions?: TopicManagementAction[]
   /** 标题 */

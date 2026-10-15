@@ -36,6 +36,12 @@ describe.sequential('V2exClient topics', () => {
     const actions = (['edit', 'move', 'append'] as const).filter(
       action => $(`.header > .gray a[href="/${action}/topic/${topicId}"]`).length > 0
     )
+    expect(detail.canViewInfo).toBe($(`.header > .gray a[href="/t/${topicId}/info"]`).length > 0)
+    if (detail.canViewInfo) {
+      const info = await client.topics.getInfo(topicId)
+      expect(info.fields).toContainEqual({ label: 'ID', value: String(topicId) })
+      expect(info.fields.some(field => field.label === '查看人数')).toBe(true)
+    }
     expect(detail.managementActions).toEqual(actions)
     for (const action of actions) {
       const state = await client.topics.prepareManagement(topicId, action)

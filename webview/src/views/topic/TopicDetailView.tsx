@@ -1,3 +1,4 @@
+import TopicInfoDialog from './TopicInfoDialog'
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
@@ -9,6 +10,7 @@ import {
   EyeOff,
   Heart,
   Inbox,
+  Info,
   RefreshCw,
   Reply,
   Share2,
@@ -100,6 +102,7 @@ export default function TopicDetailView({
   managementActions
 }: TopicDetailViewProps) {
   const { topic, showImages, showAvatar, canOperate } = controller
+  const [infoTopicId, setInfoTopicId] = useState<number>()
   const [loadingReplyPage, setLoadingReplyPage] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [collecting, setCollecting] = useState(false)
@@ -602,6 +605,13 @@ export default function TopicDetailView({
 
   return (
     <>
+      {infoTopicId === topic.id && (
+        <TopicInfoDialog
+          key={topic.id}
+          topicId={topic.id}
+          onClose={() => setInfoTopicId(undefined)}
+        />
+      )}
       <article ref={setTopicRoot} className={className}>
         <header className="topic-header">
           <h1>{topic.title}</h1>
@@ -618,6 +628,17 @@ export default function TopicDetailView({
             <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span> ·{' '}
             {topic.visitCount} 次点击
           </span>
+          {topic.canViewInfo && canOperate && (
+            <Tooltip content="帖子信息">
+              <Button
+                aria-label="帖子信息"
+                icon={<Info aria-hidden="true" />}
+                size="small"
+                variant="ghost"
+                onClick={() => setInfoTopicId(topic.id)}
+              />
+            </Tooltip>
+          )}
           {!!topic.tags.length && (
             <div className="topic-tags" aria-label="帖子标签">
               {topic.tags.map(tag => (

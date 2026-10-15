@@ -6,7 +6,8 @@ import {
   parseReplies,
   parseTagTopicList,
   parseTopicListCells,
-  parseTopicMeta
+  parseTopicMeta,
+  parseTopicInfo
 } from '../parsers/topic'
 import { getResponseUrl } from '../clientUtils'
 import { parseTopicEditContent } from '../parsers/topicManagement'
@@ -77,6 +78,12 @@ export class TopicService {
     const { data: html } = await this.session.get<string>(tagLink)
     const $ = cheerio.load(html)
     return parseTagTopicList($, normalizedTag)
+  }
+
+  /** 读取源站授权的主题信息；不从详情推算统计或时间 */
+  async getInfo(topicId: number) {
+    const { data: html } = await this.session.get<string>(`/t/${topicId}/info`)
+    return parseTopicInfo(html, topicId)
   }
 
   /** 获取话题详情 */
