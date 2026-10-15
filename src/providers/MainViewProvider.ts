@@ -6,7 +6,13 @@ import autoDailySignIn, {
 } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
-import { openBalance, openMember, openNode, openTopic } from '@/features/panelNavigation'
+import {
+  tryOpenHelp,
+  openBalance,
+  openMember,
+  openNode,
+  openTopic
+} from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
 import { downloadImage } from '@/features/imageDownload'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
@@ -244,6 +250,7 @@ export default class MainViewProvider
 
   /** 打开外部链接 */
   rpc_openExternal(path: string) {
+    if (tryOpenHelp(path)) return
     openExternal(path)
   }
 

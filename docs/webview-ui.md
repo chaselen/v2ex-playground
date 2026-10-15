@@ -101,3 +101,9 @@ Webview 使用 React、Radix Primitives 和 Lucide。Radix 只负责交互语义
 - Tabs 指示器、OTP 焦点、菜单键盘导航和 Dialog 焦点管理
 
 涉及真实状态或宿主通信时，还要在扩展宿主中验证 Webview 的首次打开、隐藏恢复和对应业务交互。
+
+## 帮助页骨架
+
+帮助面板的 `help` 骨架与真实内容共享外层 1100px 容器和 24px 内边距，内部按 200px 目录与正文两列布局；640px 以下切为单列，外层内边距为 16px。切换帮助主题时立即更新目录选中态，并使用 `help-content` 骨架替换正文；该骨架与首次加载骨架共享正文占位结构。动态内容及导航规则见 [站点帮助](help.md)。
+
+话题与帮助正文统一复用 `_topic-content.scss` 的 `article` mixin，正文排版调整在此处维护；其他仅需要基础内容增强样式的页面继续使用 `base` mixin。

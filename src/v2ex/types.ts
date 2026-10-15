@@ -603,3 +603,11 @@ export interface SoV2exSearchResult {
   /** 当前页命中项 */
   hits: SoV2exHit[]
 }
+
+/** 原站帮助主题及动态目录 */
+export interface HelpPage {
+  slug: string
+  title: string
+  html: string
+  navigation: { slug: string; title: string }[]
+}

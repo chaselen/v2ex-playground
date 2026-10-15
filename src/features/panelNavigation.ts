@@ -1,3 +1,5 @@
+import { getHelpSlug } from '@/v2ex/parsers/help'
+import { HelpPanelController } from '@/controllers/HelpPanelController'
 import Config from '@/config'
 import { MemberPanelController } from '@/controllers/MemberPanelController'
 import { TopicPanelController } from '@/controllers/TopicPanelController'
@@ -256,4 +258,36 @@ export function openCreateTopic(nodeName?: string) {
     createTopicPanel = undefined
   })
   void createTopicPanel.load()
+}
+
+let helpPanel: HelpPanelController | undefined
+
+/** 打开原站帮助主题并复用已有面板 */
+export function openHelp(slug = 'home') {
+  if (!helpPanel) {
+    helpPanel = new HelpPanelController(panelDeps)
+    helpPanel.onDidDispose(() => {
+      helpPanel = undefined
+    })
+  }
+  helpPanel.reveal()
+  void helpPanel.load(slug)
+}
+
+/** 将原站帮助链接交给插件内面板，其他链接保留外部打开行为 */
+export function tryOpenHelp(path: string): boolean {
+  try {
+    const url = new URL(path)
+    if (
+      !['https:', 'http:'].includes(url.protocol) ||
+      !['www.v2ex.com', 'v2ex.com', 'edge.v2ex.com'].includes(url.hostname)
+    )
+      return false
+    const slug = getHelpSlug(url.pathname)
+    if (!slug) return false
+    openHelp(slug)
+    return true
+  } catch {
+    return false
+  }
 }

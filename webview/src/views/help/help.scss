@@ -1,0 +1,208 @@
+@use '@/styles/topic-content';
+
+.help-scroll {
+  height: 100vh;
+}
+.help-container {
+  max-width: 1100px;
+  padding: 24px;
+  margin: 0 auto;
+}
+.help-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--v2ex-control-border);
+}
+.help-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+}
+.help-brand-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--v2ex-link-fg);
+  background: var(--v2ex-link-soft-bg);
+}
+.help-brand-icon svg {
+  width: 21px;
+  height: 21px;
+}
+.help-brand strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.help-subtitle {
+  display: block;
+  margin-top: 2px;
+  color: var(--v2ex-muted-fg);
+  font-size: 12px;
+}
+.help-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+.help-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px 12px 0;
+  border-right: 1px solid var(--v2ex-control-border);
+}
+.help-nav-label {
+  padding: 0 12px 10px;
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.help-nav button {
+  width: 100%;
+  min-height: 36px;
+  height: auto;
+  padding: 8px 12px;
+  justify-content: space-between;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+.help-nav button[aria-current='page'] {
+  background: var(--v2ex-active-bg);
+  color: var(--v2ex-active-fg);
+  border-color: var(--v2ex-hc-border, transparent);
+  font-weight: 600;
+}
+.help-nav .v2ex-button__label {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.help-nav-chevron {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  opacity: 0;
+}
+.help-nav button[aria-current='page'] .help-nav-chevron {
+  opacity: 0.8;
+}
+.help-content {
+  @include topic-content.article();
+  padding: 4px 8px 40px 0;
+  color: var(--v2ex-content-fg);
+
+  // 原站文末使用 small 输出更新时间与查看次数
+  > small:last-child,
+  .help-muted {
+    display: block;
+    margin-top: 24px;
+    color: var(--v2ex-muted-fg);
+    font-size: 12px;
+  }
+
+  .help-page-meta {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 24px;
+  }
+
+  .help-code-block {
+    font-size: 12px;
+    > code {
+      display: block;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-size: inherit;
+      white-space: pre-wrap;
+    }
+  }
+
+  [id] {
+    scroll-margin-top: 20px;
+  }
+
+  // 帮助文档中的徽章需随文字排版，尺寸沿用原站 HTML 声明
+  img:not(.v2ex-emoticon-image) {
+    display: inline;
+    margin: 0;
+    border-radius: 0;
+    vertical-align: middle;
+  }
+
+  /* 原站首页的主题介绍以直属 div 输出，解析层会去掉原站 class */
+  > div:has(> strong > a) {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--v2ex-control-border);
+  }
+  > div > strong + p {
+    margin: 6px 0 0;
+    color: var(--v2ex-muted-fg);
+  }
+}
+@media (max-width: 640px) {
+  .help-container {
+    padding: 16px;
+  }
+  .help-toolbar {
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .help-brand {
+    flex-basis: 100%;
+    margin-bottom: 8px;
+  }
+  .help-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .help-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 0 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--v2ex-control-border);
+  }
+  .help-nav-label {
+    flex-basis: 100%;
+    padding: 0 0 6px;
+  }
+  .help-nav button {
+    width: auto;
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 12px;
+  }
+  .help-nav-chevron {
+    display: none;
+  }
+  .help-content {
+    padding-right: 0;
+  }
+}
+
+.help-error {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  min-width: 0;
+}

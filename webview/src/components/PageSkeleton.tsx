@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import styles from './PageSkeleton.module.scss'
 
 type PageSkeletonVariant =
+  | 'help'
+  | 'help-content'
   | 'topic'
   | 'member'
   | 'member-topics'
@@ -54,6 +56,15 @@ function renderPlaceholder(
   showAvatar: boolean
 ): ReactNode {
   switch (variant) {
+    case 'help':
+      return (
+        <div className={styles['help-layout']}>
+          <Skeleton.Paragraph rows={10} />
+          <HelpContentPlaceholder />
+        </div>
+      )
+    case 'help-content':
+      return <HelpContentPlaceholder />
     case 'topic':
       return <TopicPlaceholder showAvatar={showAvatar} />
     case 'member':
@@ -422,6 +433,19 @@ function ReplyRows({ rows, avatars }: SkeletonRowsProps & { avatars: boolean }) 
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+/** 帮助正文的标题、分隔线与分段内容占位 */
+function HelpContentPlaceholder() {
+  return (
+    <div className={styles['help-article']}>
+      <Skeleton.Title />
+      <div className={styles.divider} />
+      <Skeleton.Paragraph rows={3} />
+      <Skeleton.Paragraph rows={4} />
+      <Skeleton.Paragraph rows={3} />
     </div>
   )
 }

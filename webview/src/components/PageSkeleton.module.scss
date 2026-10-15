@@ -633,3 +633,40 @@
     padding: 12px;
   }
 }
+
+.skeleton.help,
+.skeleton.help-content {
+  width: 100%;
+  padding: 0;
+}
+.help-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 32px;
+}
+@media (max-width: 640px) {
+  .help-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+
+.help-content {
+  min-width: 0;
+}
+.help-article {
+  padding: 4px 8px 40px 0;
+  > :first-child {
+    height: 29px;
+    width: 48%;
+    margin-bottom: 14px;
+  }
+  > :last-child {
+    margin-bottom: 0;
+  }
+}
+@media (max-width: 640px) {
+  .help-article {
+    padding-right: 0;
+  }
+}

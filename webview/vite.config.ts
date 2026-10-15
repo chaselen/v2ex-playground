@@ -18,6 +18,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 10000,
     rolldownOptions: {
       input: {
+        help: resolve(import.meta.dirname, 'help.html'),
         main: resolve(import.meta.dirname, 'main.html'),
         topic: resolve(import.meta.dirname, 'topic.html'),
         member: resolve(import.meta.dirname, 'member.html'),

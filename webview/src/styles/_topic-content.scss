@@ -238,3 +238,243 @@
     font-weight: 700;
   }
 }
+
+/** 话题与帮助文档共用的正文排版 */
+@mixin article() {
+  @include base;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.72;
+
+  > :first-child,
+  .markdown_body > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child,
+  .markdown_body > :last-child {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin: 0 0 1em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 1.65em 0 0.65em;
+    color: var(--v2ex-content-fg);
+    font-weight: 650;
+    line-height: 1.35;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  h1 {
+    font-size: 1.55em;
+  }
+
+  h2 {
+    padding-bottom: 0.28em;
+    border-bottom: 1px solid color-mix(in srgb, var(--v2ex-border) 72%, transparent);
+    font-size: 1.32em;
+  }
+
+  h3 {
+    font-size: 1.16em;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: 1em;
+  }
+
+  b,
+  strong {
+    color: color-mix(in srgb, var(--v2ex-content-fg) 94%, transparent);
+  }
+
+  a {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .topic-preview-button {
+    appearance: none;
+    display: inline-flex;
+    min-height: 20px;
+    align-items: center;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border: 1px solid var(--v2ex-link-soft-border-strong);
+    border-radius: var(--v2ex-radius-sm);
+    background: var(--v2ex-link-soft-bg-mid);
+    color: var(--v2ex-link-fg);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    vertical-align: 0.08em;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--v2ex-link-soft-hover-bg);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--v2ex-focus-border);
+      outline-offset: 2px;
+    }
+  }
+
+  .hidden-image-button {
+    &:focus-visible {
+      outline: 1px solid var(--v2ex-focus-border);
+      outline-offset: 2px;
+    }
+  }
+
+  pre {
+    margin: 1em 0;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--v2ex-border) 78%, transparent);
+    border-radius: var(--v2ex-radius-md);
+    background: color-mix(in srgb, var(--v2ex-widget-bg) 88%, var(--v2ex-webview-bg));
+    font-size: 13px;
+    line-height: 1.6;
+
+    > code {
+      display: block;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-size: inherit;
+      white-space: inherit;
+      word-break: normal;
+    }
+  }
+
+  code {
+    padding: 0.12em 0.32em;
+    border: 1px solid color-mix(in srgb, var(--v2ex-border) 68%, transparent);
+    border-radius: var(--v2ex-radius-sm);
+    background: color-mix(in srgb, var(--v2ex-widget-bg) 82%, transparent);
+    font-size: 0.92em;
+  }
+
+  blockquote {
+    margin: 1em 0;
+    padding: 10px 14px;
+    border-left: 3px solid var(--v2ex-link-soft-border);
+    background: color-mix(in srgb, var(--v2ex-widget-bg) 72%, transparent);
+    color: color-mix(in srgb, var(--v2ex-content-fg) 82%, transparent);
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--v2ex-border);
+  }
+
+  ol,
+  ul {
+    margin: 0 0 1em;
+    padding-left: 1.5em;
+  }
+
+  li + li {
+    margin-top: 0.35em;
+  }
+
+  li > ol,
+  li > ul {
+    margin: 0.35em 0 0;
+  }
+
+  img:not(.v2ex-emoticon-image) {
+    display: block;
+    height: auto;
+    margin: 0.8em auto;
+    border-radius: var(--v2ex-radius-sm);
+  }
+
+  iframe,
+  video {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 1em 0;
+    border: 0;
+    border-radius: var(--v2ex-radius-md);
+    aspect-ratio: 16 / 9;
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 1em 0;
+    overflow-x: auto;
+    border-collapse: collapse;
+
+    td,
+    th {
+      padding: 6px 12px;
+      border: 1px solid var(--v2ex-border);
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+
+    th {
+      background: color-mix(in srgb, var(--v2ex-widget-bg) 88%, var(--v2ex-webview-bg));
+      color: var(--v2ex-content-fg);
+      font-weight: 600;
+      text-align: left;
+    }
+
+    tbody tr:nth-child(2n) {
+      background: color-mix(in srgb, var(--v2ex-widget-bg) 72%, transparent);
+    }
+  }
+
+  &.append {
+    padding: 8px 10px;
+    border-left: 2px solid var(--v2ex-link-soft-border);
+    background: var(--v2ex-link-soft-bg-faint);
+
+    .append-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin: 0 0 6px;
+      padding: 0;
+      border: 0;
+      color: var(--v2ex-muted-fg);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .append-time {
+      color: color-mix(in srgb, var(--v2ex-muted-fg) 78%, transparent);
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    p:last-child,
+    ul:last-child,
+    ol:last-child,
+    pre:last-child,
+    blockquote:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

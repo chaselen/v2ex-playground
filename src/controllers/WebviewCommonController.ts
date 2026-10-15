@@ -1,3 +1,4 @@
+import { tryOpenHelp } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
 import { downloadImage } from '@/features/imageDownload'
 import type {
@@ -28,6 +29,7 @@ export abstract class WebviewCommonController<
 
   /** 打开外部链接 */
   rpc_openExternal(path: string) {
+    if (tryOpenHelp(path)) return
     openExternal(path)
   }
 

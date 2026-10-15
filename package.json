@@ -57,6 +57,12 @@
         "command": "v2ex.showLogs",
         "title": "查看日志",
         "category": "V2EX"
+      },
+      {
+        "command": "v2ex.help",
+        "title": "站点帮助",
+        "category": "V2EX",
+        "icon": "$(question)"
       }
     ],
     "viewsContainers": {
@@ -130,6 +136,11 @@
           "command": "v2ex.login",
           "when": "view == v2ex-main",
           "group": "navigation@4"
+        },
+        {
+          "command": "v2ex.help",
+          "when": "view == v2ex-main",
+          "group": "help@0"
         }
       ]
     },

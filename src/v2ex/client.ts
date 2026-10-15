@@ -1,4 +1,5 @@
 import type { HttpFailureHandler } from '@/core/httpFailureLogging'
+import { HelpService } from './services/help'
 import { AccountService } from './services/account'
 import { AuthService } from './services/auth'
 import { MemberService } from './services/member'
@@ -73,6 +74,11 @@ export interface V2exClientOptions {
 
 /** V2EX 对外客户端门面 */
 export class V2exClient {
+  /** 获取原站帮助文档 */
+  getHelpPage(slug = 'home') {
+    return new HelpService(this.session).getPage(slug)
+  }
+
   /** V2EX 服务地址 */
   readonly baseUrl: string
 
