@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, MapPin, Send, SquarePen } from 'lucide-react'
+import { ChevronDown, Info, MapPin, Send, SquarePen } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import {
   Alert,
@@ -9,8 +9,10 @@ import {
   Input,
   RadioGroup,
   RadioGroupItem,
-  Toast
+  Toast,
+  Tooltip
 } from '@/components/ui'
+import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import ReplyComposer from '@/views/topic/ReplyComposer'
 import {
@@ -248,16 +250,28 @@ export default function CreateTopicApp() {
               disabled={formDisabled}
               toolbarClassName="create-topic-editor-toolbar"
               toolbarEnd={
-                <RadioGroup
-                  className="create-topic-syntax"
-                  variant="segmented"
-                  value={draft.syntax}
-                  disabled={formDisabled}
-                  onValueChange={value => updateDraft('syntax', value as TopicSyntax)}
-                >
-                  <RadioGroupItem value="default" label="V2EX 原生格式" />
-                  <RadioGroupItem value="markdown" label="Markdown" />
-                </RadioGroup>
+                <div className="create-topic-syntax-tools">
+                  <RadioGroup
+                    className="create-topic-syntax"
+                    variant="segmented"
+                    value={draft.syntax}
+                    disabled={formDisabled}
+                    onValueChange={value => updateDraft('syntax', value as TopicSyntax)}
+                  >
+                    <RadioGroupItem value="default" label="V2EX 原生格式" />
+                    <RadioGroupItem value="markdown" label="Markdown" />
+                  </RadioGroup>
+                  <Tooltip content="语法帮助">
+                    <a
+                      className="create-topic-help-link"
+                      href="https://www.v2ex.com/help/markdown"
+                      aria-label="语法帮助"
+                      onClick={event => handleWebviewLinkClick(event)}
+                    >
+                      <Info aria-hidden="true" />
+                    </a>
+                  </Tooltip>
+                </div>
               }
               onChange={content => updateDraft('content', content)}
               onPreview={content =>
@@ -277,28 +291,37 @@ export default function CreateTopicApp() {
               <div className="create-topic-node-label">
                 <strong>发布到节点</strong>
               </div>
-              <Button
-                className="create-topic-node-select"
-                icon={
-                  draft.node ? (
-                    <Avatar
-                      className="create-topic-node-avatar"
-                      src={draft.node.avatar}
-                      alt=""
-                      shape="square"
-                      fallback={<MapPin aria-hidden="true" />}
-                    />
-                  ) : (
-                    <MapPin aria-hidden="true" />
-                  )
-                }
-                disabled={formDisabled}
-                onClick={() => void selectNode()}
-              >
-                <span className="create-topic-node-title">{draft.node?.title || '选择节点'}</span>
-                {draft.node && <span className="create-topic-node-name">{draft.node.name}</span>}
-                <ChevronDown className="create-topic-node-chevron" aria-hidden="true" />
-              </Button>
+              <div className="create-topic-node-tools">
+                <Button
+                  className="create-topic-node-select"
+                  icon={
+                    draft.node ? (
+                      <Avatar
+                        className="create-topic-node-avatar"
+                        src={draft.node.avatar}
+                        alt=""
+                        shape="square"
+                        fallback={<MapPin aria-hidden="true" />}
+                      />
+                    ) : (
+                      <MapPin aria-hidden="true" />
+                    )
+                  }
+                  disabled={formDisabled}
+                  onClick={() => void selectNode()}
+                >
+                  <span className="create-topic-node-title">{draft.node?.title || '选择节点'}</span>
+                  {draft.node && <span className="create-topic-node-name">{draft.node.name}</span>}
+                  <ChevronDown className="create-topic-node-chevron" aria-hidden="true" />
+                </Button>
+                <a
+                  className="create-topic-help-link"
+                  href="https://www.v2ex.com/help/node"
+                  onClick={event => handleWebviewLinkClick(event)}
+                >
+                  节点使用说明
+                </a>
+              </div>
             </div>
             <div className="create-topic-publish">
               <ConfirmPopover

@@ -26,6 +26,7 @@ export default function HelpApp() {
 
   /** 立即切换目录与加载占位，RPC 失败时保留重试入口 */
   async function loadPage(slug: string) {
+    if (state.slug === slug && state.status !== 'error') return
     setState(previous => ({ ...previous, slug, status: 'loading', message: undefined }))
     try {
       await vscode.load(slug)

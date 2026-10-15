@@ -167,6 +167,31 @@
   }
 }
 
+.create-topic-syntax-tools,
+.create-topic-node-tools {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-topic-node-tools {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.create-topic-help-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  font-size: 12px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .create-topic-syntax {
   flex-direction: row;
   font-size: 12px;
@@ -305,7 +330,8 @@
   }
 
   .create-topic-syntax {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
 
     .v2ex-radio-group__label {
       flex: 1;

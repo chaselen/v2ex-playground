@@ -55,7 +55,7 @@ export class HelpPanelController
   }
   /** 刷新当前主题 */
   rpc_refresh() {
-    return this.load(this.state.slug)
+    return this.load(this.state.slug, true)
   }
   /** 在浏览器中查看原文 */
   rpc_openSource() {
@@ -63,8 +63,9 @@ export class HelpPanelController
   }
 
   /** 请求主题并同步状态，旧请求不得覆盖后续导航 */
-  async load(slug = 'home') {
+  async load(slug = 'home', refresh = false) {
     if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('帮助主题无效')
+    if (!refresh && this.state.status === 'result' && this.state.slug === slug) return
     const revision = ++this.revision
     this.post({ status: 'loading', slug, data: this.state.data })
     try {
