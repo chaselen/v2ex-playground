@@ -130,17 +130,17 @@
         {
           "command": "v2ex.settings",
           "when": "view == v2ex-main",
-          "group": "navigation@3"
+          "group": "more@1"
         },
         {
           "command": "v2ex.login",
           "when": "view == v2ex-main",
-          "group": "navigation@4"
+          "group": "more@0"
         },
         {
           "command": "v2ex.help",
           "when": "view == v2ex-main",
-          "group": "help@0"
+          "group": "more@2"
         }
       ]
     },
