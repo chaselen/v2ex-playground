@@ -122,7 +122,6 @@ export default function HelpApp() {
             viewportProps={{ role: 'region', 'aria-label': '帮助目录' }}
           >
             <nav className="help-nav" aria-label="帮助主题">
-              <span className="help-nav-label">帮助目录</span>
               {state.data.navigation.map(item => (
                 <Button
                   key={item.slug}

@@ -15,8 +15,8 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  padding-bottom: 20px;
-  margin-bottom: 28px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--v2ex-control-border);
 }
 .help-brand {
@@ -79,14 +79,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 8px 12px 12px 0;
-}
-.help-nav-label {
-  padding: 0 12px 10px;
-  color: var(--v2ex-muted-fg);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  padding: 0 12px 0 0;
 }
 .help-nav button,
 .help-nav-placeholder {
@@ -125,16 +118,20 @@
 }
 .help-content {
   @include topic-content.article();
-  padding: 4px 8px 40px 0;
+  padding: 4px 8px 0 0;
   color: var(--v2ex-content-fg);
 
   // 原站文末使用 small 输出更新时间与查看次数
   > small:last-child,
   .help-muted {
-    display: block;
-    margin-top: 24px;
     color: var(--v2ex-muted-fg);
     font-size: 12px;
+  }
+
+  > small:last-child,
+  > .help-muted {
+    display: block;
+    margin-top: 24px;
   }
 
   .help-page-meta {
@@ -183,14 +180,6 @@
   .help-container {
     padding: 16px;
   }
-  .help-toolbar {
-    gap: 6px;
-    margin-bottom: 20px;
-  }
-  .help-brand {
-    flex-basis: 100%;
-    margin-bottom: 8px;
-  }
   .help-layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, auto) minmax(0, 1fr);
@@ -205,11 +194,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 0 0 18px;
-  }
-  .help-nav-label {
-    flex-basis: 100%;
-    padding: 0 0 6px;
+    padding: 0;
   }
   .help-nav button,
   .help-nav-placeholder {
