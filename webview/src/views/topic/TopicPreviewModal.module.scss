@@ -1,3 +1,5 @@
+@use '@/styles/page-layout';
+
 .modal {
   width: min(1040px, calc(100vw - 48px));
   height: min(800px, calc(100vh - 48px));
@@ -33,9 +35,7 @@
 }
 
 .container {
-  max-width: 800px;
-  padding: 24px;
-  margin: 0 auto;
+  @include page-layout.topic-container;
 }
 
 .state {

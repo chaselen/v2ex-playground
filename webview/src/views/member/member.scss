@@ -1,3 +1,4 @@
+@use '@/styles/page-layout';
 @use '../../styles/topic-content' as topic-content-shared;
 
 .member-scroll {
@@ -21,10 +22,8 @@
 }
 
 .member-container {
-  min-width: 360px;
-  max-width: 820px;
+  @include page-layout.container;
   padding: 20px;
-  margin: 0 auto;
 }
 
 .member-profile {
@@ -358,7 +357,6 @@
 
 @media (max-width: 520px) {
   .member-container {
-    min-width: 0;
     padding: 14px;
   }
 

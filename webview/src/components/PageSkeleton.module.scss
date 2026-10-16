@@ -1,3 +1,5 @@
+@use '@/styles/page-layout';
+
 .skeleton {
   --skeleton-divider: var(
     --v2ex-border-base,
@@ -9,16 +11,15 @@
 }
 
 .topic {
-  width: min(100%, 800px);
-  padding: 24px;
+  @include page-layout.topic-container;
 }
 
 .balance {
-  width: min(100%, 1100px);
+  @include page-layout.container(page-layout.$wide-width);
 }
 
 .member {
-  width: min(100%, 820px);
+  @include page-layout.container;
 }
 
 /*
@@ -613,12 +614,6 @@
     grid-template-columns: 1fr 1.4fr 0.7fr;
     gap: 8px;
     padding-inline: 4px;
-  }
-}
-
-@media (max-width: 480px) {
-  .topic {
-    padding: 14px;
   }
 }
 

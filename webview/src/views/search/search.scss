@@ -1,3 +1,4 @@
+@use '@/styles/page-layout';
 @use '../../styles/topic-list-item' as topic-list-item;
 
 .search-scroll {
@@ -13,10 +14,8 @@
 }
 
 .search-container {
-  min-width: 360px;
-  max-width: 920px;
+  @include page-layout.container;
   padding: 20px;
-  margin: 0 auto;
 }
 
 .search-header {

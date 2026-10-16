@@ -1,0 +1,21 @@
+// 页面与对应骨架共享宽度档位，窄分栏允许容器随可用空间收缩
+$standard-width: 960px;
+$wide-width: 1100px;
+$compact-width: 420px;
+
+@mixin container($max-width: $standard-width) {
+  width: 100%;
+  min-width: 0;
+  max-width: $max-width;
+  margin: 0 auto;
+}
+
+// 话题正文、预览与首次加载骨架保持相同的侧边距
+@mixin topic-container {
+  @include container;
+  padding: 24px;
+
+  @media (max-width: 480px) {
+    padding: 14px;
+  }
+}

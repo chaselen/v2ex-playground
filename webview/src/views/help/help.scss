@@ -1,12 +1,12 @@
+@use '@/styles/page-layout';
 @use '@/styles/topic-content';
 
 .help-scroll {
   height: 100vh;
 }
 .help-container {
-  max-width: 1100px;
+  @include page-layout.container(page-layout.$wide-width);
   padding: 24px;
-  margin: 0 auto;
 }
 .help-toolbar {
   display: flex;

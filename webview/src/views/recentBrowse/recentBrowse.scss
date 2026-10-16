@@ -1,3 +1,4 @@
+@use '@/styles/page-layout';
 @use '../../styles/topic-list-item' as topic-list-item;
 
 .recent-scroll {
@@ -5,10 +6,9 @@
 }
 
 .recent-container {
-  max-width: 960px;
+  @include page-layout.container;
   min-height: 100vh;
   padding: 16px 20px;
-  margin: 0 auto;
   color: var(--v2ex-webview-fg);
 }
 

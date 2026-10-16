@@ -1,3 +1,5 @@
+@use '@/styles/page-layout';
+
 .two-factor-page {
   display: flex;
   min-height: 100vh;
@@ -10,7 +12,7 @@
 
 .two-factor-panel {
   display: flex;
-  width: min(100%, 420px);
+  @include page-layout.container(page-layout.$compact-width);
   flex-direction: column;
   gap: 16px;
 }

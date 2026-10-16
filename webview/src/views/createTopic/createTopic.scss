@@ -1,3 +1,4 @@
+@use '@/styles/page-layout';
 @use '../../styles/topic-content' as topic-content;
 
 .create-topic-scroll {
@@ -11,10 +12,8 @@
 }
 
 .create-topic-container {
-  min-width: 360px;
-  max-width: 880px;
+  @include page-layout.container;
   padding: 28px 24px 36px;
-  margin: 0 auto;
 }
 
 .create-topic-header,
@@ -266,7 +265,6 @@
 
 @media (max-width: 600px) {
   .create-topic-container {
-    min-width: 0;
     padding: 16px 12px 24px;
   }
 
