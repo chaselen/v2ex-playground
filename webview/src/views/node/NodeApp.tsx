@@ -88,7 +88,7 @@ export default function NodeApp() {
 
   /** 打开话题 */
   function openTopic(topic: Topic) {
-    vscode.openTopic({ topicId: topic.id, title: topic.title })
+    vscode.openTopic(topic.id, topic.title)
   }
 
   /** 打开作者 */
@@ -101,7 +101,7 @@ export default function NodeApp() {
   /** 打开节点 */
   function openNode(nodePayload: Topic['node']) {
     if (nodePayload.name) {
-      vscode.openNode(nodePayload)
+      vscode.openNode(nodePayload.name, nodePayload.title)
     }
   }
 

@@ -364,7 +364,7 @@ function SearchResultCard({ hit }: { hit: SoV2exHit }) {
    * 打开话题
    */
   function openTopic() {
-    vscode.openTopic({ topicId: source.id, title: source.title })
+    vscode.openTopic(source.id, source.title)
   }
 
   /**

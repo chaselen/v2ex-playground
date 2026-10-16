@@ -23,7 +23,7 @@ export default async function openTopic() {
     return
   }
 
-  openTopicPanel({ topicId })
+  openTopicPanel(topicId)
 }
 
 /**

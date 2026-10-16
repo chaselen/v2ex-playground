@@ -376,7 +376,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       return onCheckImgurConnectivity(target, refresh)
     }
 
-    return vscode.checkImgurConnectivity({ target, refresh })
+    return vscode.checkImgurConnectivity(target, refresh)
   }
 
   useEffect(() => {

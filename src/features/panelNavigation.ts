@@ -9,7 +9,6 @@ import { RecentBrowsePanelController } from '@/controllers/RecentBrowsePanelCont
 import { TagPanelController } from '@/controllers/TagPanelController'
 import { NodePanelController } from '@/controllers/NodePanelController'
 import { CreateTopicPanelController } from '@/controllers/CreateTopicPanelController'
-import type { OpenNodePayload, OpenTopicPayload } from '@/shared/webview'
 
 /**
  * 存放用户页面的控制器
@@ -85,10 +84,11 @@ export function openMember(username: string) {
 
 /**
  * 打开话题详情页面
- * @param topic 话题参数
+ * @param id 话题 id
+ * @param title 话题展示标题
  */
-export function openTopic(topic: OpenTopicPayload) {
-  const topicId = Number(topic.topicId)
+export function openTopic(id: string | number, title?: string) {
+  const topicId = Number(id)
   if (Number.isNaN(topicId)) {
     throw new Error('打开话题面板缺少必要参数')
   }
@@ -109,7 +109,7 @@ export function openTopic(topic: OpenTopicPayload) {
     })
   }
 
-  controller = new TopicPanelController({ ...topic, topicId }, panelDeps)
+  controller = new TopicPanelController(topicId, title, panelDeps)
   topicPanels[topicKey] = controller
   controller.onDidDispose(() => {
     delete topicPanels[topicKey]
@@ -150,15 +150,16 @@ export function openTag(tag: string) {
 
 /**
  * 打开节点主题页面
- * @param node 节点参数
+ * @param name 节点 name
+ * @param title 节点展示标题
  */
-export function openNode(node: OpenNodePayload) {
-  const nodeName = node.name?.trim()
+export function openNode(name: string, title?: string) {
+  const nodeName = name?.trim()
   if (!nodeName) {
     throw new Error('打开节点面板缺少必要参数')
   }
 
-  const title = node.title?.trim() || nodeName
+  const panelTitle = title?.trim() || nodeName
   const nodeKey = getNodeLink(nodeName)
   let controller = nodePanels[nodeKey]
   if (controller) {
@@ -172,7 +173,7 @@ export function openNode(node: OpenNodePayload) {
     })
   }
 
-  controller = new NodePanelController(nodeName, title, panelDeps)
+  controller = new NodePanelController(nodeName, panelTitle, panelDeps)
   nodePanels[nodeKey] = controller
   controller.onDidDispose(() => {
     delete nodePanels[nodeKey]

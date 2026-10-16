@@ -33,20 +33,6 @@ const pendingShareImageLoads = new Map<string, Promise<Uri>>()
 /** 分享图缓存清理任务 */
 let shareImageCacheCleanup: Promise<void> | undefined
 
-/** 分享图保存参数 */
-interface TopicShareImageInput {
-  /** 话题 id */
-  topicId: string | number
-  /** PNG 图片 base64 内容 */
-  base64: string
-}
-
-/** 分享图图片加载选项 */
-interface LoadTopicShareImagesOptions {
-  /** 返回格式 */
-  format?: 'resourceUri' | 'dataUrl'
-}
-
 /** 获取分享图图片缓存目录 */
 export function getTopicShareImageCacheDir() {
   return getExtensionFileCacheDir(TOPIC_SHARE_IMAGE_CACHE_DIR)
@@ -56,11 +42,11 @@ export function getTopicShareImageCacheDir() {
 export async function loadTopicShareImages(
   imageSources: string[],
   webview: vscode.Webview,
-  options: LoadTopicShareImagesOptions | null = {}
+  format: 'resourceUri' | 'dataUrl' | null = 'resourceUri'
 ) {
   await cleanupTopicShareImageCache()
   const sources = Array.from(new Set(imageSources.map(source => source.trim()).filter(Boolean)))
-  const entries = await loadTopicShareImageEntries(sources, webview, options)
+  const entries = await loadTopicShareImageEntries(sources, webview, format)
   return Object.fromEntries(entries.filter(entry => entry !== undefined))
 }
 
@@ -68,12 +54,12 @@ export async function loadTopicShareImages(
  * 使用滑动并发池加载分享图片
  * @param imageSources 去重后的图片地址
  * @param webview 当前 Webview
- * @param options 图片返回格式
+ * @param format 图片返回格式
  */
 async function loadTopicShareImageEntries(
   imageSources: string[],
   webview: vscode.Webview,
-  options: LoadTopicShareImagesOptions | null
+  format: 'resourceUri' | 'dataUrl' | null
 ) {
   /** 按输入顺序保存每张图片的加载结果 */
   const entries: Array<readonly [string, string] | undefined> = new Array(imageSources.length)
@@ -88,7 +74,7 @@ async function loadTopicShareImageEntries(
       entries[currentIndex] = await loadTopicShareImageEntry(
         imageSources[currentIndex],
         webview,
-        options
+        format
       )
     }
   }
@@ -103,12 +89,12 @@ async function loadTopicShareImageEntries(
  * 加载单张分享图并转换为 Webview 可用地址
  * @param imageSrc 原始图片地址
  * @param webview 当前 Webview
- * @param options 图片返回格式
+ * @param format 图片返回格式
  */
 async function loadTopicShareImageEntry(
   imageSrc: string,
   webview: vscode.Webview,
-  options: LoadTopicShareImagesOptions | null
+  format: 'resourceUri' | 'dataUrl' | null
 ) {
   try {
     const normalizedSrc = normalizeRemoteImageSrc(
@@ -120,7 +106,7 @@ async function loadTopicShareImageEntry(
     const imageUri = await loadTopicShareImage(normalizedSrc)
     // 默认仅返回短资源 URI，data URL 只用于 Webview 无法读取资源时的回退
     const displaySrc =
-      options?.format === 'dataUrl'
+      format === 'dataUrl'
         ? await readImageDataUrl(imageUri)
         : webview.asWebviewUri(imageUri).toString()
     return [imageSrc, displaySrc] as const
@@ -317,8 +303,12 @@ function toIpv4Address(hextets: number[]) {
   return hextets.flatMap(hextet => [hextet >> 8, hextet & 0xff]).join('.')
 }
 
-/** 保存 Webview 生成的话题分享图 */
-export async function saveTopicShareImage({ topicId, base64 }: TopicShareImageInput) {
+/**
+ * 保存 Webview 生成的话题分享图
+ * @param topicId 话题 id
+ * @param base64 PNG 图片 base64 内容
+ */
+export async function saveTopicShareImage(topicId: string | number, base64: string) {
   try {
     const image = decodePng(base64)
     const destination = await vscode.window.showSaveDialog({

@@ -5,7 +5,7 @@ import autoDailySignIn, {
   onDailySignInStatusChanged
 } from '@/features/dailySignIn'
 import G from '@/global'
-import { LoginRequiredError, Topic, V2exNotification } from '@/v2ex'
+import { LoginRequiredError, Topic } from '@/v2ex'
 import {
   tryOpenHelp,
   openBalance,
@@ -34,16 +34,13 @@ import {
   MainPanelTabKey,
   MainViewRpcCommands,
   MainViewWebviewEvents,
-  MyContentTabKey,
   MyNotificationListData,
   MyOverviewRefreshData,
   MyTopicListData,
+  NodeChildrenRequest,
   NodeListData,
   NodeChildrenData,
-  OpenNodePayload,
-  OpenTopicPayload,
-  WebviewDailySignInData,
-  WebviewNotification,
+  DailySignInState,
   WebviewTopic,
   WebviewRpcController
 } from '@/shared/webview'
@@ -171,21 +168,18 @@ export default class MainViewProvider
   }
 
   /** 展开节点 */
-  rpc_expandNode(message: { tab: MainTabKey; itemKey: string; page?: number }) {
+  rpc_expandNode(message: NodeChildrenRequest) {
     return this._handleExpandNode(message.tab, message.itemKey, message.page)
   }
 
   /** 刷新节点 */
-  rpc_refreshNode(message: { tab: MainTabKey; itemKey: string; page?: number }) {
+  rpc_refreshNode(message: NodeChildrenRequest) {
     return this._handleRefreshNode(message.tab, message.itemKey, message.page)
   }
 
   /** 获取我的主题 */
-  rpc_getMyTopics(message: {
-    tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
-    page?: number
-  }) {
-    return this._handleGetMyTopics(message.tab, message.page)
+  rpc_getMyTopics(tab: MyTopicListData['tab'], page?: number) {
+    return this._handleGetMyTopics(tab, page)
   }
 
   /** 获取我的提醒 */
@@ -194,8 +188,8 @@ export default class MainViewProvider
   }
 
   /** 删除当前账户的提醒消息 */
-  rpc_deleteNotification(input: { notificationId: number }) {
-    return G.V2ex.account.deleteNotification(input.notificationId)
+  rpc_deleteNotification(notificationId: number) {
+    return G.V2ex.account.deleteNotification(notificationId)
   }
 
   /** 获取每日签到状态 */
@@ -229,8 +223,8 @@ export default class MainViewProvider
   }
 
   /** 打开话题面板 */
-  rpc_openTopic(message: OpenTopicPayload) {
-    openTopic(message)
+  rpc_openTopic(topicId: string | number, title?: string) {
+    openTopic(topicId, title)
   }
 
   /** 打开用户面板 */
@@ -239,8 +233,8 @@ export default class MainViewProvider
   }
 
   /** 打开节点主题面板 */
-  rpc_openNode(message: OpenNodePayload) {
-    openNode(message)
+  rpc_openNode(name: string, title?: string) {
+    openNode(name, title)
   }
 
   /** 打开账户余额面板 */
@@ -275,18 +269,18 @@ export default class MainViewProvider
   }
 
   /** 复制话题链接 */
-  rpc_ctxCopyLink(message: { topicId: number; label: string }) {
-    copyTopicLink(message.topicId)
+  rpc_ctxCopyLink(topicId: number) {
+    copyTopicLink(topicId)
   }
 
   /** 复制话题标题和链接 */
-  rpc_ctxCopyTitleLink(message: { topicId: number; label: string }) {
-    copyTopicTitleLink(message.topicId, message.label)
+  rpc_ctxCopyTitleLink(topicId: number, title: string) {
+    copyTopicTitleLink(topicId, title)
   }
 
   /** 在浏览器中打开话题 */
-  rpc_ctxViewInBrowser(message: { topicId: number; label: string }) {
-    viewTopicInBrowser(message.topicId)
+  rpc_ctxViewInBrowser(topicId: number) {
+    viewTopicInBrowser(topicId)
   }
 
   /**
@@ -567,7 +561,7 @@ export default class MainViewProvider
    * @param page 页码
    */
   private async _handleGetMyTopics(
-    tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>,
+    tab: MyTopicListData['tab'],
     page = 1
   ): Promise<MyTopicListData> {
     if (!(await G.V2ex.ensureAuthenticated())) {
@@ -612,14 +606,14 @@ export default class MainViewProvider
       page,
       totalPage: Math.max(result.totalPage || 1, 1),
       totalCount: result.totalCount,
-      notifications: result.list.map(notification => this._toWebviewNotification(notification))
+      notifications: result.list
     }
   }
 
   /**
    * 获取每日签到状态
    */
-  private async _handleGetDailySignInStatus(): Promise<WebviewDailySignInData> {
+  private async _handleGetDailySignInStatus(): Promise<DailySignInState> {
     if (!(await G.V2ex.ensureAuthenticated())) return { signedIn: false }
 
     return getDailySignInStatus()
@@ -628,7 +622,7 @@ export default class MainViewProvider
   /**
    * 执行每日签到
    */
-  private async _handleDailySignIn(): Promise<WebviewDailySignInData> {
+  private async _handleDailySignIn(): Promise<DailySignInState> {
     if (!(await G.V2ex.ensureAuthenticated())) return { signedIn: false }
 
     return dailySignIn()
@@ -662,14 +656,6 @@ export default class MainViewProvider
     }
 
     this._rpc?.post('topicRead', { topicIds: getReadTopicIds() })
-  }
-
-  /**
-   * 转换 Webview 提醒消息数据
-   * @param notification 领域提醒消息
-   */
-  private _toWebviewNotification(notification: V2exNotification): WebviewNotification {
-    return notification
   }
 
   /**

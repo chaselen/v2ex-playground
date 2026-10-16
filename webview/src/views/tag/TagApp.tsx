@@ -44,7 +44,7 @@ export default function TagApp() {
 
   /** 打开话题 */
   function openTopic(topic: Topic) {
-    vscode.openTopic({ topicId: topic.id, title: topic.title })
+    vscode.openTopic(topic.id, topic.title)
   }
 
   /** 打开作者 */
@@ -57,7 +57,7 @@ export default function TagApp() {
   /** 打开节点 */
   function openNode(node: Topic['node']) {
     if (node.name) {
-      vscode.openNode(node)
+      vscode.openNode(node.name, node.title)
     }
   }
 

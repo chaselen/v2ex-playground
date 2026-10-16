@@ -81,10 +81,10 @@ export default function TopicPreviewModal({
     const requestId = ++loadRequestRef.current
     setRefreshing(true)
     try {
-      const nextTopic = await vscode.getTopicPreview({
-        topicId: activeTopicId,
-        replyPage: topicRef.current?.replyCurrentPage
-      })
+      const nextTopic = await vscode.getTopicPreview(
+        activeTopicId,
+        topicRef.current?.replyCurrentPage
+      )
       return requestId === loadRequestRef.current ? nextTopic : undefined
     } finally {
       if (activeTopicIdRef.current === activeTopicId) {
@@ -101,7 +101,7 @@ export default function TopicPreviewModal({
     }
 
     const requestId = ++loadRequestRef.current
-    const nextTopic = await vscode.getTopicPreview({ topicId: activeTopicId, replyPage })
+    const nextTopic = await vscode.getTopicPreview(activeTopicId, replyPage)
     return requestId === loadRequestRef.current ? nextTopic : undefined
   }, [])
 
@@ -127,7 +127,7 @@ export default function TopicPreviewModal({
     }
 
     try {
-      const nextTopic = await vscode.getTopicPreview({ topicId, replyPage })
+      const nextTopic = await vscode.getTopicPreview(topicId, replyPage)
       if (requestId === loadRequestRef.current) {
         setState({ status: 'topic', topic: nextTopic })
       }
@@ -166,7 +166,7 @@ export default function TopicPreviewModal({
     if (!topicId) {
       return
     }
-    vscode.openTopic({ topicId, title: topic?.title })
+    vscode.openTopic(topicId, topic?.title)
     onClose()
   }
 
@@ -180,7 +180,7 @@ export default function TopicPreviewModal({
   /** 复制预览话题标题和链接 */
   function copyPreviewTitleLink() {
     if (topicId && topic) {
-      void vscode.copyTopicTitleLink({ topicId, title: topic.title })
+      void vscode.copyTopicTitleLink(topicId, topic.title)
     }
   }
 

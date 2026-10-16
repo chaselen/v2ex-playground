@@ -1,21 +1,16 @@
 import { tryOpenHelp } from '@/features/panelNavigation'
 import { openExternal } from '@/features/openExternal'
 import { downloadImage } from '@/features/imageDownload'
-import type {
-  OpenNodePayload,
-  OpenTopicPayload,
-  WebviewCommonRpcCommands,
-  WebviewRpcController
-} from '@/shared/webview'
+import type { WebviewCommonRpcCommands, WebviewRpcController } from '@/shared/webview'
 
 /** Webview 公共导航依赖 */
 export interface WebviewNavigationDeps {
   /** 打开用户面板 */
   openMember: (username: string) => void
   /** 打开话题面板 */
-  openTopic: (topic: OpenTopicPayload) => void
+  openTopic: (topicId: string | number, title?: string) => void
   /** 打开节点主题标签 */
-  openNode: (node: OpenNodePayload) => void
+  openNode: (name: string, title?: string) => void
 }
 
 /** 提供 Webview 公共 RPC 的控制器 */
@@ -34,8 +29,8 @@ export abstract class WebviewCommonController<
   }
 
   /** 打开话题面板 */
-  rpc_openTopic(payload: OpenTopicPayload) {
-    this.navigation.openTopic(payload)
+  rpc_openTopic(topicId: string | number, title?: string) {
+    this.navigation.openTopic(topicId, title)
   }
 
   /** 打开用户面板 */
@@ -44,8 +39,8 @@ export abstract class WebviewCommonController<
   }
 
   /** 打开节点主题标签 */
-  rpc_openNode(payload: OpenNodePayload) {
-    this.navigation.openNode(payload)
+  rpc_openNode(name: string, title?: string) {
+    this.navigation.openNode(name, title)
   }
 
   /** 下载远程图片 */

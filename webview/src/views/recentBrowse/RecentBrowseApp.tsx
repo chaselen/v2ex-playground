@@ -144,10 +144,7 @@ export default function RecentBrowseApp() {
    * @param topic 最近浏览话题
    */
   function openTopic(topic: RecentBrowseTopic) {
-    vscode.openTopic({
-      topicId: topic.topicId,
-      title: topic.title || `/t/${topic.topicId}`
-    })
+    vscode.openTopic(topic.topicId, topic.title || `/t/${topic.topicId}`)
   }
 
   /**
@@ -174,10 +171,7 @@ export default function RecentBrowseApp() {
       return
     }
 
-    vscode.openNode({
-      name: topic.nodeName,
-      title: topic.nodeTitle || topic.nodeName
-    })
+    vscode.openNode(topic.nodeName, topic.nodeTitle || topic.nodeName)
   }
 
   useEffect(() => {

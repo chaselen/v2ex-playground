@@ -31,12 +31,6 @@ const SHARE_IMAGE_INLINE_BATCH_SIZE = 10
 /** 分享图片等待加载的最长时间 */
 const SHARE_IMAGE_LOAD_TIMEOUT_MS = 5000
 
-/** 分享图片加载选项 */
-interface LoadShareImagesOptions {
-  /** 返回格式 */
-  format?: 'resourceUri' | 'dataUrl'
-}
-
 /** 分享图片预加载选项 */
 interface EmbedShareImagesOptions {
   /** 是否重试此前加载失败的图片 */
@@ -56,7 +50,7 @@ interface TopicShareDialogProps {
   /** 加载分享图使用的本地资源 URI 或 data URL */
   loadImages: (
     imageSources: string[],
-    options?: LoadShareImagesOptions
+    format?: 'resourceUri' | 'dataUrl'
   ) => Promise<Record<string, string>>
   /** 弹窗状态变化 */
   onOpenChange: (open: boolean) => void
@@ -350,9 +344,7 @@ export default function TopicShareDialog({
       try {
         Object.assign(
           inlineImages,
-          await loadImages(fallbackSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE), {
-            format: 'dataUrl'
-          })
+          await loadImages(fallbackSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE), 'dataUrl')
         )
       } catch {
         // 单批回退失败时保留透明占位图，避免中断整张分享图

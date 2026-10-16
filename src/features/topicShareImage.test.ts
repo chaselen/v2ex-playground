@@ -105,7 +105,7 @@ describe('loadTopicShareImages', () => {
     expect(mocks.loggerWarn).toHaveBeenCalledTimes(2)
   })
 
-  test('uses the default resource URI format when RPC serializes options as null', async () => {
+  test('uses the default resource URI format when RPC serializes the format as null', async () => {
     const webview = {
       asWebviewUri: vi.fn(() => ({ toString: () => 'vscode-webview://share/test.png' }))
     }
@@ -125,7 +125,7 @@ describe('loadTopicShareImages', () => {
     const result = await loadTopicShareImages(
       ['https://cdn.v2ex.com/avatar/fallback.png'],
       {} as never,
-      { format: 'dataUrl' }
+      'dataUrl'
     )
 
     expect(mocks.readFile).toHaveBeenCalled()

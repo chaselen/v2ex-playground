@@ -89,7 +89,7 @@ export default function TopicApp() {
 
   /** 检测 Imgur 连通性 */
   function checkImgurConnectivity(target: 'image' | 'upload', refresh = false) {
-    return vscode.checkImgurConnectivity({ target, refresh })
+    return vscode.checkImgurConnectivity(target, refresh)
   }
 
   useEffect(() => {
@@ -232,9 +232,7 @@ export default function TopicApp() {
       <TopicShareContextMenu
         disabled={!topic}
         onCopyLink={() => topic && vscode.copyTopicLink(topic.id)}
-        onCopyTitleLink={() =>
-          topic && vscode.copyTopicTitleLink({ topicId: topic.id, title: topic.title })
-        }
+        onCopyTitleLink={() => topic && vscode.copyTopicTitleLink(topic.id, topic.title)}
         onViewInBrowser={() => topic && vscode.viewTopicInBrowser(topic.id)}
       >
         <div>{content}</div>
@@ -264,12 +262,12 @@ export default function TopicApp() {
           loadFirstReplyPage={() =>
             topic.replyCurrentPage === 1
               ? Promise.resolve(topic)
-              : vscode.getTopicPreview({ topicId: topic.id, replyPage: 1 })
+              : vscode.getTopicPreview(topic.id, 1)
           }
-          loadImages={(imageSources, options) => vscode.loadTopicShareImages(imageSources, options)}
+          loadImages={(imageSources, format) => vscode.loadTopicShareImages(imageSources, format)}
           onCopyLink={() => vscode.copyTopicLink(topic.id)}
           onOpenChange={setShowShareDialog}
-          onSave={base64 => vscode.saveTopicShareImage({ topicId: topic.id, base64 })}
+          onSave={base64 => vscode.saveTopicShareImage(topic.id, base64)}
         />
       )}
     </>

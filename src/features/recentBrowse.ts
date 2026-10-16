@@ -1,5 +1,5 @@
 import G from '@/global'
-import type { RecentBrowseTopic } from '@/shared/webview'
+import type { RecentBrowseListData, RecentBrowseTopic } from '@/shared/recentBrowse'
 import type { TopicDetail } from '@/v2ex'
 
 /** 最近浏览记录存储 key */
@@ -68,16 +68,7 @@ export async function updateRecentBrowseTopic(detail: TopicDetail): Promise<void
  * @param pageSize 每页数量
  * @param query 标题、作者或节点搜索词
  */
-export function getRecentBrowseTopics(
-  page = 1,
-  pageSize = 20,
-  query = ''
-): {
-  page: number
-  totalPage: number
-  totalCount: number
-  topics: RecentBrowseTopic[]
-} {
+export function getRecentBrowseTopics(page = 1, pageSize = 20, query = ''): RecentBrowseListData {
   const normalizedQuery = query.trim().toLocaleLowerCase()
   const records = Object.values(getRecentBrowseRecordsMap())
     .filter(topic => {

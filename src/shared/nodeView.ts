@@ -1,18 +1,10 @@
-import type { Node, Topic } from '../v2ex/types'
+import type { NodeTopicList } from '../v2ex/types'
 import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 
 /** 节点主题面板数据 */
-export interface NodePanelTopicList {
-  /** 节点信息 */
-  node: Node
+export interface NodePanelTopicList extends NodeTopicList {
   /** 当前页码 */
   page: number
-  /** 总页数 */
-  totalPage: number
-  /** 主题总数 */
-  totalCount: number
-  /** 主题列表 */
-  list: Topic[]
 }
 
 /** 节点主题面板状态 */

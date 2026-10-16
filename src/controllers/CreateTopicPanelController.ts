@@ -21,9 +21,10 @@ import type {
   CreateTopicPanelRpcCommands,
   CreateTopicPanelViewState,
   CreateTopicPanelWebviewEvents,
+  ImageUploadInput,
   WebviewRpcController
 } from '@/shared/webview'
-import type { CreateTopicInput, Node } from '@/v2ex'
+import type { CreateTopicInput, Node, TopicSyntax } from '@/v2ex'
 import {
   DEFAULT_TOPIC_SYNTAX,
   LoginRequiredError,
@@ -184,18 +185,18 @@ export class CreateTopicPanelController
   }
 
   /** 预览新主题正文 */
-  rpc_previewTopic(payload: { content: string; syntax: CreateTopicInput['syntax'] }) {
-    return G.V2ex.topics.previewContent(payload.content, payload.syntax, 'topic')
+  rpc_previewTopic(content: string, syntax: TopicSyntax) {
+    return G.V2ex.topics.previewContent(content, syntax, 'topic')
   }
 
   /** 上传正文图片 */
-  rpc_uploadImage(message: { filename: string; mimeType: string; base64: string }) {
+  rpc_uploadImage(message: ImageUploadInput) {
     return uploadImage(message)
   }
 
   /** 检测 Imgur 连通性 */
-  rpc_checkImgurConnectivity(message: { target: 'upload'; refresh?: boolean }) {
-    return checkImgurConnectivity(message.target, message.refresh)
+  rpc_checkImgurConnectivity(target: 'upload', refresh?: boolean) {
+    return checkImgurConnectivity(target, refresh)
   }
 
   /** 加载或重新加载创作表单 */

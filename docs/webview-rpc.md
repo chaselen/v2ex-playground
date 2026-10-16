@@ -4,7 +4,7 @@
 
 页面契约集中在 `src/shared/*View.ts`，公共协议与类型推导在 `src/shared/webviewRpc.ts`。扩展侧由 `src/core/WebviewRpcBridge.ts` 分发，Webview 通过 `webview/src/core/vscode.ts` 的类型化客户端调用，不直接发送业务消息。
 
-命令以函数签名描述参数和业务返回值，客户端统一转换为 Promise。单个语义值直接传递，多字段使用对象；两侧复用领域类型，公共导航和状态命令通过共享接口组合。
+命令以函数签名描述参数和业务返回值，客户端统一转换为 Promise。一两个简单参数直接声明具名参数及其类型；参数较多、结构复杂或传递完整业务数据时使用对象；两侧复用领域类型，公共导航和状态命令通过共享接口组合。
 
 桥接器仅允许调用 `rpc_<command>` 方法，生命周期方法不能使用该前缀。`WebviewRpcController<Commands>` 检查处理器与契约一致，但消息仍须通过运行时校验；无效消息忽略，未知命令返回失败响应。
 

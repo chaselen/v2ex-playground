@@ -1,3 +1,5 @@
+import type { AccountOverview, V2exNotification } from '../v2ex/types'
+import type { DailySignInState } from './dailySignIn'
 import type { WebviewCommonRpcCommands } from './commonView'
 
 /**
@@ -10,8 +12,6 @@ export interface WebviewNode {
   title: string
   /** 节点图标地址 */
   avatar?: string
-  /** 节点简介 */
-  description?: string
 }
 
 /** 首页预置节点 */
@@ -68,60 +68,6 @@ export interface WebviewTopic {
   isRead?: boolean
 }
 
-/**
- * Webview 账户概览
- */
-export interface WebviewAccountOverview {
-  /** 头像地址 */
-  avatar: string
-  /** 用户名 */
-  username: string
-  /** 用户签名 */
-  tagline: string
-  /** 节点收藏数量 */
-  nodeCollectionCount: number
-  /** 主题收藏数量 */
-  topicCollectionCount: number
-  /** 特别关注数量 */
-  specialFollowingCount: number
-  /** 活跃度百分比 */
-  activityPercent: number
-  /** 未读提醒数量 */
-  unreadNoticeCount: number
-  /** 金币数量 */
-  gold: number
-  /** 银币数量 */
-  silver: number
-  /** 铜币数量 */
-  bronze: number
-}
-
-/**
- * Webview 提醒消息项
- */
-export interface WebviewNotification {
-  /** 提醒 id */
-  id: number
-  /** 用户头像 */
-  avatar: string
-  /** 用户名 */
-  username: string
-  /** 用户主页路径 */
-  memberPath: string
-  /** 提醒摘要 HTML */
-  summaryHtml: string
-  /** 话题 id */
-  topicId?: number
-  /** 话题标题 */
-  topicTitle?: string
-  /** 话题路径 */
-  topicPath?: string
-  /** 提醒展示时间，通常为中文相对时间文本 */
-  time: string
-  /** 消息正文 HTML */
-  payloadHtml: string
-}
-
 /** 主面板标签 key */
 export type MainTabKey = 'explore' | 'custom' | 'collection'
 
@@ -138,7 +84,7 @@ export interface InitData {
     collection: WebviewNode[]
   }
   loggedIn: boolean
-  accountOverview?: WebviewAccountOverview
+  accountOverview?: AccountOverview
   selectedTab?: MainPanelTabKey
 }
 
@@ -160,6 +106,16 @@ export interface NodeChildrenData {
   children: WebviewTopic[]
   /** 错误文案 */
   error?: string
+}
+
+/** 主面板节点子列表请求 */
+export interface NodeChildrenRequest {
+  /** 标签 key */
+  tab: MainTabKey
+  /** 列表项 key */
+  itemKey: string
+  /** 页码 */
+  page?: number
 }
 
 /** 我的内容标签 key */
@@ -190,24 +146,7 @@ export interface MyNotificationListData {
   /** 消息总数 */
   totalCount: number
   /** 消息列表 */
-  notifications: WebviewNotification[]
-}
-
-/** 每日签到结果 */
-export type WebviewDailySignInResult = 'success' | 'repetitive' | 'failed'
-
-/**
- * 每日签到数据
- */
-export interface WebviewDailySignInData {
-  /** 今日是否已签到 */
-  signedIn: boolean
-  /** 是否正在签到 */
-  loading?: boolean
-  /** 签到结果 */
-  result?: WebviewDailySignInResult
-  /** 当日签到奖励铜币数 */
-  reward?: number
+  notifications: V2exNotification[]
 }
 
 /**
@@ -225,7 +164,7 @@ export interface MyOverviewRefreshData {
   /** 是否已登录 */
   loggedIn: boolean
   /** 账户概览 */
-  accountOverview?: WebviewAccountOverview
+  accountOverview?: AccountOverview
 }
 
 /**
@@ -233,9 +172,9 @@ export interface MyOverviewRefreshData {
  */
 export interface AccountOverviewChangedData {
   /** 最新账户概览 */
-  overview: WebviewAccountOverview
+  overview: AccountOverview
   /** 旧账户概览 */
-  oldOverview?: WebviewAccountOverview
+  oldOverview?: AccountOverview
 }
 
 /**
@@ -261,17 +200,14 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
   ready(): InitData
   refreshCollectionNodes(): NodeListData
   refreshMyOverview(): MyOverviewRefreshData
-  expandNode(payload: { tab: MainTabKey; itemKey: string; page?: number }): NodeChildrenData
-  refreshNode(payload: { tab: MainTabKey; itemKey: string; page?: number }): NodeChildrenData
-  getMyTopics(payload: {
-    tab: Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
-    page?: number
-  }): MyTopicListData
+  expandNode(payload: NodeChildrenRequest): NodeChildrenData
+  refreshNode(payload: NodeChildrenRequest): NodeChildrenData
+  getMyTopics(tab: MyTopicListData['tab'], page?: number): MyTopicListData
   getMyNotifications(page?: number): MyNotificationListData
   /** 删除提醒消息，成功后由调用方重新读取列表 */
-  deleteNotification(input: { notificationId: number }): void
-  getDailySignInStatus(): WebviewDailySignInData
-  dailySignIn(): WebviewDailySignInData
+  deleteNotification(notificationId: number): void
+  getDailySignInStatus(): DailySignInState
+  dailySignIn(): DailySignInState
   addNode(): NodeListData
   collectNode(): NodeListData
   removeNode(nodeName: string): NodeListData
@@ -280,9 +216,9 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
   createTopic(): void
   search(): void
   login(): void
-  ctxCopyLink(payload: { topicId: number; label: string }): void
-  ctxCopyTitleLink(payload: { topicId: number; label: string }): void
-  ctxViewInBrowser(payload: { topicId: number; label: string }): void
+  ctxCopyLink(topicId: number): void
+  ctxCopyTitleLink(topicId: number, title: string): void
+  ctxViewInBrowser(topicId: number): void
 }
 
 /**
@@ -291,7 +227,7 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
 export interface MainViewWebviewEvents {
   initData: InitData
   accountOverviewChanged: AccountOverviewChangedData
-  dailySignInStatusChanged: WebviewDailySignInData
+  dailySignInStatusChanged: DailySignInState
   selectMainTab: SelectMainTabData
   topicRead: TopicReadData
   /** 收藏节点列表已变化，需同步收藏节点标签 */

@@ -125,7 +125,7 @@ export default function CreateTopicApp() {
       Toast.success('主题发布成功')
       setDraft({ ...emptyDraft })
       setComposerResetKey(current => current + 1)
-      void vscode.openTopic({ topicId: result.topicId, title: result.title })
+      void vscode.openTopic(result.topicId, result.title)
     } catch (err) {
       Toast.error((err as Error).message || '发布主题失败')
     } finally {
@@ -151,7 +151,7 @@ export default function CreateTopicApp() {
    * @param refresh 是否强制刷新检测结果
    */
   function checkTopicImageConnectivity(target: 'upload', refresh: boolean) {
-    return vscode.checkImgurConnectivity({ target, refresh })
+    return vscode.checkImgurConnectivity(target, refresh)
   }
 
   if (state.status === 'error') {
@@ -274,12 +274,7 @@ export default function CreateTopicApp() {
                 </div>
               }
               onChange={content => updateDraft('content', content)}
-              onPreview={content =>
-                vscode.previewTopic({
-                  content,
-                  syntax: draft.syntax
-                })
-              }
+              onPreview={content => vscode.previewTopic(content, draft.syntax)}
               onUploadImage={uploadTopicImage}
               onCheckImgurConnectivity={checkTopicImageConnectivity}
               onUploadingChange={setUploading}

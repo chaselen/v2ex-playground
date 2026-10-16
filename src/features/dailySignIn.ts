@@ -1,7 +1,7 @@
 import vscode from 'vscode'
 import Config from '@/config'
 import G from '@/global'
-import type { DailyRes } from '@/v2ex'
+import type { DailySignInState } from '@/shared/dailySignIn'
 import { beijingNow, getBeijingDate } from '@/core/dayjs'
 import { logger } from '@/core/logger'
 
@@ -16,15 +16,7 @@ export interface AutoDailySignInOptions {
 }
 
 /** 签到数据 */
-export interface DailySignInData {
-  /** 今日是否已签到 */
-  signedIn: boolean
-  /** 是否正在签到 */
-  loading?: boolean
-  /** 签到结果 */
-  result?: DailyRes
-  /** 当日签到奖励铜币数 */
-  reward?: number
+export interface DailySignInData extends DailySignInState {
   /**
    * 签到任务日 YYYY-MM-DD。
    * 来自余额描述中的任务日，不是流水墙钟日；常见刷新前（约 8 点）可能为昨日。

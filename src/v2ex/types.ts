@@ -318,10 +318,20 @@ export interface DailySignInResult {
   rewardDate?: string
 }
 
+/** 金银铜币余额 */
+export interface CoinBalance {
+  /** 金币数量 */
+  gold: number
+  /** 银币数量 */
+  silver: number
+  /** 铜币数量 */
+  bronze: number
+}
+
 /**
  * 账户概览
  */
-export interface AccountOverview {
+export interface AccountOverview extends CoinBalance {
   /** 头像地址 */
   avatar: string
   /** 用户名 */
@@ -338,12 +348,6 @@ export interface AccountOverview {
   activityPercent: number
   /** 未读提醒数量 */
   unreadNoticeCount: number
-  /** 金币数量 */
-  gold: number
-  /** 银币数量 */
-  silver: number
-  /** 铜币数量 */
-  bronze: number
 }
 
 /** 账户流水收支方向 */
@@ -374,13 +378,7 @@ export interface BalanceTransaction {
 /**
  * 账户余额详情
  */
-export interface BalanceDetail {
-  /** 金币数量 */
-  gold: number
-  /** 银币数量 */
-  silver: number
-  /** 铜币数量 */
-  bronze: number
+export interface BalanceDetail extends CoinBalance {
   /** 当前页码 */
   page: number
   /** 总页数 */
@@ -421,18 +419,6 @@ export type MemberTopicTabKey = 'qna' | 'tech' | 'play' | 'jobs' | 'deals' | 'ci
 /** 用户页内容标签；`ignored` 仅本人页，数据来自忽略主题编号而非成员页路径 */
 export type MemberContentTabKey = 'topics' | 'replies' | MemberTopicTabKey | 'ignored'
 
-/**
- * 特别关注的用户
- */
-export interface FollowingMember {
-  /** 用户编号；页面未提供时为 0 */
-  memberId: number
-  /** 用户头像地址 */
-  avatar: string
-  /** 用户名 */
-  username: string
-}
-
 /** 用户编号、用户名与头像摘要 */
 export interface MemberSummary {
   /** 用户编号 */
@@ -442,6 +428,12 @@ export interface MemberSummary {
   /** 用户名 */
   username: string
 }
+
+/**
+ * 特别关注的用户
+ * 页面未提供编号时 memberId 为 0
+ */
+export type FollowingMember = MemberSummary
 
 /** 屏蔽的用户 */
 export type BlockedMember = MemberSummary

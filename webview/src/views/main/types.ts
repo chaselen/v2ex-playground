@@ -25,11 +25,6 @@ export type MainTabs = Record<MainTabKey, NodeItem[]>
 export type TreeItemType = 'node' | 'topic' | 'pagination' | 'loading' | 'error' | 'empty'
 
 /**
- * 右键菜单动作
- */
-export type ContextMenuAction = 'copyLink' | 'copyTitleLink' | 'viewInBrowser'
-
-/**
  * 节点树渲染项
  */
 export interface TreeItem {

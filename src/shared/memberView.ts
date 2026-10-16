@@ -53,8 +53,8 @@ export interface MemberPanelViewState {
 export interface MemberPanelRpcCommands
   extends WebviewCommonRpcCommands, WebviewStateRpcCommands<MemberPanelViewState> {
   refresh(): void
-  loadMemberTab(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile
-  loadMemberPage(payload: { tab: MemberContentTabKey; page?: number }): MemberProfile
+  loadMemberTab(tab: MemberContentTabKey, page?: number): MemberProfile
+  loadMemberPage(tab: MemberContentTabKey, page?: number): MemberProfile
   followMember(): MemberProfile
   unfollowMember(): MemberProfile
   blockMember(): MemberProfile

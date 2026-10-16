@@ -1,12 +1,7 @@
+import type { CoinBalance } from '@extension/v2ex/types'
 import styles from './CurrencyBalance.module.scss'
 
-interface CurrencyBalanceProps {
-  /** 金币数量 */
-  gold: number
-  /** 银币数量 */
-  silver: number
-  /** 铜币数量 */
-  bronze: number
+interface CurrencyBalanceProps extends CoinBalance {
   /** 页面自定义币种尺寸类名 */
   coinClassName?: string
 }

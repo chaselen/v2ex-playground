@@ -11,8 +11,10 @@ import {
   type WebviewNavigationDeps
 } from '@/controllers/WebviewCommonController'
 import type {
+  DeleteRecentBrowseTopicRequest,
   RecentBrowsePanelRpcCommands,
   RecentBrowsePanelWebviewEvents,
+  RecentBrowseQuery,
   WebviewRpcController
 } from '@/shared/webview'
 
@@ -63,17 +65,12 @@ export class RecentBrowsePanelController
   }
 
   /** 获取最近浏览话题 */
-  rpc_getRecentBrowseTopics(message: { page?: number; pageSize?: number; query?: string }) {
+  rpc_getRecentBrowseTopics(message: RecentBrowseQuery) {
     return getRecentBrowseTopics(message.page, message.pageSize, message.query)
   }
 
   /** 删除最近浏览话题 */
-  async rpc_deleteRecentBrowseTopic(message: {
-    topicId: number
-    page?: number
-    pageSize?: number
-    query?: string
-  }) {
+  async rpc_deleteRecentBrowseTopic(message: DeleteRecentBrowseTopicRequest) {
     await deleteRecentBrowseTopic(message.topicId)
     return getRecentBrowseTopics(message.page, message.pageSize, message.query)
   }

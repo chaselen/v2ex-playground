@@ -18,6 +18,7 @@ import {
   Tooltip
 } from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
+import type { AccountOverview, V2exNotification } from '@extension/v2ex/types'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
@@ -28,8 +29,6 @@ import type {
   MainViewWebviewEvents,
   MyNotificationListData,
   MyTopicListData,
-  WebviewAccountOverview,
-  WebviewNotification,
   WebviewTopic
 } from '@extension/shared/webview'
 import styles from './MyTab.module.scss'
@@ -45,7 +44,7 @@ interface MyTabProps {
   /** 是否已登录 */
   loggedIn: boolean
   /** 账户概览 */
-  overview?: WebviewAccountOverview
+  overview?: AccountOverview
   /** 账户概览加载错误 */
   overviewError?: string | null
   /** 重试加载账户概览 */
@@ -79,7 +78,7 @@ const statItems: Array<{
 ]
 
 /** 我的主题内容标签 key */
-type MyContentTopicTabKey = Extract<MyContentTabKey, 'topicCollection' | 'specialFollowing'>
+type MyContentTopicTabKey = MyTopicListData['tab']
 
 /** 我的主题列表状态 */
 interface MyTopicListState {
@@ -113,7 +112,7 @@ interface MyNotificationListState {
   /** 消息总数 */
   totalCount: number
   /** 消息列表 */
-  notifications: WebviewNotification[]
+  notifications: V2exNotification[]
   /** 错误文案 */
   error: string | null
 }
@@ -338,7 +337,7 @@ export default function MyTab(props: MyTabProps) {
     }))
 
     try {
-      const data = await vscode.getMyTopics({ tab, page })
+      const data = await vscode.getMyTopics(tab, page)
       if (topicRequestSeq.current[tab] === requestSeq) {
         onMyTopicListLoaded(data)
         return true
@@ -518,7 +517,7 @@ export default function MyTab(props: MyTabProps) {
    */
   function handleNotificationClick(
     event: MouseEvent<HTMLDivElement>,
-    notification: WebviewNotification
+    notification: V2exNotification
   ) {
     handleWebviewLinkClick(event, {
       topicTitle: notification.topicTitle,
@@ -532,7 +531,7 @@ export default function MyTab(props: MyTabProps) {
   }
 
   /** 删除成功后刷新列表，末页删空时退回上一页；账户切换后忽略旧操作结果 */
-  async function deleteNotification(notification: WebviewNotification) {
+  async function deleteNotification(notification: V2exNotification) {
     if (notificationDeletePending.current) return
     notificationDeletePending.current = true
     const accountKey = accountKeyRef.current
@@ -541,7 +540,7 @@ export default function MyTab(props: MyTabProps) {
     setDeletingNotification(notification.id)
     setNotificationDeleteError(null)
     try {
-      await vscode.deleteNotification({ notificationId: notification.id })
+      await vscode.deleteNotification(notification.id)
       if (accountKeyRef.current !== accountKey) return
       notificationRequestSeq.current += 1
       setNotificationList(current => ({
@@ -565,7 +564,7 @@ export default function MyTab(props: MyTabProps) {
    * 渲染消息行
    * @param notification 提醒消息
    */
-  function renderNotificationItem(notification: WebviewNotification) {
+  function renderNotificationItem(notification: V2exNotification) {
     return (
       <div className={styles['my-notification-item']} key={notification.id}>
         <button

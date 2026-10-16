@@ -1,3 +1,4 @@
+import type { ImageUploadInput } from './image'
 import type {
   TopicInfo,
   MemberInfo,
@@ -8,7 +9,7 @@ import type {
   TopicContentInput,
   TopicManagementAction,
   TopicManagementState,
-  TopicManagementInput
+  TopicSyntax
 } from '../v2ex/types'
 import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 export type { MemberInfo } from '../v2ex/types'
@@ -19,6 +20,18 @@ export interface TopicActionTarget {
   topicId: string | number
   /** 当前回复页 */
   replyPage?: number
+}
+
+/** 提交话题回复请求 */
+export interface PostTopicReplyInput extends TopicActionTarget {
+  /** 回复正文 */
+  content: string
+}
+
+/** 感谢话题回复请求 */
+export interface ThankTopicReplyInput extends TopicActionTarget {
+  /** 回复 id */
+  replyId: string
 }
 
 /** 话题内用户快速信息 */
@@ -73,9 +86,9 @@ export interface TopicPanelRpcCommands
   /** 读取首页推广或下沉的确认说明 */
   prepareTopicManagement(action: TopicManagementAction): TopicManagementState
   /** 提交首页推广或下沉操作并返回最新详情 */
-  manageTopic(payload: TopicManagementInput): TopicDetail
+  manageTopic(action: TopicManagementAction, confirmation: string): TopicDetail
   /** 预览主题正文或附言 */
-  previewTopicContent(payload: { content: string; syntax: 'default' | 'markdown' }): string
+  previewTopicContent(content: string, syntax: TopicSyntax): string
   /** 打开标签主题面板 */
   openTag(tag: string): void
   login(): void
@@ -83,52 +96,54 @@ export interface TopicPanelRpcCommands
   /** 复制话题链接 */
   copyTopicLink(topicId: string | number): void
   /** 复制话题标题和链接 */
-  copyTopicTitleLink(payload: { topicId: string | number; title: string }): void
+  copyTopicTitleLink(topicId: string | number, title: string): void
   /** 在浏览器中打开话题 */
   viewTopicInBrowser(topicId: string | number): void
   /** 保存话题分享图 */
-  saveTopicShareImage(payload: { topicId: string | number; base64: string }): void
+  saveTopicShareImage(topicId: string | number, base64: string): void
   /** 加载分享图使用的本地资源 URI 或 data URL */
   loadTopicShareImages(
     imageSources: string[],
-    options?: { format?: 'resourceUri' | 'dataUrl' }
+    format?: 'resourceUri' | 'dataUrl'
   ): Record<string, string>
   /** 收藏话题并返回最新详情 */
-  collectTopic(payload: TopicActionTarget): TopicDetail
+  collectTopic(topicId: string | number, replyPage?: number): TopicDetail
   /** 取消收藏话题并返回最新详情 */
-  cancelCollectTopic(payload: TopicActionTarget): TopicDetail
+  cancelCollectTopic(topicId: string | number, replyPage?: number): TopicDetail
   /** 忽略话题并返回最新详情 */
-  ignoreTopic(payload: TopicActionTarget): TopicDetail
+  ignoreTopic(topicId: string | number, replyPage?: number): TopicDetail
   /** 取消忽略话题并返回最新详情 */
-  cancelIgnoreTopic(payload: TopicActionTarget): TopicDetail
+  cancelIgnoreTopic(topicId: string | number, replyPage?: number): TopicDetail
   /** 感谢话题创建者并返回最新详情 */
-  thankTopic(payload: TopicActionTarget): TopicDetail
+  thankTopic(topicId: string | number, replyPage?: number): TopicDetail
   /** 提交回复并返回最新详情 */
-  postTopicReply(payload: TopicActionTarget & { content: string }): TopicDetail
+  postTopicReply(payload: PostTopicReplyInput): TopicDetail
   /** 上传回复图片 */
-  uploadImage(payload: { filename: string; mimeType: string; base64: string }): string
+  uploadImage(payload: ImageUploadInput): string
   /** 检测 Imgur 连通性 */
-  checkImgurConnectivity(payload: { target: 'image' | 'upload'; refresh?: boolean }): boolean
+  checkImgurConnectivity(target: 'image' | 'upload', refresh?: boolean): boolean
   /** 预览回复内容 */
   previewReply(content: string): string
   /** 加载站内话题预览 */
-  getTopicPreview(payload: { topicId: string | number; replyPage?: number }): TopicDetail
+  getTopicPreview(topicId: string | number, replyPage?: number): TopicDetail
   /** 感谢回复者并返回最新详情 */
-  thankTopicReply(payload: TopicActionTarget & { replyId: string }): TopicDetail
+  thankTopicReply(payload: ThankTopicReplyInput): TopicDetail
   /** 加载当前话题回复页并返回最新详情 */
   loadReplyPage(replyPage: number): TopicDetail
   /** 加载用户快速信息 */
   loadMemberQuickInfo(username: string): MemberQuickInfo
   /**
    * 屏蔽用户
-   * @param target 用户关系操作目标
+   * @param memberId 用户编号
+   * @param username 用户名
    */
-  blockMember(target: TopicMemberRelationTarget): void
+  blockMember(memberId: number, username: string): void
   /**
    * 取消屏蔽用户
-   * @param target 用户关系操作目标
+   * @param memberId 用户编号
+   * @param username 用户名
    */
-  unblockMember(target: TopicMemberRelationTarget): void
+  unblockMember(memberId: number, username: string): void
 }
 
 /**

@@ -221,9 +221,7 @@ export default function TopicContentDialog({
                     </RadioGroup>
                   }
                   onUploadingChange={setUploading}
-                  onPreview={content =>
-                    vscode.previewTopicContent({ content, syntax: values.syntax })
-                  }
+                  onPreview={content => vscode.previewTopicContent(content, values.syntax)}
                 />
               </div>
             )}

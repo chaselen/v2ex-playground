@@ -27,12 +27,6 @@ export interface NodeQuickPickOptions {
   sortByCountDescending?: boolean
 }
 
-/** 添加自定义节点时的 QuickPick 项 */
-export type AddCustomNodeQuickPickItem = NodeQuickPickItem
-
-/** 添加收藏节点时的 QuickPick 项 */
-export type AddCollectionNodeQuickPickItem = NodeQuickPickItem
-
 /**
  * 打开通用节点 QuickPick
  * @param nodes 全部节点
@@ -77,7 +71,7 @@ export function showNodeQuickPick(
 export function showAddCustomNodeQuickPick(
   nodes: Node[],
   customNodeNames: ReadonlySet<string>
-): Thenable<AddCustomNodeQuickPickItem | undefined> {
+): Thenable<NodeQuickPickItem | undefined> {
   return showNodeQuickPick(nodes, {
     title: '添加自定义节点',
     placeHolder: '搜索节点',
@@ -93,7 +87,7 @@ export function showAddCustomNodeQuickPick(
 export function showAddCollectionNodeQuickPick(
   nodes: Node[],
   collectionNodeNames: ReadonlySet<string>
-): Thenable<AddCollectionNodeQuickPickItem | undefined> {
+): Thenable<NodeQuickPickItem | undefined> {
   return showNodeQuickPick(nodes, {
     title: '添加收藏节点',
     placeHolder: '搜索节点',

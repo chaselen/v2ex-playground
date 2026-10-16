@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
+import type { AccountOverview } from '@extension/v2ex/types'
 import type {
   InitData,
   MainPanelTabKey,
   MainViewRpcCommands,
-  MainViewWebviewEvents,
-  WebviewAccountOverview
+  MainViewWebviewEvents
 } from '@extension/shared/webview'
 import { useNodeTreeTabs } from './hooks/useNodeTreeTabs'
 import MyTab, { type MyTabHandle } from './tabs/MyTab'
@@ -50,7 +50,7 @@ export default function MainApp() {
   const [contentLoadingTabs, setContentLoadingTabs] = useState<MainPanelTabKey[]>([])
   const [refreshingTabs, setRefreshingTabs] = useState<MainPanelTabKey[]>([])
   const [loggedIn, setLoggedIn] = useState(false)
-  const [accountOverview, setAccountOverview] = useState<WebviewAccountOverview>()
+  const [accountOverview, setAccountOverview] = useState<AccountOverview>()
   const [accountOverviewError, setAccountOverviewError] = useState<string | null>(null)
   const [accountOverviewLoaded, setAccountOverviewLoaded] = useState(false)
   const [initializing, setInitializing] = useState(true)

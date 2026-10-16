@@ -222,13 +222,13 @@ export class MemberPanelController
   }
 
   /** 加载用户标签内容 */
-  rpc_loadMemberTab(message: { tab: MemberContentTabKey; page?: number }) {
-    return this.loadMemberContent(message.tab, message.page)
+  rpc_loadMemberTab(tab: MemberContentTabKey, page?: number) {
+    return this.loadMemberContent(tab, page)
   }
 
   /** 加载用户内容页 */
-  rpc_loadMemberPage(message: { tab: MemberContentTabKey; page?: number }) {
-    return this.loadMemberContent(message.tab, message.page)
+  rpc_loadMemberPage(tab: MemberContentTabKey, page?: number) {
+    return this.loadMemberContent(tab, page)
   }
 
   /**

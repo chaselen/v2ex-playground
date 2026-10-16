@@ -52,7 +52,7 @@ export default function TopicManagementDialog({
     setBusy(true)
     setError('')
     try {
-      await vscode.manageTopic({ action, confirmation })
+      await vscode.manageTopic(action, confirmation)
       Toast.success(action === 'boost' ? '主题已放到首页' : '主题已下沉')
       onClose()
     } catch (reason) {

@@ -271,7 +271,7 @@ export default function MemberApp() {
 
     setLoadingContent(true)
     try {
-      const nextProfile = await vscode[command]({ tab, page })
+      const nextProfile = await vscode[command](tab, page)
       if (!request.isLatest()) {
         return undefined
       }
@@ -316,7 +316,7 @@ export default function MemberApp() {
    * @param title 话题标题
    */
   function openTopic(topicId: number, title: string) {
-    vscode.openTopic({ topicId, title })
+    vscode.openTopic(topicId, title)
   }
 
   /**
@@ -779,7 +779,7 @@ function renderTopics(
               showAuthor={content.tab === 'ignored'}
               onOpenTopic={item => openTopic(item.id, item.title)}
               onOpenMember={openMember}
-              onOpenNode={node => vscode.openNode(node)}
+              onOpenNode={node => vscode.openNode(node.name, node.title)}
             />
           )
 

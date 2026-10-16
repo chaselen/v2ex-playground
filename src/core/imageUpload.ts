@@ -1,4 +1,5 @@
 import http from '@/core/http'
+import type { ImageUploadInput } from '@/shared/image'
 
 /** Imgur 上传超时时间 */
 const imgurUploadTimeout = 60000
@@ -12,16 +13,6 @@ interface ImgurResponse {
     /** 图片访问链接 */
     link: string
   }
-}
-
-/** 图片上传参数 */
-export interface UploadImageOptions {
-  /** 文件名 */
-  filename: string
-  /** MIME 类型 */
-  mimeType: string
-  /** 图片 base64 内容 */
-  base64: string
 }
 
 /** Imgur Client ID 池 */
@@ -41,7 +32,7 @@ export const imgurClientIdPool = [
  * 上传图片到 Imgur
  * @param options 图片上传参数
  */
-export async function uploadImage(options: UploadImageOptions): Promise<string> {
+export async function uploadImage(options: ImageUploadInput): Promise<string> {
   const formData = new FormData()
   const buffer = Buffer.from(options.base64, 'base64')
   const blob = new Blob([new Uint8Array(buffer)], { type: options.mimeType })

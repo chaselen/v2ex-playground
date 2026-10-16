@@ -1,14 +1,6 @@
 import * as cheerio from 'cheerio/slim'
-import { parsePagerTotalPage } from './common'
-import type {
-  AccountOverview,
-  BalanceDetail,
-  BalanceTransaction,
-  DailySignInReward
-} from '../types'
-
-/** Cheerio 选择结果 */
-type CheerioSelection = ReturnType<cheerio.CheerioAPI>
+import { parsePagerTotalPage, type CheerioSelection } from './common'
+import type { BalanceDetail, BalanceTransaction, CoinBalance, DailySignInReward } from '../types'
 
 /**
  * 解析账户余额详情
@@ -105,9 +97,7 @@ export function parseDailySignInMissionDate(
  * @example
  * 25 <img alt="S"> 21 <img alt="B"> -> 0 金 25 银 21 铜
  */
-export function parseCoinBalance(
-  balanceArea: CheerioSelection
-): Pick<AccountOverview, 'gold' | 'silver' | 'bronze'> {
+export function parseCoinBalance(balanceArea: CheerioSelection): CoinBalance {
   const balance = {
     gold: 0,
     silver: 0,

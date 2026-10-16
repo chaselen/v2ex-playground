@@ -1,5 +1,5 @@
 import G from '@/global'
-import type { CreateTopicDraft } from '@/shared/webview'
+import type { CreateTopicDraft } from '@/shared/createTopicDraft'
 
 /** 创作新主题草稿存储 key */
 const createTopicDraftsKey = 'v2ex.createTopicDrafts'

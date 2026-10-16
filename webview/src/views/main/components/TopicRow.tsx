@@ -8,19 +8,6 @@ import styles from './TopicRow.module.scss'
 /** 主面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<MainViewRpcCommands>()
 
-/** 主题右键菜单动作 */
-type TopicContextMenuAction = 'copyLink' | 'copyTitleLink' | 'viewInBrowser'
-
-/** 右键菜单命令映射 */
-const contextMenuCommands: Record<
-  TopicContextMenuAction,
-  'ctxCopyLink' | 'ctxCopyTitleLink' | 'ctxViewInBrowser'
-> = {
-  copyLink: 'ctxCopyLink',
-  copyTitleLink: 'ctxCopyTitleLink',
-  viewInBrowser: 'ctxViewInBrowser'
-}
-
 interface TopicRowProps {
   /** 主题 id */
   topicId: number
@@ -51,18 +38,7 @@ export default function TopicRow(props: TopicRowProps) {
    */
   function openTopic(event: MouseEvent<HTMLElement>) {
     event.stopPropagation()
-    vscode.openTopic({ topicId, title })
-  }
-
-  /**
-   * 发送右键菜单命令
-   * @param action 菜单动作
-   */
-  function postContextMenuCommand(action: TopicContextMenuAction) {
-    vscode[contextMenuCommands[action]]({
-      topicId,
-      label: title
-    })
+    vscode.openTopic(topicId, title)
   }
 
   const content = (
@@ -95,9 +71,9 @@ export default function TopicRow(props: TopicRowProps) {
   return (
     <TopicShareContextMenu
       compact
-      onCopyLink={() => postContextMenuCommand('copyLink')}
-      onCopyTitleLink={() => postContextMenuCommand('copyTitleLink')}
-      onViewInBrowser={() => postContextMenuCommand('viewInBrowser')}
+      onCopyLink={() => vscode.ctxCopyLink(topicId)}
+      onCopyTitleLink={() => vscode.ctxCopyTitleLink(topicId, title)}
+      onViewInBrowser={() => vscode.ctxViewInBrowser(topicId)}
     >
       {row}
     </TopicShareContextMenu>

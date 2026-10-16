@@ -6,7 +6,7 @@ import type {
   TopicContentAction,
   TopicContentInput,
   TopicManagementAction,
-  TopicManagementInput
+  TopicSyntax
 } from '@/v2ex'
 
 import G from '@/global'
@@ -33,9 +33,11 @@ import {
   TopicPanelViewState,
   TopicPanelWebviewEvents,
   TopicActionTarget,
+  PostTopicReplyInput,
+  ThankTopicReplyInput,
   TopicMemberRelationTarget,
   MemberQuickInfo,
-  OpenTopicPayload,
+  ImageUploadInput,
   WebviewRpcController
 } from '@/shared/webview'
 
@@ -117,17 +119,18 @@ export class TopicPanelController
   private readonly configListener: vscode.Disposable
 
   /**
-   * @param input 话题面板输入参数
+   * @param id 话题 id
+   * @param title 话题展示标题
    * @param deps 外部面板导航依赖
    */
-  constructor(input: OpenTopicPayload, deps: TopicPanelDeps) {
+  constructor(id: string | number, title: string | undefined, deps: TopicPanelDeps) {
     super(deps)
-    const topicId = normalizeTopicId(input.topicId)
+    const topicId = normalizeTopicId(id)
     this.key = getTopicLink(topicId)
     this.topicId = topicId
     this.panel = createV2exWebviewPanel({
       viewType: this.key,
-      title: input.title || `/t/${topicId}`,
+      title: title || `/t/${topicId}`,
       htmlEntry: 'topic.html',
       enableFindWidget: true,
       useDefaultIcon: true,
@@ -288,8 +291,8 @@ export class TopicPanelController
   }
 
   /** 复制话题标题和链接 */
-  rpc_copyTopicTitleLink(message: { topicId: string | number; title: string }) {
-    copyTopicTitleLink(message.topicId, message.title)
+  rpc_copyTopicTitleLink(topicId: string | number, title: string) {
+    copyTopicTitleLink(topicId, title)
   }
 
   /** 在浏览器中打开话题 */
@@ -298,16 +301,13 @@ export class TopicPanelController
   }
 
   /** 保存话题分享图 */
-  rpc_saveTopicShareImage(message: { topicId: string | number; base64: string }) {
-    void saveTopicShareImage(message)
+  rpc_saveTopicShareImage(topicId: string | number, base64: string) {
+    void saveTopicShareImage(topicId, base64)
   }
 
   /** 加载分享图使用的本地资源 URI 或 data URL */
-  rpc_loadTopicShareImages(
-    imageSources: string[],
-    options?: { format?: 'resourceUri' | 'dataUrl' } | null
-  ) {
-    return loadTopicShareImages(imageSources, this.panel.webview, options)
+  rpc_loadTopicShareImages(imageSources: string[], format?: 'resourceUri' | 'dataUrl' | null) {
+    return loadTopicShareImages(imageSources, this.panel.webview, format)
   }
 
   /** 复用全量节点选择器 */
@@ -346,8 +346,10 @@ export class TopicPanelController
   }
 
   /** 展示管理使用独立契约，与内容更新共享提交互斥 */
-  rpc_manageTopic(payload: TopicManagementInput) {
-    return this.runTopicAuthorOperation(() => G.V2ex.topics.manage(this.topicId, payload))
+  rpc_manageTopic(action: TopicManagementAction, confirmation: string) {
+    return this.runTopicAuthorOperation(() =>
+      G.V2ex.topics.manage(this.topicId, { action, confirmation })
+    )
   }
 
   /** 作者操作提交后统一刷新标题、最近浏览和主话题状态 */
@@ -368,48 +370,54 @@ export class TopicPanelController
   }
 
   /** 主题与附言均使用主题正文预览 */
-  rpc_previewTopicContent(payload: { content: string; syntax: 'default' | 'markdown' }) {
-    return G.V2ex.topics.previewContent(payload.content, payload.syntax, 'topic')
+  rpc_previewTopicContent(content: string, syntax: TopicSyntax) {
+    return G.V2ex.topics.previewContent(content, syntax, 'topic')
   }
 
   /** 收藏话题 */
-  rpc_collectTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.topics.collect(topicId))
+  rpc_collectTopic(topicId: string | number, replyPage?: number) {
+    return this.runTopicMutation({ topicId, replyPage }, topicId => G.V2ex.topics.collect(topicId))
   }
 
   /** 取消收藏话题 */
-  rpc_cancelCollectTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.topics.cancelCollect(topicId))
+  rpc_cancelCollectTopic(topicId: string | number, replyPage?: number) {
+    return this.runTopicMutation({ topicId, replyPage }, topicId =>
+      G.V2ex.topics.cancelCollect(topicId)
+    )
   }
 
   /** 忽略话题 */
-  rpc_ignoreTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.topics.ignore(topicId))
+  rpc_ignoreTopic(topicId: string | number, replyPage?: number) {
+    return this.runTopicMutation({ topicId, replyPage }, topicId => G.V2ex.topics.ignore(topicId))
   }
 
   /** 取消忽略话题 */
-  rpc_cancelIgnoreTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.topics.cancelIgnore(topicId))
+  rpc_cancelIgnoreTopic(topicId: string | number, replyPage?: number) {
+    return this.runTopicMutation({ topicId, replyPage }, topicId =>
+      G.V2ex.topics.cancelIgnore(topicId)
+    )
   }
 
   /** 感谢话题创建者 */
-  rpc_thankTopic(target: TopicActionTarget) {
-    return this.runTopicMutation(target, topicId => G.V2ex.topics.thankTopic(topicId))
+  rpc_thankTopic(topicId: string | number, replyPage?: number) {
+    return this.runTopicMutation({ topicId, replyPage }, topicId =>
+      G.V2ex.topics.thankTopic(topicId)
+    )
   }
 
   /** 提交话题回复 */
-  rpc_postTopicReply(message: TopicActionTarget & { content: string }) {
+  rpc_postTopicReply(message: PostTopicReplyInput) {
     return this.handlePostTopicReply(message)
   }
 
   /** 上传回复图片 */
-  rpc_uploadImage(message: { filename: string; mimeType: string; base64: string }) {
+  rpc_uploadImage(message: ImageUploadInput) {
     return uploadImage(message)
   }
 
   /** 检测 Imgur 连通性 */
-  rpc_checkImgurConnectivity(message: { target: 'image' | 'upload'; refresh?: boolean }) {
-    return checkImgurConnectivity(message.target, message.refresh)
+  rpc_checkImgurConnectivity(target: 'image' | 'upload', refresh?: boolean) {
+    return checkImgurConnectivity(target, refresh)
   }
 
   /** 预览回复内容 */
@@ -418,12 +426,12 @@ export class TopicPanelController
   }
 
   /** 加载站内话题预览 */
-  rpc_getTopicPreview(message: { topicId: string | number; replyPage?: number }) {
-    return this.loadTopicPreview(message)
+  rpc_getTopicPreview(topicId: string | number, replyPage?: number) {
+    return this.loadTopicPreview(topicId, replyPage)
   }
 
   /** 感谢话题回复者 */
-  rpc_thankTopicReply(message: TopicActionTarget & { replyId: string }) {
+  rpc_thankTopicReply(message: ThankTopicReplyInput) {
     return this.handleThankTopicReply(message)
   }
 
@@ -438,13 +446,13 @@ export class TopicPanelController
   }
 
   /** 屏蔽用户 */
-  rpc_blockMember(target: TopicMemberRelationTarget) {
-    return this.mutateMemberBlock('block', target)
+  rpc_blockMember(memberId: number, username: string) {
+    return this.mutateMemberBlock('block', { memberId, username })
   }
 
   /** 取消屏蔽用户 */
-  rpc_unblockMember(target: TopicMemberRelationTarget) {
-    return this.mutateMemberBlock('unblock', target)
+  rpc_unblockMember(memberId: number, username: string) {
+    return this.mutateMemberBlock('unblock', { memberId, username })
   }
 
   /**
@@ -627,11 +635,12 @@ export class TopicPanelController
 
   /**
    * 加载站内话题预览；只读取详情，不写入最近浏览或替换主面板状态
-   * @param message 预览请求
+   * @param id 话题 id
+   * @param page 回复页码
    */
-  private loadTopicPreview(message: { topicId: string | number; replyPage?: number }) {
-    const topicId = normalizeTopicId(message.topicId)
-    const replyPage = normalizeReplyPage(message.replyPage)
+  private loadTopicPreview(id: string | number, page?: number) {
+    const topicId = normalizeTopicId(id)
+    const replyPage = normalizeReplyPage(page)
     return G.V2ex.topics.getDetail(topicId, replyPage)
   }
 
@@ -639,7 +648,7 @@ export class TopicPanelController
    * 提交话题回复
    * @param message 回复请求
    */
-  private handlePostTopicReply(message: TopicActionTarget & { content: string }) {
+  private handlePostTopicReply(message: PostTopicReplyInput) {
     if (!message.content) {
       throw new Error('请输入回复内容')
     }
@@ -653,7 +662,7 @@ export class TopicPanelController
    * 感谢话题回复者
    * @param message 感谢请求
    */
-  private handleThankTopicReply(message: TopicActionTarget & { replyId: string }) {
+  private handleThankTopicReply(message: ThankTopicReplyInput) {
     if (!message.replyId) {
       throw new Error('缺少回复 id')
     }

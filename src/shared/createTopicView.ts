@@ -1,3 +1,5 @@
+import type { CreateTopicDraft } from './createTopicDraft'
+import type { ImageUploadInput } from './image'
 import type { CreateTopicInput, CreateTopicResult, Node, TopicSyntax } from '../v2ex/types'
 export type { Node, TopicSyntax } from '../v2ex/types'
 export {
@@ -6,18 +8,6 @@ export {
   TOPIC_TITLE_MAX_LENGTH
 } from '../v2ex/types'
 import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
-
-/** 创作新主题草稿 */
-export interface CreateTopicDraft {
-  /** 主题标题 */
-  title: string
-  /** 主题正文 */
-  content: string
-  /** 正文语法 */
-  syntax: TopicSyntax
-  /** 已选节点 */
-  node?: Node
-}
 
 /** 创作新主题表单状态 */
 export interface CreateTopicFormState {
@@ -51,11 +41,11 @@ export interface CreateTopicPanelRpcCommands
   /** 发布新主题 */
   createTopic(input: CreateTopicInput): CreateTopicResult
   /** 预览新主题正文 */
-  previewTopic(payload: { content: string; syntax: TopicSyntax }): string
+  previewTopic(content: string, syntax: TopicSyntax): string
   /** 上传正文图片 */
-  uploadImage(payload: { filename: string; mimeType: string; base64: string }): string
+  uploadImage(payload: ImageUploadInput): string
   /** 检测 Imgur 连通性 */
-  checkImgurConnectivity(payload: { target: 'upload'; refresh?: boolean }): boolean
+  checkImgurConnectivity(target: 'upload', refresh?: boolean): boolean
 }
 
 /** 创作新主题面板事件 */

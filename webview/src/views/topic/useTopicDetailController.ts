@@ -134,11 +134,13 @@ export default function useTopicDetailController(
       canOperate,
       login: () => vscode.login(),
       refresh: () => applyViewResult(refresh),
-      collect: () => applyMutationResult(vscode.collectTopic(target)),
-      cancelCollect: () => applyMutationResult(vscode.cancelCollectTopic(target)),
-      ignore: () => applyMutationResult(vscode.ignoreTopic(target)),
-      cancelIgnore: () => applyMutationResult(vscode.cancelIgnoreTopic(target)),
-      thankTopic: () => applyMutationResult(vscode.thankTopic(target)),
+      collect: () => applyMutationResult(vscode.collectTopic(target.topicId, target.replyPage)),
+      cancelCollect: () =>
+        applyMutationResult(vscode.cancelCollectTopic(target.topicId, target.replyPage)),
+      ignore: () => applyMutationResult(vscode.ignoreTopic(target.topicId, target.replyPage)),
+      cancelIgnore: () =>
+        applyMutationResult(vscode.cancelIgnoreTopic(target.topicId, target.replyPage)),
+      thankTopic: () => applyMutationResult(vscode.thankTopic(target.topicId, target.replyPage)),
       postReply: content =>
         applyMutationResult(
           vscode.postTopicReply({
@@ -156,9 +158,9 @@ export default function useTopicDetailController(
       loadReplyPage: replyPage => applyViewResult(() => loadReplyPage(replyPage)),
       openMember: username => vscode.openMember(username),
       loadMemberQuickInfo: username => vscode.loadMemberQuickInfo(username),
-      blockMember: target => vscode.blockMember(target),
-      unblockMember: target => vscode.unblockMember(target),
-      openNode: () => vscode.openNode(topic.node),
+      blockMember: target => vscode.blockMember(target.memberId, target.username),
+      unblockMember: target => vscode.unblockMember(target.memberId, target.username),
+      openNode: () => vscode.openNode(topic.node.name, topic.node.title),
       openTag: tag => vscode.openTag(tag)
     }
   }, [
