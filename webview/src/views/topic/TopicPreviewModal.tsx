@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicShareContextMenu from '@/components/TopicShareContextMenu'
-import { Alert, Button, Dialog, Toast } from '@/components/ui'
+import { ScrollArea, Alert, Button, Dialog, Toast } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import useTopicDetailController from './useTopicDetailController'
@@ -54,8 +52,8 @@ export default function TopicPreviewModal({
   const [floatingActionsContainer, setFloatingActionsContainer] = useState<HTMLDivElement | null>(
     null
   )
-  /** 供 TopicDetailView 滚动定位；绑定 SimpleBar 内部可滚动节点 */
-  const scrollContainerRef = useRef<HTMLElement | null>(null)
+  /** 供 TopicDetailView 滚动定位；绑定 ScrollArea 内部可滚动节点 */
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const loadRequestRef = useRef(0)
   const activeTopicIdRef = useRef(topicId)
   const canOperateRef = useRef(canOperate)
@@ -191,11 +189,6 @@ export default function TopicPreviewModal({
     }
   }
 
-  /** 绑定 SimpleBar 实例，并同步真正的滚动容器 */
-  function bindSimpleBar(instance: SimpleBarCore | null) {
-    scrollContainerRef.current = instance?.getScrollElement() ?? null
-  }
-
   return (
     <Dialog
       className={styles.modal}
@@ -223,7 +216,7 @@ export default function TopicPreviewModal({
         onViewInBrowser={viewPreviewInBrowser}
       >
         <div className={styles.body} ref={setFloatingActionsContainer}>
-          <SimpleBar ref={bindSimpleBar} className={styles.scroll} autoHide={false}>
+          <ScrollArea fillViewport viewportRef={scrollContainerRef} className={styles.scroll}>
             {(state.status === 'loading' || refreshing) && (
               <PageSkeleton variant="topic" showAvatar={showAvatar} />
             )}
@@ -246,7 +239,7 @@ export default function TopicPreviewModal({
                 onTopicPreview={onPreviewTopic}
               />
             )}
-          </SimpleBar>
+          </ScrollArea>
         </div>
       </TopicShareContextMenu>
     </Dialog>

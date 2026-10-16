@@ -649,54 +649,10 @@
   overflow: hidden;
 }
 
-.v2ex-pagination__page-select-viewport {
-  width: 100%;
-  max-height: 156px;
-  border-radius: inherit;
-}
-
 .v2ex-pagination__page-select-content {
   display: flex;
   flex-direction: column;
   gap: 1px;
-}
-
-.v2ex-pagination__page-select-scrollbar {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  width: 8px;
-  touch-action: none;
-  user-select: none;
-  padding: 2px;
-  transition: background var(--v2ex-motion-fast) ease-out;
-
-  &[data-orientation='vertical'] {
-    right: 0;
-  }
-}
-
-.v2ex-pagination__page-select-thumb {
-  position: relative;
-  width: 100%;
-  border-radius: 999px;
-  background: var(--v2ex-scrollbar-bg);
-
-  &:hover {
-    background: var(--v2ex-scrollbar-hover-bg);
-  }
-
-  /* 保证极短列表时拇指仍可点 */
-  &::before {
-    position: absolute;
-    inset: 50% -50%;
-    content: '';
-    transform: translate(-50%, -50%);
-    width: 100%;
-    min-width: 12px;
-    min-height: 24px;
-  }
 }
 
 .v2ex-pagination__page-select-item {
@@ -2221,4 +2177,73 @@
   .v2ex-clearable-select--active .v2ex-select__icon {
     visibility: hidden;
   }
+}
+
+.v2ex-scroll-area {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.v2ex-scroll-area__viewport {
+  // 将内容中的 sticky / z-index 限制在滚动条下方
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  max-height: inherit;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  // 整页滚动容器保留键盘滚动，内部控件各自显示焦点
+  outline: none;
+}
+
+// 默认布局允许 contentClassName 覆盖，不依赖样式加载顺序
+:where(.v2ex-scroll-area__content) {
+  display: flow-root;
+}
+
+.v2ex-scroll-area__content--fill-viewport {
+  min-height: 100%;
+}
+
+.v2ex-scroll-area__scrollbar {
+  z-index: 1;
+  display: flex;
+  padding: 2px;
+  touch-action: none;
+  user-select: none;
+
+  &[data-orientation='vertical'] {
+    flex-direction: column;
+    width: 8px;
+  }
+
+  &[data-orientation='horizontal'] {
+    height: 8px;
+  }
+
+  &:hover .v2ex-scroll-area__thumb {
+    background: var(--v2ex-scrollbar-hover-bg);
+  }
+
+  .v2ex-scroll-area__thumb:active {
+    background: var(--v2ex-scrollbar-active-bg);
+  }
+}
+
+.v2ex-scroll-area__thumb {
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--v2ex-scrollbar-bg);
+}
+
+.v2ex-scroll-area__corner {
+  z-index: 1;
+  background: transparent;
 }

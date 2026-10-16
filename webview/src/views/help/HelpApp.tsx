@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { BookOpen, ChevronRight, ExternalLink } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import PageSkeleton from '@/components/PageSkeleton'
-import { Alert, Button } from '@/components/ui'
+import { ScrollArea, Alert, Button } from '@/components/ui'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import type { HelpRpcCommands, HelpViewState, HelpWebviewEvents } from '@extension/shared/webview'
 
@@ -13,7 +12,7 @@ const vscode = createVsCodeClient<HelpRpcCommands, HelpWebviewEvents>()
 export default function HelpApp() {
   const [state, setState] = useState<HelpViewState>({ status: 'loading', slug: 'home' })
   const contentRootRef = useRef<HTMLDivElement>(null)
-  const contentScrollRef = useRef<HTMLElement>(null)
+  const contentScrollRef = useRef<HTMLDivElement>(null)
   const loading = state.status === 'loading'
   useEffect(
     () =>
@@ -108,20 +107,19 @@ export default function HelpApp() {
         </Button>
       </header>
       {!state.data && (
-        <SimpleBar className="help-initial-scroll" autoHide={false}>
+        <ScrollArea className="help-initial-scroll">
           {loading ? (
             <PageSkeleton variant="help" />
           ) : (
             <HelpError message={state.message} onRetry={() => void loadPage(state.slug)} />
           )}
-        </SimpleBar>
+        </ScrollArea>
       )}
       {state.data && (
         <div className="help-layout">
-          <SimpleBar
+          <ScrollArea
             className="help-nav-scroll"
-            autoHide={false}
-            scrollableNodeProps={{ role: 'region', 'aria-label': '帮助目录' }}
+            viewportProps={{ role: 'region', 'aria-label': '帮助目录' }}
           >
             <nav className="help-nav" aria-label="帮助主题">
               <span className="help-nav-label">帮助目录</span>
@@ -137,12 +135,11 @@ export default function HelpApp() {
                 </Button>
               ))}
             </nav>
-          </SimpleBar>
-          <SimpleBar
+          </ScrollArea>
+          <ScrollArea
             className="help-content-scroll"
-            autoHide={false}
-            scrollableNodeProps={{
-              ref: contentScrollRef,
+            viewportRef={contentScrollRef}
+            viewportProps={{
               role: 'region',
               'aria-label': '帮助正文'
             }}
@@ -161,7 +158,7 @@ export default function HelpApp() {
                 />
               )}
             </div>
-          </SimpleBar>
+          </ScrollArea>
         </div>
       )}
     </main>

@@ -1,13 +1,12 @@
 import { Fragment, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ChevronRight, Inbox, RefreshCw, Search } from 'lucide-react'
 import dayjs from 'dayjs'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
 import NodeSelectButton from '@/components/NodeSelectButton'
 import type { Node } from '@extension/v2ex/types'
 import { createVsCodeClient } from '@/core/vscode'
 import {
+  ScrollArea,
   Alert,
   Badge,
   Button,
@@ -80,7 +79,7 @@ export default function SearchApp() {
   const [state, setState] = useState<SearchViewState>({ status: 'initial' })
   const [currentPage, setCurrentPage] = useState(1)
   const requestIdRef = useRef(0)
-  const scrollRef = useRef<SimpleBarCore | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const result = state.status === 'result' || state.status === 'loading' ? state.result : undefined
   const loading = state.status === 'loading'
@@ -118,7 +117,7 @@ export default function SearchApp() {
         return
       }
       setState({ status: 'result', result: nextResult })
-      scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       if (requestId !== requestIdRef.current) {
         return
@@ -141,7 +140,7 @@ export default function SearchApp() {
   }, [])
 
   return (
-    <SimpleBar ref={scrollRef} className="search-scroll" role="main" autoHide={false}>
+    <ScrollArea fillViewport viewportRef={scrollRef} className="search-scroll" role="main">
       <main className="search-container">
         <header className="search-header">
           <div className="search-primary-controls">
@@ -346,7 +345,7 @@ export default function SearchApp() {
         {loading && !result && <PageSkeleton variant="search" rows={4} />}
       </main>
       <ToastViewport />
-    </SimpleBar>
+    </ScrollArea>
   )
 }
 

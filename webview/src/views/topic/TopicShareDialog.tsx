@@ -1,10 +1,18 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Check, Copy, Download, Heart, Inbox } from 'lucide-react'
 import QRCode from 'qrcode'
-import SimpleBar from 'simplebar-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import UserBadge from '@/components/UserBadge'
-import { Button, Dialog, Empty, RadioGroup, RadioGroupItem, Spinner, Toast } from '@/components/ui'
+import {
+  ScrollArea,
+  Button,
+  Dialog,
+  Empty,
+  RadioGroup,
+  RadioGroupItem,
+  Spinner,
+  Toast
+} from '@/components/ui'
 import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
 import { getShareImageSourceCandidates } from '@/core/shareImageSources'
@@ -513,12 +521,7 @@ export default function TopicShareDialog({
   return (
     <Dialog className={styles.dialog} open={open} title="分享话题" onOpenChange={onOpenChange}>
       <div className={styles.layout}>
-        <SimpleBar
-          className={styles.preview}
-          aria-label="分享图预览"
-          autoHide={false}
-          role="region"
-        >
+        <ScrollArea className={styles.preview} aria-label="分享图预览" role="region">
           <div className={styles.previewContent}>
             <article className={styles.card} ref={cardRef}>
               <header className={styles.cardHeader}>
@@ -596,7 +599,7 @@ export default function TopicShareDialog({
               </footer>
             </article>
           </div>
-        </SimpleBar>
+        </ScrollArea>
 
         <aside className={styles.controls}>
           <div className={styles.controlsHeader}>

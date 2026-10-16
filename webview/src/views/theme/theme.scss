@@ -1,4 +1,5 @@
 .theme-preview-light {
+  --vscode-scrollbarSlider-activeBackground: rgba(0, 0, 0, 0.6);
   --vscode-editor-background: #ffffff;
   --vscode-editor-foreground: #1f2328;
   --vscode-foreground: #1f2328;
@@ -34,6 +35,7 @@
 }
 
 .theme-preview-dark {
+  --vscode-scrollbarSlider-activeBackground: rgba(191, 191, 191, 0.4);
   --vscode-editor-background: #1f1f1f;
   --vscode-editor-foreground: #cccccc;
   --vscode-foreground: #cccccc;
@@ -264,4 +266,38 @@
     color: var(--v2ex-muted-fg);
     font-weight: 600;
   }
+}
+
+.theme-preview-scroll {
+  max-height: 160px;
+  border: 1px solid var(--v2ex-border);
+
+  .v2ex-scroll-area__content {
+    padding: 8px;
+  }
+}
+
+.theme-preview-scroll-wide {
+  width: 640px;
+  padding: 8px;
+  background: var(--v2ex-hover-bg);
+}
+
+.theme-preview-scroll-fill {
+  height: 160px;
+  border: 1px solid var(--v2ex-border);
+}
+
+.theme-preview-scroll-fill-content {
+  padding: 8px;
+  background: var(--v2ex-hover-bg);
+}
+
+.theme-preview-scroll-sticky {
+  margin: -8px -8px 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 8px;
+  background: var(--v2ex-webview-bg);
 }

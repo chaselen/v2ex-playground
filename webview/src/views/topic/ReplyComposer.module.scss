@@ -212,7 +212,7 @@
   display: inline-flex;
 }
 
-.emoticonPopover {
+.emoticonPopover:global(.v2ex-popover) {
   width: fit-content;
   max-width: calc(100vw - 40px);
   padding: 0;
@@ -225,7 +225,7 @@
 .emoticonPanel {
   width: max-content;
   max-width: 100%;
-  max-height: min(520px, calc(100vh - 120px));
+  max-height: min(520px, calc(100vh - 120px), calc(var(--available-height) - 2px));
 }
 
 .emoticonContent {

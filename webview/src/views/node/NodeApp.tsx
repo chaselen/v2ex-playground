@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bookmark, BookmarkPlus, Inbox, RefreshCw, SquarePen } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicListItem from '@/components/TopicListItem'
-import { Alert, Avatar, Button, Empty, Pagination, Toast } from '@/components/ui'
+import { ScrollArea, Alert, Avatar, Button, Empty, Pagination, Toast } from '@/components/ui'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import type { Topic } from '@extension/v2ex/types'
 import type {
@@ -20,7 +18,7 @@ const vscode = createVsCodeClient<NodePanelRpcCommands, NodePanelWebviewEvents>(
 export default function NodeApp() {
   const [state, setState] = useState<NodePanelViewState>({ status: 'loading', loggedIn: false })
   const [collecting, setCollecting] = useState(false)
-  const scrollRef = useRef<SimpleBarCore | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const data = state.data
   const loading = state.status === 'loading'
   const node = data?.node
@@ -45,7 +43,7 @@ export default function NodeApp() {
   async function refresh() {
     try {
       await vscode.refresh()
-      scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
       // 扩展侧已同步错误状态
     }
@@ -58,7 +56,7 @@ export default function NodeApp() {
   async function loadPage(page: number) {
     try {
       await vscode.loadPage(page)
-      scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
       // 扩展侧已同步错误状态
     }
@@ -112,7 +110,7 @@ export default function NodeApp() {
   ].filter(Boolean)
 
   return (
-    <SimpleBar ref={scrollRef} className="node-scroll" role="main" autoHide={false}>
+    <ScrollArea fillViewport viewportRef={scrollRef} className="node-scroll" role="main">
       <main className="node-container">
         {loading && !data && <PageSkeleton variant="node-topics" rows={6} />}
 
@@ -233,6 +231,6 @@ export default function NodeApp() {
           </div>
         )}
       </main>
-    </SimpleBar>
+    </ScrollArea>
   )
 }

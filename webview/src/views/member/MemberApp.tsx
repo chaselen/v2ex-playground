@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Eye, Heart, HeartOff, Inbox, RefreshCw, UserCheck, UserRound, UserX } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
@@ -11,6 +9,7 @@ import TopicListItem from '@/components/TopicListItem'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import { useLatestRequest } from '@/hooks/useLatestRequest'
 import {
+  ScrollArea,
   Alert,
   Avatar,
   Button,
@@ -109,7 +108,7 @@ export default function MemberApp() {
   const [unignoringTopicId, setUnignoringTopicId] = useState<number>()
   /** 用户关系操作错误 */
   const [memberActionError, setMemberActionError] = useState('')
-  const scrollRef = useRef<SimpleBarCore | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const profileCacheRef = useRef(new Map<string, MemberProfile>())
   const { startRequest } = useLatestRequest()
   const profile = state.profile
@@ -137,7 +136,7 @@ export default function MemberApp() {
    * 滚动到顶部
    */
   function scrollToTop() {
-    scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   /**
@@ -360,17 +359,11 @@ export default function MemberApp() {
     return dispose
   }, [])
 
-  useEffect(() => {
-    if (profile) {
-      scrollRef.current?.recalculate()
-    }
-  }, [profile])
-
   /** 当前可见内容标签；本人页追加「已忽略」 */
   const visibleTabs = getVisibleMemberTabs(state.isSelf, profile?.ignoredTopicIds?.length ?? 0)
 
   return (
-    <SimpleBar ref={scrollRef} className="member-scroll" role="main" autoHide={false}>
+    <ScrollArea fillViewport viewportRef={scrollRef} className="member-scroll" role="main">
       {state.status === 'loading' && <PageSkeleton variant="member" rows={4} />}
 
       {state.status === 'error' && (
@@ -586,7 +579,7 @@ export default function MemberApp() {
           </section>
         </article>
       )}
-    </SimpleBar>
+    </ScrollArea>
   )
 }
 

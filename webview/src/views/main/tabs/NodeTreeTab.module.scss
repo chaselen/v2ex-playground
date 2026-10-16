@@ -14,24 +14,9 @@ $node-child-indent: 18px;
   flex: 1;
   min-height: 0;
 
-  /* SimpleBar 默认继承 auto 高度，展开内容后 wrapper 会越过滚动区域并覆盖底部操作区。 */
-  :global(.simplebar-wrapper) {
-    height: 100%;
-  }
-
-  :global(.simplebar-content-wrapper),
-  :global(.simplebar-content) {
+  :global(.v2ex-scroll-area__content) {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
-  }
-
-  :global(.simplebar-content) {
-    flex: 1 0 auto;
-  }
-
-  :global(.simplebar-placeholder) {
-    width: auto !important;
   }
 }
 
@@ -118,15 +103,6 @@ $node-child-indent: 18px;
 
 .tree-item--error {
   color: var(--v2ex-danger-fg);
-}
-
-.node-tree-panel,
-.node-tree {
-  :global(.simplebar-content-wrapper),
-  :global(.simplebar-mask),
-  :global(.simplebar-offset) {
-    min-height: 0;
-  }
 }
 
 .node-avatar,

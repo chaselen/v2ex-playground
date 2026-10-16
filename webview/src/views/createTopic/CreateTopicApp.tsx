@@ -1,8 +1,8 @@
 import NodeSelectButton from '@/components/NodeSelectButton'
 import { useEffect, useRef, useState } from 'react'
 import { Info, Send, SquarePen } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
 import {
+  ScrollArea,
   Alert,
   Button,
   ConfirmPopover,
@@ -181,7 +181,7 @@ export default function CreateTopicApp() {
     !initializing && Boolean(draft.title.trim() && draft.node) && !publishing && !uploading
 
   return (
-    <SimpleBar className="create-topic-scroll" role="main" autoHide={false}>
+    <ScrollArea fillViewport className="create-topic-scroll" role="main">
       <main className="create-topic-container">
         <header className="create-topic-header">
           <div className="create-topic-heading">
@@ -324,7 +324,7 @@ export default function CreateTopicApp() {
           </section>
         </div>
       </main>
-    </SimpleBar>
+    </ScrollArea>
   )
 }
 

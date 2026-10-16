@@ -12,9 +12,9 @@
 
 - Chromium 原生日期输入的弹出日历无法跟随宿主主题，日期选择使用共享 DatePicker
 - Base UI 浮层使用 Portal，统一消费语义变量；Dialog 内触发的浮层必须高于 Dialog 内容，否则选项会被遮挡，点击落入下层控件
-- 浮层触发器的 `render` 元素须将 ref 转发到真实 DOM；SimpleBar 的 ref 返回滚动实例，作为触发区域时需要真实 DOM 包裹层
+- 浮层触发器的 `render` 元素须将 ref 转发到真实 DOM；ScrollArea 的 `viewportRef` 指向内部滚动容器，作为触发区域时需要真实 DOM 包裹层
 - Tooltip、Popover、ConfirmPopover 组合时保留中间真实 DOM，避免多个 `render` 触发器竞争同一节点
-- SimpleBar 和 Tabs 内容区可能被键盘聚焦，整页容器不画焦点外框；按钮、链接等交互控件保留焦点描边
+- ScrollArea 和 Tabs 内容区可能被键盘聚焦，整页容器不画焦点外框；按钮、链接等交互控件保留焦点描边
 - 动画遵循 `prefers-reduced-motion`，收起内容使用 `inert` 与无障碍隐藏，避免键盘进入被裁切的链接
 
 ## HTML 内容中的用户浮层

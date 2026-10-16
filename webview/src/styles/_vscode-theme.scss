@@ -234,6 +234,10 @@ body {
     --vscode-scrollbarSlider-hoverBackground,
     rgba(127, 127, 127, 0.55)
   );
+  --v2ex-scrollbar-active-bg: var(
+    --vscode-scrollbarSlider-activeBackground,
+    var(--v2ex-scrollbar-hover-bg)
+  );
 
   /* 图片预览浮层：固定深色底；高对比 body 类再覆盖为 contrast 边框 */
   --v2ex-image-preview-border: rgb(255 255 255 / 18%);

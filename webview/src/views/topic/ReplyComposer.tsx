@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import { Image, Smile } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
-import { Button, Popover, Spinner, Textarea, Toast, Tooltip } from '@/components/ui'
+import { ScrollArea, Button, Popover, Spinner, Textarea, Toast, Tooltip } from '@/components/ui'
 import { proxyImgurImageSrc } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { isApplePlatform } from '@/core/platform'
@@ -556,7 +555,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    */
   function renderEmoticonPanel() {
     return (
-      <SimpleBar className={styles.emoticonPanel} autoHide={false}>
+      <ScrollArea className={styles.emoticonPanel}>
         <div className={styles.emoticonContent}>
           {emoticonGroups.map(group => (
             <section key={group.title} className={styles.emoticonSection}>
@@ -582,7 +581,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             </section>
           ))}
         </div>
-      </SimpleBar>
+      </ScrollArea>
     )
   }
 

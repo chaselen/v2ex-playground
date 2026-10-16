@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
-import { Alert, Button, Toast } from '@/components/ui'
+import { ScrollArea, Alert, Button, Toast } from '@/components/ui'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicShareContextMenu from '@/components/TopicShareContextMenu'
@@ -41,7 +39,7 @@ export default function TopicApp() {
   const [contentAction, setContentAction] = useState<TopicContentAction>()
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>('nested')
-  const topicScrollRef = useRef<HTMLElement | null>(null)
+  const topicScrollRef = useRef<HTMLDivElement | null>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
   const contentActions = topic?.contentActions ?? []
@@ -155,13 +153,8 @@ export default function TopicApp() {
     }
   }, [topic])
 
-  /** 绑定 SimpleBar 实例，并同步真正的滚动容器 */
-  function bindSimpleBar(instance: SimpleBarCore | null) {
-    topicScrollRef.current = instance?.getScrollElement() ?? null
-  }
-
   const content = (
-    <SimpleBar ref={bindSimpleBar} className="topic-shell" role="main" autoHide={false}>
+    <ScrollArea viewportRef={topicScrollRef} className="topic-shell" role="main">
       {state.status === 'loading' && <PageSkeleton variant="topic" showAvatar={showAvatar} />}
 
       {state.status === 'error' && (
@@ -223,12 +216,12 @@ export default function TopicApp() {
           onShare={() => setShowShareDialog(true)}
         />
       )}
-    </SimpleBar>
+    </ScrollArea>
   )
 
   return (
     <>
-      {/* SimpleBar 的 ref 返回滚动实例，菜单触发器需绑定真实 DOM */}
+      {/* 菜单触发器需绑定真实 DOM */}
       <TopicShareContextMenu
         disabled={!topic}
         onCopyLink={() => topic && vscode.copyTopicLink(topic.id)}

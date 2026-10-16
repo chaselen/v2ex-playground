@@ -32,6 +32,7 @@ import {
   RadioGroup,
   RadioGroupItem,
   Select,
+  ScrollArea,
   Spinner,
   Tag,
   Tabs,
@@ -67,6 +68,8 @@ export default function ThemePreviewApp() {
   const [inputValue, setInputValue] = useState('V2EX')
   const [otpValue, setOtpValue] = useState('12')
   const [previewPage, setPreviewPage] = useState(4)
+  const [fillViewport, setFillViewport] = useState(true)
+  const [scrollRows, setScrollRows] = useState(3)
   const [replyViewMode, setReplyViewMode] = useState('nested')
 
   const setPreviewTheme = (label: string, bodyClass: string) => {
@@ -96,6 +99,32 @@ export default function ThemePreviewApp() {
       </header>
 
       <section className="theme-preview-grid">
+        <PreviewSection title="滚动区域">
+          <Button onClick={() => setScrollRows(rows => (rows === 3 ? 30 : 3))}>切换滚动内容</Button>
+          <ScrollArea
+            className="theme-preview-scroll"
+            viewportProps={{ role: 'region', 'aria-label': '滚动区域示例' }}
+          >
+            <div className="theme-preview-scroll-sticky">置顶内容：滚动条应保持可见和可点击</div>
+            {Array.from({ length: scrollRows }, (_, index) => (
+              <p key={index}>第 {index + 1} 行：检查动态内容和键盘滚动</p>
+            ))}
+            <div className="theme-preview-scroll-wide">横向滚动内容</div>
+          </ScrollArea>
+        </PreviewSection>
+        <PreviewSection title="内容填充视口">
+          <Button onClick={() => setFillViewport(value => !value)} aria-pressed={fillViewport}>
+            {fillViewport ? '关闭视口填充' : '开启视口填充'}
+          </Button>
+          <ScrollArea
+            fillViewport={fillViewport}
+            className="theme-preview-scroll-fill"
+            contentClassName="theme-preview-scroll-fill-content"
+            viewportProps={{ role: 'region', 'aria-label': '视口填充示例' }}
+          >
+            <p>短内容的背景应随填充开关变化</p>
+          </ScrollArea>
+        </PreviewSection>
         <PreviewSection title="基础组件">
           <div className="theme-preview-row">
             <Button variant="primary" icon={<RefreshCw aria-hidden="true" />}>

@@ -2,10 +2,10 @@ import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type
 import { CircleCheck, CircleHelp, Gift, Inbox, SquarePen, Trash2, UserRound } from 'lucide-react'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import CurrencyBalance from '@/components/CurrencyBalance'
-import SimpleBar from 'simplebar-react'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import PageSkeleton from '@/components/PageSkeleton'
 import {
+  ScrollArea,
   Avatar,
   Badge,
   Button,
@@ -762,42 +762,42 @@ export default function MyTab(props: MyTabProps) {
 
   if (loading) {
     return (
-      <SimpleBar className={styles['my-panel']} autoHide={false}>
+      <ScrollArea fillViewport className={styles['my-panel']}>
         <div className={styles['my-panel-content']}>
           <PageSkeleton variant="my" rows={4} />
         </div>
-      </SimpleBar>
+      </ScrollArea>
     )
   }
 
   if (!loggedIn) {
     return (
-      <SimpleBar className={styles['my-panel']} autoHide={false}>
+      <ScrollArea fillViewport className={styles['my-panel']}>
         <LoginPrompt />
-      </SimpleBar>
+      </ScrollArea>
     )
   }
 
   if (!overview && overviewError) {
     return (
-      <SimpleBar className={styles['my-panel']} autoHide={false}>
+      <ScrollArea fillViewport className={styles['my-panel']}>
         <div className={styles['empty-panel']}>
           <Empty title="加载失败" description={overviewError} icon={<Inbox aria-hidden="true" />} />
           <Button size="small" loading={loading} onClick={onRetryOverview}>
             重试
           </Button>
         </div>
-      </SimpleBar>
+      </ScrollArea>
     )
   }
 
   if (!overview) {
     return (
-      <SimpleBar className={styles['my-panel']} autoHide={false}>
+      <ScrollArea fillViewport className={styles['my-panel']}>
         <div className={styles['empty-panel']}>
           <Empty title="暂无账户概览" icon={<Inbox aria-hidden="true" />} />
         </div>
-      </SimpleBar>
+      </ScrollArea>
     )
   }
 
@@ -805,7 +805,7 @@ export default function MyTab(props: MyTabProps) {
   const activityPercent = Math.min(Math.max(overview.activityPercent, 0), 100)
 
   return (
-    <SimpleBar className={styles['my-panel']} autoHide={false}>
+    <ScrollArea fillViewport className={styles['my-panel']}>
       <div className={styles['my-panel-content']}>
         <article className={styles['my-card']}>
           <header className={styles['my-profile']}>
@@ -954,7 +954,7 @@ export default function MyTab(props: MyTabProps) {
           <div className={styles['my-content-panel']}>{renderActiveContent()}</div>
         </section>
       </div>
-    </SimpleBar>
+    </ScrollArea>
   )
 }
 

@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import { ChevronRight, Inbox, Plus, RefreshCw, Trash2 } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
 import PageSkeleton from '@/components/PageSkeleton'
-import { Button, ConfirmPopover, Empty } from '@/components/ui'
+import { ScrollArea, Button, ConfirmPopover, Empty } from '@/components/ui'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
@@ -449,9 +448,9 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
 
   return (
     <div className={styles['node-tree-layout']}>
-      <SimpleBar className={styles['node-tree-panel']} autoHide={false}>
+      <ScrollArea fillViewport className={styles['node-tree-panel']}>
         {renderContent()}
-      </SimpleBar>
+      </ScrollArea>
       {!loading && (tab === 'custom' || (tab === 'collection' && loggedIn)) && (
         <div className={styles['tree-footer']}>
           <Button

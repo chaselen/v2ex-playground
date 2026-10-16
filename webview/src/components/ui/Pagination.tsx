@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area'
+import { ScrollArea } from './ScrollArea'
 import { Button } from './Button'
 import { HoverCard } from './HoverCard'
 import { mergeClassNames } from './utils'
@@ -217,47 +217,37 @@ function CompactPageSelect({ disabled, onPageChange, page, totalPages }: Compact
       showArrow={false}
       className="v2ex-pagination__page-select"
       content={
-        <ScrollAreaPrimitive.Root className="v2ex-pagination__page-select-list">
-          <ScrollAreaPrimitive.Viewport
-            className="v2ex-pagination__page-select-viewport"
-            role="listbox"
-            aria-label="选择页码"
-          >
-            <div className="v2ex-pagination__page-select-content">
-              {Array.from({ length: totalPages }, (_, index) => {
-                const itemPage = index + 1
-                const isActive = itemPage === page
+        <ScrollArea
+          className="v2ex-pagination__page-select-list"
+          contentClassName="v2ex-pagination__page-select-content"
+          viewportProps={{ role: 'listbox', 'aria-label': '选择页码' }}
+        >
+          {Array.from({ length: totalPages }, (_, index) => {
+            const itemPage = index + 1
+            const isActive = itemPage === page
 
-                return (
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={isActive}
-                    aria-label={`第 ${itemPage} 页`}
-                    className={mergeClassNames(
-                      'v2ex-pagination__page-select-item',
-                      isActive && 'v2ex-pagination__page-select-item--active'
-                    )}
-                    ref={isActive ? currentItemRef : undefined}
-                    key={itemPage}
-                    onClick={() => {
-                      onPageChange(itemPage)
-                      setOpen(false)
-                    }}
-                  >
-                    {itemPage}
-                  </button>
-                )
-              })}
-            </div>
-          </ScrollAreaPrimitive.Viewport>
-          <ScrollAreaPrimitive.Scrollbar
-            className="v2ex-pagination__page-select-scrollbar"
-            orientation="vertical"
-          >
-            <ScrollAreaPrimitive.Thumb className="v2ex-pagination__page-select-thumb" />
-          </ScrollAreaPrimitive.Scrollbar>
-        </ScrollAreaPrimitive.Root>
+            return (
+              <button
+                type="button"
+                role="option"
+                aria-selected={isActive}
+                aria-label={`第 ${itemPage} 页`}
+                className={mergeClassNames(
+                  'v2ex-pagination__page-select-item',
+                  isActive && 'v2ex-pagination__page-select-item--active'
+                )}
+                ref={isActive ? currentItemRef : undefined}
+                key={itemPage}
+                onClick={() => {
+                  onPageChange(itemPage)
+                  setOpen(false)
+                }}
+              >
+                {itemPage}
+              </button>
+            )
+          })}
+        </ScrollArea>
       }
     >
       {label}

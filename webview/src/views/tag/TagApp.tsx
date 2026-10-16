@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Inbox, RefreshCw } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicListItem from '@/components/TopicListItem'
-import { Alert, Button, Empty } from '@/components/ui'
+import { ScrollArea, Alert, Button, Empty } from '@/components/ui'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import type { Topic } from '@extension/v2ex/types'
 import type {
@@ -19,7 +17,7 @@ const vscode = createVsCodeClient<TagPanelRpcCommands, TagPanelWebviewEvents>()
 /** 标签主题页面应用 */
 export default function TagApp() {
   const [state, setState] = useState<TagPanelViewState>({ status: 'loading' })
-  const scrollRef = useRef<SimpleBarCore | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const data = state.data
   const loading = state.status === 'loading'
 
@@ -36,7 +34,7 @@ export default function TagApp() {
   async function refresh() {
     try {
       await vscode.refresh()
-      scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
       // 扩展侧已同步错误状态
     }
@@ -62,7 +60,7 @@ export default function TagApp() {
   }
 
   return (
-    <SimpleBar ref={scrollRef} className="tag-scroll" role="main" autoHide={false}>
+    <ScrollArea fillViewport viewportRef={scrollRef} className="tag-scroll" role="main">
       <main className="tag-container">
         {loading && <PageSkeleton variant="tag-topics" rows={6} />}
 
@@ -132,6 +130,6 @@ export default function TagApp() {
           </div>
         )}
       </main>
-    </SimpleBar>
+    </ScrollArea>
   )
 }

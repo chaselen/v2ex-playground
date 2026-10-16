@@ -2,7 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './HelpApp'
 import ImagePreviewProvider from '@/components/ImagePreviewProvider'
-import 'simplebar-react/dist/simplebar.min.css'
 import '@/styles/index.scss'
 import './help.scss'
 

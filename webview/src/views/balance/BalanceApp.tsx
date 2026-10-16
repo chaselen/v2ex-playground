@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { CircleHelp, Inbox, RefreshCw } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import CurrencyBalance from '@/components/CurrencyBalance'
-import { Alert, Button, Empty, Pagination, Spinner } from '@/components/ui'
+import { ScrollArea, Alert, Button, Empty, Pagination, Spinner } from '@/components/ui'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import PageSkeleton from '@/components/PageSkeleton'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
@@ -24,7 +22,7 @@ const vscode = createVsCodeClient<BalancePanelRpcCommands, BalancePanelWebviewEv
 export default function BalanceApp() {
   const [state, setState] = useState<BalancePanelViewState>({ status: 'loading' })
   const [loadingPage, setLoadingPage] = useState(false)
-  const scrollRef = useRef<SimpleBarCore | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const { startRequest } = useLatestRequest()
   const detail = state.detail
 
@@ -48,7 +46,7 @@ export default function BalanceApp() {
         return
       }
       setState({ status: 'balance', detail: nextDetail, showRefresh: true })
-      scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       console.error(err)
     } finally {
@@ -92,14 +90,8 @@ export default function BalanceApp() {
     )
   }, [])
 
-  useEffect(() => {
-    if (detail) {
-      scrollRef.current?.recalculate()
-    }
-  }, [detail])
-
   return (
-    <SimpleBar ref={scrollRef} className="balance-scroll" role="main" autoHide={false}>
+    <ScrollArea fillViewport viewportRef={scrollRef} className="balance-scroll" role="main">
       {state.status === 'loading' && <PageSkeleton variant="balance" rows={6} />}
 
       {state.status === 'error' && (
@@ -238,6 +230,6 @@ export default function BalanceApp() {
           </section>
         </article>
       )}
-    </SimpleBar>
+    </ScrollArea>
   )
 }

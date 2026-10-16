@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Eye, Inbox, RefreshCw, Search, Trash2, UserRound } from 'lucide-react'
-import SimpleBar from 'simplebar-react'
-import type SimpleBarCore from 'simplebar-core'
 import NodeButton from '@/components/NodeButton'
 import PageSkeleton from '@/components/PageSkeleton'
-import { Avatar, Button, ConfirmPopover, Empty, Input, Pagination, Toast } from '@/components/ui'
+import {
+  ScrollArea,
+  Avatar,
+  Button,
+  ConfirmPopover,
+  Empty,
+  Input,
+  Pagination,
+  Toast
+} from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
   RecentBrowseListData,
@@ -36,7 +43,7 @@ export default function RecentBrowseApp() {
   const [query, setQuery] = useState('')
   const [activeQuery, setActiveQuery] = useState('')
   const requestIdRef = useRef(0)
-  const scrollRef = useRef<SimpleBarCore | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const data = state.data
   const loading = state.status === 'loading'
 
@@ -64,7 +71,7 @@ export default function RecentBrowseApp() {
       }
 
       setState({ status: 'result', data: nextData })
-      scrollRef.current?.getScrollElement()?.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       if (requestId !== requestIdRef.current) {
         return
@@ -266,7 +273,7 @@ export default function RecentBrowseApp() {
   }
 
   return (
-    <SimpleBar ref={scrollRef} className="recent-scroll" role="main" autoHide={false}>
+    <ScrollArea viewportRef={scrollRef} className="recent-scroll" role="main">
       <main className="recent-container">
         <header className="recent-toolbar">
           <div className="recent-search">
@@ -367,6 +374,6 @@ export default function RecentBrowseApp() {
           </>
         )}
       </main>
-    </SimpleBar>
+    </ScrollArea>
   )
 }

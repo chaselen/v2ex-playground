@@ -10,12 +10,11 @@
   color: var(--v2ex-content-fg);
   font-size: 14px;
 
-  .simplebar-content-wrapper {
+  .v2ex-scroll-area__viewport {
     min-height: 0;
   }
 
-  .simplebar-content {
-    min-height: 100%;
+  .v2ex-scroll-area__content {
     background: var(--v2ex-webview-bg);
     color: var(--v2ex-content-fg);
   }
