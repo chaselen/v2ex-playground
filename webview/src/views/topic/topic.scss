@@ -144,6 +144,16 @@ $reply-right-inset: 10px;
   @include topic-content-shared.article;
 }
 
+.topic-outdated-notice {
+  margin: 0 0 20px;
+  padding: 8px 12px;
+  border-radius: var(--v2ex-radius-md);
+  color: var(--v2ex-muted-fg);
+  background: color-mix(in srgb, var(--v2ex-webview-fg) 5%, var(--v2ex-webview-bg));
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .topic-divider {
   height: 1px;
   border: 0;

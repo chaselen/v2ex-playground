@@ -127,6 +127,8 @@ export interface TopicDetail {
   publishedAt: string
   /** 点击次数 */
   visitCount: number
+  /** 旧帖提醒文案 */
+  outdatedNotice?: string
   /** 内容 */
   content: string
   /** 追加内容 */

@@ -2,6 +2,49 @@ import * as cheerio from 'cheerio/slim'
 import { describe, expect, it } from 'vitest'
 import { parseReplies, parseTagTopicList, parseTopicMeta, parseTopicInfo } from './topic'
 
+describe('topic outdated notice parsing', () => {
+  it('从主题容器读取旧帖提醒，与正文和附言分离', () => {
+    const notice = '这是一个创建于 2234 天前的主题，其中的信息可能已经有所发展或是发生改变。'
+    const $ = cheerio.load(`
+      <div id="Main">
+        <div class="box">
+          <div class="header"><h1>旧主题</h1></div>
+          <div class="outdated"> ${notice} </div>
+          <div class="cell"><div class="topic_content">Topic body</div></div>
+          <div class="subtle">
+            <span class="fade">第 1 条附言 · 2020 年 9 月 3 日</span>
+            <div class="topic_content">Supplement</div>
+          </div>
+        </div>
+      </div>
+    `)
+
+    expect(parseTopicMeta($, 703733, 'https://www.v2ex.com')).toMatchObject({
+      outdatedNotice: notice,
+      content: 'Topic body',
+      appends: [{ content: 'Supplement' }]
+    })
+  })
+
+  it.each(['', '<div class="outdated"> </div>'])(
+    '源站未提供有效提醒时不从正文或其他区域提取',
+    noticeHtml => {
+      const $ = cheerio.load(`
+        <div class="outdated">侧栏提示</div>
+        <div id="Main">
+          <div class="box">
+            ${noticeHtml}
+            <div class="cell"><div class="topic_content"><div class="outdated">正文引用</div></div></div>
+          </div>
+          <div class="box"><div class="outdated">回复引用</div></div>
+        </div>
+      `)
+
+      expect(parseTopicMeta($, 1, 'https://www.v2ex.com').outdatedNotice).toBeUndefined()
+    }
+  )
+})
+
 describe('topic time parsing', () => {
   it('格式化发帖时间', () => {
     const $ = cheerio.load(`

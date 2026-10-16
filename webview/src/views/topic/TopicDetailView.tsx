@@ -663,6 +663,8 @@ export default function TopicDetailView({
 
         <hr className="topic-divider topic-divider--content-start" />
 
+        {topic.outdatedNotice && <p className="topic-outdated-notice">{topic.outdatedNotice}</p>}
+
         {topic.content ? (
           <EnhancedHtmlContent
             as="section"

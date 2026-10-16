@@ -118,6 +118,9 @@ describe.sequential('V2exClient topics', () => {
     expect(detail.displayTime).toBe('2020 年 9 月 3 日')
     expect(detail.publishedAt).toBe('2020-09-03 08:36:53')
     expect(detail.content).toContain('V2EX Playground')
+    expect(detail.outdatedNotice).toMatch(
+      /^这是一个创建于 \d+ 天前的主题，其中的信息可能已经有所发展或是发生改变。$/
+    )
     expect(detail.replyCount).toBeGreaterThanOrEqual(42)
     expect(detail.replies.length).toBeGreaterThanOrEqual(42)
     expect(detail.replyCurrentPage).toBe(1)

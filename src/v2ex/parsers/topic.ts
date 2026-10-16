@@ -134,6 +134,7 @@ export function parseTopicMeta(
   topic.visitCount = Number(
     meta.find(item => /(?:views|次点击)/i.test(item))?.match(/\d+/)?.[0] || 0
   )
+  topic.outdatedNotice = $('#Main > .box').first().children('.outdated').text().trim() || undefined
   topic.content = $('#Main .topic_content').html() || ''
   $('.subtle').each((_, element) => {
     topic.appends.push({
