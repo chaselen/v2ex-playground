@@ -1,7 +1,11 @@
-.trigger {
+.wrapper {
   align-self: flex-start;
   min-width: 180px;
   max-width: 100%;
+}
+
+.trigger {
+  width: 100%;
   min-height: 32px;
   padding: 5px 10px;
 

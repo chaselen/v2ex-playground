@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { ClearButton } from './ClearButton'
 import {
   forwardRef,
   useState,
@@ -32,6 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     onKeyDown,
     onValueChange,
     prefix,
+    readOnly,
     value,
     ...props
   },
@@ -61,20 +62,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         className="v2ex-input__control"
         disabled={disabled}
         value={value}
+        readOnly={readOnly}
         onChange={event => onValueChange?.(event.currentTarget.value)}
         onCompositionStart={() => setComposing(true)}
         onCompositionEnd={() => setComposing(false)}
         onKeyDown={handleKeyDown}
       />
-      {clearable && hasValue && !disabled && (
-        <button
-          className="v2ex-input__clear"
-          type="button"
-          aria-label="清空输入"
-          onClick={() => onValueChange?.('')}
-        >
-          <X aria-hidden="true" />
-        </button>
+      {clearable && hasValue && !disabled && !readOnly && (
+        <ClearButton label="清空输入" onClear={() => onValueChange?.('')} />
       )}
     </span>
   )

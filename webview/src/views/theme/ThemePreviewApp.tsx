@@ -1,3 +1,5 @@
+import NodeSelectButton from '@/components/NodeSelectButton'
+import type { Node } from '@extension/v2ex/types'
 import { useState, type ReactNode } from 'react'
 import {
   Bookmark,
@@ -59,6 +61,7 @@ export default function ThemePreviewApp() {
   const [activeTheme, setActiveTheme] = useState('暗色')
   const [selectedKey, setSelectedKey] = useState('v2ex')
   const [modalVisible, setModalVisible] = useState(false)
+  const [node, setNode] = useState<Node | undefined>({ name: 'qna', title: '问与答' })
   const [inputValue, setInputValue] = useState('V2EX')
   const [otpValue, setOtpValue] = useState('12')
   const [previewPage, setPreviewPage] = useState(4)
@@ -253,12 +256,20 @@ export default function ThemePreviewApp() {
             <Input disabled value="禁用输入框" />
             <Textarea placeholder="多行内容" />
             <Select
+              clearable
+              defaultValue="v2ex"
               aria-label="选择一个节点"
               placeholder="选择一个节点"
               options={[
                 { label: 'V2EX', value: 'v2ex' },
                 { label: 'Radix Primitives', value: 'radix' }
               ]}
+            />
+            <NodeSelectButton
+              node={node}
+              clearable
+              onClear={() => setNode(undefined)}
+              onClick={() => setNode({ name: 'qna', title: '问与答' })}
             />
             <Select
               aria-label="禁用选择器"

@@ -1,6 +1,7 @@
 import { Select as SelectPrimitive } from 'radix-ui'
 import { Check, ChevronDown } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { ClearButton } from './ClearButton'
 import { mergeClassNames } from './utils'
 
 export interface SelectOption {
@@ -21,6 +22,8 @@ export interface SelectProps {
   placeholder?: ReactNode
   /** 选项 */
   options: SelectOption[]
+  /** 允许清空选择，清空时通过 onValueChange 返回空字符串 */
+  clearable?: boolean
   /** 是否禁用 */
   disabled?: boolean
   /** 无障碍名称 */
@@ -34,6 +37,7 @@ export interface SelectProps {
 /** 基于 Radix Select 的单选下拉框 */
 export function Select({
   className,
+  clearable = false,
   defaultValue,
   disabled,
   options,
@@ -42,19 +46,32 @@ export function Select({
   onValueChange,
   ...props
 }: SelectProps) {
+  const [internalValue, setInternalValue] = useState(defaultValue ?? '')
+  const currentValue = value ?? internalValue
+  const canClear = clearable && !!currentValue && !disabled
+
+  function changeValue(nextValue: string) {
+    if (value === undefined) setInternalValue(nextValue)
+    onValueChange?.(nextValue)
+  }
+
   return (
-    <SelectPrimitive.Root
-      value={value}
-      defaultValue={defaultValue}
-      disabled={disabled}
-      onValueChange={onValueChange}
-    >
-      <SelectPrimitive.Trigger className={mergeClassNames('v2ex-select', className)} {...props}>
-        <SelectPrimitive.Value placeholder={placeholder} />
-        <SelectPrimitive.Icon className="v2ex-select__icon">
-          <ChevronDown aria-hidden="true" />
-        </SelectPrimitive.Icon>
-      </SelectPrimitive.Trigger>
+    <SelectPrimitive.Root value={currentValue} disabled={disabled} onValueChange={changeValue}>
+      <span
+        className={mergeClassNames(
+          'v2ex-clearable-select v2ex-select-container',
+          canClear && 'v2ex-clearable-select--active',
+          className
+        )}
+      >
+        <SelectPrimitive.Trigger className="v2ex-select" {...props}>
+          <SelectPrimitive.Value placeholder={placeholder} />
+          <SelectPrimitive.Icon className="v2ex-select__icon">
+            <ChevronDown aria-hidden="true" />
+          </SelectPrimitive.Icon>
+        </SelectPrimitive.Trigger>
+        {canClear && <ClearButton label="清空选择" onClear={() => changeValue('')} />}
+      </span>
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
           className="v2ex-select__content"

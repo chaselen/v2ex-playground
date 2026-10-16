@@ -503,7 +503,7 @@
   }
 }
 
-.v2ex-input__clear {
+.v2ex-control-clear {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -528,7 +528,7 @@
   }
 }
 
-.v2ex-input__clear > svg {
+.v2ex-control-clear > svg {
   width: 14px;
   height: 14px;
 }
@@ -2159,5 +2159,60 @@
 
   .v2ex-image-preview__image {
     transition: none;
+  }
+}
+
+.v2ex-select-container {
+  width: 100%;
+}
+
+// 清除按钮与触发器为兄弟节点，避免嵌套按钮和误触发选择流程
+.v2ex-clearable-select {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  vertical-align: middle;
+
+  > .v2ex-control-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
+.v2ex-control-clear {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.v2ex-input:hover,
+.v2ex-input:focus-within,
+.v2ex-clearable-select:hover,
+.v2ex-clearable-select:focus-within {
+  > .v2ex-control-clear {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.v2ex-clearable-select--active:hover,
+.v2ex-clearable-select--active:focus-within {
+  .v2ex-select__icon {
+    visibility: hidden;
+  }
+}
+
+@media (hover: none) {
+  .v2ex-input,
+  .v2ex-clearable-select--active {
+    > .v2ex-control-clear {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .v2ex-clearable-select--active .v2ex-select__icon {
+    visibility: hidden;
   }
 }
