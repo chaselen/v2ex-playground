@@ -3,6 +3,9 @@ import type {
   MemberInfo,
   Node,
   TopicDetail,
+  TopicContentAction,
+  TopicContentState,
+  TopicContentInput,
   TopicManagementAction,
   TopicManagementState,
   TopicManagementInput
@@ -62,13 +65,17 @@ export interface TopicPanelRpcCommands
   /** 加载源站话题信息 */
   getTopicInfo(topicId: number): TopicInfo
   /** 选择目标节点，返回展示信息 */
-  pickTopicManagementNode(currentNodeName?: string): Node | undefined
-  /** 检查当前主话题作者权限并读取初始化数据 */
+  pickTopicContentNode(currentNodeName?: string): Node | undefined
+  /** 读取编辑、移动或附言的初始化数据 */
+  prepareTopicContent(action: TopicContentAction): TopicContentState
+  /** 提交内容操作并返回最新详情 */
+  updateTopicContent(payload: TopicContentInput): TopicDetail
+  /** 读取首页推广或下沉的确认说明 */
   prepareTopicManagement(action: TopicManagementAction): TopicManagementState
-  /** 提交主话题管理操作并返回最新详情 */
+  /** 提交首页推广或下沉操作并返回最新详情 */
   manageTopic(payload: TopicManagementInput): TopicDetail
   /** 预览主题正文或附言 */
-  previewTopicManagement(payload: { content: string; syntax: 'default' | 'markdown' }): string
+  previewTopicContent(payload: { content: string; syntax: 'default' | 'markdown' }): string
   /** 打开标签主题面板 */
   openTag(tag: string): void
   login(): void

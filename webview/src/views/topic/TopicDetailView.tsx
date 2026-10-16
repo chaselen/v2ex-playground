@@ -77,8 +77,8 @@ export interface TopicDetailViewProps {
   onReplyViewModeChange?: (mode: ReplyViewMode) => void
   /** 打开站内话题预览 */
   onTopicPreview: OpenTopicPreview
-  /** 主面板作者管理操作 */
-  managementActions?: ReactNode
+  /** 主面板作者操作入口 */
+  authorActions?: ReactNode
   /** 打开话题分享图 */
   onShare?: () => void
 }
@@ -100,7 +100,7 @@ export default function TopicDetailView({
   onReplyViewModeChange,
   onTopicPreview,
   onShare,
-  managementActions
+  authorActions
 }: TopicDetailViewProps) {
   const { topic, showImages, showAvatar, canOperate } = controller
   const [infoTopicId, setInfoTopicId] = useState<number>()
@@ -642,7 +642,7 @@ export default function TopicDetailView({
               />
             </Tooltip>
           )}
-          {managementActions}
+          {authorActions}
           {!!topic.tags.length && (
             <div className="topic-tags" aria-label="帖子标签">
               {topic.tags.map(tag => (

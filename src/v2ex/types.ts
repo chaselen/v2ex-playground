@@ -105,7 +105,9 @@ export interface TopicDetail {
   id: number
   /** 服务端当前是否提供信息页入口 */
   canViewInfo?: boolean
-  /** 服务端当前提供的作者管理入口 */
+  /** 服务端当前提供的编辑、移动及附言入口 */
+  contentActions?: TopicContentAction[]
+  /** 服务端当前提供的首页推广及下沉入口 */
   managementActions?: TopicManagementAction[]
   /** 标题 */
   title: string
@@ -609,11 +611,11 @@ export interface HelpPage {
   navigation: { slug: string; title: string }[]
 }
 
-/** 主题作者管理操作，权限以服务端页面为准 */
-export type TopicManagementAction = 'edit' | 'move' | 'append'
+/** 主题内容操作，权限以服务端页面为准 */
+export type TopicContentAction = 'edit' | 'move' | 'append'
 
-/** 作者管理初始化数据；正文仅在编辑时从服务端读取原文 */
-export interface TopicManagementState {
+/** 内容操作初始化数据；正文仅在编辑时从服务端读取原文 */
+export interface TopicContentState {
   /** 当前主题标题 */
   title: string
   /** 编辑时的原始正文，移动和附言初始化为空 */
@@ -624,8 +626,22 @@ export interface TopicManagementState {
   nodeName: string
 }
 
-/** 固定的作者管理请求，语法与服务端数字枚举由领域层映射 */
-export type TopicManagementInput =
+/** 内容操作请求，语法与服务端数字枚举由领域层映射 */
+export type TopicContentInput =
   | { action: 'edit'; title: string; content: string; syntax: TopicSyntax }
   | { action: 'move'; nodeName: string }
   | { action: 'append'; content: string; syntax: TopicSyntax }
+
+/** 主题展示管理操作 */
+export type TopicManagementAction = 'boost' | 'fade'
+
+/** 展示管理确认信息，不包含正文、节点或会话令牌 */
+export interface TopicManagementState {
+  /** 当前的操作确认文案，包含费用或时长 */
+  confirmation: string
+}
+
+/** 已确认的展示管理请求 */
+export interface TopicManagementInput extends TopicManagementState {
+  action: TopicManagementAction
+}

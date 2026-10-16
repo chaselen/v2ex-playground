@@ -13,9 +13,9 @@ describe.sequential('V2exClient topics', () => {
     'reads known sandbox editor values through the facade',
     async () => {
       const fixture = JSON.parse(
-        readFileSync(new URL('../parsers/fixtures/topicManagement.json', import.meta.url), 'utf8')
+        readFileSync(new URL('../parsers/fixtures/topicContent.json', import.meta.url), 'utf8')
       )
-      const state = await client.topics.prepareManagement(editFixtureTopicId, 'edit')
+      const state = await client.topics.prepareContent(editFixtureTopicId, 'edit')
       expect(state).toMatchObject({ ...fixture.expected, nodeName: 'sandbox' })
       expect(state.syntax).toMatch(/^(default|markdown)$/)
     }
@@ -57,9 +57,26 @@ describe.sequential('V2exClient topics', () => {
       expect(info.fields).toContainEqual({ label: 'ID', value: String(topicId) })
       expect(info.fields.some(field => field.label === '查看人数')).toBe(true)
     }
-    expect(detail.managementActions).toEqual(actions)
+    for (const action of ['boost', 'fade'] as const) {
+      const path = action === 'boost' ? `/t/${topicId}/boost` : `/fade/topic/${topicId}`
+      const available = $('#Main > .box > .inner > .fr > a[onclick]')
+        .toArray()
+        .some(element => {
+          const script = $(element).attr('onclick') || ''
+          return script.includes(`location.href = '${path}?once=`)
+        })
+      expect(detail.managementActions?.includes(action)).toBe(available)
+      if (available) {
+        const state = await client.topics.prepareManagement(topicId, action)
+        expect(Object.keys(state)).toEqual(['confirmation'])
+        expect(state.confirmation).toMatch(
+          action === 'boost' ? /消耗 \d+ 铜币.*放到首页/ : /下沉 10 天/
+        )
+      }
+    }
+    expect(detail.contentActions).toEqual(actions)
     for (const action of actions) {
-      const state = await client.topics.prepareManagement(topicId, action)
+      const state = await client.topics.prepareContent(topicId, action)
       expect(state.title).toBe(detail.title)
       expect(state.nodeName).toBe(detail.node.name)
       expect(state.syntax).toMatch(/^(default|markdown)$/)

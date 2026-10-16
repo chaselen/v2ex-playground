@@ -9,10 +9,11 @@ import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import TopicPreviewModal from './TopicPreviewModal'
 import TopicShareDialog from './TopicShareDialog'
-import TopicManagementDialog, { topicManagementLabels } from './TopicManagementDialog'
+import TopicContentDialog, { topicContentLabels } from './TopicContentDialog'
+import TopicManagementPopover from './TopicManagementPopover'
 import type { ReplyViewMode } from './replyTree'
 import useTopicDetailController from './useTopicDetailController'
-import type { TopicDetail, TopicManagementAction } from '@extension/v2ex/types'
+import type { TopicDetail, TopicContentAction } from '@extension/v2ex/types'
 import type {
   TopicPanelRpcCommands,
   TopicPanelViewState,
@@ -37,12 +38,14 @@ export default function TopicApp() {
     canOperate: false
   })
   const [previewTopicId, setPreviewTopicId] = useState<string>()
-  const [managementAction, setManagementAction] = useState<TopicManagementAction>()
+  const [contentAction, setContentAction] = useState<TopicContentAction>()
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>('nested')
   const topicScrollRef = useRef<HTMLElement | null>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
+  const contentActions = topic?.contentActions ?? []
+  const managementActions = topic?.managementActions ?? []
   const showImages = state.showImages !== false
   const showAvatar = state.showAvatar !== false
 
@@ -191,18 +194,27 @@ export default function TopicApp() {
       {state.status === 'topic' && topicController && (
         <TopicDetailView
           controller={topicController}
-          managementActions={
-            state.canOperate &&
-            topic?.managementActions?.map(action => (
-              <Button
-                key={action}
-                size="small"
-                variant="secondary"
-                onClick={() => setManagementAction(action)}
-              >
-                {topicManagementLabels[action]}
-              </Button>
-            ))
+          authorActions={
+            state.canOperate && (
+              <>
+                {contentActions.map(action => (
+                  <Button
+                    key={action}
+                    size="small"
+                    variant="secondary"
+                    onClick={() => setContentAction(action)}
+                  >
+                    {topicContentLabels[action]}
+                  </Button>
+                ))}
+                {managementActions.length > 0 && (
+                  <TopicManagementPopover
+                    key={topicController.topic.id}
+                    actions={managementActions}
+                  />
+                )}
+              </>
+            )
           }
           initialReplyViewMode={replyViewMode}
           scrollContainerRef={topicScrollRef}
@@ -227,12 +239,12 @@ export default function TopicApp() {
       >
         <div>{content}</div>
       </TopicShareContextMenu>
-      {managementAction && topic && state.canOperate && (
-        <TopicManagementDialog
-          key={`${topic.id}:${managementAction}`}
-          action={managementAction}
+      {contentAction && topic && state.canOperate && (
+        <TopicContentDialog
+          key={`${topic.id}:${contentAction}`}
+          action={contentAction}
           currentNode={topic.node}
-          onClose={() => setManagementAction(undefined)}
+          onClose={() => setContentAction(undefined)}
         />
       )}
       <TopicPreviewModal

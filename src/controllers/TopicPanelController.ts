@@ -2,7 +2,12 @@ import { getTopicLink, AccountRestrictedError, LoginRequiredError, TopicDetail }
 import vscode from 'vscode'
 import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
 import { showNodeQuickPick } from '@/features/nodeQuickPick'
-import type { TopicManagementAction, TopicManagementInput } from '@/v2ex'
+import type {
+  TopicContentAction,
+  TopicContentInput,
+  TopicManagementAction,
+  TopicManagementInput
+} from '@/v2ex'
 
 import G from '@/global'
 import Config from '@/config'
@@ -52,8 +57,8 @@ export class TopicPanelController
   extends WebviewCommonController<TopicPanelDeps>
   implements WebviewRpcController<TopicPanelRpcCommands>
 {
-  /** 防止同一面板重复提交作者管理操作 */
-  private managingTopic = false
+  /** 防止同一面板的内容更新与展示管理并发提交 */
+  private submittingAuthorOperation = false
 
   /** 话题面板缓存 key */
   readonly key: string
@@ -306,7 +311,7 @@ export class TopicPanelController
   }
 
   /** 复用全量节点选择器 */
-  async rpc_pickTopicManagementNode(currentNodeName?: string) {
+  async rpc_pickTopicContentNode(currentNodeName?: string) {
     const node = await showNodeQuickPick(await G.V2ex.nodes.getAll(), {
       title: '移动主题',
       placeHolder: '选择目标节点',
@@ -325,17 +330,32 @@ export class TopicPanelController
     return G.V2ex.topics.getInfo(topicId)
   }
 
-  /** 检查主话题作者权限并读取初始化数据，目标由控制器固定 */
+  /** 内容操作目标由控制器固定，不能从 Webview 传入其他主题 */
+  rpc_prepareTopicContent(action: TopicContentAction) {
+    return G.V2ex.topics.prepareContent(this.topicId, action)
+  }
+
+  /** 提交内容更新并刷新主话题 */
+  rpc_updateTopicContent(payload: TopicContentInput) {
+    return this.runTopicAuthorOperation(() => G.V2ex.topics.updateContent(this.topicId, payload))
+  }
+
+  /** 展示管理只读取确认说明 */
   rpc_prepareTopicManagement(action: TopicManagementAction) {
     return G.V2ex.topics.prepareManagement(this.topicId, action)
   }
 
-  /** 提交后更新标题、最近浏览和主话题状态 */
-  async rpc_manageTopic(payload: TopicManagementInput) {
-    if (this.managingTopic) throw new Error('主题操作正在提交，请稍候')
-    this.managingTopic = true
+  /** 展示管理使用独立契约，与内容更新共享提交互斥 */
+  rpc_manageTopic(payload: TopicManagementInput) {
+    return this.runTopicAuthorOperation(() => G.V2ex.topics.manage(this.topicId, payload))
+  }
+
+  /** 作者操作提交后统一刷新标题、最近浏览和主话题状态 */
+  private async runTopicAuthorOperation(operation: () => Promise<void>) {
+    if (this.submittingAuthorOperation) throw new Error('主题操作正在提交，请稍候')
+    this.submittingAuthorOperation = true
     try {
-      await G.V2ex.topics.manage(this.topicId, payload)
+      await operation()
       try {
         await this.reloadTopic(false)
       } catch {
@@ -343,12 +363,12 @@ export class TopicPanelController
       }
       return this.detail
     } finally {
-      this.managingTopic = false
+      this.submittingAuthorOperation = false
     }
   }
 
   /** 主题与附言均使用主题正文预览 */
-  rpc_previewTopicManagement(payload: { content: string; syntax: 'default' | 'markdown' }) {
+  rpc_previewTopicContent(payload: { content: string; syntax: 'default' | 'markdown' }) {
     return G.V2ex.topics.previewContent(payload.content, payload.syntax, 'topic')
   }
 

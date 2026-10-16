@@ -1,8 +1,22 @@
+// 完整 cheerio 入口会额外打包 parse5、undici 和编码处理依赖，显著增大 VSIX
+// 复用 slim 的 htmlparser2，并由 decodeTextarea 补齐 textarea 的文本恢复规则
 import { parseTopicIdByLink } from '../links'
 import * as cheerio from 'cheerio/slim'
+import { decodeHTML } from 'entities'
 import dayjs from '@/core/dayjs'
 import { getV2exTimeSpan, type CheerioSelection } from './common'
-import type { Node, TagTopicList, Topic, TopicDetail, TopicInfo, TopicReply } from '../types'
+import type {
+  Node,
+  TagTopicList,
+  Topic,
+  TopicDetail,
+  TopicInfo,
+  TopicReply,
+  TopicContentAction,
+  TopicContentState,
+  TopicManagementAction,
+  TopicManagementState
+} from '../types'
 
 /**
  * 解析话题列表项
@@ -145,9 +159,9 @@ export function parseTopicMeta(
 
   topic.canViewInfo = headerMeta.find(`a[href="/t/${topicId}/info"]`).length > 0
 
-  topic.managementActions = (['edit', 'move', 'append'] as const).filter(
-    action => headerMeta.find(`a[href="/${action}/topic/${topicId}"]`).length > 0
-  )
+  topic.contentActions = parseTopicContentActions($, topicId)
+  const management = parseTopicManagement($, topicId)
+  topic.managementActions = (['boost', 'fade'] as const).filter(action => !!management[action])
 
   const topicButtons = $('.topic_buttons')
   if (topicButtons.length) {
@@ -242,4 +256,80 @@ export function parseTopicInfo(html: string, topicId: number): TopicInfo {
     throw new Error('无法读取帖子信息，请确认登录状态和访问权限后重试')
   }
   return { fields }
+}
+
+/** 只提取编辑所需原文，不能用主题页已渲染的 HTML 反推正文 */
+export function parseTopicEditContent(
+  html: string,
+  topicId: number
+): Pick<TopicContentState, 'title' | 'content' | 'syntax'> {
+  const $ = cheerio.load(html)
+  const form = $(`form[method="post"][action="/edit/topic/${topicId}"]`)
+  const title = form.find('textarea[name="title"]')
+  const content = form.find('textarea[name="content"]')
+  const syntax = String(form.find('select[name="syntax"]').val() ?? '')
+  if (!title.length || !content.length || !['0', '1'].includes(syntax)) {
+    throw new Error(
+      $('.problem, #error_message, .message').first().text().trim() ||
+        $('#Main .inner').first().text().trim() ||
+        '无法读取主题原文，请刷新后重试'
+    )
+  }
+  return {
+    title: decodeTextarea(String(title.val() ?? '')),
+    content: decodeTextarea(String(content.val() ?? '')),
+    syntax: syntax === '1' ? 'markdown' : 'default'
+  }
+}
+
+/**
+ * htmlparser2 10 保留 textarea 内的实体，直接读取 .val() 会把 &lt; 等转义文本带入编辑框
+ * 实体只解码一次，例如 &amp;lt; 应恢复为 &lt;，不能继续变成 <
+ * 升级 Cheerio / htmlparser2 时须核对 textarea 行为并运行对应回归测试，避免重复解码
+ */
+function decodeTextarea(raw: string): string {
+  // 输入换行和空字符先标准化；首个 LF 在实体解码后移除，保留字符引用产生的 CR
+  return decodeHTML(raw.replace(/\r\n?/g, '\n').replace(/\0/g, '\uFFFD')).replace(/^\n/, '')
+}
+
+/** 从主题头部读取编辑、移动和附言权限，不接受正文中的同名入口 */
+export function parseTopicContentActions(
+  $: cheerio.CheerioAPI,
+  topicId: number
+): TopicContentAction[] {
+  const headerMeta = $('.header > .gray')
+  return (['edit', 'move', 'append'] as const).filter(
+    action => headerMeta.find(`a[href="/${action}/topic/${topicId}"]`).length > 0
+  )
+}
+
+/** 按管理链接文字识别操作，独立校验路径与确认说明，不依赖 JavaScript 语句格式 */
+export function parseTopicManagement($: cheerio.CheerioAPI, topicId: number) {
+  const operations: Partial<
+    Record<TopicManagementAction, TopicManagementState & { path: string }>
+  > = {}
+  $('#Main > .box > .inner > .fr > a[onclick]').each((_, element) => {
+    const label = $(element)
+      .text()
+      .trim()
+      .replace(/\s*[↑↓]$/, '')
+      .trim()
+    const action = label === '放到首页' ? 'boost' : label === '下沉' ? 'fade' : undefined
+    if (!action) return
+
+    // 只读取字符串，不执行脚本，也不依赖 if、confirm 或跳转函数的写法
+    const script = $(element).attr('onclick') || ''
+    const literals = Array.from(
+      script.matchAll(/'([^'\\\r\n]*)'|"([^"\\\r\n]*)"/g),
+      match => match[1] ?? match[2]
+    )
+    const pathname = action === 'boost' ? `/t/${topicId}/boost` : `/fade/topic/${topicId}`
+    const hasEntry = literals.some(value => value.split(/[?#]/, 1)[0] === pathname)
+    const confirmation = literals.find(
+      value => value.includes(label) && (action === 'boost' ? /\d+\s*铜币/ : /\d+\s*天/).test(value)
+    )
+    // 无法读取费用或时长时不提供可提交入口，避免按过期说明执行操作
+    if (hasEntry && confirmation) operations[action] = { path: pathname, confirmation }
+  })
+  return operations
 }

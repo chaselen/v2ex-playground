@@ -1,0 +1,34 @@
+.panel {
+  box-sizing: border-box;
+  width: min(220px, calc(100vw - 16px));
+}
+
+.trigger :global(.v2ex-button__label) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+
+  > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.operations {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.operation {
+  flex: 1;
+  justify-content: flex-start;
+}

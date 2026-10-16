@@ -1,3 +1,4 @@
+import type { AxiosResponse } from 'axios'
 import { getTagLink, parseTopicIdByLink } from '../links'
 import * as cheerio from 'cheerio/slim'
 import dayjs, { BEIJING_UTC_OFFSET } from '@/core/dayjs'
@@ -7,11 +8,19 @@ import {
   parseTagTopicList,
   parseTopicListCells,
   parseTopicMeta,
-  parseTopicInfo
+  parseTopicInfo,
+  parseTopicEditContent,
+  parseTopicManagement
 } from '../parsers/topic'
 import { getResponseUrl } from '../clientUtils'
-import { parseTopicEditContent } from '../parsers/topicManagement'
-import type { TopicManagementAction, TopicManagementState, TopicManagementInput } from '../types'
+import type {
+  TopicContentAction,
+  TopicContentState,
+  TopicContentInput,
+  TopicManagementAction,
+  TopicManagementState,
+  TopicManagementInput
+} from '../types'
 import {
   type CreateTopicInput,
   type CreateTopicResult,
@@ -205,13 +214,10 @@ export class TopicService {
     throw new Error(errorMessage || '发布主题失败')
   }
 
-  /** 仅编辑需要读取原始正文；移动和附言只检查当前权限 */
-  async prepareManagement(
-    topicId: number,
-    action: TopicManagementAction
-  ): Promise<TopicManagementState> {
-    const detail = await this.requireManagementAction(topicId, action)
-    const state: TopicManagementState = {
+  /** 内容操作仅在编辑时读取原文，移动和附言检查当前权限 */
+  async prepareContent(topicId: number, action: TopicContentAction): Promise<TopicContentState> {
+    const detail = await this.requireContentAction(topicId, action)
+    const state: TopicContentState = {
       title: detail.title,
       content: '',
       syntax: 'default',
@@ -224,9 +230,9 @@ export class TopicService {
     return state
   }
 
-  /** 按已核实的三个独立表单契约提交；只有附言携带 once */
-  async manage(topicId: number, input: TopicManagementInput): Promise<void> {
-    await this.requireManagementAction(topicId, input.action)
+  /** 按编辑、移动及附言各自的表单契约提交 */
+  async updateContent(topicId: number, input: TopicContentInput): Promise<void> {
+    await this.requireContentAction(topicId, input.action)
     const body = new URLSearchParams()
     if (input.action === 'move') {
       if (!input.nodeName.trim()) throw new Error('请选择目标节点')
@@ -247,24 +253,69 @@ export class TopicService {
     const response = await this.session.post<string>(`/${input.action}/topic/${topicId}`, body, {
       responseType: 'text'
     })
+    this.assertTopicUpdateSuccess(response, topicId)
+  }
+
+  /** 展示管理只读取操作确认信息，不加载编辑表单 */
+  async prepareManagement(
+    topicId: number,
+    action: TopicManagementAction
+  ): Promise<TopicManagementState> {
+    const operation = await this.requireManagementAction(topicId, action)
+    return { confirmation: operation.confirmation }
+  }
+
+  /** 展示管理在确认费用后获取最新 once，使用当前授权入口提交 */
+  async manage(topicId: number, input: TopicManagementInput): Promise<void> {
+    const operation = await this.requireManagementAction(topicId, input.action)
+    if (input.confirmation !== operation.confirmation) {
+      throw new Error('操作说明或费用已变化，请关闭后重新确认')
+    }
+    const query = new URLSearchParams({ once: await this.session.getOnce() })
+    const response = await this.session.get<string>(`${operation.path}?${query}`, {
+      responseType: 'text',
+      headers: { Referer: new URL(`/t/${topicId}`, this.baseUrl).toString() }
+    })
+    const $ = cheerio.load(response.data)
+    // 完整响应示例：主题 1248973 已经被下沉 10 天；仅匹配成功关键词，兼容编号、时长及措辞变化
+    const faded =
+      input.action === 'fade' &&
+      $('.message')
+        .toArray()
+        .some(element => /已(?:经)?被下沉/.test($(element).text()))
+    if (!faded) this.assertTopicUpdateSuccess(response, topicId)
+  }
+
+  private assertTopicUpdateSuccess(response: AxiosResponse<string>, topicId: number) {
     const url = new URL(getResponseUrl(response, this.baseUrl))
-    if (url.pathname !== `/t/${topicId}`) {
-      const $ = cheerio.load(response.data)
+    const $ = cheerio.load(response.data)
+    const problem = $('.problem').first().text().trim()
+    if (problem || url.pathname !== `/t/${topicId}`) {
       throw new Error(
-        $('.problem, #error_message, .message').first().text().trim() ||
+        problem ||
+          $('#error_message, .message').first().text().trim() ||
           $('#Main .inner').first().text().trim() ||
           '操作未成功，请刷新主题后核对'
       )
     }
   }
 
-  /** 权限以主题头部的服务端入口为准，写入时再次校验 */
-  private async requireManagementAction(topicId: number, action: TopicManagementAction) {
-    if (!['edit', 'move', 'append'].includes(action)) throw new Error('无效的主题操作')
+  /** 内容操作权限仅以主题头部的服务端入口为准 */
+  private async requireContentAction(topicId: number, action: TopicContentAction) {
+    if (!['edit', 'move', 'append'].includes(action)) throw new Error('无效的主题内容操作')
     const detail = await this.getDetail(topicId)
-    if (!detail.managementActions?.includes(action))
+    if (!detail.contentActions?.includes(action))
       throw new Error('当前主题不支持此操作，请刷新后重试')
     return detail
+  }
+
+  /** 展示管理权限与确认信息只从管理栏读取，提交前再次校验 */
+  private async requireManagementAction(topicId: number, action: TopicManagementAction) {
+    if (!['boost', 'fade'].includes(action)) throw new Error('无效的主题管理操作')
+    const { data } = await this.session.get<string>(`/t/${topicId}?p=1`)
+    const operation = parseTopicManagement(cheerio.load(data), topicId)[action]
+    if (!operation) throw new Error('当前主题不支持此操作，请刷新后重试')
+    return operation
   }
 
   /** 提交回复 */

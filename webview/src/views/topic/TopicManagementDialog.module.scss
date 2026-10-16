@@ -1,65 +1,19 @@
-.form {
+.body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.editorToolbar {
-  min-height: 38px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.syntax {
-  flex-direction: row;
-  font-size: 12px;
-}
-
-.appendForm {
+  justify-content: center;
+  min-height: 3.2em;
   gap: 12px;
-}
-
-.field .composer {
-  margin-top: 0;
-}
-
-.currentNode {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.nodeAvatar {
-  width: 16px;
-  height: 16px;
-  border-radius: var(--v2ex-radius-xs);
-}
-
-.nodeName {
-  color: var(--v2ex-muted-fg);
-}
-
-.rules {
-  padding-top: 12px;
-  border-top: 1px solid var(--v2ex-border);
-  color: var(--v2ex-muted-fg);
-  font-size: 12px;
   line-height: 1.6;
 
-  ul {
-    margin: 6px 0 0;
-    padding-left: 20px;
+  > p {
+    margin: 0;
   }
+}
 
-  p {
-    margin: 6px 0 0;
-  }
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--v2ex-muted-fg);
 }

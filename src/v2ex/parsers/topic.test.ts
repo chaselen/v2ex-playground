@@ -1,6 +1,14 @@
 import * as cheerio from 'cheerio/slim'
-import { describe, expect, it } from 'vitest'
-import { parseReplies, parseTagTopicList, parseTopicMeta, parseTopicInfo } from './topic'
+import { describe, expect, it, test } from 'vitest'
+import {
+  parseReplies,
+  parseTagTopicList,
+  parseTopicMeta,
+  parseTopicInfo,
+  parseTopicEditContent,
+  parseTopicManagement
+} from './topic'
+import { readFileSync } from 'node:fs'
 
 describe('topic outdated notice parsing', () => {
   it('从主题容器读取旧帖提醒，与正文和附言分离', () => {
@@ -277,4 +285,204 @@ describe('parseTopicInfo', () => {
   ])('拒绝登录页、详情页和其他主题信息', html => {
     expect(() => parseTopicInfo(html, 703733)).toThrow('访问权限')
   })
+})
+
+const realEditFixture = JSON.parse(
+  readFileSync(new URL('./fixtures/topicContent.json', import.meta.url), 'utf8')
+)
+
+// 中文编辑页的实际字段；原始正文可能包含被 HTML 转义的 Markdown 或 HTML
+const editForm = `<form method="post" action="/edit/topic/12" id="topic_form">
+  <textarea name="title" id="topic_title">标题 &amp; 示例</textarea>
+  <textarea name="content" id="topic_content">**正文**\n&lt;b&gt;原文&lt;/b&gt;</textarea>
+  <select name="syntax"><option value="0">Default</option><option value="1" selected>Markdown</option></select>
+</form>`
+
+describe('topic edit content', () => {
+  // 期望值已与真实编辑页浏览器 textarea.value 核对，不由被测解析器生成
+  test.each(['markdown', 'default'] as const)(
+    'restores browser editor values from the captured %s form',
+    syntax => {
+      expect(parseTopicEditContent(realEditFixture.forms[syntax], realEditFixture.topicId)).toEqual(
+        { ...realEditFixture.expected, syntax }
+      )
+    }
+  )
+
+  test('reads raw title, content and syntax without requiring once', () => {
+    expect(parseTopicEditContent(editForm, 12)).toEqual({
+      title: '标题 & 示例',
+      content: '**正文**\n<b>原文</b>',
+      syntax: 'markdown'
+    })
+    expect(
+      parseTopicEditContent(
+        editForm
+          .replace('value="0"', 'value="0" selected')
+          .replace('value="1" selected', 'value="1"'),
+        12
+      ).syntax
+    ).toBe('default')
+  })
+
+  test.each([
+    { name: 'empty text', raw: '', expected: '' },
+    { name: 'surrounding whitespace', raw: '  正文\n\n', expected: '  正文\n\n' },
+    { name: 'escaped HTML', raw: '&lt;b&gt;原文&lt;/b&gt;', expected: '<b>原文</b>' },
+    { name: 'literal HTML', raw: '<b>原文</b>', expected: '<b>原文</b>' },
+    {
+      name: 'literal comments and scripts',
+      raw: '<!--注释--><script>alert(1)</script>',
+      expected: '<!--注释--><script>alert(1)</script>'
+    },
+    { name: 'comparison operators', raw: 'a < b && c > d', expected: 'a < b && c > d' },
+    {
+      name: 'named and numeric entities',
+      raw: '&amp; &quot; &apos; &copy; &nbsp; &#65; &#x1F600;',
+      expected: '& " \' © \u00A0 A 😀'
+    },
+    {
+      name: 'legacy and unknown entities',
+      raw: '&copy abc &unknown;',
+      expected: '© abc &unknown;'
+    },
+    { name: 'one decoding pass', raw: '&amp;lt;b&amp;gt; &amp;#10;', expected: '&lt;b&gt; &#10;' },
+    { name: 'escaped closing tag', raw: '&lt;/textarea&gt;后文', expected: '</textarea>后文' },
+    {
+      name: 'line ending normalization',
+      raw: '首行\r\n第二行\r第三行',
+      expected: '首行\n第二行\n第三行'
+    },
+    { name: 'initial newline', raw: '\n\n正文', expected: '\n正文' },
+    { name: 'initial CRLF', raw: '\r\n正文', expected: '正文' },
+    { name: 'initial encoded LF', raw: '&#10;正文', expected: '正文' },
+    { name: 'encoded CR', raw: '&#13;正文', expected: '\r正文' },
+    { name: 'literal null', raw: 'a\0b', expected: 'a\uFFFDb' },
+    { name: 'invalid numeric entities', raw: '&#0; &#x80;', expected: '\uFFFD €' }
+  ])('restores textarea semantics for $name', ({ raw, expected }) => {
+    const html = `<form method="post" action="/edit/topic/12">
+      <textarea name="title">${raw}</textarea>
+      <textarea name="content">${raw}</textarea>
+      <select name="syntax"><option value="1" selected>Markdown</option></select>
+    </form>`
+
+    expect(parseTopicEditContent(html, 12)).toEqual({
+      title: expected,
+      content: expected,
+      syntax: 'markdown'
+    })
+  })
+
+  test('rejects expired permissions, mismatched topics and incomplete content', () => {
+    expect(() =>
+      parseTopicEditContent(
+        '<div id="Main"><div class="inner">你不能编辑这个主题。</div></div>',
+        12
+      )
+    ).toThrow('你不能编辑这个主题')
+    expect(() => parseTopicEditContent(editForm, 13)).toThrow('无法读取主题原文')
+    expect(() =>
+      parseTopicEditContent(editForm.replace('name="content"', 'name="other"'), 12)
+    ).toThrow('无法读取主题原文')
+    expect(() =>
+      parseTopicEditContent(editForm.replace('value="1" selected', 'value="unknown" selected'), 12)
+    ).toThrow('无法读取主题原文')
+  })
+
+  test('exposes only exact server management links for the current topic', () => {
+    const $ = cheerio.load(
+      `<div class="header"><small class="gray"><a href="/append/topic/12">APPEND</a><a href="/edit/topic/123">编辑</a><a href="https://evil.test/move/topic/12">移动</a></small></div><div class="topic_content"><a href="/edit/topic/12">伪造编辑入口</a></div>`
+    )
+    expect(parseTopicMeta($, 12, 'https://www.v2ex.com').contentActions).toEqual(['append'])
+    expect(parseTopicMeta(cheerio.load(''), 12, 'https://www.v2ex.com').contentActions).toEqual([])
+  })
+})
+
+describe('server placement links', () => {
+  function page(script: string, wrapper = true, label = '放到首页 ↑') {
+    const link = `<a onclick="${script.replaceAll('"', '&quot;')}">${label}</a>`
+    return cheerio.load(
+      wrapper
+        ? `<div id="Main"><div class="box"><div class="inner"><div class="fr">${link}</div></div></div></div>`
+        : `<div class="topic_content">${link}</div>`
+    )
+  }
+  const script =
+    "if (confirm('你确认要消耗 700 铜币将此主题放到首页？')) { location.href = '/t/12/boost?once=123'; }"
+
+  test('exposes only the operation path and confirmation from the management bar', () => {
+    expect(parseTopicManagement(page(script), 12)).toEqual({
+      boost: {
+        path: '/t/12/boost',
+        confirmation: '你确认要消耗 700 铜币将此主题放到首页？'
+      }
+    })
+    expect(parseTopicMeta(page(script), 12, 'https://www.v2ex.com').managementActions).toEqual([
+      'boost'
+    ])
+    expect(parseTopicManagement(page(script, false), 12)).toEqual({})
+    expect(parseTopicManagement(page(script), 123)).toEqual({})
+    expect(parseTopicManagement(page(script, true, '报告这个主题'), 12)).toEqual({})
+    expect(parseTopicManagement(page(script, true, '下沉 ↓'), 12)).toEqual({})
+  })
+
+  test.each(['', '?once=', '?once=expired', '?once=123&extra=1', '?other=value#section'])(
+    'ignores the page query when identifying the operation path: %s',
+    query => {
+      const $ = page(script.replace('?once=123', query))
+      expect(parseTopicManagement($, 12).boost).toEqual({
+        path: '/t/12/boost',
+        confirmation: '你确认要消耗 700 铜币将此主题放到首页？'
+      })
+    }
+  )
+
+  test.each([
+    script.replace('/t/12/boost', 'https://evil.test/t/12/boost'),
+    script.replace('/t/12/boost', '/report/topic/12'),
+    script.replace('700 铜币', '一些铜币')
+  ])('rejects invalid paths or missing confirmation', value => {
+    expect(parseTopicManagement(page(value), 12)).toEqual({})
+  })
+})
+
+// 按钮文字与路径共同识别入口，不依赖脚本语句格式
+describe('placement script formatting', () => {
+  test.each([
+    `if(confirm("你确认要消耗 700 铜币将此主题放到首页？")){location.href="/t/12/boost?once=123"}`,
+    `confirm ('你确认要消耗 700 铜币将此主题放到首页？') && window.location.assign('/t/12/boost?once=123');`,
+    `if (window.confirm(\n  '你确认要消耗 700 铜币将此主题放到首页？'\n)) {\n window.location.href = '/t/12/boost?once=123'\n}`,
+    `showConfirmation('你确认要消耗 700 铜币将此主题放到首页？', '/t/12/boost?once=123');`,
+    `const target = '/t/12/boost?once=123'; if (confirm('你确认要消耗 700 铜币将此主题放到首页？')) location.replace(target);`
+  ])('identifies the labeled boost link regardless of the surrounding code', script => {
+    const $ = cheerio.load(
+      `<div id="Main"><div class="box"><div class="inner"><div class="fr"><a onclick="${script.replaceAll('"', '&quot;')}">放到首页</a></div></div></div></div>`
+    )
+    expect(parseTopicManagement($, 12)).toEqual({
+      boost: {
+        path: '/t/12/boost',
+        confirmation: '你确认要消耗 700 铜币将此主题放到首页？'
+      }
+    })
+  })
+
+  test('identifies fade by its exact path', () => {
+    const $ = cheerio.load(
+      `<div id="Main"><div class="box"><div class="inner"><div class="fr"><a onclick="confirm('你确认要将此主题下沉 10 天？') &amp;&amp; location.assign('/fade/topic/12?once=456')">下沉</a></div></div></div></div>`
+    )
+    expect(parseTopicManagement($, 12)).toEqual({
+      fade: { path: '/fade/topic/12', confirmation: '你确认要将此主题下沉 10 天？' }
+    })
+  })
+})
+
+test('keeps content capabilities separate from display management capabilities', () => {
+  const $ =
+    cheerio.load(`<div class="header"><small class="gray"><a href="/append/topic/12">APPEND</a></small></div>
+    <div id="Main"><div class="box"><div class="inner"><div class="fr">
+      <a onclick="confirm('你确认要将此主题下沉 10 天？') &amp;&amp; location.assign('/fade/topic/12')">下沉</a>
+    </div></div></div></div>`)
+  const topic = parseTopicMeta($, 12, 'https://www.v2ex.com')
+  expect(topic.contentActions).toEqual(['append'])
+  expect(topic.managementActions).toEqual(['fade'])
 })
