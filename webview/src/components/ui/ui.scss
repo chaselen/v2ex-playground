@@ -1125,8 +1125,8 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--v2ex-focus-border);
-    outline-offset: 1px;
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: 2px;
   }
 }
 
@@ -1134,7 +1134,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--v2ex-focus-border);
+  background: var(--v2ex-primary-button-bg);
 }
 
 .v2ex-radio-group__badge {

@@ -84,13 +84,34 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 
-  label {
+  > label,
+  > .search-operator-filter,
+  > .search-node-filter {
     display: flex;
     flex-direction: column;
     gap: 6px;
     min-width: 0;
     color: var(--v2ex-muted-fg);
     font-size: 12px;
+  }
+}
+
+.search-operator-options {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 30px;
+  column-gap: 16px;
+}
+
+.search-node-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  > :first-child {
+    flex: 1;
+    min-width: 0;
   }
 }
 

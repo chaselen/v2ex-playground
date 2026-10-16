@@ -4,6 +4,8 @@ import dayjs from 'dayjs'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import PageSkeleton from '@/components/PageSkeleton'
+import NodeSelectButton from '@/components/NodeSelectButton'
+import type { Node } from '@extension/v2ex/types'
 import { createVsCodeClient } from '@/core/vscode'
 import {
   Alert,
@@ -16,8 +18,12 @@ import {
   Empty,
   Input,
   Pagination,
+  RadioGroup,
+  RadioGroupItem,
   Select,
-  Spinner
+  Spinner,
+  Toast,
+  ToastViewport
 } from '@/components/ui'
 import type {
   SearchPanelRpcCommands,
@@ -45,7 +51,7 @@ interface SearchFilters {
   sort: SearchSortOption
   operator: SoV2exOperator
   username: string
-  node: string
+  node?: Node
   dateStart: string
   dateEnd: string
 }
@@ -63,7 +69,7 @@ const initialFilters: SearchFilters = {
   sort: 'relevance',
   operator: 'or',
   username: '',
-  node: '',
+  node: undefined,
   dateStart: '',
   dateEnd: ''
 }
@@ -197,19 +203,20 @@ export default function SearchApp() {
             </div>
             <CollapsibleContent>
               <div className="search-filter-grid">
-                <label>
-                  <span>关键词关系</span>
-                  <Select
-                    aria-label="关键词关系"
+                <div className="search-operator-filter">
+                  <span id="search-operator-label">关键词关系</span>
+                  <RadioGroup
+                    className="search-operator-options"
+                    aria-labelledby="search-operator-label"
+                    orientation="horizontal"
                     value={filters.operator}
                     disabled={loading}
-                    options={[
-                      { value: 'or', label: '包含任意关键词' },
-                      { value: 'and', label: '包含全部关键词' }
-                    ]}
                     onValueChange={value => updateFilter('operator', value as SoV2exOperator)}
-                  />
-                </label>
+                  >
+                    <RadioGroupItem value="or" label="任意关键词" />
+                    <RadioGroupItem value="and" label="全部关键词" />
+                  </RadioGroup>
+                </div>
                 <label>
                   <span>作者</span>
                   <Input
@@ -225,21 +232,26 @@ export default function SearchApp() {
                     }}
                   />
                 </label>
-                <label>
-                  <span>节点</span>
-                  <Input
-                    value={filters.node}
-                    placeholder="如 qna,-jobs"
-                    clearable
-                    disabled={loading}
-                    onValueChange={value => updateFilter('node', value)}
-                    onKeyDown={event => {
-                      if (event.key === 'Enter') {
-                        void search(1)
-                      }
-                    }}
-                  />
-                </label>
+                <div className="search-node-filter">
+                  <span id="search-node-label">节点</span>
+                  <div className="search-node-controls">
+                    <NodeSelectButton
+                      aria-labelledby="search-node-label"
+                      node={filters.node}
+                      clearable
+                      onClear={() => updateFilter('node', undefined)}
+                      disabled={loading}
+                      onClick={async () => {
+                        try {
+                          const node = await vscode.selectNode(filters.node?.name)
+                          if (node) updateFilter('node', node)
+                        } catch (error) {
+                          Toast.error(error instanceof Error ? error.message : '加载节点失败')
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
                 <label>
                   <span>发帖日期</span>
                   <div className="search-date-range">
@@ -333,6 +345,7 @@ export default function SearchApp() {
 
         {loading && !result && <PageSkeleton variant="search" rows={4} />}
       </main>
+      <ToastViewport />
     </SimpleBar>
   )
 }
@@ -410,7 +423,7 @@ function createSearchParams(filters: SearchFilters, page: number): SoV2exSearchP
   }
 
   const username = filters.username.trim()
-  const node = filters.node.trim()
+  const node = filters.node?.name
   if (username) {
     params.username = username
   }

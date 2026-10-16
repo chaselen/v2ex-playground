@@ -1,4 +1,4 @@
-import type { SoV2exSearchParams, SoV2exSearchResult } from '../v2ex/types'
+import type { Node, SoV2exSearchParams, SoV2exSearchResult } from '../v2ex/types'
 import type { WebviewCommonRpcCommands } from './commonView'
 export type {
   SoV2exHit,
@@ -13,6 +13,8 @@ export type {
 
 /** 搜索面板 Webview RPC 命令 */
 export interface SearchPanelRpcCommands extends WebviewCommonRpcCommands {
+  /** 打开搜索节点选择器 */
+  selectNode(currentNodeName?: string): Node | undefined
   search(params: SoV2exSearchParams): SoV2exSearchResult
 }
 

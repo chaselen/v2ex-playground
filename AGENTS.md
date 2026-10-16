@@ -47,7 +47,9 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 - 保留已有未提交改动，不覆盖或清理无关内容
 - 除非需求明确要求，不改 activation events、命令 ID 或配置项 key
 - 扩展侧 TypeScript 改动运行对应类型检查与构建；Webview 源码改动同理。共享 RPC、HTML 加载链路、构建配置或跨侧改动运行 `npm run check` 和 `npm run build`
-- 开发时优先运行直接相关测试；涉及共享基础设施、跨领域行为或影响范围不明时运行 `npm test`。发布或打包前运行 `npm test`、`npm run check`、`npm run build`
+- 按需选择测试范围，优先只运行本次改动可能影响的模块及其直接依赖方的相关测试；不因涉及共享代码、RPC 或跨侧改动就默认运行全量测试
+- 影响范围不明时，先检查调用链和现有测试，再确定验证范围；仅在影响确实广泛、定向测试发现跨模块问题或用户明确要求时扩大测试范围。相关验证通过后，不无故重复或扩大测试
+- live 测试仅在改动依赖真实页面、外部接口或格式契约时按相关领域运行，不为普通 UI 或 RPC 接线改动运行全量 live 测试。发布或打包前仍运行 `npm test`、`npm run check`、`npm run build`
 - 测试覆盖复杂业务规则、重要边界、回归问题与公开契约，不为简单透传、日志文案或框架行为机械补测试
 - `src/v2ex/`、Cookie、两步验证及解析改动至少运行对应领域测试；依赖真实页面或外部格式时还需运行相关 live 测试并确保网络可达
 - 门面真实页面测试为 `src/v2ex/tests/client.<领域>.live.test.ts`；service、parser 测试通常与实现同目录。回复解析、分页合并或楼中楼算法变化还需运行 `src/v2ex/tests/replyTree.live.test.ts`
