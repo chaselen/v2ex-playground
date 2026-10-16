@@ -55,29 +55,36 @@ export class HelpPanelController
   }
   /** 刷新当前主题 */
   rpc_refresh() {
-    return this.load(this.state.slug, true)
+    return this.load(this.state.slug, true, this.state.anchor)
   }
   /** 在浏览器中查看原文 */
   rpc_openSource() {
-    void openExternal(`${G.V2ex.baseUrl}/help/${this.state.slug}`)
+    const url = new URL(`/help/${this.state.slug}`, G.V2ex.baseUrl)
+    if (this.state.anchor) url.hash = this.state.anchor
+    void openExternal(url.toString())
   }
 
   /** 请求主题并同步状态，旧请求不得覆盖后续导航 */
-  async load(slug = 'home', refresh = false) {
+  async load(slug = 'home', refresh = false, anchor?: string) {
     if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('帮助主题无效')
-    if (!refresh && this.state.status === 'result' && this.state.slug === slug) return
+    if (!refresh && this.state.status === 'result' && this.state.slug === slug) {
+      // 已加载的文档仍需推送导航，支持再次点击同一章节重新定位
+      this.post({ ...this.state, anchor })
+      return
+    }
     const revision = ++this.revision
-    this.post({ status: 'loading', slug, data: this.state.data })
+    this.post({ status: 'loading', slug, anchor, data: this.state.data })
     try {
       const data = await G.V2ex.help.getPage(slug)
       if (revision !== this.revision) return
       this.panel.title = formatPanelTitle(data.title)
-      this.post({ status: 'result', slug, data })
+      this.post({ status: 'result', slug, anchor, data })
     } catch (error) {
       if (revision !== this.revision) return
       this.post({
         status: 'error',
         slug,
+        anchor,
         data: this.state.data,
         message: error instanceof Error ? error.message : '帮助内容加载失败'
       })

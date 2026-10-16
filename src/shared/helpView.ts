@@ -5,6 +5,8 @@ import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './common
 export interface HelpViewState {
   status: 'loading' | 'result' | 'error'
   slug: string
+  /** 页面加载后定位的章节 id，不含 # */
+  anchor?: string
   data?: HelpPage
   message?: string
 }

@@ -1,14 +1,16 @@
 @use '@/styles/page-layout';
 @use '@/styles/topic-content';
 
-.help-scroll {
-  height: 100vh;
-}
 .help-container {
   @include page-layout.container(page-layout.$wide-width);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
   padding: 24px;
+  overflow: hidden;
 }
 .help-toolbar {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -52,14 +54,32 @@
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
   gap: 32px;
-  align-items: start;
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+.help-initial-scroll,
+.help-nav-scroll,
+.help-content-scroll {
+  min-width: 0;
+  min-height: 0;
+  overscroll-behavior: contain;
+
+  .simplebar-content-wrapper {
+    overscroll-behavior: contain;
+  }
+}
+.help-initial-scroll {
+  flex: 1;
+}
+.help-nav-scroll {
+  border-right: 1px solid var(--v2ex-control-border);
 }
 .help-nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 8px 12px 12px 0;
-  border-right: 1px solid var(--v2ex-control-border);
 }
 .help-nav-label {
   padding: 0 12px 10px;
@@ -68,7 +88,8 @@
   font-weight: 600;
   letter-spacing: 0.08em;
 }
-.help-nav button {
+.help-nav button,
+.help-nav-placeholder {
   width: 100%;
   min-height: 36px;
   height: auto;
@@ -172,21 +193,26 @@
   }
   .help-layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, auto) minmax(0, 1fr);
     gap: 24px;
+  }
+  .help-nav-scroll {
+    max-height: 25vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--v2ex-control-border);
   }
   .help-nav {
     flex-direction: row;
     flex-wrap: wrap;
     gap: 6px;
     padding: 0 0 18px;
-    border-right: 0;
-    border-bottom: 1px solid var(--v2ex-control-border);
   }
   .help-nav-label {
     flex-basis: 100%;
     padding: 0 0 6px;
   }
-  .help-nav button {
+  .help-nav button,
+  .help-nav-placeholder {
     width: auto;
     min-height: 30px;
     padding: 5px 9px;
@@ -205,4 +231,9 @@
   justify-items: start;
   gap: 12px;
   min-width: 0;
+}
+
+.help-nav-placeholder {
+  display: flex;
+  align-items: center;
 }

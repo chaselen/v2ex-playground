@@ -262,7 +262,7 @@ export function openCreateTopic(nodeName?: string) {
 let helpPanel: HelpPanelController | undefined
 
 /** 打开原站帮助主题并复用已有面板 */
-export function openHelp(slug = 'home') {
+export function openHelp(slug = 'home', anchor?: string) {
   if (!helpPanel) {
     helpPanel = new HelpPanelController(panelDeps)
     helpPanel.onDidDispose(() => {
@@ -270,7 +270,7 @@ export function openHelp(slug = 'home') {
     })
   }
   helpPanel.reveal()
-  void helpPanel.load(slug)
+  void helpPanel.load(slug, false, anchor)
 }
 
 /** 将原站帮助链接交给插件内面板，其他链接保留外部打开行为 */
@@ -284,7 +284,7 @@ export function tryOpenHelp(path: string): boolean {
       return false
     const slug = getHelpSlug(url.pathname)
     if (!slug) return false
-    openHelp(slug)
+    openHelp(slug, url.hash ? decodeURIComponent(url.hash.slice(1)) : undefined)
     return true
   } catch {
     return false

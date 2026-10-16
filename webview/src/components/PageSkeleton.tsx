@@ -59,7 +59,14 @@ function renderPlaceholder(
     case 'help':
       return (
         <div className={styles['help-layout']}>
-          <Skeleton.Paragraph rows={10} />
+          <div className={`help-nav ${styles['help-nav']}`} aria-hidden="true">
+            <span className="help-nav-label">帮助目录</span>
+            {Array.from({ length: 10 }, (_, index) => (
+              <div className={`help-nav-placeholder ${styles['help-nav-item']}`} key={index}>
+                <Skeleton.Title />
+              </div>
+            ))}
+          </div>
           <HelpContentPlaceholder />
         </div>
       )
