@@ -60,7 +60,6 @@ function renderPlaceholder(
       return (
         <div className={styles['help-layout']}>
           <div className={`help-nav ${styles['help-nav']}`} aria-hidden="true">
-            <span className="help-nav-label">帮助目录</span>
             {Array.from({ length: 10 }, (_, index) => (
               <div className={`help-nav-placeholder ${styles['help-nav-item']}`} key={index}>
                 <Skeleton.Title />
@@ -408,7 +407,7 @@ function TopicRows({ rows, avatars }: { rows: number; avatars: boolean }) {
     <div>
       {Array.from({ length: rows }, (_, index) => (
         <div className={styles.row} key={index}>
-          {avatars && <Skeleton.Avatar size="small" />}
+          {avatars && <Skeleton.Avatar size="small" shape="square" />}
           <div className={styles['row-content']}>
             <div className={styles['row-title']}>
               <Skeleton.Title style={{ width: `${62 - (index % 3) * 8}%` }} />
@@ -433,7 +432,7 @@ function ReplyRows({ rows, avatars }: SkeletonRowsProps & { avatars: boolean }) 
     <div className={styles['reply-list']}>
       {Array.from({ length: rows }, (_, index) => (
         <div className={styles.reply} key={index}>
-          {avatars && <Skeleton.Avatar size="small" />}
+          {avatars && <Skeleton.Avatar size="small" shape="square" />}
           <div className={styles['row-content']}>
             <Skeleton.Title className={styles.author} />
             <Skeleton.Paragraph rows={2} />

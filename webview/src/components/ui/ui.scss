@@ -1963,8 +1963,6 @@
   }
 }
 
-.v2ex-skeleton__title,
-.v2ex-skeleton__line,
 .v2ex-skeleton__button,
 .v2ex-skeleton__avatar {
   position: relative;
@@ -1972,15 +1970,35 @@
   background: color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent);
 }
 
+// 行框等于 line-height，色条高度等于 font-size 并在行框内垂直居中
+.v2ex-skeleton__title,
+.v2ex-skeleton__line {
+  --v2ex-skeleton-bar-radius: var(--v2ex-radius-xs);
+  position: relative;
+  overflow: hidden;
+  height: 1lh;
+  background: none;
+
+  &::before {
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: calc((1lh - 1em) / 2);
+    height: 1em;
+    border-radius: var(--v2ex-skeleton-bar-radius);
+    content: '';
+    background: color-mix(in srgb, var(--v2ex-webview-fg) 12%, transparent);
+  }
+}
+
 .v2ex-skeleton--active
   :is(
-    .v2ex-skeleton__title,
-    .v2ex-skeleton__line,
     .v2ex-skeleton__button,
-    .v2ex-skeleton__avatar
+    .v2ex-skeleton__avatar,
+    .v2ex-skeleton__title,
+    .v2ex-skeleton__line
   )::after {
   position: absolute;
-  inset: 0;
   content: '';
   background: linear-gradient(
     90deg,
@@ -1992,24 +2010,36 @@
   animation: v2ex-skeleton-wave 1.5s ease-in-out infinite;
 }
 
-.v2ex-skeleton__title {
-  width: 40%;
-  height: 20px;
-  margin-bottom: 16px;
-  border-radius: var(--v2ex-radius-sm);
+.v2ex-skeleton--active :is(.v2ex-skeleton__button, .v2ex-skeleton__avatar)::after {
+  inset: 0;
 }
 
+.v2ex-skeleton--active :is(.v2ex-skeleton__title, .v2ex-skeleton__line)::after {
+  right: 0;
+  left: 0;
+  top: calc((1lh - 1em) / 2);
+  height: 1em;
+  border-radius: var(--v2ex-skeleton-bar-radius);
+}
+
+.v2ex-skeleton__title {
+  --v2ex-skeleton-bar-radius: var(--v2ex-radius-sm);
+  width: 40%;
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+// 多行正文统一用 article() 的 14px / 1.72，不再按页面分别指定
 .v2ex-skeleton__paragraph {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  margin-bottom: 16px;
+  margin-bottom: 1em;
+  font-size: 14px;
+  line-height: 1.72;
 }
 
 .v2ex-skeleton__line {
   width: var(--v2ex-skeleton-line-width, 100%);
-  height: 14px;
-  border-radius: var(--v2ex-radius-xs);
 }
 
 .v2ex-skeleton__button {

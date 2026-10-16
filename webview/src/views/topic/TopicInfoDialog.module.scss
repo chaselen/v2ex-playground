@@ -39,12 +39,11 @@
   }
 }
 
-.labelPlaceholder,
-.shortPlaceholder,
-.longPlaceholder {
-  height: 14px;
+.row .labelPlaceholder,
+.row .shortPlaceholder,
+.row .longPlaceholder {
   max-width: 100%;
-  margin: 4px 0;
+  margin: 0;
 }
 
 .labelPlaceholder {
