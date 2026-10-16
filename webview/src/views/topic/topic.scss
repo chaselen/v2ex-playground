@@ -264,15 +264,10 @@ $reply-right-inset: 10px;
 
 .reply-view-switch {
   flex: 0 0 auto;
-  padding: 2px;
-  font-size: 12px;
-  line-height: 1.3;
 
   .v2ex-radio-group__label {
     width: 68px;
-    min-height: 22px;
     box-sizing: border-box;
-    padding: 2px 7px;
     font-weight: 500;
   }
 }

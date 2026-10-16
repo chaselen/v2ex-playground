@@ -1,3 +1,6 @@
+@use 'sass:map';
+@use './control-size';
+
 /*
  * Webview 基础组件
  * 所有颜色来自 VS Code Theme Color 映射后的 --v2ex-* 语义变量
@@ -9,14 +12,15 @@
   justify-content: center;
   gap: 6px;
   min-width: 0;
-  min-height: 28px;
-  padding: 4px 11px;
+  min-height: map.get(control-size.$heights, default);
+  padding: map.get(control-size.$padding-block, default)
+    map.get(control-size.$padding-inline, default);
   border: 1px solid transparent;
   border-radius: var(--v2ex-radius-sm);
   color: var(--v2ex-default-fg);
   background: var(--v2ex-default-bg);
   cursor: pointer;
-  line-height: 1.35;
+  line-height: control-size.$line-height;
   text-align: center;
   user-select: none;
 
@@ -144,28 +148,6 @@
     color: var(--v2ex-danger-fg);
     background: var(--v2ex-danger-bg);
   }
-}
-
-.v2ex-button--small {
-  min-height: 24px;
-  padding: 2px 8px;
-  font-size: 12px;
-}
-
-.v2ex-button--large {
-  min-height: 34px;
-  padding: 6px 12px;
-}
-
-.v2ex-button--compact {
-  padding-inline: 3px;
-}
-
-.v2ex-button--large .v2ex-button__icon,
-.v2ex-button--large .v2ex-button__spinner,
-.v2ex-button--large .v2ex-button__icon > svg {
-  width: 18px;
-  height: 18px;
 }
 
 .v2ex-button__icon,
@@ -452,12 +434,14 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  min-height: 28px;
-  padding: 0 8px;
+  min-height: map.get(control-size.$heights, default);
+  padding: map.get(control-size.$padding-block, default)
+    map.get(control-size.$padding-inline, default);
   border: 1px solid var(--v2ex-input-border);
   border-radius: var(--v2ex-radius-sm);
   color: var(--v2ex-input-fg);
   background: var(--v2ex-input-bg);
+  line-height: control-size.$line-height;
 
   &:hover:not(.v2ex-input--disabled) {
     border-color: var(--v2ex-focus-border);
@@ -484,15 +468,15 @@
 }
 
 .v2ex-input__prefix > svg {
-  width: 15px;
-  height: 15px;
+  width: map.get(control-size.$icon-sizes, default);
+  height: map.get(control-size.$icon-sizes, default);
 }
 
 .v2ex-input__control {
   flex: 1;
   width: 100%;
   min-width: 0;
-  padding: 4px 0;
+  padding: 0;
   border: 0;
   outline: 0;
   color: inherit;
@@ -547,11 +531,11 @@
   font-size: var(--v2ex-font-size, 13px);
 }
 
-.v2ex-pagination__button {
+.v2ex-button.v2ex-pagination__button {
   min-width: 30px;
-  height: 28px;
-  min-height: 28px;
-  padding: 2px 8px;
+  height: map.get(control-size.$heights, default);
+  min-height: map.get(control-size.$heights, default);
+  padding: map.get(control-size.$padding-block, small) map.get(control-size.$padding-inline, small);
   font-size: inherit;
 
   /* 禁用的前后箭头：hover 不改变颜色与背景 */
@@ -574,7 +558,7 @@
 .v2ex-pagination__ellipsis {
   min-width: 22px;
   font-size: inherit;
-  line-height: 28px;
+  line-height: map.get(control-size.$heights, default);
   text-align: center;
 }
 
@@ -584,22 +568,22 @@
   font-size: 12px;
 
   .v2ex-pagination__button {
-    min-width: 26px;
-    height: 26px;
-    min-height: 26px;
-    padding: 2px 6px;
+    min-width: map.get(control-size.$heights, small);
+    height: map.get(control-size.$heights, small);
+    min-height: map.get(control-size.$heights, small);
+    padding: map.get(control-size.$padding-block, small) 6px;
   }
 
   .v2ex-pagination__ellipsis {
     min-width: 20px;
-    line-height: 26px;
+    line-height: map.get(control-size.$heights, small);
   }
 }
 
 .v2ex-pagination__compact-label {
   display: inline-flex;
   min-width: 52px;
-  height: 26px;
+  height: map.get(control-size.$heights, small);
   align-items: center;
   justify-content: center;
   padding: 0 6px;
@@ -657,11 +641,11 @@
 
 .v2ex-pagination__page-select-item {
   display: flex;
-  min-height: 26px;
+  min-height: map.get(control-size.$heights, small);
   flex: none;
   align-items: center;
   justify-content: center;
-  padding: 2px 8px;
+  padding: map.get(control-size.$padding-block, small) map.get(control-size.$padding-inline, small);
   border: 0;
   border-radius: var(--v2ex-radius-xs);
   outline: 0;
@@ -703,8 +687,8 @@
 
 .v2ex-pagination__jumper input {
   width: 52px;
-  height: 28px;
-  padding: 2px 6px;
+  height: map.get(control-size.$heights, default);
+  padding: map.get(control-size.$padding-block, small) 6px;
   border: 1px solid var(--v2ex-input-border);
   border-radius: var(--v2ex-radius-sm);
   outline: 0;
@@ -731,8 +715,8 @@
 
 .v2ex-pagination--compact .v2ex-pagination__jumper input {
   width: 48px;
-  height: 26px;
-  padding: 2px 5px;
+  height: map.get(control-size.$heights, small);
+  padding: map.get(control-size.$padding-block, small) 5px;
 }
 
 .v2ex-otp {
@@ -849,14 +833,16 @@
   }
 }
 
-.v2ex-tabs__scroll-button {
+.v2ex-button.v2ex-tabs__scroll-button {
   width: 24px;
-  height: 28px;
+  height: map.get(control-size.$heights, small);
   min-width: 24px;
+  min-height: map.get(control-size.$heights, small);
   flex: none;
   padding: 0;
 
   .v2ex-button__icon,
+  .v2ex-button__spinner,
   .v2ex-button__icon > svg {
     width: 15px;
     height: 15px;
@@ -947,17 +933,19 @@
 .v2ex-select {
   display: inline-flex;
   width: 100%;
-  min-height: 30px;
+  min-height: map.get(control-size.$heights, default);
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 4px 7px 4px 9px;
+  padding: map.get(control-size.$padding-block, default)
+    map.get(control-size.$padding-inline, default);
   border: 1px solid var(--v2ex-input-border);
   border-radius: var(--v2ex-radius-sm);
   outline: none;
   color: var(--v2ex-input-fg);
   background: var(--v2ex-input-bg);
   font: inherit;
+  line-height: control-size.$line-height;
   text-align: left;
 
   &:hover:not(:disabled) {
@@ -990,8 +978,8 @@
   flex: none;
 
   > svg {
-    width: 15px;
-    height: 15px;
+    width: map.get(control-size.$icon-sizes, default);
+    height: map.get(control-size.$icon-sizes, default);
   }
 }
 
@@ -1059,12 +1047,14 @@
 }
 
 .v2ex-radio-group {
+  line-height: control-size.$line-height;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
 .v2ex-radio-group__label {
+  min-height: map.get(control-size.$heights, default);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1074,8 +1064,8 @@
 
 .v2ex-radio-group__item {
   display: inline-flex;
-  width: 16px;
-  height: 16px;
+  width: map.get(control-size.$icon-sizes, default);
+  height: map.get(control-size.$icon-sizes, default);
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -1115,17 +1105,18 @@
   max-width: 100%;
   flex-wrap: nowrap;
   gap: 2px;
-  padding: 3px;
+  padding: map.get(control-size.$segmented-padding, default);
   border: 1px solid var(--v2ex-hc-border, transparent);
   border-radius: var(--v2ex-radius-md);
   background: var(--v2ex-light-button-bg);
 
   .v2ex-radio-group__label {
     position: relative;
-    min-height: 28px;
+    min-height: map.get(control-size.$heights, default) -
+      map.get(control-size.$segmented-padding, default) * 2 - 2px;
     justify-content: center;
     gap: 0;
-    padding: 4px 10px;
+    padding: 0 map.get(control-size.$padding-inline, default);
     border: 1px solid transparent;
     border-radius: var(--v2ex-radius-sm);
     color: var(--v2ex-muted-fg);
@@ -1240,17 +1231,19 @@
   display: inline-flex;
   width: 100%;
   min-width: 0;
-  min-height: 28px;
+  min-height: map.get(control-size.$heights, default);
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 4px 7px 4px 9px;
+  padding: map.get(control-size.$padding-block, default)
+    map.get(control-size.$padding-inline, default);
   border: 1px solid var(--v2ex-input-border);
   border-radius: var(--v2ex-radius-sm);
   outline: none;
   color: var(--v2ex-input-fg);
   background: var(--v2ex-input-bg);
   font: inherit;
+  line-height: control-size.$line-height;
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -1293,8 +1286,8 @@
 
 .v2ex-date-picker__icon {
   flex: none;
-  width: 15px;
-  height: 15px;
+  width: map.get(control-size.$icon-sizes, default);
+  height: map.get(control-size.$icon-sizes, default);
   color: var(--v2ex-icon-fg);
 }
 
@@ -2021,7 +2014,7 @@
 
 .v2ex-skeleton__button {
   width: 72px;
-  height: 28px;
+  height: map.get(control-size.$heights, default);
   border-radius: var(--v2ex-radius-sm);
 }
 
@@ -2246,4 +2239,67 @@
 .v2ex-scroll-area__corner {
   z-index: 1;
   background: transparent;
+}
+
+@each $size, $height in control-size.$heights {
+  $icon-size: map.get(control-size.$icon-sizes, $size);
+  $segmented-padding: map.get(control-size.$segmented-padding, $size);
+
+  .v2ex-button--#{$size},
+  .v2ex-input--#{$size},
+  .v2ex-select--#{$size},
+  .v2ex-date-picker--#{$size} {
+    min-height: $height;
+    padding: map.get(control-size.$padding-block, $size)
+      map.get(control-size.$padding-inline, $size);
+    font-size: map.get(control-size.$font-sizes, $size);
+    line-height: control-size.$line-height;
+  }
+
+  .v2ex-button--#{$size} .v2ex-button__icon,
+  .v2ex-button--#{$size} .v2ex-button__spinner,
+  .v2ex-button--#{$size} .v2ex-button__icon > svg,
+  .v2ex-input--#{$size} .v2ex-input__prefix > svg,
+  .v2ex-select--#{$size} .v2ex-select__icon > svg,
+  .v2ex-date-picker--#{$size} .v2ex-date-picker__icon {
+    width: $icon-size;
+    height: $icon-size;
+  }
+
+  .v2ex-radio-group--#{$size} {
+    font-size: map.get(control-size.$font-sizes, $size);
+    line-height: control-size.$line-height;
+  }
+
+  .v2ex-radio-group--#{$size} .v2ex-radio-group__label {
+    min-height: $height;
+  }
+
+  .v2ex-radio-group--#{$size}:not(.v2ex-radio-group--segmented) .v2ex-radio-group__item {
+    width: $icon-size;
+    height: $icon-size;
+  }
+
+  .v2ex-radio-group--#{$size}:not(.v2ex-radio-group--segmented) .v2ex-radio-group__indicator {
+    width: $icon-size * 0.5;
+    height: $icon-size * 0.5;
+  }
+
+  .v2ex-radio-group--segmented.v2ex-radio-group--#{$size} {
+    padding: $segmented-padding;
+
+    .v2ex-radio-group__label {
+      min-height: $height - $segmented-padding * 2 - 2px;
+      padding: 0 map.get(control-size.$padding-inline, $size);
+    }
+  }
+
+  .v2ex-skeleton__button--#{$size} {
+    height: $height;
+  }
+}
+
+// 放在尺寸循环之后，避免 padding 简写盖掉横向收紧
+.v2ex-button--compact {
+  padding-inline: 3px;
 }

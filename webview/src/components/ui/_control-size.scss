@@ -1,0 +1,41 @@
+// 单行控件与骨架共用的尺寸，页面不重复声明高度
+$heights: (
+  small: 28px,
+  default: 32px,
+  large: 36px
+);
+
+// 在宿主字号基础上微调，避免固定字号抵消用户设置
+$font-sizes: (
+  small: calc(var(--v2ex-font-size) - 1px),
+  default: var(--v2ex-font-size),
+  large: calc(var(--v2ex-font-size) + 1px)
+);
+
+$line-height: 1.35;
+
+// 1px 边框下内容区保持 22px：外高 - 2px 边框 - 2 * padding-block
+$padding-block: (
+  small: 2px,
+  default: 4px,
+  large: 6px
+);
+
+$padding-inline: (
+  small: 8px,
+  default: 10px,
+  large: 12px
+);
+
+$icon-sizes: (
+  small: 16px,
+  default: 16px,
+  large: 18px
+);
+
+// 分段单选轨道内边距。标签高度 = 控件高度 - 两侧内边距 - 1px 边框
+$segmented-padding: (
+  small: 2px,
+  default: 3px,
+  large: 4px
+);

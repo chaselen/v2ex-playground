@@ -1,3 +1,4 @@
+import type { ControlSize } from './controlSize'
 import type { CSSProperties, HTMLAttributes } from 'react'
 import { mergeClassNames } from './utils'
 
@@ -53,8 +54,22 @@ function SkeletonParagraph({ className, rows = 3, style, ...props }: SkeletonPar
   )
 }
 
-function SkeletonButton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div {...props} className={mergeClassNames('v2ex-skeleton__button', className)} />
+interface SkeletonButtonProps extends HTMLAttributes<HTMLDivElement> {
+  /** 与真实按钮一致的尺寸 */
+  size?: ControlSize
+}
+
+function SkeletonButton({ className, size = 'default', ...props }: SkeletonButtonProps) {
+  return (
+    <div
+      {...props}
+      className={mergeClassNames(
+        'v2ex-skeleton__button',
+        `v2ex-skeleton__button--${size}`,
+        className
+      )}
+    />
+  )
 }
 
 function SkeletonAvatar({

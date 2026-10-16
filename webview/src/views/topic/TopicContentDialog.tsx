@@ -210,6 +210,7 @@ export default function TopicContentDialog({
                   toolbarEnd={
                     <RadioGroup
                       className={styles.syntax}
+                      size="small"
                       variant="segmented"
                       aria-label="文本标记语法"
                       value={values.syntax}

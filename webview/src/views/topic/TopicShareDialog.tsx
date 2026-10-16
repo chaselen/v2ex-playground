@@ -682,6 +682,7 @@ export default function TopicShareDialog({
                   <RadioGroup
                     aria-label="分享图回复列表模式"
                     className={styles.replyViewModeControl}
+                    size="small"
                     variant="segmented"
                     value={shareReplyViewMode}
                     onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}

@@ -393,14 +393,10 @@
 .replyViewModeControl:global(.v2ex-radio-group--segmented) {
   flex: none;
   gap: 1px;
-  padding: 2px;
   border-radius: var(--v2ex-radius-sm);
 
   :global(.v2ex-radio-group__label) {
-    min-height: 22px;
-    padding: 2px 7px;
     border-radius: var(--v2ex-radius-xs);
-    font-size: 11px;
   }
 }
 

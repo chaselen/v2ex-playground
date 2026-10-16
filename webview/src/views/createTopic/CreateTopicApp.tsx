@@ -224,7 +224,7 @@ export default function CreateTopicApp() {
               <Input
                 ref={titleRef}
                 id="create-topic-title"
-                className="create-topic-title"
+                size="large"
                 value={draft.title}
                 maxLength={titleMaxLength}
                 placeholder="用一句清晰的话概括主题"
@@ -253,6 +253,7 @@ export default function CreateTopicApp() {
                 <div className="create-topic-syntax-tools">
                   <RadioGroup
                     className="create-topic-syntax"
+                    size="small"
                     variant="segmented"
                     value={draft.syntax}
                     disabled={formDisabled}

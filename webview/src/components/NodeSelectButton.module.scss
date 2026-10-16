@@ -6,8 +6,6 @@
 
 .trigger {
   width: 100%;
-  min-height: 32px;
-  padding: 5px 10px;
 
   &:enabled {
     color: var(--v2ex-input-fg);
@@ -58,4 +56,12 @@
   flex: none;
   margin-left: auto;
   color: var(--v2ex-muted-fg);
+}
+
+:global(.v2ex-button--large) {
+  .avatar,
+  .chevron {
+    width: 18px;
+    height: 18px;
+  }
 }

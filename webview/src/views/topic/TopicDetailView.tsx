@@ -737,6 +737,7 @@ export default function TopicDetailView({
                   <RadioGroup
                     aria-label="回复列表展示模式"
                     className="reply-view-switch"
+                    size="small"
                     variant="segmented"
                     value={replyViewMode}
                     onValueChange={value => changeReplyViewMode(value as ReplyViewMode)}

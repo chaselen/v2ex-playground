@@ -128,18 +128,6 @@
   color: var(--v2ex-danger-fg);
 }
 
-.create-topic-title {
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: var(--v2ex-radius-md);
-  font-size: 14px;
-
-  &:focus-within {
-    border-color: var(--v2ex-focus-border);
-    outline: none;
-  }
-}
-
 .create-topic-composer {
   min-height: 360px;
   padding: 14px 20px 20px;
@@ -183,12 +171,6 @@
 
 .create-topic-syntax {
   flex-direction: row;
-  font-size: 12px;
-
-  .v2ex-radio-group__label {
-    min-height: 26px;
-    padding: 3px 8px;
-  }
 }
 
 .create-topic-editor-toolbar {
@@ -243,8 +225,6 @@
 
 .create-topic-publish-button {
   min-width: 112px;
-  min-height: 32px;
-  font-size: 13px;
 }
 
 .create-topic-state {

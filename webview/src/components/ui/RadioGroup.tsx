@@ -1,3 +1,4 @@
+import type { ControlSize } from './controlSize'
 import { Radio } from '@base-ui/react/radio'
 import { RadioGroup as RadioGroupPrimitive } from '@base-ui/react/radio-group'
 import type { ComponentProps, ReactNode } from 'react'
@@ -9,6 +10,8 @@ export interface RadioGroupProps extends Omit<
   'className'
 > {
   className?: string
+  /** 默认 32px，small 为 28px，large 为 36px */
+  size?: ControlSize
   /** 单选组排列方向 */
   orientation?: 'horizontal' | 'vertical'
   /** 单选组视觉样式 */
@@ -19,6 +22,7 @@ export interface RadioGroupProps extends Omit<
 export function RadioGroup({
   className,
   variant = 'default',
+  size = 'default',
   orientation = 'horizontal',
   ...props
 }: RadioGroupProps) {
@@ -28,6 +32,7 @@ export function RadioGroup({
       data-orientation={orientation}
       className={mergeClassNames(
         'v2ex-radio-group',
+        `v2ex-radio-group--${size}`,
         variant === 'segmented' && 'v2ex-radio-group--segmented',
         className
       )}

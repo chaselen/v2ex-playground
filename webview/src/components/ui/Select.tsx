@@ -1,3 +1,4 @@
+import type { ControlSize } from './controlSize'
 import { Select as SelectPrimitive } from '@base-ui/react/select'
 import { Check, ChevronDown } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -14,6 +15,8 @@ export interface SelectOption {
 }
 
 export interface SelectProps {
+  /** 默认 32px，small 为 28px，large 为 36px */
+  size?: ControlSize
   /** 当前值 */
   value?: string
   /** 默认值 */
@@ -37,6 +40,7 @@ export interface SelectProps {
 /** 基于 Base UI Select 的单选下拉框 */
 export function Select({
   className,
+  size = 'default',
   clearable = false,
   defaultValue,
   disabled,
@@ -69,7 +73,10 @@ export function Select({
           className
         )}
       >
-        <SelectPrimitive.Trigger className="v2ex-select" {...props}>
+        <SelectPrimitive.Trigger
+          className={mergeClassNames('v2ex-select', `v2ex-select--${size}`)}
+          {...props}
+        >
           <SelectPrimitive.Value placeholder={placeholder} />
           <SelectPrimitive.Icon className="v2ex-select__icon">
             <ChevronDown aria-hidden="true" />

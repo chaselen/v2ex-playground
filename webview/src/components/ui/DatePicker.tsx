@@ -1,3 +1,4 @@
+import type { ControlSize } from './controlSize'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
@@ -10,6 +11,8 @@ const VALUE_FORMAT = 'YYYY-MM-DD'
 const DISPLAY_FORMAT = 'YYYY/MM/DD'
 
 export interface DatePickerProps {
+  /** 默认 32px，small 为 28px，large 为 36px */
+  size?: ControlSize
   /** 当前值，格式 YYYY-MM-DD */
   value?: string
   /** 占位文案 */
@@ -41,6 +44,7 @@ function buildCalendarDays(viewMonth: Dayjs): Dayjs[] {
 /** 主题化日期选择器；替代原生 type=date 的宿主日历弹出层 */
 export function DatePicker({
   className,
+  size = 'default',
   disabled = false,
   placeholder = '选择日期',
   value = '',
@@ -167,6 +171,7 @@ export function DatePicker({
         type="button"
         className={mergeClassNames(
           'v2ex-date-picker',
+          `v2ex-date-picker--${size}`,
           !display && 'v2ex-date-picker--placeholder',
           disabled && 'v2ex-date-picker--disabled',
           className

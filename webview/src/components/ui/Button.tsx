@@ -1,15 +1,15 @@
+import type { ControlSize } from './controlSize'
 import { LoaderCircle } from 'lucide-react'
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { mergeClassNames } from './utils'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'subtle' | 'ghost' | 'danger'
-export type ButtonSize = 'small' | 'default' | 'large'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** 按钮视觉层级 */
   variant?: ButtonVariant
-  /** 按钮尺寸 */
-  size?: ButtonSize
+  /** 默认 32px，small 为 28px，large 为 36px */
+  size?: ControlSize
   /** 缩小横向内边距，适合紧凑工具栏或纯图标按钮 */
   compact?: boolean
   /** 异步操作进行中 */

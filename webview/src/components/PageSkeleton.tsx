@@ -115,12 +115,12 @@ function TopicPlaceholder({ showAvatar }: { showAvatar: boolean }) {
         )}
       </div>
       <div className={styles['topic-meta']}>
-        <Skeleton.Button className={styles.tag} />
+        <Skeleton.Button className={styles.tag} size="small" />
         <Skeleton.Title className={styles.author} />
         <Skeleton.Paragraph rows={1} className={styles.time} />
         <div className={styles['topic-tags']}>
-          <Skeleton.Button />
-          <Skeleton.Button />
+          <Skeleton.Button size="small" />
+          <Skeleton.Button size="small" />
         </div>
       </div>
       <Skeleton.Paragraph rows={5} />
@@ -141,7 +141,7 @@ function MemberPlaceholder({ rows }: SkeletonRowsProps) {
           <Skeleton.Title className={styles.username} />
           <Skeleton.Paragraph rows={2} className={styles['profile-meta']} />
         </div>
-        <Skeleton.Button className={styles['icon-button']} />
+        <Skeleton.Button size="small" className={styles['icon-button']} />
       </div>
       {/* 对齐真实页 .member-content：资料区下方再接标签与列表 */}
       <div className={styles['member-body']}>
@@ -183,8 +183,8 @@ function BalancePlaceholder({ rows }: SkeletonRowsProps) {
           <Skeleton.Title className={styles.wallet} />
         </div>
         <div className={styles.actions}>
-          <Skeleton.Button />
-          <Skeleton.Button />
+          <Skeleton.Button size="small" />
+          <Skeleton.Button size="small" />
         </div>
       </div>
       <div className={styles['balance-ledger']}>
@@ -354,7 +354,7 @@ function MyPlaceholder({ rows }: SkeletonRowsProps) {
         <div className={styles['my-profile']}>
           <Skeleton.Avatar className={styles['my-avatar']} shape="square" />
           <Skeleton.Title className={styles.username} />
-          <Skeleton.Button className={styles['my-profile-action']} />
+          <Skeleton.Button size="small" className={styles['my-profile-action']} />
         </div>
         <div className={styles.stats}>
           {Array.from({ length: 3 }, (_, index) => (
@@ -372,7 +372,7 @@ function MyPlaceholder({ rows }: SkeletonRowsProps) {
           <Skeleton.Title />
         </div>
         <div className={styles['sign-in-row']}>
-          <Skeleton.Button />
+          <Skeleton.Button size="small" />
         </div>
       </div>
       <div className={styles.tabs}>

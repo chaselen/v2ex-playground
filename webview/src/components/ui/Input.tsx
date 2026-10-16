@@ -1,3 +1,4 @@
+import type { ControlSize } from './controlSize'
 import { ClearButton } from './ClearButton'
 import {
   forwardRef,
@@ -10,8 +11,10 @@ import { mergeClassNames } from './utils'
 
 export interface InputProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  'onChange' | 'prefix'
+  'onChange' | 'prefix' | 'size'
 > {
+  /** 默认 32px，small 为 28px，large 为 36px */
+  size?: ControlSize
   /** 输入框前置内容 */
   prefix?: ReactNode
   /** 是否显示清空按钮 */
@@ -33,6 +36,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     onValueChange,
     prefix,
     readOnly,
+    size = 'default',
     value,
     ...props
   },
@@ -54,7 +58,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   }
 
   return (
-    <span className={mergeClassNames('v2ex-input', disabled && 'v2ex-input--disabled', className)}>
+    <span
+      className={mergeClassNames(
+        'v2ex-input',
+        `v2ex-input--${size}`,
+        disabled && 'v2ex-input--disabled',
+        className
+      )}
+    >
       {prefix && <span className="v2ex-input__prefix">{prefix}</span>}
       <input
         {...props}

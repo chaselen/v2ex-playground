@@ -34,6 +34,7 @@ import {
   Select,
   ScrollArea,
   Spinner,
+  Skeleton,
   Tag,
   Tabs,
   TabsContent,
@@ -318,6 +319,40 @@ export default function ThemePreviewApp() {
               ]}
             />
           </Dialog>
+        </PreviewSection>
+
+        <PreviewSection title="表单控件尺寸">
+          {(['default', 'small', 'large'] as const).map(size => (
+            <div className="theme-preview-form" key={size} data-control-size={size}>
+              <strong>
+                {{ default: '默认 32px', small: '紧凑 28px', large: '大号 36px' }[size]}
+              </strong>
+              <Input size={size} aria-label={`${size} 输入框`} placeholder="输入内容" />
+              <Select
+                size={size}
+                aria-label={`${size} 选择器`}
+                defaultValue="v2ex"
+                options={[{ label: 'V2EX', value: 'v2ex' }]}
+              />
+              <DatePicker size={size} aria-label={`${size} 日期`} />
+              <NodeSelectButton size={size} node={node} />
+              <RadioGroup size={size} aria-label={`${size} 单选组`} defaultValue="any">
+                <RadioGroupItem value="any" label="任意关键词" />
+                <RadioGroupItem value="all" label="全部关键词" />
+              </RadioGroup>
+              <RadioGroup
+                size={size}
+                variant="segmented"
+                aria-label={`${size} 分段单选组`}
+                defaultValue="any"
+              >
+                <RadioGroupItem value="any" label="任意关键词" />
+                <RadioGroupItem value="all" label="全部关键词" />
+              </RadioGroup>
+              <Button size={size}>操作按钮</Button>
+              <Skeleton.Button size={size} />
+            </div>
+          ))}
         </PreviewSection>
 
         <PreviewSection title="复合表单">
