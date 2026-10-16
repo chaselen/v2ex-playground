@@ -20,17 +20,23 @@ export interface PopoverProps {
   showArrow?: boolean
   /** 浮层附加类名 */
   className?: string
-  /** 打开状态变化 */
-  onOpenChange?: (open: boolean) => void
+  /** 浮层的无障碍名称 */
+  'aria-label'?: string
+  /** 关闭后焦点位置，默认为触发按钮 */
+  finalFocus?: PopoverPrimitive.Popup.Props['finalFocus']
+  /** 打开状态变化，可通过事件详情取消关闭 */
+  onOpenChange?: PopoverPrimitive.Root.Props['onOpenChange']
 }
 
 /** 基于 Base UI Popover、使用 VS Code Widget 颜色的点击浮层 */
 export function Popover({
   align = 'center',
+  'aria-label': ariaLabel,
   children,
   className,
   content,
   defaultOpen,
+  finalFocus,
   onOpenChange,
   open,
   showArrow = false,
@@ -56,7 +62,8 @@ export function Popover({
         >
           <PopoverPrimitive.Popup
             className={mergeClassNames('v2ex-popover', className)}
-            finalFocus={() => getTriggerFocusTarget(triggerRef.current)}
+            finalFocus={finalFocus ?? (() => getTriggerFocusTarget(triggerRef.current))}
+            aria-label={ariaLabel}
           >
             {content}
             {showArrow && (

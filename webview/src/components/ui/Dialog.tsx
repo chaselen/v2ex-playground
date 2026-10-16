@@ -19,8 +19,10 @@ export interface DialogProps {
   closeOnOverlayClick?: boolean
   /** 对话框附加类名 */
   className?: string
-  /** 打开状态变化 */
-  onOpenChange: (open: boolean) => void
+  /** 关闭后焦点位置，默认由 Base UI 恢复 */
+  finalFocus?: DialogPrimitive.Popup.Props['finalFocus']
+  /** 打开状态变化，可通过事件详情取消关闭 */
+  onOpenChange: NonNullable<DialogPrimitive.Root.Props['onOpenChange']>
 }
 
 /** 基于 Base UI Dialog、使用 VS Code Widget 颜色的模态框 */
@@ -30,6 +32,7 @@ export function Dialog({
   closeOnOverlayClick = true,
   description,
   footer,
+  finalFocus,
   onOpenChange,
   open,
   title
@@ -42,12 +45,15 @@ export function Dialog({
           details.cancel()
           return
         }
-        onOpenChange(nextOpen)
+        onOpenChange(nextOpen, details)
       }}
     >
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="v2ex-dialog__overlay" />
-        <DialogPrimitive.Popup className={mergeClassNames('v2ex-dialog', className)}>
+        <DialogPrimitive.Popup
+          className={mergeClassNames('v2ex-dialog', className)}
+          finalFocus={finalFocus}
+        >
           <header className="v2ex-dialog__header">
             <DialogPrimitive.Title className="v2ex-dialog__title">{title}</DialogPrimitive.Title>
             <DialogPrimitive.Close
