@@ -236,7 +236,7 @@
   transition: transform var(--v2ex-motion-fast);
 }
 
-.theme-preview-tree-trigger[data-state='closed'] > svg {
+.theme-preview-tree-trigger:not([data-panel-open]) > svg {
   transform: rotate(-90deg);
 }
 

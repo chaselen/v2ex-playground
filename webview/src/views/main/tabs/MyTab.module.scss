@@ -403,7 +403,7 @@
 
   .my-notification-item:hover &,
   .my-notification-item:focus-within &,
-  &[data-state='open'],
+  &[data-popup-open],
   &[aria-busy='true'] {
     opacity: 1;
     pointer-events: auto;

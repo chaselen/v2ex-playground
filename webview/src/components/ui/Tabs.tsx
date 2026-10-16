@@ -1,4 +1,4 @@
-import { Tabs as TabsPrimitive } from 'radix-ui'
+import { Tabs as TabsPrimitive } from '@base-ui/react/tabs'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   useCallback,
@@ -9,7 +9,7 @@ import {
   type ReactNode
 } from 'react'
 import { Button } from './Button'
-import { mergeClassNames } from './utils'
+import { mergeClassNames, withBaseClassName } from './utils'
 
 export interface TabsProps extends Omit<
   ComponentProps<typeof TabsPrimitive.Root>,
@@ -19,18 +19,30 @@ export interface TabsProps extends Omit<
   onValueChange?: (value: string) => void
 }
 
-/** 基于 Radix Tabs 的受控标签容器 */
-export function Tabs({ className, orientation = 'horizontal', ...props }: TabsProps) {
+/** 基于 Base UI Tabs 的受控标签容器 */
+export function Tabs({
+  className,
+  orientation = 'horizontal',
+  onValueChange,
+  ...props
+}: TabsProps) {
   return (
     <TabsPrimitive.Root
-      className={mergeClassNames('v2ex-tabs', className)}
+      className={withBaseClassName('v2ex-tabs', className)}
       orientation={orientation}
+      onValueChange={value => {
+        if (typeof value === 'string') onValueChange?.(value)
+      }}
       {...props}
     />
   )
 }
 
-export interface TabsListProps extends Omit<ComponentProps<typeof TabsPrimitive.List>, 'ref'> {
+export interface TabsListProps extends Omit<
+  ComponentProps<typeof TabsPrimitive.List>,
+  'ref' | 'className'
+> {
+  className?: string
   /** 标签栏右侧附加内容 */
   extra?: ReactNode
   /** 溢出时显示横向滚动按钮 */
@@ -153,7 +165,7 @@ export function TabsList({
     const scheduleUpdate = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        const activeTab = list.querySelector<HTMLElement>('[role="tab"][data-state="active"]')
+        const activeTab = list.querySelector<HTMLElement>('[role="tab"][data-active]')
         if (activeTab) {
           scrollTabIntoView(activeTab, 'auto')
         }
@@ -166,7 +178,7 @@ export function TabsList({
     resizeObserver.observe(list)
     mutationObserver.observe(list, {
       attributes: true,
-      attributeFilter: ['data-state'],
+      attributeFilter: ['data-active'],
       childList: true,
       subtree: true
     })
@@ -196,7 +208,7 @@ export function TabsList({
           onClick={() => scrollOverflow('back')}
         />
       )}
-      <TabsPrimitive.List ref={listRef} className="v2ex-tabs__list" {...props}>
+      <TabsPrimitive.List activateOnFocus ref={listRef} className="v2ex-tabs__list" {...props}>
         {children}
       </TabsPrimitive.List>
       {overflowState.overflow && (
@@ -218,20 +230,17 @@ export function TabsList({
 }
 
 /** 单个标签按钮 */
-export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Trigger>) {
+export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Tab>) {
   return (
-    <TabsPrimitive.Trigger
-      className={mergeClassNames('v2ex-tabs__trigger', className)}
-      {...props}
-    />
+    <TabsPrimitive.Tab className={withBaseClassName('v2ex-tabs__trigger', className)} {...props} />
   )
 }
 
 /** 标签内容 */
-export function TabsContent({ className, ...props }: ComponentProps<typeof TabsPrimitive.Content>) {
+export function TabsContent({ className, ...props }: ComponentProps<typeof TabsPrimitive.Panel>) {
   return (
-    <TabsPrimitive.Content
-      className={mergeClassNames('v2ex-tabs__content', className)}
+    <TabsPrimitive.Panel
+      className={withBaseClassName('v2ex-tabs__content', className)}
       {...props}
     />
   )

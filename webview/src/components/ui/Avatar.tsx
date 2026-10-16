@@ -1,7 +1,7 @@
 import { UserRound } from 'lucide-react'
-import { Avatar as AvatarPrimitive } from 'radix-ui'
+import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar'
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
-import { mergeClassNames } from './utils'
+import { mergeClassNames, withBaseClassName } from './utils'
 
 export interface AvatarProps extends Omit<
   ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>,
@@ -19,7 +19,7 @@ export interface AvatarProps extends Omit<
   fallback?: ReactNode
 }
 
-/** 基于 Radix Avatar、适配 VS Code 主题的头像 */
+/** 基于 Base UI Avatar、适配 VS Code 主题的头像 */
 export function Avatar({
   alt = '',
   className,
@@ -32,15 +32,13 @@ export function Avatar({
   return (
     <AvatarPrimitive.Root
       {...props}
-      className={mergeClassNames(
-        'v2ex-avatar',
-        `v2ex-avatar--${size}`,
-        `v2ex-avatar--${shape}`,
+      className={withBaseClassName(
+        mergeClassNames('v2ex-avatar', `v2ex-avatar--${size}`, `v2ex-avatar--${shape}`),
         className
       )}
     >
       {src && <AvatarPrimitive.Image className="v2ex-avatar__image" src={src} alt={alt} />}
-      <AvatarPrimitive.Fallback className="v2ex-avatar__fallback" delayMs={120}>
+      <AvatarPrimitive.Fallback className="v2ex-avatar__fallback" delay={120}>
         {fallback ?? <UserRound aria-hidden="true" />}
       </AvatarPrimitive.Fallback>
     </AvatarPrimitive.Root>

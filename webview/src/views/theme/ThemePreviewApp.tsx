@@ -19,6 +19,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   ConfirmPopover,
+  ContextMenu,
   DatePicker,
   Dialog,
   DropdownMenu,
@@ -61,6 +62,7 @@ export default function ThemePreviewApp() {
   const [activeTheme, setActiveTheme] = useState('暗色')
   const [selectedKey, setSelectedKey] = useState('v2ex')
   const [modalVisible, setModalVisible] = useState(false)
+  const [contextMenuDisabled, setContextMenuDisabled] = useState(false)
   const [node, setNode] = useState<Node | undefined>({ name: 'qna', title: '问与答' })
   const [inputValue, setInputValue] = useState('V2EX')
   const [otpValue, setOtpValue] = useState('12')
@@ -77,7 +79,7 @@ export default function ThemePreviewApp() {
       <header className="theme-preview-header">
         <div>
           <h1>Webview UI × VS Code 主题回归页</h1>
-          <p>检查 Radix 原语、Lucide 图标与 VS Code 语义变量</p>
+          <p>检查 Base UI、Lucide 图标与 VS Code 语义变量</p>
         </div>
         <div className="theme-preview-row">
           {previewThemes.map(theme => (
@@ -239,6 +241,30 @@ export default function ThemePreviewApp() {
               <Button>Badge</Button>
             </Badge>
             <Button onClick={() => setModalVisible(true)}>Dialog</Button>
+            <Button
+              aria-pressed={contextMenuDisabled}
+              onClick={() => setContextMenuDisabled(value => !value)}
+            >
+              {contextMenuDisabled ? '启用右键菜单' : '禁用右键菜单'}
+            </Button>
+            <ContextMenu
+              disabled={contextMenuDisabled}
+              items={[
+                { key: 'copy', label: '复制', onSelect: () => Toast.success('已复制') },
+                { key: 'disabled', label: '禁用菜单项', disabled: true }
+              ]}
+            >
+              <div>
+                <Input aria-label="右键菜单状态保留" defaultValue="切换禁用状态后保留输入" />
+              </div>
+            </ContextMenu>
+            <ConfirmPopover title="确认组合触发器操作？" onConfirm={() => Toast.success('已确认')}>
+              <span>
+                <Tooltip content="组合触发器提示">
+                  <Button>组合触发器</Button>
+                </Tooltip>
+              </span>
+            </ConfirmPopover>
           </div>
           <Dialog
             title="Dialog 主题回归"
@@ -253,7 +279,15 @@ export default function ThemePreviewApp() {
             }
             onOpenChange={setModalVisible}
           >
-            检查遮罩、背景、边框、文字和按钮状态
+            <p>检查遮罩、背景、边框、文字和按钮状态</p>
+            <Select
+              aria-label="对话框内选择"
+              placeholder="选择组件"
+              options={[
+                { label: 'Base UI', value: 'base-ui' },
+                { label: 'V2EX', value: 'v2ex' }
+              ]}
+            />
           </Dialog>
         </PreviewSection>
 
@@ -269,7 +303,7 @@ export default function ThemePreviewApp() {
               placeholder="选择一个节点"
               options={[
                 { label: 'V2EX', value: 'v2ex' },
-                { label: 'Radix Primitives', value: 'radix' }
+                { label: 'Base UI', value: 'base-ui' }
               ]}
             />
             <NodeSelectButton

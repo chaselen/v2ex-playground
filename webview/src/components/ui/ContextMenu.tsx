@@ -1,5 +1,5 @@
-import { ContextMenu as ContextMenuPrimitive } from 'radix-ui'
-import { Fragment, type ReactElement, type ReactNode } from 'react'
+import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
+import { Fragment, useEffect, useState, type ReactElement, type ReactNode } from 'react'
 import { mergeClassNames } from './utils'
 
 export interface ContextMenuItem {
@@ -30,7 +30,7 @@ export interface ContextMenuProps {
   className?: string
 }
 
-/** 基于 Radix Context Menu、使用 VS Code Menu 颜色的通用右键菜单 */
+/** 基于 Base UI Context Menu、使用 VS Code Menu 颜色的通用右键菜单 */
 export function ContextMenu({
   children,
   className,
@@ -38,41 +38,46 @@ export function ContextMenu({
   items,
   size = 'comfortable'
 }: ContextMenuProps) {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (disabled) setOpen(false)
+  }, [disabled])
+
   return (
-    <ContextMenuPrimitive.Root>
-      <ContextMenuPrimitive.Trigger asChild disabled={disabled}>
-        {children}
-      </ContextMenuPrimitive.Trigger>
+    <ContextMenuPrimitive.Root disabled={disabled} open={open && !disabled} onOpenChange={setOpen}>
+      <ContextMenuPrimitive.Trigger render={children} />
       <ContextMenuPrimitive.Portal>
-        <ContextMenuPrimitive.Content
-          className={mergeClassNames(
-            'v2ex-menu',
-            'v2ex-context-menu',
-            `v2ex-context-menu--${size}`,
-            className
-          )}
-          collisionPadding={8}
-        >
-          {items.map(item => (
-            <Fragment key={item.key}>
-              {item.separatorBefore && (
-                <ContextMenuPrimitive.Separator className="v2ex-menu__separator" />
-              )}
-              <ContextMenuPrimitive.Item
-                className="v2ex-menu__item"
-                disabled={item.disabled}
-                onSelect={item.onSelect}
-              >
-                {item.icon && (
-                  <span className="v2ex-context-menu__icon" aria-hidden="true">
-                    {item.icon}
-                  </span>
+        <ContextMenuPrimitive.Positioner className="v2ex-floating-positioner" collisionPadding={8}>
+          <ContextMenuPrimitive.Popup
+            className={mergeClassNames(
+              'v2ex-menu',
+              'v2ex-context-menu',
+              `v2ex-context-menu--${size}`,
+              className
+            )}
+          >
+            {items.map(item => (
+              <Fragment key={item.key}>
+                {item.separatorBefore && (
+                  <ContextMenuPrimitive.Separator className="v2ex-menu__separator" />
                 )}
-                {item.label}
-              </ContextMenuPrimitive.Item>
-            </Fragment>
-          ))}
-        </ContextMenuPrimitive.Content>
+                <ContextMenuPrimitive.Item
+                  className="v2ex-menu__item"
+                  disabled={item.disabled}
+                  onClick={item.onSelect}
+                >
+                  {item.icon && (
+                    <span className="v2ex-context-menu__icon" aria-hidden="true">
+                      {item.icon}
+                    </span>
+                  )}
+                  {item.label}
+                </ContextMenuPrimitive.Item>
+              </Fragment>
+            ))}
+          </ContextMenuPrimitive.Popup>
+        </ContextMenuPrimitive.Positioner>
       </ContextMenuPrimitive.Portal>
     </ContextMenuPrimitive.Root>
   )

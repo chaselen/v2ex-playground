@@ -427,7 +427,7 @@
   width: 100%;
   height: 100%;
   background: var(--v2ex-progress-fg);
-  transition: transform 180ms ease;
+  transition: width 180ms ease;
 }
 
 .v2ex-progress__label {
@@ -635,7 +635,7 @@
   }
 }
 
-/* 紧凑模式 hover 页码列表：Radix ScrollArea + 菜单项样式 */
+/* 紧凑模式 hover 页码列表：Base UI ScrollArea + 菜单项样式 */
 .v2ex-pagination__page-select.v2ex-popover {
   min-width: 72px;
   max-width: min(120px, calc(100vw - 16px));
@@ -662,6 +662,9 @@
 }
 
 .v2ex-pagination__page-select-scrollbar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
   display: flex;
   width: 8px;
   touch-action: none;
@@ -676,7 +679,7 @@
 
 .v2ex-pagination__page-select-thumb {
   position: relative;
-  flex: 1;
+  width: 100%;
   border-radius: 999px;
   background: var(--v2ex-scrollbar-bg);
 
@@ -946,7 +949,7 @@
     color: var(--v2ex-webview-fg);
   }
 
-  &:hover:not([data-state='active'])::before {
+  &:hover:not([data-active])::before {
     background: var(--v2ex-toolbar-hover-bg);
   }
 
@@ -955,12 +958,12 @@
     outline-offset: -2px;
   }
 
-  &[data-state='active'] {
+  &[data-active] {
     color: var(--v2ex-webview-fg);
     font-weight: 600;
   }
 
-  &[data-state='active']::after {
+  &[data-active]::after {
     background: var(--v2ex-tab-indicator);
   }
 
@@ -1006,7 +1009,7 @@
   }
 
   /* 展开只加粗边框，不叠 box-shadow，避免出现双层 outline 环 */
-  &[data-state='open'] {
+  &[data-popup-open] {
     border-color: var(--v2ex-focus-border);
   }
 
@@ -1038,8 +1041,8 @@
 
 .v2ex-select__content {
   z-index: 1110;
-  width: var(--radix-select-trigger-width);
-  max-height: min(320px, var(--radix-select-content-available-height));
+  width: var(--anchor-width);
+  max-height: min(320px, var(--available-height));
   border: 1px solid var(--v2ex-border);
   border-radius: var(--v2ex-radius-sm);
   color: var(--v2ex-menu-fg);
@@ -1050,6 +1053,8 @@
 }
 
 .v2ex-select__viewport {
+  max-height: inherit;
+  overflow-y: auto;
   padding: 4px;
 }
 
@@ -1087,14 +1092,13 @@
 }
 
 .v2ex-collapsible__content {
+  height: var(--collapsible-panel-height);
   overflow: hidden;
+  transition: height var(--v2ex-motion-normal) ease-out;
 
-  &[data-state='open'] {
-    animation: v2ex-collapsible-open var(--v2ex-motion-normal) ease-out;
-  }
-
-  &[data-state='closed'] {
-    animation: v2ex-collapsible-close var(--v2ex-motion-fast) ease-in;
+  &[data-starting-style],
+  &[data-ending-style] {
+    height: 0;
   }
 }
 
@@ -1171,14 +1175,14 @@
     color: var(--v2ex-muted-fg);
     font-weight: 600;
 
-    &:hover:not(:has(.v2ex-radio-group__item:disabled)):not(
-        :has(.v2ex-radio-group__item[data-state='checked'])
+    &:hover:not(:has(.v2ex-radio-group__item[data-disabled])):not(
+        :has(.v2ex-radio-group__item[data-checked])
       ) {
       color: var(--v2ex-webview-fg);
       background: var(--v2ex-light-button-hover-bg);
     }
 
-    &:has(.v2ex-radio-group__item[data-state='checked']) {
+    &:has(.v2ex-radio-group__item[data-checked]) {
       border-color: var(--v2ex-hc-border, var(--v2ex-control-border));
       color: var(--v2ex-webview-fg);
       /* 优先用输入/页面背景抬起选中项，避免与轨道同色时选中态消失 */
@@ -1192,7 +1196,7 @@
       outline-offset: -1px;
     }
 
-    &:has(.v2ex-radio-group__item:disabled) {
+    &:has(.v2ex-radio-group__item[data-disabled]) {
       color: var(--v2ex-disabled-fg);
       cursor: not-allowed;
     }
@@ -1224,6 +1228,10 @@
   }
 }
 
+.v2ex-floating-positioner {
+  z-index: 1110;
+}
+
 .v2ex-tooltip,
 .v2ex-popover,
 .v2ex-menu {
@@ -1244,18 +1252,32 @@
   overflow-wrap: anywhere;
 }
 
-.v2ex-tooltip__arrow {
-  transform: translateY(-1px);
-}
-
 .v2ex-popover {
   max-width: min(360px, calc(100vw - 16px));
   padding: 10px;
   border-radius: var(--v2ex-radius-md);
 }
 
+.v2ex-tooltip__arrow,
 .v2ex-popover__arrow {
-  transform: translateY(-1px);
+  width: 18px;
+  height: 6px;
+
+  &[data-side='top'] {
+    bottom: -5px;
+  }
+  &[data-side='bottom'] {
+    top: -5px;
+    transform: rotate(180deg);
+  }
+  &[data-side='left'] {
+    right: -11px;
+    transform: rotate(-90deg);
+  }
+  &[data-side='right'] {
+    left: -11px;
+    transform: rotate(90deg);
+  }
 }
 
 .v2ex-date-picker {
@@ -1734,11 +1756,14 @@
   list-style: none;
 }
 
-.v2ex-toast {
+.v2ex-toast__content {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
+}
+
+.v2ex-toast {
   padding: 10px;
   border: 1px solid var(--v2ex-info-border);
   border-radius: var(--v2ex-radius-md);
@@ -1746,25 +1771,24 @@
   background: var(--v2ex-overlay-bg);
   box-shadow: var(--v2ex-shadow-elevated);
 
-  &[data-state='open'] {
-    animation: v2ex-toast-in var(--v2ex-motion-normal) ease-out;
+  transform: translateX(var(--toast-swipe-movement-x, 0px));
+  transition: transform var(--v2ex-motion-normal) ease-out;
+
+  &[data-starting-style] {
+    opacity: 0;
+    transform: translateX(16px);
   }
 
-  &[data-state='closed'] {
+  &[data-ending-style] {
     animation: v2ex-toast-out var(--v2ex-motion-normal) ease-in;
   }
 
-  &[data-swipe='move'] {
-    transform: translateX(var(--radix-toast-swipe-move-x));
+  &[data-ending-style][data-swipe-direction='right'] {
+    animation-name: v2ex-toast-swipe-out;
   }
 
-  &[data-swipe='cancel'] {
-    transform: translateX(0);
-    transition: transform var(--v2ex-motion-normal) ease-out;
-  }
-
-  &[data-swipe='end'] {
-    animation: v2ex-toast-swipe-out var(--v2ex-motion-normal) ease-out;
+  &[data-swiping] {
+    transition: none;
   }
 }
 
@@ -1802,6 +1826,8 @@
 
 .v2ex-toast__message {
   min-width: 0;
+  margin: 0;
+  font: inherit;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
@@ -2100,13 +2126,6 @@
   }
 }
 
-@keyframes v2ex-toast-in {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-}
-
 @keyframes v2ex-toast-out {
   to {
     opacity: 0;
@@ -2116,27 +2135,7 @@
 
 @keyframes v2ex-toast-swipe-out {
   to {
-    transform: translateX(calc(var(--radix-toast-swipe-end-x) + 16px));
-  }
-}
-
-@keyframes v2ex-collapsible-open {
-  from {
-    height: 0;
-  }
-
-  to {
-    height: var(--radix-collapsible-content-height);
-  }
-}
-
-@keyframes v2ex-collapsible-close {
-  from {
-    height: var(--radix-collapsible-content-height);
-  }
-
-  to {
-    height: 0;
+    transform: translateX(calc(var(--toast-swipe-movement-x) + 16px));
   }
 }
 
@@ -2161,7 +2160,10 @@
     animation: none;
   }
 
-  .v2ex-image-preview__image {
+  .v2ex-image-preview__image,
+  .v2ex-collapsible__content,
+  .v2ex-toast,
+  .v2ex-progress__indicator {
     transition: none;
   }
 }

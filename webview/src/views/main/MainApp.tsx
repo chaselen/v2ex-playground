@@ -277,10 +277,10 @@ export default function MainApp() {
           <TabsTrigger value="collection">{tabLabels.collection}</TabsTrigger>
           <TabsTrigger value="my">{tabLabels.my}</TabsTrigger>
         </TabsList>
-        <TabsContent value="explore" forceMount>
+        <TabsContent value="explore" keepMounted>
           <NodeTreeTab tab="explore" nodes={nodeTreeTabs.tabs.explore} {...nodeTreeTabProps} />
         </TabsContent>
-        <TabsContent value="custom" forceMount>
+        <TabsContent value="custom" keepMounted>
           <NodeTreeTab
             tab="custom"
             nodes={nodeTreeTabs.tabs.custom}
@@ -289,7 +289,7 @@ export default function MainApp() {
             {...nodeTreeTabProps}
           />
         </TabsContent>
-        <TabsContent value="collection" forceMount>
+        <TabsContent value="collection" keepMounted>
           <NodeTreeTab
             tab="collection"
             nodes={nodeTreeTabs.tabs.collection}
@@ -302,7 +302,7 @@ export default function MainApp() {
             {...nodeTreeTabProps}
           />
         </TabsContent>
-        <TabsContent value="my" forceMount>
+        <TabsContent value="my" keepMounted>
           <MyTab
             ref={myTabRef}
             loading={myOverviewLoading}

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { Dialog as DialogPrimitive } from 'radix-ui'
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
 import type { ReactNode } from 'react'
 import { Button } from './Button'
 import { mergeClassNames } from './utils'
@@ -23,7 +23,7 @@ export interface DialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** 基于 Radix Dialog、使用 VS Code Widget 颜色的模态框 */
+/** 基于 Base UI Dialog、使用 VS Code Widget 颜色的模态框 */
 export function Dialog({
   children,
   className,
@@ -35,24 +35,32 @@ export function Dialog({
   title
 }: DialogProps) {
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={(nextOpen, details) => {
+        if (!closeOnOverlayClick && details.reason === 'outside-press') {
+          details.cancel()
+          return
+        }
+        onOpenChange(nextOpen)
+      }}
+    >
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="v2ex-dialog__overlay" />
-        <DialogPrimitive.Content
-          className={mergeClassNames('v2ex-dialog', className)}
-          onPointerDownOutside={closeOnOverlayClick ? undefined : event => event.preventDefault()}
-        >
+        <DialogPrimitive.Backdrop className="v2ex-dialog__overlay" />
+        <DialogPrimitive.Popup className={mergeClassNames('v2ex-dialog', className)}>
           <header className="v2ex-dialog__header">
             <DialogPrimitive.Title className="v2ex-dialog__title">{title}</DialogPrimitive.Title>
-            <DialogPrimitive.Close asChild>
-              <Button
-                className="v2ex-dialog__close"
-                variant="ghost"
-                size="small"
-                icon={<X aria-hidden="true" />}
-                aria-label="关闭"
-              />
-            </DialogPrimitive.Close>
+            <DialogPrimitive.Close
+              render={
+                <Button
+                  className="v2ex-dialog__close"
+                  variant="ghost"
+                  size="small"
+                  icon={<X aria-hidden="true" />}
+                  aria-label="关闭"
+                />
+              }
+            />
           </header>
           {description ? (
             <DialogPrimitive.Description className="v2ex-dialog__description">
@@ -65,7 +73,7 @@ export function Dialog({
           )}
           <div className="v2ex-dialog__body">{children}</div>
           {footer && <footer className="v2ex-dialog__footer">{footer}</footer>}
-        </DialogPrimitive.Content>
+        </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
   )

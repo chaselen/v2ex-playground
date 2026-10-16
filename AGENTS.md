@@ -78,10 +78,11 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 
 ## Webview UI、主题与导航
 
-- 交互使用 Radix Primitives，图标使用 Lucide；优先复用 `components/ui/` 与 Badge、Tag、Alert、Empty 等语义组件。通用控件统一封装无障碍、主题和交互，不在页面复制 Radix 样式
+- 修改 Base UI 组件前，通过[官方文档索引](https://base-ui.com/llms.txt)查阅相关组件与组合规则，并结合项目安装版本的类型定义核对 API
+- 交互使用 Base UI，图标使用 Lucide；优先复用 `components/ui/` 与 Badge、Tag、Alert、Empty 等语义组件。通用控件统一封装无障碍、主题和交互，不在页面复制 Base UI 样式
 - 样式使用 SCSS。主题映射集中于 `styles/_vscode-theme.scss`，业务与共享组件只用 `--v2ex-*`；直接读取 `--vscode-*` 仅限映射文件、主题 mock 和宿主区域向语义变量的重映射
 - `styles/index.scss` 仅加载公共样式和全局规则；富文本复用 `_topic-content.scss`，主侧栏重复模式复用 `views/main/components/_mixins.scss`。跨页面样式优先用不直接生成选择器的 mixin，不把 `.topic-content` 加入全局样式
-- 浮层通过 Radix Portal 挂到 `document.body`，主题与层级集中在 `components/ui/ui.scss`。高对比描边由主题映射处理；组合多个 `asChild` 触发器时保留中间真实 DOM
+- 浮层通过 Base UI Portal 挂到 `document.body`，主题与层级集中在 `components/ui/ui.scss`。高对比描边由主题映射处理；组合多个 `render` 触发器时保留中间真实 DOM
 - 首次无内容加载使用 `PageSkeleton`，与真实容器、层级、间距和断点对齐，保留无障碍与减少动效支持；已有内容上的局部加载使用 Spinner 或组件 loading。话题刷新等既有整块骨架行为按对应页面设计处理
 - 修改公共组件、主题或浮层时运行主题回归页，覆盖亮色、暗色、高对比与高对比亮色；骨架变化还需对照真实内容检查窄侧栏布局及局部加载
 - HTML 内容统一复用共享主题化外层、链接导航与内容增强，不在页面重复路径正则、URL 解码或 RPC 分支
@@ -105,7 +106,7 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 - [话题分享图](docs/topic-share-image.md) — 长图渲染、本地图片缓存、Webview 资源授权和回退规则
 - [主题写操作接口契约](docs/topic-write-contract.md) — 发布、编辑、移动与附言的请求差异、权限与成功判据
 - [Webview RPC 通信](docs/webview-rpc.md) — 消息协议、约定式控制器、事件推送和安全边界
-- [Webview UI 与主题](docs/webview-ui.md) — Radix 原语、Lucide 图标、VS Code 语义变量和组件扩展约束
+- [Webview UI 与主题](docs/webview-ui.md) — Base UI、Lucide 图标、VS Code 语义变量和组件扩展约束
 
 ## 提交
 

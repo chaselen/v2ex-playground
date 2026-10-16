@@ -8,7 +8,7 @@ import {
   ZoomIn,
   ZoomOut
 } from 'lucide-react'
-import { Dialog as DialogPrimitive } from 'radix-ui'
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
 import {
   useEffect,
   useLayoutEffect,
@@ -204,22 +204,24 @@ export function ImagePreview({
       }}
     >
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="v2ex-image-preview__overlay" />
-        <DialogPrimitive.Content
+        <DialogPrimitive.Backdrop className="v2ex-image-preview__overlay" />
+        <DialogPrimitive.Popup
           className="v2ex-image-preview"
           aria-describedby={undefined}
           onKeyDown={handleKeyDown}
         >
           <DialogPrimitive.Title className="v2ex-visually-hidden">图片预览</DialogPrimitive.Title>
 
-          <DialogPrimitive.Close asChild>
-            <Button
-              className="v2ex-image-preview__close"
-              variant="ghost"
-              icon={<X aria-hidden="true" />}
-              aria-label="关闭图片预览"
-            />
-          </DialogPrimitive.Close>
+          <DialogPrimitive.Close
+            render={
+              <Button
+                className="v2ex-image-preview__close"
+                variant="ghost"
+                icon={<X aria-hidden="true" />}
+                aria-label="关闭图片预览"
+              />
+            }
+          />
 
           {imageCount > 1 && (
             <>
@@ -325,7 +327,7 @@ export function ImagePreview({
               </>
             )}
           </div>
-        </DialogPrimitive.Content>
+        </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
   )

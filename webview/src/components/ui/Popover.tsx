@@ -1,7 +1,7 @@
-import { Popover as PopoverPrimitive } from 'radix-ui'
-import type { ReactElement, ReactNode } from 'react'
-import { FloatingArrow } from './FloatingArrow'
-import { mergeClassNames } from './utils'
+import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
+import { useRef, type ReactElement, type ReactNode } from 'react'
+import { FLOATING_ARROW_HEIGHT, FloatingArrow } from './FloatingArrow'
+import { getTriggerFocusTarget, mergeClassNames } from './utils'
 
 export interface PopoverProps {
   /** 触发元素 */
@@ -24,7 +24,7 @@ export interface PopoverProps {
   onOpenChange?: (open: boolean) => void
 }
 
-/** 基于 Radix Popover、使用 VS Code Widget 颜色的点击浮层 */
+/** 基于 Base UI Popover、使用 VS Code Widget 颜色的点击浮层 */
 export function Popover({
   align = 'center',
   children,
@@ -36,24 +36,34 @@ export function Popover({
   showArrow = false,
   side = 'bottom'
 }: PopoverProps) {
+  const triggerRef = useRef<HTMLElement>(null)
   return (
     <PopoverPrimitive.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
-      <PopoverPrimitive.Trigger asChild>{children}</PopoverPrimitive.Trigger>
+      <PopoverPrimitive.Trigger
+        ref={(element: HTMLElement | null) => {
+          triggerRef.current = element
+        }}
+        render={children}
+        nativeButton={typeof children.type !== 'string' || children.type === 'button'}
+      />
       <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          className={mergeClassNames('v2ex-popover', className)}
+        <PopoverPrimitive.Positioner
+          className="v2ex-floating-positioner"
           side={side}
           align={align}
-          sideOffset={6}
+          sideOffset={6 + (showArrow ? FLOATING_ARROW_HEIGHT : 0)}
           collisionPadding={8}
         >
-          {content}
-          {showArrow && (
-            <PopoverPrimitive.Arrow asChild>
-              <FloatingArrow className="v2ex-popover__arrow" />
-            </PopoverPrimitive.Arrow>
-          )}
-        </PopoverPrimitive.Content>
+          <PopoverPrimitive.Popup
+            className={mergeClassNames('v2ex-popover', className)}
+            finalFocus={() => getTriggerFocusTarget(triggerRef.current)}
+          >
+            {content}
+            {showArrow && (
+              <PopoverPrimitive.Arrow render={<FloatingArrow className="v2ex-popover__arrow" />} />
+            )}
+          </PopoverPrimitive.Popup>
+        </PopoverPrimitive.Positioner>
       </PopoverPrimitive.Portal>
     </PopoverPrimitive.Root>
   )

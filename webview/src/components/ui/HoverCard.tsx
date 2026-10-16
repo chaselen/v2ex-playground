@@ -1,6 +1,6 @@
-import { HoverCard as HoverCardPrimitive } from 'radix-ui'
+import { PreviewCard as HoverCardPrimitive } from '@base-ui/react/preview-card'
 import type { ReactElement, ReactNode } from 'react'
-import { FloatingArrow } from './FloatingArrow'
+import { FLOATING_ARROW_HEIGHT, FloatingArrow } from './FloatingArrow'
 import { mergeClassNames } from './utils'
 
 export interface HoverCardProps {
@@ -26,7 +26,7 @@ export interface HoverCardProps {
   onOpenChange?: (open: boolean) => void
 }
 
-/** 基于 Radix Hover Card 的悬停资料浮层 */
+/** 基于 Base UI Hover Card 的悬停资料浮层 */
 export function HoverCard({
   align = 'start',
   children,
@@ -40,28 +40,25 @@ export function HoverCard({
   side = 'bottom'
 }: HoverCardProps) {
   return (
-    <HoverCardPrimitive.Root
-      open={open}
-      openDelay={openDelay}
-      closeDelay={closeDelay}
-      onOpenChange={onOpenChange}
-    >
-      <HoverCardPrimitive.Trigger asChild>{children}</HoverCardPrimitive.Trigger>
+    <HoverCardPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <HoverCardPrimitive.Trigger render={children} delay={openDelay} closeDelay={closeDelay} />
       <HoverCardPrimitive.Portal>
-        <HoverCardPrimitive.Content
-          className={mergeClassNames('v2ex-popover', className)}
+        <HoverCardPrimitive.Positioner
+          className="v2ex-floating-positioner"
           side={side}
           align={align}
-          sideOffset={6}
+          sideOffset={6 + (showArrow ? FLOATING_ARROW_HEIGHT : 0)}
           collisionPadding={8}
         >
-          {content}
-          {showArrow && (
-            <HoverCardPrimitive.Arrow asChild>
-              <FloatingArrow className="v2ex-popover__arrow" />
-            </HoverCardPrimitive.Arrow>
-          )}
-        </HoverCardPrimitive.Content>
+          <HoverCardPrimitive.Popup className={mergeClassNames('v2ex-popover', className)}>
+            {content}
+            {showArrow && (
+              <HoverCardPrimitive.Arrow
+                render={<FloatingArrow className="v2ex-popover__arrow" />}
+              />
+            )}
+          </HoverCardPrimitive.Popup>
+        </HoverCardPrimitive.Positioner>
       </HoverCardPrimitive.Portal>
     </HoverCardPrimitive.Root>
   )

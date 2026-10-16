@@ -1,20 +1,34 @@
-import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
+import { Radio } from '@base-ui/react/radio'
+import { RadioGroup as RadioGroupPrimitive } from '@base-ui/react/radio-group'
 import type { ComponentProps, ReactNode } from 'react'
 import { Badge, type BadgeVariant } from './Badge'
 import { mergeClassNames } from './utils'
 
-export interface RadioGroupProps extends ComponentProps<typeof RadioGroupPrimitive.Root> {
+export interface RadioGroupProps extends Omit<
+  ComponentProps<typeof RadioGroupPrimitive<string>>,
+  'className'
+> {
+  className?: string
+  /** 单选组排列方向 */
+  orientation?: 'horizontal' | 'vertical'
   /** 单选组视觉样式 */
   variant?: 'default' | 'segmented'
 }
 
-/** 基于 Radix RadioGroup 的单选组 */
-export function RadioGroup({ className, variant = 'default', ...props }: RadioGroupProps) {
+/** 基于 Base UI RadioGroup 的单选组 */
+export function RadioGroup({
+  className,
+  variant = 'default',
+  orientation = 'horizontal',
+  ...props
+}: RadioGroupProps) {
   return (
-    <RadioGroupPrimitive.Root
+    <RadioGroupPrimitive
+      aria-orientation={orientation}
+      data-orientation={orientation}
       className={mergeClassNames(
         'v2ex-radio-group',
-        variant === 'segmented' ? 'v2ex-radio-group--segmented' : undefined,
+        variant === 'segmented' && 'v2ex-radio-group--segmented',
         className
       )}
       {...props}
@@ -23,9 +37,10 @@ export function RadioGroup({ className, variant = 'default', ...props }: RadioGr
 }
 
 export interface RadioGroupItemProps extends Omit<
-  ComponentProps<typeof RadioGroupPrimitive.Item>,
-  'children'
+  ComponentProps<typeof Radio.Root>,
+  'children' | 'className'
 > {
+  className?: string
   /** 显示文案 */
   label: ReactNode
   /** 选项徽标 */
@@ -44,9 +59,9 @@ export function RadioGroupItem({
 }: RadioGroupItemProps) {
   return (
     <label className={mergeClassNames('v2ex-radio-group__label', className)}>
-      <RadioGroupPrimitive.Item className="v2ex-radio-group__item" {...props}>
-        <RadioGroupPrimitive.Indicator className="v2ex-radio-group__indicator" />
-      </RadioGroupPrimitive.Item>
+      <Radio.Root className="v2ex-radio-group__item" {...props}>
+        <Radio.Indicator className="v2ex-radio-group__indicator" />
+      </Radio.Root>
       <span className="v2ex-radio-group__text">{label}</span>
       {badge !== undefined && badge !== null && (
         <Badge count={badge} countClassName="v2ex-radio-group__badge" variant={badgeVariant} />

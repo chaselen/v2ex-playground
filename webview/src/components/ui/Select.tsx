@@ -1,4 +1,4 @@
-import { Select as SelectPrimitive } from 'radix-ui'
+import { Select as SelectPrimitive } from '@base-ui/react/select'
 import { Check, ChevronDown } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { ClearButton } from './ClearButton'
@@ -34,7 +34,7 @@ export interface SelectProps {
   onValueChange?: (value: string) => void
 }
 
-/** 基于 Radix Select 的单选下拉框 */
+/** 基于 Base UI Select 的单选下拉框 */
 export function Select({
   className,
   clearable = false,
@@ -56,7 +56,12 @@ export function Select({
   }
 
   return (
-    <SelectPrimitive.Root value={currentValue} disabled={disabled} onValueChange={changeValue}>
+    <SelectPrimitive.Root
+      value={currentValue || null}
+      items={options}
+      disabled={disabled}
+      onValueChange={nextValue => changeValue(nextValue ?? '')}
+    >
       <span
         className={mergeClassNames(
           'v2ex-clearable-select v2ex-select-container',
@@ -73,28 +78,30 @@ export function Select({
         {canClear && <ClearButton label="清空选择" onClear={() => changeValue('')} />}
       </span>
       <SelectPrimitive.Portal>
-        <SelectPrimitive.Content
-          className="v2ex-select__content"
-          position="popper"
+        <SelectPrimitive.Positioner
+          className="v2ex-floating-positioner"
+          alignItemWithTrigger={false}
           sideOffset={4}
           collisionPadding={8}
         >
-          <SelectPrimitive.Viewport className="v2ex-select__viewport">
-            {options.map(option => (
-              <SelectPrimitive.Item
-                key={option.value}
-                className="v2ex-select__item"
-                value={option.value}
-                disabled={option.disabled}
-              >
-                <SelectPrimitive.ItemIndicator className="v2ex-select__indicator">
-                  <Check aria-hidden="true" />
-                </SelectPrimitive.ItemIndicator>
-                <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
-              </SelectPrimitive.Item>
-            ))}
-          </SelectPrimitive.Viewport>
-        </SelectPrimitive.Content>
+          <SelectPrimitive.Popup className="v2ex-select__content">
+            <SelectPrimitive.List className="v2ex-select__viewport">
+              {options.map(option => (
+                <SelectPrimitive.Item
+                  key={option.value}
+                  className="v2ex-select__item"
+                  value={option.value}
+                  disabled={option.disabled}
+                >
+                  <SelectPrimitive.ItemIndicator className="v2ex-select__indicator">
+                    <Check aria-hidden="true" />
+                  </SelectPrimitive.ItemIndicator>
+                  <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
+                </SelectPrimitive.Item>
+              ))}
+            </SelectPrimitive.List>
+          </SelectPrimitive.Popup>
+        </SelectPrimitive.Positioner>
       </SelectPrimitive.Portal>
     </SelectPrimitive.Root>
   )

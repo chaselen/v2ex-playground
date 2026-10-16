@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
+import { Menu as DropdownMenuPrimitive } from '@base-ui/react/menu'
 import type { ReactElement, ReactNode } from 'react'
 import { mergeClassNames } from './utils'
 
@@ -29,7 +29,7 @@ export interface DropdownMenuProps {
   className?: string
 }
 
-/** 基于 Radix Dropdown Menu、使用 VS Code Menu 颜色的菜单 */
+/** 基于 Base UI Dropdown Menu、使用 VS Code Menu 颜色的菜单 */
 export function DropdownMenu({
   align = 'start',
   children,
@@ -39,32 +39,37 @@ export function DropdownMenu({
 }: DropdownMenuProps) {
   return (
     <DropdownMenuPrimitive.Root>
-      <DropdownMenuPrimitive.Trigger asChild>{children}</DropdownMenuPrimitive.Trigger>
+      <DropdownMenuPrimitive.Trigger
+        render={children}
+        nativeButton={typeof children.type !== 'string' || children.type === 'button'}
+      />
       <DropdownMenuPrimitive.Portal>
-        <DropdownMenuPrimitive.Content
-          className={mergeClassNames('v2ex-menu', className)}
+        <DropdownMenuPrimitive.Positioner
+          className="v2ex-floating-positioner"
           side={side}
           align={align}
           sideOffset={4}
           collisionPadding={8}
         >
-          {items.map(item => (
-            <DropdownMenuPrimitive.Item
-              className={mergeClassNames(
-                'v2ex-menu__item',
-                item.active && 'v2ex-menu__item--active'
-              )}
-              disabled={item.disabled}
-              onSelect={item.onSelect}
-              key={item.key}
-            >
-              <span className="v2ex-menu__indicator" aria-hidden="true">
-                {item.active && <Check />}
-              </span>
-              {item.label}
-            </DropdownMenuPrimitive.Item>
-          ))}
-        </DropdownMenuPrimitive.Content>
+          <DropdownMenuPrimitive.Popup className={mergeClassNames('v2ex-menu', className)}>
+            {items.map(item => (
+              <DropdownMenuPrimitive.Item
+                className={mergeClassNames(
+                  'v2ex-menu__item',
+                  item.active && 'v2ex-menu__item--active'
+                )}
+                disabled={item.disabled}
+                onClick={item.onSelect}
+                key={item.key}
+              >
+                <span className="v2ex-menu__indicator" aria-hidden="true">
+                  {item.active && <Check />}
+                </span>
+                {item.label}
+              </DropdownMenuPrimitive.Item>
+            ))}
+          </DropdownMenuPrimitive.Popup>
+        </DropdownMenuPrimitive.Positioner>
       </DropdownMenuPrimitive.Portal>
     </DropdownMenuPrimitive.Root>
   )

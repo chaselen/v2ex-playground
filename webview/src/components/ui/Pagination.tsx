@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { ScrollArea as ScrollAreaPrimitive } from 'radix-ui'
+import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area'
 import { Button } from './Button'
 import { HoverCard } from './HoverCard'
 import { mergeClassNames } from './utils'
@@ -217,7 +217,7 @@ function CompactPageSelect({ disabled, onPageChange, page, totalPages }: Compact
       showArrow={false}
       className="v2ex-pagination__page-select"
       content={
-        <ScrollAreaPrimitive.Root className="v2ex-pagination__page-select-list" type="hover">
+        <ScrollAreaPrimitive.Root className="v2ex-pagination__page-select-list">
           <ScrollAreaPrimitive.Viewport
             className="v2ex-pagination__page-select-viewport"
             role="listbox"

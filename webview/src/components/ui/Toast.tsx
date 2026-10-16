@@ -1,25 +1,23 @@
 import { AlertTriangle, CheckCircle2, CircleAlert, Info, X } from 'lucide-react'
-import { Toast as ToastPrimitive } from 'radix-ui'
-import { useEffect, useState } from 'react'
+import { Toast as ToastPrimitive } from '@base-ui/react/toast'
+import { useEffect } from 'react'
 import { mergeClassNames } from './utils'
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'danger'
 
 interface ToastItem {
-  id: number
   message: string
   variant: ToastVariant
 }
 
 type ToastListener = (item: ToastItem) => void
 
-let nextToastId = 0
 const toastListeners = new Set<ToastListener>()
 const pendingToasts: ToastItem[] = []
 
 /** 发布一条全局 Toast */
 function publishToast(variant: ToastVariant, message: string) {
-  const item = { id: ++nextToastId, message, variant }
+  const item = { message, variant }
   if (!toastListeners.size) {
     pendingToasts.push(item)
     return
@@ -37,53 +35,51 @@ export const Toast = {
 
 /** 页面级 Toast 宿主；每个 Webview 入口挂载一次 */
 export function ToastViewport() {
-  const [items, setItems] = useState<ToastItem[]>([])
+  return (
+    <ToastPrimitive.Provider timeout={3000} limit={Infinity}>
+      <ToastPrimitive.Portal>
+        <ToastPrimitive.Viewport className="v2ex-toast-viewport">
+          <ToastList />
+        </ToastPrimitive.Viewport>
+      </ToastPrimitive.Portal>
+    </ToastPrimitive.Provider>
+  )
+}
+
+function ToastList() {
+  const { toasts, add } = ToastPrimitive.useToastManager()
 
   useEffect(() => {
     const listener: ToastListener = item => {
-      setItems(current => [...current, item])
+      add({ title: item.message, type: item.variant })
     }
     toastListeners.add(listener)
-    if (pendingToasts.length) {
-      setItems(current => [...current, ...pendingToasts.splice(0)])
-    }
+    pendingToasts.splice(0).forEach(listener)
     return () => {
       toastListeners.delete(listener)
     }
-  }, [])
+  }, [add])
 
-  function removeToast(id: number) {
-    setItems(current => current.filter(item => item.id !== id))
-  }
-
-  return (
-    <ToastPrimitive.Provider duration={3000} swipeDirection="right">
-      {items.map(item => {
-        const Icon = getToastIcon(item.variant)
-        return (
-          <ToastPrimitive.Root
-            className={mergeClassNames('v2ex-toast', `v2ex-toast--${item.variant}`)}
-            open
-            onOpenChange={open => {
-              if (!open) {
-                removeToast(item.id)
-              }
-            }}
-            key={item.id}
-          >
-            <Icon className="v2ex-toast__icon" fill="currentColor" aria-hidden="true" />
-            <ToastPrimitive.Title className="v2ex-toast__message">
-              {item.message}
-            </ToastPrimitive.Title>
-            <ToastPrimitive.Close className="v2ex-toast__close" aria-label="关闭通知">
-              <X aria-hidden="true" />
-            </ToastPrimitive.Close>
-          </ToastPrimitive.Root>
-        )
-      })}
-      <ToastPrimitive.Viewport className="v2ex-toast-viewport" />
-    </ToastPrimitive.Provider>
-  )
+  return toasts.map(item => {
+    const variant = item.type as ToastVariant
+    const Icon = getToastIcon(variant)
+    return (
+      <ToastPrimitive.Root
+        className={mergeClassNames('v2ex-toast', `v2ex-toast--${variant}`)}
+        toast={item}
+        swipeDirection="right"
+        key={item.id}
+      >
+        <ToastPrimitive.Content className="v2ex-toast__content">
+          <Icon className="v2ex-toast__icon" fill="currentColor" aria-hidden="true" />
+          <ToastPrimitive.Title className="v2ex-toast__message" />
+          <ToastPrimitive.Close className="v2ex-toast__close" aria-label="关闭通知">
+            <X aria-hidden="true" />
+          </ToastPrimitive.Close>
+        </ToastPrimitive.Content>
+      </ToastPrimitive.Root>
+    )
+  })
 }
 
 function getToastIcon(variant: ToastVariant) {

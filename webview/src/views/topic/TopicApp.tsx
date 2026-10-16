@@ -216,6 +216,7 @@ export default function TopicApp() {
 
   return (
     <>
+      {/* SimpleBar 的 ref 返回滚动实例，菜单触发器需绑定真实 DOM */}
       <TopicShareContextMenu
         disabled={!topic}
         onCopyLink={() => topic && vscode.copyTopicLink(topic.id)}
@@ -224,7 +225,7 @@ export default function TopicApp() {
         }
         onViewInBrowser={() => topic && vscode.viewTopicInBrowser(topic.id)}
       >
-        {content}
+        <div>{content}</div>
       </TopicShareContextMenu>
       {managementAction && topic && state.canOperate && (
         <TopicManagementDialog

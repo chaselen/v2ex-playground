@@ -1,8 +1,8 @@
-import { Collapsible as CollapsiblePrimitive } from 'radix-ui'
+import { Collapsible as CollapsiblePrimitive } from '@base-ui/react/collapsible'
 import type { ComponentProps } from 'react'
-import { mergeClassNames } from './utils'
+import { withBaseClassName } from './utils'
 
-/** 基于 Radix Collapsible 的折叠容器 */
+/** 基于 Base UI Collapsible 的折叠容器 */
 export function Collapsible(props: ComponentProps<typeof CollapsiblePrimitive.Root>) {
   return <CollapsiblePrimitive.Root {...props} />
 }
@@ -14,7 +14,7 @@ export function CollapsibleTrigger({
 }: ComponentProps<typeof CollapsiblePrimitive.Trigger>) {
   return (
     <CollapsiblePrimitive.Trigger
-      className={mergeClassNames('v2ex-collapsible__trigger', className)}
+      className={withBaseClassName('v2ex-collapsible__trigger', className)}
       {...props}
     />
   )
@@ -24,10 +24,10 @@ export function CollapsibleTrigger({
 export function CollapsibleContent({
   className,
   ...props
-}: ComponentProps<typeof CollapsiblePrimitive.Content>) {
+}: ComponentProps<typeof CollapsiblePrimitive.Panel>) {
   return (
-    <CollapsiblePrimitive.Content
-      className={mergeClassNames('v2ex-collapsible__content', className)}
+    <CollapsiblePrimitive.Panel
+      className={withBaseClassName('v2ex-collapsible__content', className)}
       {...props}
     />
   )

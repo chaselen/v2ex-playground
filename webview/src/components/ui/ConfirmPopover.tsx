@@ -1,9 +1,9 @@
-import { Popover as PopoverPrimitive } from 'radix-ui'
+import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { TriangleAlert } from 'lucide-react'
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { Button } from './Button'
-import { FloatingArrow } from './FloatingArrow'
-import { mergeClassNames } from './utils'
+import { FLOATING_ARROW_HEIGHT, FloatingArrow } from './FloatingArrow'
+import { getTriggerFocusTarget, mergeClassNames } from './utils'
 
 export interface ConfirmPopoverProps {
   /** 触发元素 */
@@ -36,7 +36,7 @@ export interface ConfirmPopoverProps {
   onCancel?: () => void
 }
 
-/** 基于 Radix Popover 的就地确认框 */
+/** 基于 Base UI Popover 的就地确认框 */
 export function ConfirmPopover({
   align = 'center',
   cancelText = '取消',
@@ -53,6 +53,7 @@ export function ConfirmPopover({
   title,
   titleIcon
 }: ConfirmPopoverProps) {
+  const triggerRef = useRef<HTMLElement>(null)
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const resolvedTitleIcon =
@@ -85,57 +86,74 @@ export function ConfirmPopover({
 
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={changeOpen}>
-      <PopoverPrimitive.Trigger asChild disabled={disabled || confirming}>
-        {children}
-      </PopoverPrimitive.Trigger>
+      <PopoverPrimitive.Trigger
+        ref={(element: HTMLElement | null) => {
+          triggerRef.current = element
+        }}
+        render={children}
+        nativeButton={typeof children.type !== 'string' || children.type === 'button'}
+        disabled={disabled || confirming}
+      />
       <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          className={mergeClassNames('v2ex-popover v2ex-confirm-popover', className)}
+        <PopoverPrimitive.Positioner
+          className="v2ex-floating-positioner"
           side={side}
           align={align}
-          sideOffset={6}
+          sideOffset={6 + FLOATING_ARROW_HEIGHT}
           collisionPadding={8}
-          role="alertdialog"
-          aria-busy={confirming}
         >
-          <div className="v2ex-confirm-popover__body">
-            {resolvedTitleIcon && (
-              <span
-                className={mergeClassNames(
-                  'v2ex-confirm-popover__icon',
-                  danger && 'v2ex-confirm-popover__icon--danger'
-                )}
+          <PopoverPrimitive.Popup
+            className={mergeClassNames('v2ex-popover v2ex-confirm-popover', className)}
+            finalFocus={() => getTriggerFocusTarget(triggerRef.current)}
+            role="alertdialog"
+            aria-busy={confirming}
+          >
+            <div className="v2ex-confirm-popover__body">
+              {resolvedTitleIcon && (
+                <span
+                  className={mergeClassNames(
+                    'v2ex-confirm-popover__icon',
+                    danger && 'v2ex-confirm-popover__icon--danger'
+                  )}
+                >
+                  {resolvedTitleIcon}
+                </span>
+              )}
+              <PopoverPrimitive.Title className="v2ex-confirm-popover__title" render={<strong />}>
+                {title}
+              </PopoverPrimitive.Title>
+              {description && (
+                <PopoverPrimitive.Description
+                  className="v2ex-confirm-popover__description"
+                  render={<div />}
+                >
+                  {description}
+                </PopoverPrimitive.Description>
+              )}
+            </div>
+            <div className="v2ex-confirm-popover__actions">
+              <Button
+                size="small"
+                disabled={confirming}
+                onClick={() => {
+                  setOpen(false)
+                  onCancel?.()
+                }}
               >
-                {resolvedTitleIcon}
-              </span>
-            )}
-            <strong className="v2ex-confirm-popover__title">{title}</strong>
-            {description && <div className="v2ex-confirm-popover__description">{description}</div>}
-          </div>
-          <div className="v2ex-confirm-popover__actions">
-            <Button
-              size="small"
-              disabled={confirming}
-              onClick={() => {
-                setOpen(false)
-                onCancel?.()
-              }}
-            >
-              {cancelText}
-            </Button>
-            <Button
-              size="small"
-              variant={danger ? 'danger' : 'primary'}
-              loading={confirming}
-              onClick={() => void confirm()}
-            >
-              {confirmText}
-            </Button>
-          </div>
-          <PopoverPrimitive.Arrow asChild>
-            <FloatingArrow className="v2ex-popover__arrow" />
-          </PopoverPrimitive.Arrow>
-        </PopoverPrimitive.Content>
+                {cancelText}
+              </Button>
+              <Button
+                size="small"
+                variant={danger ? 'danger' : 'primary'}
+                loading={confirming}
+                onClick={() => void confirm()}
+              >
+                {confirmText}
+              </Button>
+            </div>
+            <PopoverPrimitive.Arrow render={<FloatingArrow className="v2ex-popover__arrow" />} />
+          </PopoverPrimitive.Popup>
+        </PopoverPrimitive.Positioner>
       </PopoverPrimitive.Portal>
     </PopoverPrimitive.Root>
   )
