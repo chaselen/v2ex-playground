@@ -9,6 +9,8 @@ export interface OtpInputProps {
   value: string
   /** 是否禁用 */
   disabled?: boolean
+  /** 是否在挂载时聚焦第一个输入框 */
+  autoFocus?: boolean
   /** 是否处于校验错误状态 */
   invalid?: boolean
   /** 附加类名 */
@@ -21,6 +23,7 @@ export interface OtpInputProps {
 
 /** 基于 Base UI One Time Password Field 的数字验证码输入 */
 export function OtpInput({
+  autoFocus = false,
   className,
   disabled = false,
   invalid = false,
@@ -53,6 +56,7 @@ export function OtpInput({
       </span>
       {Array.from({ length }, (_, index) => (
         <OneTimePasswordField.Input
+          autoFocus={autoFocus && index === 0}
           className="v2ex-otp__input"
           inputMode="numeric"
           aria-labelledby={index === 0 ? labelId : undefined}

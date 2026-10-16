@@ -118,6 +118,8 @@ interface ReplyComposerProps {
   maxLength?: number | null
   /** 编辑框默认行数 */
   rows?: number
+  /** 是否在正文输入框挂载时自动聚焦 */
+  autoFocus?: boolean
   /** 编辑框占位文案 */
   placeholder?: string
   /** 预览空状态文案 */
@@ -190,6 +192,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     onChange,
     maxLength = 10000,
     rows = 5,
+    autoFocus = false,
     placeholder = '请尽量让自己的回复能够对别人有帮助',
     previewEmptyText = '暂无预览内容',
     previewAriaLabel = '生成回复预览',
@@ -737,6 +740,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           )}
         >
           <Textarea
+            autoFocus={autoFocus}
             value={value}
             maxLength={maxLength ?? undefined}
             rows={rows}

@@ -94,6 +94,7 @@ export default function TwoFactorApp() {
         )}
 
         <OtpInput
+          autoFocus
           className="two-factor-input"
           length={twoFactorCodeLength}
           disabled={submitting}

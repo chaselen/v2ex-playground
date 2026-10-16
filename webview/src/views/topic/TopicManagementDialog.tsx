@@ -196,6 +196,7 @@ export default function TopicManagementDialog({
             ) : (
               <div className={styles.field}>
                 <ReplyComposer
+                  autoFocus
                   className={styles.composer}
                   showImages
                   value={values.content}
