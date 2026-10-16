@@ -43,6 +43,7 @@ import { FloatingActions, floatingActionStyles } from './FloatingActions'
 import {
   buildReplyTree,
   getReplyChildrenClassName,
+  shouldIndentReplyChildren,
   type ReplyViewMode,
   type TopicReplyNode
 } from './replyTree'
@@ -324,6 +325,15 @@ export default function TopicDetailView({
       reply.content,
       replyViewMode === 'nested' ? parent : undefined
     )
+    // 封顶后将子容器放到布局外，避免头像列继续累加水平缩进
+    const indentChildren = shouldIndentReplyChildren(depth)
+    const children = replyViewMode === 'nested' && reply.children.length > 0 && (
+      <div
+        className={getReplyChildrenClassName(depth, 'reply-children', 'reply-children--max-indent')}
+      >
+        {reply.children.map(child => renderReply(child, depth + 1, reply))}
+      </div>
+    )
     return (
       <div className="reply-item" key={reply.replyId}>
         <div className="reply-layout">
@@ -354,19 +364,10 @@ export default function TopicDetailView({
                 onTopicPreview={onTopicPreview}
               />
             </CollapsibleReplyContent>
+            {indentChildren && children}
           </div>
         </div>
-        {replyViewMode === 'nested' && reply.children.length > 0 && (
-          <div
-            className={getReplyChildrenClassName(
-              depth,
-              'reply-children',
-              'reply-children--max-indent'
-            )}
-          >
-            {reply.children.map(child => renderReply(child, depth + 1, reply))}
-          </div>
-        )}
+        {!indentChildren && children}
       </div>
     )
   }
@@ -631,6 +632,8 @@ export default function TopicDetailView({
           {topic.canViewInfo && canOperate && (
             <Tooltip content="帖子信息">
               <Button
+                className="topic-info-button"
+                compact
                 aria-label="帖子信息"
                 icon={<Info aria-hidden="true" />}
                 size="small"
@@ -639,6 +642,7 @@ export default function TopicDetailView({
               />
             </Tooltip>
           )}
+          {managementActions}
           {!!topic.tags.length && (
             <div className="topic-tags" aria-label="帖子标签">
               {topic.tags.map(tag => (
@@ -679,7 +683,6 @@ export default function TopicDetailView({
 
         {showTopicToolbar && (canOperate || onShare) && (
           <div className="topic-toolbar">
-            {managementActions}
             {renderTopicActionButtons('toolbar')}
             {onShare && (
               <Button

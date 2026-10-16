@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FolderInput, MessageSquarePlus, Pencil } from 'lucide-react'
 import SimpleBar from 'simplebar-react'
 import type SimpleBarCore from 'simplebar-core'
 import { Alert, Button, Toast } from '@/components/ui'
@@ -22,13 +21,6 @@ import type {
 
 /** 话题面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<TopicPanelRpcCommands, TopicPanelWebviewEvents>()
-
-/** 作者管理按钮的操作图标 */
-const topicManagementIcons = {
-  edit: <Pencil aria-hidden="true" />,
-  move: <FolderInput aria-hidden="true" />,
-  append: <MessageSquarePlus aria-hidden="true" />
-}
 
 /**
  * 话题页面应用
@@ -205,7 +197,7 @@ export default function TopicApp() {
               <Button
                 key={action}
                 size="small"
-                icon={topicManagementIcons[action]}
+                variant="secondary"
                 onClick={() => setManagementAction(action)}
               >
                 {topicManagementLabels[action]}

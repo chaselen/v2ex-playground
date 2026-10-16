@@ -1,6 +1,8 @@
 @use '@/styles/page-layout';
 @use '../../styles/topic-content' as topic-content-shared;
 
+$reply-right-inset: 10px;
+
 .topic-shell {
   width: 100%;
   height: 100vh;
@@ -53,6 +55,18 @@
     color: var(--v2ex-muted-fg);
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+.topic-info-button.v2ex-button {
+  flex: none;
+
+  circle {
+    fill: currentColor;
+  }
+
+  path {
+    stroke: var(--v2ex-webview-bg);
   }
 }
 
@@ -141,7 +155,6 @@
   margin: 16px 0 20px;
 }
 
-.topic-divider--reply-start,
 .topic-divider--append-start {
   margin: 20px 0 14px;
 }
@@ -150,8 +163,8 @@
   margin-top: 10px;
 }
 
-.topic-append + .topic-divider--reply-start {
-  margin-top: 16px;
+.topic-divider--reply-start {
+  margin: 28px 0 20px;
 }
 
 .topic-empty-content {
@@ -189,6 +202,7 @@
 .reply h2 {
   margin: 0;
   font-size: 16px;
+  font-weight: 700;
 }
 
 .reply-heading {
@@ -322,7 +336,7 @@
 }
 
 .reply > .reply-item {
-  padding-right: 10px;
+  padding-right: $reply-right-inset;
 }
 
 .reply-heading + .reply-item,
@@ -401,32 +415,40 @@
 }
 
 .reply-children {
-  --v2ex-reply-parent-surface: var(--v2ex-reply-surface, var(--v2ex-webview-bg));
-  margin: 12px -10px 0 18px;
+  margin: 8px 0 0;
 
   > .reply-item {
-    --v2ex-reply-surface: color-mix(
-      in srgb,
-      var(--v2ex-widget-bg) 48%,
-      var(--v2ex-reply-parent-surface)
-    );
-    padding: 12px 10px;
+    --v2ex-reply-surface: color-mix(in srgb, var(--v2ex-widget-bg) 48%, var(--v2ex-webview-bg));
+    // 仅左侧增加层级间距，避免右侧内边距累加导致楼层号逐层左移
+    padding: 8px 0 8px 18px;
     border-bottom: 0;
     border-left: 1px solid var(--v2ex-border);
     background: var(--v2ex-reply-surface);
   }
 }
 
-// 达到视觉缩进上限后仍展开子回复，但不再累加缩进、左边框与浅底
-.reply-children.reply-children--max-indent {
-  margin: 12px 0 0;
+// 第一层背景延伸至顶层分隔线右端，内容仍保留与根回复一致的右侧留白
+.reply > .reply-item > .reply-layout > .reply-body > .reply-children {
+  margin-right: -$reply-right-inset;
 
   > .reply-item {
-    padding: 12px 0;
+    padding-right: $reply-right-inset;
+  }
+}
+
+.reply-children .reply-children {
+  > .reply-item {
+    background: transparent;
+  }
+}
+
+// 达到视觉缩进上限后仍展开子回复，但不再累加缩进、左边框与浅底
+.reply-children.reply-children--max-indent {
+  > .reply-item {
+    padding: 8px 0;
     border-left: 0;
     border-bottom: 1px solid var(--v2ex-border);
     background: transparent;
-    // 不改写表面色，遮罩沿用上一层缩进行
 
     &:last-child {
       border-bottom: 0;
@@ -533,12 +555,7 @@
     flex-wrap: wrap;
   }
 
-  .toolbar-count,
-  .reply-actions {
+  .toolbar-count {
     margin-left: 0;
-  }
-
-  .reply-children {
-    margin-left: 10px;
   }
 }

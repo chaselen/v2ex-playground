@@ -177,28 +177,40 @@
 }
 
 .cardReplyChildren {
-  --v2ex-reply-parent-surface: var(--v2ex-reply-surface, var(--v2ex-webview-bg));
-  margin: 12px -10px 0 18px;
+  margin: 8px 0 0;
 
   > .cardReply {
-    --v2ex-reply-surface: color-mix(
-      in srgb,
-      var(--v2ex-widget-bg) 48%,
-      var(--v2ex-reply-parent-surface)
-    );
-    padding: 12px 10px;
+    --v2ex-reply-surface: color-mix(in srgb, var(--v2ex-widget-bg) 48%, var(--v2ex-webview-bg));
+    padding: 8px 0 8px 18px;
     border-bottom: 0;
     border-left: 1px solid var(--v2ex-border);
     background: var(--v2ex-reply-surface);
   }
 }
 
+.cardReplies > .cardReply {
+  padding-right: 10px;
+}
+
+// 背景延伸到分隔线右端，内侧留白仅保留一份，避免楼层号逐层左移
+.cardReplies > .cardReply > .cardReplyChildren {
+  margin-right: -10px;
+}
+
+.cardReplies > .cardReply > .cardReplyChildren > .cardReply {
+  padding-right: 10px;
+}
+
+.cardReplyChildren .cardReplyChildren {
+  > .cardReply {
+    background: transparent;
+  }
+}
+
 // 达到视觉缩进上限后仍展开子回复，但不再累加缩进、左边框与浅底
 .cardReplyChildren.cardReplyChildrenMaxIndent {
-  margin: 12px 0 0;
-
   > .cardReply {
-    padding: 12px 0;
+    padding: 8px 0;
     border-left: 0;
     border-bottom: 1px solid var(--v2ex-border);
     background: transparent;
