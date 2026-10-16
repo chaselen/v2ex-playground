@@ -48,7 +48,9 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 - 除非需求明确要求，不改 activation events、命令 ID 或配置项 key
 - 扩展侧 TypeScript 改动运行对应类型检查与构建；Webview 源码改动同理。共享 RPC、HTML 加载链路、构建配置或跨侧改动运行 `npm run check` 和 `npm run build`
 - 按需选择测试范围，优先只运行本次改动可能影响的模块及其直接依赖方的相关测试；不因涉及共享代码、RPC 或跨侧改动就默认运行全量测试
-- 影响范围不明时，先检查调用链和现有测试，再确定验证范围；仅在影响确实广泛、定向测试发现跨模块问题或用户明确要求时扩大测试范围。相关验证通过后，不无故重复或扩大测试
+- 影响范围不明时，先检查调用链和现有测试，再确定验证范围；仅在影响确实广泛、定向测试发现跨模块问题或用户明确要求时扩大测试范围
+- 验证按本次改动的实际影响选择，不为每次页面改动默认打开 `webview/theme.html` 或运行 `npm run preview:theme`。主题回归页的运行条件见「Webview UI、主题与导航」
+- 同一任务中已经通过、且后续修改不影响其覆盖范围或结论的类型检查、测试、构建和手动验证不再重复执行
 - live 测试仅在改动依赖真实页面、外部接口或格式契约时按相关领域运行，不为普通 UI 或 RPC 接线改动运行全量 live 测试。发布或打包前仍运行 `npm test`、`npm run check`、`npm run build`
 - 测试覆盖复杂业务规则、重要边界、回归问题与公开契约，不为简单透传、日志文案或框架行为机械补测试
 - `src/v2ex/`、Cookie、两步验证及解析改动至少运行对应领域测试；依赖真实页面或外部格式时还需运行相关 live 测试并确保网络可达
@@ -84,7 +86,7 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 - `styles/index.scss` 仅加载公共样式和全局规则；富文本复用 `_topic-content.scss`，主侧栏重复模式复用 `views/main/components/_mixins.scss`。跨页面样式优先用不直接生成选择器的 mixin，不把 `.topic-content` 加入全局样式
 - 浮层通过 Base UI Portal 挂到 `document.body`，主题与层级集中在 `components/ui/ui.scss`。高对比描边由主题映射处理；组合多个 `render` 触发器时保留中间真实 DOM
 - 首次无内容加载使用 `PageSkeleton`，与真实容器、层级、间距和断点对齐，保留无障碍与减少动效支持；已有内容上的局部加载使用 Spinner 或组件 loading。话题刷新等既有整块骨架行为按对应页面设计处理
-- 修改公共组件、主题或浮层时运行主题回归页，覆盖亮色、暗色、高对比与高对比亮色；骨架变化还需对照真实内容检查窄侧栏布局及局部加载
+- 主题回归页仅在本次改动共享组件实现、主题映射、浮层或 `webview/theme.html` 时运行，覆盖亮色、暗色、高对比与高对比亮色。只改业务页面且未改这些实现时不打开该页。骨架变化还需对照真实内容检查窄侧栏布局及局部加载
 - HTML 内容统一复用共享主题化外层、链接导航与内容增强，不在页面重复路径正则、URL 解码或 RPC 分支
 - 业务按钮链接通过 `resolveWebviewUrl()` 解析；HTML 链接交给 `handleWebviewLinkClick()` / `core/linkNavigation.ts`；扩展侧统一使用 `src/features/openExternal.ts`
 - HTML 标准化、图片预览与隐藏图片占位由 `core/contentEnhancement.ts` 处理。修改共享导航或增强时验证话题、用户、节点、外部链接与图片，一次点击只触发一种打开行为
