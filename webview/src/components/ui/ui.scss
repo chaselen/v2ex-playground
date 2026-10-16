@@ -157,6 +157,10 @@
   padding: 6px 12px;
 }
 
+.v2ex-button--compact {
+  padding-inline: 3px;
+}
+
 .v2ex-button--large .v2ex-button__icon,
 .v2ex-button--large .v2ex-button__spinner,
 .v2ex-button--large .v2ex-button__icon > svg {

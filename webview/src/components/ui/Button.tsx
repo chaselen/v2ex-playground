@@ -10,6 +10,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
   /** 按钮尺寸 */
   size?: ButtonSize
+  /** 缩小横向内边距，适合紧凑工具栏或纯图标按钮 */
+  compact?: boolean
   /** 异步操作进行中 */
   loading?: boolean
   /** 按钮前置图标 */
@@ -21,6 +23,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   {
     children,
     className,
+    compact = false,
     disabled,
     icon,
     loading = false,
@@ -40,6 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         'v2ex-button',
         `v2ex-button--${variant}`,
         `v2ex-button--${size}`,
+        compact && 'v2ex-button--compact',
         className
       )}
       disabled={disabled || loading}

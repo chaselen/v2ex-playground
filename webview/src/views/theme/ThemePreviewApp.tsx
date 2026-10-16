@@ -102,6 +102,13 @@ export default function ThemePreviewApp() {
             <Button>Secondary</Button>
             <Button variant="subtle">Subtle</Button>
             <Button variant="ghost">Ghost</Button>
+            <Button
+              compact
+              size="small"
+              variant="ghost"
+              aria-label="紧凑搜索"
+              icon={<Search aria-hidden="true" />}
+            />
             <Button variant="danger">Danger</Button>
           </div>
           <div className="theme-preview-row">
