@@ -1,3 +1,5 @@
+@use './focus';
+
 @mixin base() {
   line-height: 1.55;
   word-break: break-word;
@@ -110,7 +112,7 @@
       background: var(--v2ex-default-hover-bg);
     }
 
-    &:focus-visible {
+    @include focus.keyboard-focus {
       outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 2px;
     }
@@ -327,14 +329,14 @@
       background: var(--v2ex-link-soft-hover-bg);
     }
 
-    &:focus-visible {
+    @include focus.keyboard-focus {
       outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 2px;
     }
   }
 
   .hidden-image-button {
-    &:focus-visible {
+    @include focus.keyboard-focus {
       outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 2px;
     }

@@ -1,3 +1,5 @@
+@use './focus';
+
 /** 主题列表标题 */
 @mixin title {
   color: var(--v2ex-link-fg);
@@ -10,7 +12,7 @@
     text-decoration: underline;
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 1px;
   }
@@ -37,7 +39,7 @@
     text-decoration: underline;
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 1px;
   }

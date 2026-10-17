@@ -13,8 +13,10 @@
 - Chromium 原生日期输入的弹出日历无法跟随宿主主题，日期选择使用共享 DatePicker
 - Base UI 浮层使用 Portal，统一消费语义变量；Dialog 内触发的浮层必须高于 Dialog 内容，否则选项会被遮挡，点击落入下层控件
 - 浮层触发器的 `render` 元素须将 ref 转发到真实 DOM；ScrollArea 的 `viewportRef` 指向内部滚动容器，作为触发区域时需要真实 DOM 包裹层
-- Tooltip、Popover、ConfirmPopover 组合时保留中间真实 DOM，避免多个 `render` 触发器竞争同一节点
+- Popover / ConfirmPopover 的按钮提示通过可选 `tooltip` 和 `tooltipProps` 提供；内部通过 Base UI 的 `render` 组合触发器，共享真实按钮、ref 和无障碍描述关联。点击浮层打开或提示缺省时禁用提示，动态增删提示保持触发器结构不变，不在页面添加额外的可聚焦包裹层
 - ScrollArea 和 Tabs 内容区可能被键盘聚焦，整页容器不画焦点外框；按钮、链接等交互控件保留焦点描边
+- 按钮类控件的焦点描边同时参考最近一次输入方式，避免键盘打开浮层、鼠标关闭后残留 `:focus-visible`。鼠标操作不移除实际焦点，Esc 关闭浮层沿用此前的输入方式，切回键盘导航后恢复提示；文本输入控件仍保留鼠标聚焦提示。重复的输入方式判断集中在 `styles/_focus.scss`，通过共享 mixin 消费
+- 非模态浮层通过 Tab 移出或点击外部关闭时保留新的焦点；日期选择、确认或 Esc 关闭时恢复触发按钮。鼠标选择也恢复实际焦点，是否显示描边由输入方式决定。立即关闭的异步确认在请求期间让共享 Button 保留焦点和 Tab 停靠，通过 `aria-disabled` 阻止重复激活；请求结束不再次抢回焦点。等待回调的确认按钮在请求期间保持可聚焦但不可重复激活；Tab 移出、点击外部或 Esc 可收起浮层，请求继续执行，完成后保留用户的新焦点
 - 动画遵循 `prefers-reduced-motion`，收起内容使用 `inert` 与无障碍隐藏，避免键盘进入被裁切的链接
 
 ## HTML 内容中的用户浮层

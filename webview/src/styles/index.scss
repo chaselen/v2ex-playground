@@ -1,5 +1,6 @@
 @use './vscode-theme';
 @use '../components/ui/ui';
+@use './focus';
 
 *,
 *::before,
@@ -33,6 +34,13 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+// 原生按钮也可能继承浏览器恢复焦点后的默认描边；键盘提示由各控件保留
+button {
+  @include focus.pointer-focus {
+    outline: none;
+  }
 }
 
 a {

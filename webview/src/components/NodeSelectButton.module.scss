@@ -1,3 +1,5 @@
+@use '../styles/focus';
+
 .wrapper {
   align-self: flex-start;
   min-width: 180px;
@@ -14,13 +16,25 @@
   }
 
   &:hover:not(:disabled),
+  :where(.wrapper:hover) > &:not(:disabled),
   &:active:not(:disabled) {
     color: var(--v2ex-input-fg);
     background: var(--v2ex-input-bg);
-    border-color: var(--v2ex-focus-border);
+    border-color: var(--v2ex-input-hover-border);
   }
 
-  &:focus-visible {
+  &:disabled {
+    .name,
+    .chevron {
+      color: inherit;
+    }
+
+    .avatar {
+      opacity: 0.45;
+    }
+  }
+
+  @include focus.keyboard-focus($enabled-only: true) {
     border-color: var(--v2ex-focus-border);
   }
 

@@ -1,4 +1,5 @@
 @use '../components/mixins';
+@use '../../../styles/focus';
 
 $node-child-indent: 18px;
 
@@ -149,7 +150,7 @@ $node-child-indent: 18px;
   text-align: left;
   cursor: pointer;
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
   }

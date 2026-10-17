@@ -399,22 +399,19 @@ export default function TopicDetailView({
           </Tooltip>
         ) : (
           <ConfirmPopover
+            tooltip="感谢回复者"
             title={`确认花费 10 个铜币向 @${reply.userName} 的这条回复发送感谢？`}
             cancelText="取消"
             onConfirm={() => thankReply(reply.replyId)}
           >
-            <span className="reply-action-popconfirm-trigger">
-              <Tooltip content="感谢回复者">
-                <Button
-                  aria-label="感谢回复者"
-                  className="reply-action-button"
-                  icon={<Heart aria-hidden="true" />}
-                  loading={pendingThankReplyIds.includes(reply.replyId)}
-                  size="small"
-                  variant="ghost"
-                />
-              </Tooltip>
-            </span>
+            <Button
+              aria-label="感谢回复者"
+              className="reply-action-button"
+              icon={<Heart aria-hidden="true" />}
+              loading={pendingThankReplyIds.includes(reply.replyId)}
+              size="small"
+              variant="ghost"
+            />
           </ConfirmPopover>
         )}
         {showReplyComposer && (
@@ -451,6 +448,27 @@ export default function TopicDetailView({
       >
         {isFloating ? null : '刷新页面'}
       </Button>
+    )
+
+    const thankAction = (
+      <ConfirmPopover
+        tooltip={isFloating ? '感谢主题创建者' : undefined}
+        tooltipProps={{ className: floatingTooltipClass, side: 'left' }}
+        title="你确定要向本主题创建者发送谢意？"
+        cancelText="取消"
+        onConfirm={() => requestTopicAction(thankTopic, setThankingTopic)}
+      >
+        <Button
+          aria-label="感谢主题创建者"
+          className={isFloating ? floatingButtonClass : undefined}
+          icon={<Heart aria-hidden="true" />}
+          loading={thankingTopic}
+          size={buttonSize}
+          variant={isFloating ? 'ghost' : 'subtle'}
+        >
+          {isFloating ? null : '感谢'}
+        </Button>
+      </ConfirmPopover>
     )
 
     return (
@@ -527,54 +545,21 @@ export default function TopicDetailView({
                   )
                 }
               >
-                <span>
-                  <Button
-                    aria-label={topic.isIgnored ? '取消忽略' : '忽略主题'}
-                    icon={
-                      topic.isIgnored ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />
-                    }
-                    loading={updatingIgnore}
-                    size={buttonSize}
-                    variant="subtle"
-                  >
-                    {topic.isIgnored ? '取消忽略' : '忽略主题'}
-                  </Button>
-                </span>
+                <Button
+                  aria-label={topic.isIgnored ? '取消忽略' : '忽略主题'}
+                  icon={
+                    topic.isIgnored ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />
+                  }
+                  loading={updatingIgnore}
+                  size={buttonSize}
+                  variant="subtle"
+                >
+                  {topic.isIgnored ? '取消忽略' : '忽略主题'}
+                </Button>
               </ConfirmPopover>
             )}
 
-            {topic.canThank && !topic.isThanked && (
-              <ConfirmPopover
-                title="你确定要向本主题创建者发送谢意？"
-                cancelText="取消"
-                onConfirm={() => requestTopicAction(thankTopic, setThankingTopic)}
-              >
-                <span className={isFloating ? floatingActionStyles.popconfirmTrigger : undefined}>
-                  {isFloating ? (
-                    <Tooltip className={floatingTooltipClass} content="感谢主题创建者" side="left">
-                      <Button
-                        aria-label="感谢主题创建者"
-                        className={floatingButtonClass}
-                        icon={<Heart aria-hidden="true" />}
-                        loading={thankingTopic}
-                        size={buttonSize}
-                        variant="ghost"
-                      />
-                    </Tooltip>
-                  ) : (
-                    <Button
-                      aria-label="感谢主题创建者"
-                      icon={<Heart aria-hidden="true" />}
-                      loading={thankingTopic}
-                      size={buttonSize}
-                      variant="subtle"
-                    >
-                      感谢
-                    </Button>
-                  )}
-                </span>
-              </ConfirmPopover>
-            )}
+            {topic.canThank && !topic.isThanked && thankAction}
 
             {topic.canThank &&
               topic.isThanked &&

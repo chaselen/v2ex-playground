@@ -269,15 +269,13 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
               }
             }}
           >
-            <span>
-              <Button
-                variant="ghost"
-                size="small"
-                icon={<Trash2 aria-hidden="true" />}
-                title="删除"
-                aria-label="删除"
-              />
-            </span>
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<Trash2 aria-hidden="true" />}
+              title="删除"
+              aria-label="删除"
+            />
           </ConfirmPopover>
         )}
         {!data.loading && tab === 'collection' && (
@@ -288,15 +286,13 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
             danger
             onConfirm={() => (data.itemKey ? onCancelCollectNode?.(data.itemKey) : undefined)}
           >
-            <span>
-              <Button
-                variant="ghost"
-                size="small"
-                icon={<Trash2 aria-hidden="true" />}
-                title="取消收藏"
-                aria-label="取消收藏"
-              />
-            </span>
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<Trash2 aria-hidden="true" />}
+              title="取消收藏"
+              aria-label="取消收藏"
+            />
           </ConfirmPopover>
         )}
         <Button

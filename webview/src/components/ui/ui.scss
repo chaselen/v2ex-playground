@@ -1,5 +1,6 @@
 @use 'sass:map';
 @use './control-size';
+@use '../../styles/focus';
 
 /*
  * Webview 基础组件
@@ -24,12 +25,12 @@
   text-align: center;
   user-select: none;
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-default-fg);
     background: var(--v2ex-default-hover-bg);
   }
 
-  &:active:not(:disabled) {
+  &:active:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-default-fg);
     background: var(--v2ex-default-active-bg);
   }
@@ -38,17 +39,17 @@
     outline: none;
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 2px;
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     border-color: var(--v2ex-disabled-border);
     color: var(--v2ex-disabled-fg);
     background: var(--v2ex-disabled-bg);
     cursor: not-allowed;
-    opacity: 0.72;
   }
 }
 
@@ -56,16 +57,17 @@
   color: var(--v2ex-primary-button-fg);
   background: var(--v2ex-primary-button-bg);
 
-  &:hover:not(:disabled),
-  &:active:not(:disabled) {
+  &:hover:not(:disabled, [aria-disabled='true']),
+  &:active:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-primary-button-fg);
     background: var(--v2ex-primary-button-hover-bg);
   }
 
-  &:disabled {
-    border-color: var(--v2ex-hc-border, transparent);
-    color: var(--v2ex-primary-button-fg);
-    background: var(--v2ex-primary-button-bg);
+  &:disabled,
+  &[aria-disabled='true'] {
+    border-color: var(--v2ex-disabled-border);
+    color: var(--v2ex-disabled-fg);
+    background: var(--v2ex-disabled-bg);
   }
 }
 
@@ -74,17 +76,18 @@
   color: var(--v2ex-default-fg);
   background: var(--v2ex-default-bg);
 
-  &:hover:not(:disabled),
-  &:active:not(:disabled) {
+  &:hover:not(:disabled, [aria-disabled='true']),
+  &:active:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-default-fg);
     background: var(--v2ex-default-hover-bg);
   }
 
-  &:active:not(:disabled) {
+  &:active:not(:disabled, [aria-disabled='true']) {
     background: var(--v2ex-default-active-bg);
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     border-color: var(--v2ex-disabled-border);
     color: var(--v2ex-disabled-fg);
     background: var(--v2ex-disabled-bg);
@@ -96,17 +99,18 @@
   color: var(--v2ex-webview-fg);
   background: var(--v2ex-light-button-bg);
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-hover-fg);
     background: var(--v2ex-light-button-hover-bg);
   }
 
-  &:active:not(:disabled) {
+  &:active:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-webview-fg);
     background: var(--v2ex-light-button-active-bg);
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     background: var(--v2ex-light-button-bg);
   }
 }
@@ -116,18 +120,19 @@
   color: var(--v2ex-webview-fg);
   background: transparent;
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-hover-fg);
     background: var(--v2ex-toolbar-hover-bg);
   }
 
   /* 按下用中性加深表面，避免 active-bg 选中蓝 + 页面深色字的对比问题 */
-  &:active:not(:disabled) {
+  &:active:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-webview-fg);
     background: var(--v2ex-light-button-active-bg);
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     border-color: transparent;
     background: transparent;
   }
@@ -138,15 +143,16 @@
   color: var(--v2ex-danger-fg);
   background: var(--v2ex-danger-bg);
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled, [aria-disabled='true']) {
     color: var(--v2ex-danger-fg);
     background: color-mix(in srgb, var(--v2ex-danger-bg) 84%, var(--v2ex-danger-fg));
   }
 
-  &:disabled {
-    border-color: var(--v2ex-hc-border, var(--v2ex-danger-border));
-    color: var(--v2ex-danger-fg);
-    background: var(--v2ex-danger-bg);
+  &:disabled,
+  &[aria-disabled='true'] {
+    border-color: var(--v2ex-disabled-border);
+    color: var(--v2ex-disabled-fg);
+    background: var(--v2ex-disabled-bg);
   }
 }
 
@@ -444,10 +450,10 @@
   line-height: control-size.$line-height;
 
   &:hover:not(.v2ex-input--disabled) {
-    border-color: var(--v2ex-focus-border);
+    border-color: var(--v2ex-input-hover-border);
   }
 
-  &:focus-within {
+  &:focus-within:not(.v2ex-input--disabled) {
     border-color: var(--v2ex-focus-border);
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
@@ -459,6 +465,10 @@
   color: var(--v2ex-disabled-fg);
   background: var(--v2ex-disabled-bg);
   cursor: not-allowed;
+
+  .v2ex-input__prefix {
+    color: inherit;
+  }
 }
 
 .v2ex-input__prefix {
@@ -488,6 +498,10 @@
 
   &:disabled {
     cursor: not-allowed;
+
+    &::placeholder {
+      color: var(--v2ex-disabled-fg);
+    }
   }
 }
 
@@ -510,7 +524,7 @@
     background: var(--v2ex-hover-bg);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 1px;
   }
@@ -612,7 +626,7 @@
       background: var(--v2ex-toolbar-hover-bg);
     }
 
-    &:focus-visible {
+    @include focus.keyboard-focus {
       outline: 1px solid var(--v2ex-focus-border);
       outline-offset: 1px;
     }
@@ -657,8 +671,7 @@
   cursor: pointer;
   user-select: none;
 
-  &:hover,
-  &:focus-visible {
+  @include focus.keyboard-focus($also: '&:hover') {
     color: var(--v2ex-menu-selection-fg);
     background: var(--v2ex-menu-selection-bg);
   }
@@ -668,8 +681,7 @@
     background: var(--v2ex-active-bg);
     font-weight: 600;
 
-    &:hover,
-    &:focus-visible {
+    @include focus.keyboard-focus($also: '&:hover') {
       color: var(--v2ex-active-fg);
       background: var(--v2ex-active-bg);
     }
@@ -706,7 +718,18 @@
     appearance: none;
   }
 
-  &:focus-visible {
+  &:hover:not(:disabled) {
+    border-color: var(--v2ex-input-hover-border);
+  }
+
+  &:disabled {
+    border-color: var(--v2ex-disabled-border);
+    color: var(--v2ex-disabled-fg);
+    background: var(--v2ex-disabled-bg);
+    cursor: not-allowed;
+  }
+
+  &:focus-visible:not(:disabled) {
     border-color: var(--v2ex-focus-border);
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
@@ -741,13 +764,13 @@
   text-align: center;
 
   &:hover:not(:disabled) {
-    border-color: var(--v2ex-focus-border);
+    border-color: var(--v2ex-input-hover-border);
   }
 
-  &:focus-visible {
+  &:focus-visible:not(:disabled) {
     border-color: var(--v2ex-focus-border);
-    outline: none;
-    box-shadow: 0 0 0 1px var(--v2ex-focus-border);
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
   }
 
   &:disabled {
@@ -758,7 +781,7 @@
   }
 }
 
-.v2ex-otp--invalid .v2ex-otp__input {
+.v2ex-otp--invalid .v2ex-otp__input:not(:disabled) {
   border-color: var(--v2ex-danger-border);
 }
 
@@ -777,29 +800,35 @@
   resize: vertical;
   transition:
     border-color var(--v2ex-motion-fast),
-    box-shadow var(--v2ex-motion-fast);
+    outline-color var(--v2ex-motion-fast);
 
   &::placeholder {
     color: var(--v2ex-placeholder-fg);
   }
 
   &:hover:not(:disabled) {
-    border-color: var(--v2ex-focus-border);
+    border-color: var(--v2ex-input-hover-border);
   }
 
-  &:focus-visible {
+  &:focus-visible:not(:disabled) {
     border-color: var(--v2ex-focus-border);
-    box-shadow: 0 0 0 1px var(--v2ex-focus-border);
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
   }
 
   &:disabled {
+    border-color: var(--v2ex-disabled-border);
     color: var(--v2ex-disabled-fg);
     background: var(--v2ex-disabled-bg);
     cursor: not-allowed;
+
+    &::placeholder {
+      color: var(--v2ex-disabled-fg);
+    }
   }
 }
 
-.v2ex-textarea--invalid {
+.v2ex-textarea--invalid:not(:disabled) {
   border-color: var(--v2ex-danger-border);
 }
 
@@ -887,15 +916,15 @@
     content: '';
   }
 
-  &:hover {
+  &:hover:not(:disabled):not([data-disabled]) {
     color: var(--v2ex-webview-fg);
   }
 
-  &:hover:not([data-active])::before {
+  &:hover:not(:disabled):not([data-disabled]):not([data-active])::before {
     background: var(--v2ex-toolbar-hover-bg);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -2px;
   }
@@ -909,7 +938,8 @@
     background: var(--v2ex-tab-indicator);
   }
 
-  &:disabled {
+  &:disabled,
+  &[data-disabled] {
     color: var(--v2ex-disabled-fg);
     cursor: not-allowed;
   }
@@ -948,18 +978,15 @@
   line-height: control-size.$line-height;
   text-align: left;
 
-  &:hover:not(:disabled) {
-    border-color: var(--v2ex-focus-border);
+  &:hover:not(:disabled),
+  :where(.v2ex-clearable-select:hover) > &:not(:disabled) {
+    border-color: var(--v2ex-input-hover-border);
   }
 
-  /* 展开只加粗边框，不叠 box-shadow，避免出现双层 outline 环 */
-  &[data-popup-open] {
+  @include focus.keyboard-focus($enabled-only: true, $also: '&[data-popup-open]:not(:disabled)') {
     border-color: var(--v2ex-focus-border);
-  }
-
-  &:focus-visible {
-    border-color: var(--v2ex-focus-border);
-    box-shadow: 0 0 0 1px var(--v2ex-focus-border);
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
   }
 
   &[data-placeholder] {
@@ -967,6 +994,7 @@
   }
 
   &:disabled {
+    border-color: var(--v2ex-disabled-border);
     color: var(--v2ex-disabled-fg);
     background: var(--v2ex-disabled-bg);
     cursor: not-allowed;
@@ -1060,6 +1088,11 @@
   gap: 6px;
   color: var(--v2ex-webview-fg);
   cursor: pointer;
+
+  &:has(.v2ex-radio-group__item[data-disabled]) {
+    color: var(--v2ex-disabled-fg);
+    cursor: not-allowed;
+  }
 }
 
 .v2ex-radio-group__item {
@@ -1074,13 +1107,23 @@
   outline: none;
   background: var(--v2ex-input-bg);
 
-  &:hover {
-    border-color: var(--v2ex-focus-border);
+  &:hover:not([data-disabled]) {
+    border-color: var(--v2ex-input-hover-border);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 2px;
+  }
+}
+
+.v2ex-radio-group__item[data-disabled] {
+  border-color: var(--v2ex-disabled-border);
+  background: var(--v2ex-disabled-bg);
+  cursor: not-allowed;
+
+  .v2ex-radio-group__indicator {
+    background: var(--v2ex-disabled-fg);
   }
 }
 
@@ -1137,7 +1180,7 @@
       box-shadow: 0 1px 2px var(--v2ex-widget-shadow-color);
     }
 
-    &:has(.v2ex-radio-group__item:focus-visible) {
+    @include focus.keyboard-focus-within('.v2ex-radio-group__item') {
       border-color: var(--v2ex-focus-border);
       outline: 1px solid var(--v2ex-focus-border);
       outline-offset: -1px;
@@ -1233,7 +1276,7 @@
   min-width: 0;
   min-height: map.get(control-size.$heights, default);
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   padding: map.get(control-size.$padding-block, default)
     map.get(control-size.$padding-inline, default);
@@ -1248,22 +1291,32 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 
-  &:hover:not(:disabled) {
-    border-color: var(--v2ex-focus-border);
+  &:hover:not(:disabled),
+  :where(.v2ex-clearable-select:hover) > &:not(:disabled) {
+    border-color: var(--v2ex-input-hover-border);
   }
 
   /* 去掉浏览器默认 focus ring，与 Input 一致用内描边 */
-  &:focus,
-  &:focus-visible {
+  @include focus.keyboard-focus($enabled-only: true, $also: '&:focus') {
     outline: none;
   }
 
-  &:focus-visible,
-  &[aria-expanded='true'] {
+  @include focus.keyboard-focus(
+    $enabled-only: true,
+    $also: "&[aria-expanded='true']:not(:disabled)"
+  ) {
     border-color: var(--v2ex-focus-border);
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
   }
+}
+
+.v2ex-date-picker-container {
+  width: 100%;
+}
+
+.v2ex-date-picker.v2ex-date-picker--clearable {
+  padding-right: 32px;
 }
 
 .v2ex-date-picker--placeholder {
@@ -1278,6 +1331,7 @@
 }
 
 .v2ex-date-picker__value {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1288,7 +1342,7 @@
   flex: none;
   width: map.get(control-size.$icon-sizes, default);
   height: map.get(control-size.$icon-sizes, default);
-  color: var(--v2ex-icon-fg);
+  color: inherit;
 }
 
 .v2ex-date-picker__popover {
@@ -1349,12 +1403,11 @@
     background: var(--v2ex-hover-bg);
   }
 
-  &:focus,
-  &:focus-visible {
+  @include focus.keyboard-focus($also: '&:focus') {
     outline: none;
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     border-color: var(--v2ex-focus-border);
     background: var(--v2ex-hover-bg);
   }
@@ -1406,12 +1459,11 @@
     background: var(--v2ex-hover-bg);
   }
 
-  &:focus,
-  &:focus-visible {
+  @include focus.keyboard-focus($also: '&:focus') {
     outline: none;
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     border-color: var(--v2ex-focus-border);
     background: var(--v2ex-hover-bg);
   }
@@ -1800,7 +1852,7 @@
     background: var(--v2ex-hover-bg);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 1px;
   }

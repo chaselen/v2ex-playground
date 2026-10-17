@@ -29,6 +29,10 @@ body {
   --v2ex-input-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
   --v2ex-input-fg: var(--vscode-input-foreground, var(--v2ex-webview-fg));
   --v2ex-input-border: var(--vscode-input-border, var(--v2ex-control-border));
+  --v2ex-input-hover-border: var(
+    --v2ex-hc-border,
+    color-mix(in srgb, var(--v2ex-input-fg) 40%, var(--v2ex-input-bg))
+  );
   --v2ex-placeholder-fg: var(
     --vscode-input-placeholderForeground,
     var(--vscode-descriptionForeground, var(--v2ex-webview-fg))
@@ -144,7 +148,7 @@ body {
     --vscode-disabledForeground,
     var(--vscode-descriptionForeground, var(--v2ex-webview-fg))
   );
-  --v2ex-disabled-bg: var(--vscode-input-background, var(--v2ex-widget-bg));
+  --v2ex-disabled-bg: color-mix(in srgb, var(--v2ex-input-bg) 90%, var(--v2ex-input-fg));
   --v2ex-disabled-border: var(--vscode-input-border, var(--v2ex-border));
 
   /*

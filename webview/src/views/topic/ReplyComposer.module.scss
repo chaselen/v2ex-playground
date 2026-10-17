@@ -1,3 +1,5 @@
+@use '../../styles/focus';
+
 .root {
   margin-top: 18px;
 }
@@ -208,10 +210,6 @@
   }
 }
 
-.extraPopoverTrigger {
-  display: inline-flex;
-}
-
 .emoticonPopover:global(.v2ex-popover) {
   width: fit-content;
   max-width: calc(100vw - 40px);
@@ -267,12 +265,11 @@
   background: transparent;
   cursor: pointer;
 
-  &:hover,
-  &:focus-visible {
+  @include focus.keyboard-focus($also: '&:hover') {
     background: var(--v2ex-hover-bg);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 1px;
   }

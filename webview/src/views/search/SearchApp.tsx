@@ -251,10 +251,15 @@ export default function SearchApp() {
                     />
                   </div>
                 </div>
-                <label>
-                  <span>发帖日期</span>
+                <div
+                  className="search-date-filter"
+                  role="group"
+                  aria-labelledby="search-date-label"
+                >
+                  <span id="search-date-label">发帖日期</span>
                   <div className="search-date-range">
                     <DatePicker
+                      clearable
                       aria-label="开始日期"
                       placeholder="开始日期"
                       disabled={loading}
@@ -263,6 +268,7 @@ export default function SearchApp() {
                     />
                     <span aria-hidden="true">~</span>
                     <DatePicker
+                      clearable
                       aria-label="结束日期"
                       placeholder="结束日期"
                       disabled={loading}
@@ -270,7 +276,7 @@ export default function SearchApp() {
                       onValueChange={value => updateFilter('dateEnd', value)}
                     />
                   </div>
-                </label>
+                </div>
               </div>
             </CollapsibleContent>
           </Collapsible>

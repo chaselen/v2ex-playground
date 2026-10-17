@@ -1,11 +1,12 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { TriangleAlert } from 'lucide-react'
-import { useRef, useState, type ReactElement, type ReactNode } from 'react'
-import { Button } from './Button'
+import { cloneElement, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { Button, type ButtonProps } from './Button'
 import { FLOATING_ARROW_HEIGHT, FloatingArrow } from './FloatingArrow'
+import { PopoverTrigger, type PopoverTooltipProps } from './PopoverTrigger'
 import { getTriggerFocusTarget, mergeClassNames } from './utils'
 
-export interface ConfirmPopoverProps {
+export interface ConfirmPopoverProps extends PopoverTooltipProps {
   /** 触发元素 */
   children: ReactElement
   /** 确认标题 */
@@ -20,7 +21,7 @@ export interface ConfirmPopoverProps {
   titleIcon?: ReactNode
   /** 确认按钮是否为危险操作 */
   danger?: boolean
-  /** 确认后是否立即关闭浮层，不等待确认回调完成 */
+  /** 确认后立即关闭浮层；共享 Button 在请求期间保留焦点，但不可重复激活 */
   closeImmediately?: boolean
   /** 是否禁用 */
   disabled?: boolean
@@ -51,9 +52,12 @@ export function ConfirmPopover({
   onConfirm,
   side = 'top',
   title,
-  titleIcon
+  titleIcon,
+  tooltip,
+  tooltipProps
 }: ConfirmPopoverProps) {
   const triggerRef = useRef<HTMLElement>(null)
+  const restoreTriggerFocus = useRef(true)
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const resolvedTitleIcon =
@@ -78,22 +82,32 @@ export function ConfirmPopover({
     }
   }
 
-  function changeOpen(nextOpen: boolean) {
-    if (!confirming) {
+  function changeOpen(nextOpen: boolean, details: PopoverPrimitive.Root.ChangeEventDetails) {
+    // 请求继续执行，但允许离开浮层；完成时不抢回用户已经移走的焦点
+    if (!confirming || !nextOpen) {
+      restoreTriggerFocus.current =
+        nextOpen || (details.reason !== 'focus-out' && details.reason !== 'outside-press')
       setOpen(nextOpen)
     }
   }
 
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={changeOpen}>
-      <PopoverPrimitive.Trigger
-        ref={(element: HTMLElement | null) => {
+      <PopoverTrigger
+        popupOpen={open}
+        tooltip={tooltip}
+        tooltipProps={tooltipProps}
+        triggerRef={(element: HTMLElement | null) => {
           triggerRef.current = element
         }}
-        render={children}
-        nativeButton={typeof children.type !== 'string' || children.type === 'button'}
-        disabled={disabled || confirming}
-      />
+        disabled={disabled || (confirming && !closeImmediately)}
+        aria-disabled={confirming && closeImmediately ? true : undefined}
+        aria-busy={confirming || undefined}
+      >
+        {confirming && children.type === Button
+          ? cloneElement(children as ReactElement<ButtonProps>, { focusableWhenDisabled: true })
+          : children}
+      </PopoverTrigger>
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Positioner
           className="v2ex-floating-positioner"
@@ -104,7 +118,9 @@ export function ConfirmPopover({
         >
           <PopoverPrimitive.Popup
             className={mergeClassNames('v2ex-popover v2ex-confirm-popover', className)}
-            finalFocus={() => getTriggerFocusTarget(triggerRef.current)}
+            finalFocus={() =>
+              restoreTriggerFocus.current ? getTriggerFocusTarget(triggerRef.current) : false
+            }
             role="alertdialog"
             aria-busy={confirming}
           >
@@ -146,6 +162,7 @@ export function ConfirmPopover({
                 size="small"
                 variant={danger ? 'danger' : 'primary'}
                 loading={confirming}
+                focusableWhenDisabled
                 onClick={() => void confirm()}
               >
                 {confirmText}

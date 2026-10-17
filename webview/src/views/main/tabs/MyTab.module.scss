@@ -1,4 +1,5 @@
 @use '../components/mixins';
+@use '../../../styles/focus';
 
 .my-panel {
   box-sizing: border-box;
@@ -39,7 +40,7 @@
   cursor: pointer;
   outline: none;
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     box-shadow: 0 0 0 1px var(--v2ex-focus-border);
   }
 }
@@ -234,8 +235,7 @@
   color: var(--v2ex-main-content-fg);
   @include mixins.ellipsis;
 
-  &:hover,
-  &:focus-visible {
+  @include focus.keyboard-focus($also: '&:hover') {
     color: var(--v2ex-link-fg);
   }
 }
@@ -352,13 +352,12 @@
   text-align: left;
   cursor: pointer;
 
-  &:hover,
-  &:focus-visible {
+  @include focus.keyboard-focus($also: '&:hover') {
     background: var(--v2ex-hover-bg);
     color: var(--v2ex-hover-fg);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
   }

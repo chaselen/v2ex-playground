@@ -1,3 +1,5 @@
+@use '../../styles/focus';
+
 .trigger {
   display: inline-flex;
   min-width: 0;
@@ -69,7 +71,7 @@
   font: inherit;
   cursor: pointer;
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 2px;
   }

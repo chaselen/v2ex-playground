@@ -1,5 +1,6 @@
 @use '@/styles/page-layout';
 @use '../../styles/topic-content' as topic-content-shared;
+@use '../../styles/focus';
 
 $reply-right-inset: 10px;
 
@@ -80,7 +81,7 @@ $reply-right-inset: 10px;
   background: transparent;
   cursor: pointer;
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 2px;
   }
@@ -329,14 +330,15 @@ $reply-right-inset: 10px;
   padding: 16px 0;
   border-bottom: 1px solid var(--v2ex-border);
 
-  // 子回复 hover 时祖先也会被命中，仅显示不包含 hover 子回复的最内层操作区
-  &:hover:not(:has(.reply-item:hover))
+  // 子回复悬停或聚焦时，仅显示对应最内层回复的操作区
+  &:is(:hover, :focus-within):not(:has(.reply-item:is(:hover, :focus-within)))
     > .reply-layout
     > .reply-body
     > .reply-meta
     > .reply-actions
     .reply-action-button {
-    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -498,12 +500,10 @@ $reply-right-inset: 10px;
   gap: 2px;
   margin-left: auto;
 
-  .reply-action-popconfirm-trigger {
-    display: inline-flex;
-  }
-
   .reply-action-button {
-    visibility: hidden;
+    // 保留 Tab 顺序与焦点恢复能力，聚焦回复后显现
+    opacity: 0;
+    pointer-events: none;
     min-width: 24px;
     min-height: 24px;
     padding: 3px;
@@ -534,7 +534,8 @@ $reply-right-inset: 10px;
 
 @media (hover: none) {
   .reply-actions .reply-action-button {
-    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 

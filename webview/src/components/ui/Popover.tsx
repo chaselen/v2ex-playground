@@ -1,9 +1,10 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
-import { useRef, type ReactElement, type ReactNode } from 'react'
+import { useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { FLOATING_ARROW_HEIGHT, FloatingArrow } from './FloatingArrow'
+import { PopoverTrigger, type PopoverTooltipProps } from './PopoverTrigger'
 import { getTriggerFocusTarget, mergeClassNames } from './utils'
 
-export interface PopoverProps {
+export interface PopoverProps extends PopoverTooltipProps {
   /** 触发元素 */
   children: ReactElement
   /** 浮层内容 */
@@ -40,18 +41,37 @@ export function Popover({
   onOpenChange,
   open,
   showArrow = false,
-  side = 'bottom'
+  side = 'bottom',
+  tooltip,
+  tooltipProps
 }: PopoverProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
+  const resolvedOpen = open ?? uncontrolledOpen
   const triggerRef = useRef<HTMLElement>(null)
+  const restoreTriggerFocus = useRef(true)
   return (
-    <PopoverPrimitive.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
-      <PopoverPrimitive.Trigger
-        ref={(element: HTMLElement | null) => {
+    <PopoverPrimitive.Root
+      open={resolvedOpen}
+      onOpenChange={(nextOpen, details) => {
+        onOpenChange?.(nextOpen, details)
+        if (!details.isCanceled) {
+          if (open === undefined) setUncontrolledOpen(nextOpen)
+          // Tab 移出或点击外部时，由当前交互决定焦点位置
+          restoreTriggerFocus.current =
+            nextOpen || (details.reason !== 'focus-out' && details.reason !== 'outside-press')
+        }
+      }}
+    >
+      <PopoverTrigger
+        popupOpen={resolvedOpen}
+        tooltip={tooltip}
+        tooltipProps={tooltipProps}
+        triggerRef={(element: HTMLElement | null) => {
           triggerRef.current = element
         }}
-        render={children}
-        nativeButton={typeof children.type !== 'string' || children.type === 'button'}
-      />
+      >
+        {children}
+      </PopoverTrigger>
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Positioner
           className="v2ex-floating-positioner"
@@ -62,7 +82,11 @@ export function Popover({
         >
           <PopoverPrimitive.Popup
             className={mergeClassNames('v2ex-popover', className)}
-            finalFocus={finalFocus ?? (() => getTriggerFocusTarget(triggerRef.current))}
+            finalFocus={
+              finalFocus ??
+              (() =>
+                restoreTriggerFocus.current ? getTriggerFocusTarget(triggerRef.current) : false)
+            }
             aria-label={ariaLabel}
           >
             {content}

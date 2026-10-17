@@ -1,5 +1,6 @@
 @use '@/styles/page-layout';
 @use '../../styles/topic-list-item' as topic-list-item;
+@use '../../styles/focus';
 
 .search-scroll {
   width: 100%;
@@ -66,7 +67,7 @@
     transform: rotate(90deg);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
   }
 }
@@ -82,7 +83,8 @@
 
   > label,
   > .search-operator-filter,
-  > .search-node-filter {
+  > .search-node-filter,
+  > .search-date-filter {
     display: flex;
     flex-direction: column;
     gap: 6px;

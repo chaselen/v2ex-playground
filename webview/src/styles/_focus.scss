@@ -1,0 +1,30 @@
+$-keyboard-focus: ':focus-visible:where(:root:not([data-v2ex-pointer-interaction]) *)';
+
+// :where 保持输入方式判断的优先级为零，避免覆盖控件自身的状态规则
+@mixin keyboard-focus($enabled-only: false, $also: null) {
+  $selector: '&#{$-keyboard-focus}';
+  @if $enabled-only {
+    $selector: '#{$selector}:not(:disabled)';
+  }
+  @if $also {
+    $selector: '#{$also}, #{$selector}';
+  }
+
+  #{$selector} {
+    @content;
+  }
+}
+
+// 为包含指定键盘焦点控件的外层容器提供状态样式
+@mixin keyboard-focus-within($descendant) {
+  &:has(#{$descendant}#{$-keyboard-focus}) {
+    @content;
+  }
+}
+
+// 抑制浏览器恢复焦点后给原生按钮保留的鼠标操作描边
+@mixin pointer-focus {
+  &:focus-visible:where(:root[data-v2ex-pointer-interaction] *) {
+    @content;
+  }
+}

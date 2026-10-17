@@ -1,8 +1,9 @@
 import type { ControlSize } from './controlSize'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs, { type Dayjs } from 'dayjs'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from './Button'
+import { ClearButton } from './ClearButton'
 import { Popover } from './Popover'
 import { mergeClassNames } from './utils'
 
@@ -17,6 +18,8 @@ export interface DatePickerProps {
   value?: string
   /** 占位文案 */
   placeholder?: string
+  /** 有值时在右侧显示清除按钮 */
+  clearable?: boolean
   /** 是否禁用 */
   disabled?: boolean
   /** 无障碍名称 */
@@ -45,6 +48,7 @@ function buildCalendarDays(viewMonth: Dayjs): Dayjs[] {
 export function DatePicker({
   className,
   size = 'default',
+  clearable = false,
   disabled = false,
   placeholder = '选择日期',
   value = '',
@@ -53,6 +57,7 @@ export function DatePicker({
 }: DatePickerProps) {
   const selected = useMemo(() => parseValue(value), [value])
   const [open, setOpen] = useState(false)
+  const restoreTriggerFocus = useRef(true)
   const [viewMonth, setViewMonth] = useState(() => (selected ?? dayjs()).startOf('month'))
 
   useEffect(() => {
@@ -64,13 +69,16 @@ export function DatePicker({
   const days = useMemo(() => buildCalendarDays(viewMonth), [viewMonth])
   const today = dayjs().startOf('day')
   const display = selected ? selected.format(DISPLAY_FORMAT) : ''
+  const canClear = clearable && !!display && !disabled
 
   function selectDay(day: Dayjs) {
+    restoreTriggerFocus.current = true
     onValueChange?.(day.format(VALUE_FORMAT))
     setOpen(false)
   }
 
   function clearValue() {
+    restoreTriggerFocus.current = true
     onValueChange?.('')
     setOpen(false)
   }
@@ -155,35 +163,56 @@ export function DatePicker({
   )
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={next => {
-        if (!disabled) {
-          setOpen(next)
-        }
-      }}
-      side="bottom"
-      align="start"
-      className="v2ex-date-picker__popover"
-      content={panel}
+    <span
+      className={mergeClassNames(
+        'v2ex-clearable-select v2ex-date-picker-container',
+        canClear && 'v2ex-clearable-select--active'
+      )}
     >
-      <button
-        type="button"
-        className={mergeClassNames(
-          'v2ex-date-picker',
-          `v2ex-date-picker--${size}`,
-          !display && 'v2ex-date-picker--placeholder',
-          disabled && 'v2ex-date-picker--disabled',
-          className
-        )}
-        disabled={disabled}
-        aria-label={props['aria-label']}
-        aria-haspopup="dialog"
-        aria-expanded={open}
+      <Popover
+        open={open}
+        finalFocus={() => restoreTriggerFocus.current}
+        onOpenChange={(next, details) => {
+          if (!disabled) {
+            // 点击外部或 Tab 移出后保留新焦点，避免关闭时抢走另一个浮层的焦点
+            restoreTriggerFocus.current = next || details.reason === 'escape-key'
+            setOpen(next)
+          }
+        }}
+        side="bottom"
+        align="start"
+        className="v2ex-date-picker__popover"
+        content={panel}
       >
-        <span className="v2ex-date-picker__value">{display || placeholder}</span>
-        <CalendarIcon className="v2ex-date-picker__icon" aria-hidden="true" />
-      </button>
-    </Popover>
+        <button
+          type="button"
+          className={mergeClassNames(
+            'v2ex-date-picker',
+            `v2ex-date-picker--${size}`,
+            canClear && 'v2ex-date-picker--clearable',
+            !display && 'v2ex-date-picker--placeholder',
+            disabled && 'v2ex-date-picker--disabled',
+            className
+          )}
+          disabled={disabled}
+          aria-label={props['aria-label']}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+        >
+          <CalendarIcon className="v2ex-date-picker__icon" aria-hidden="true" />
+          <span className="v2ex-date-picker__value">{display || placeholder}</span>
+        </button>
+      </Popover>
+      {canClear && (
+        <ClearButton
+          label={props['aria-label'] ? `清空${props['aria-label']}` : '清空日期'}
+          onClear={() => {
+            restoreTriggerFocus.current = false
+            onValueChange?.('')
+            setOpen(false)
+          }}
+        />
+      )}
+    </span>
   )
 }

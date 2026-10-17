@@ -783,6 +783,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
         <div className={styles.submitRow}>
           {showEmoticons && (
             <Popover
+              tooltip="插入表情"
               side="top"
               align="end"
               showArrow
@@ -798,18 +799,14 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
                 }
               }}
             >
-              <span className={styles.extraPopoverTrigger}>
-                <Tooltip content="插入表情">
-                  <Button
-                    aria-label="插入表情"
-                    className={styles.extraButton}
-                    icon={<Smile aria-hidden="true" />}
-                    size="small"
-                    variant="ghost"
-                    disabled={emoticonDisabled}
-                  />
-                </Tooltip>
-              </span>
+              <Button
+                aria-label="插入表情"
+                className={styles.extraButton}
+                icon={<Smile aria-hidden="true" />}
+                size="small"
+                variant="ghost"
+                disabled={emoticonDisabled}
+              />
             </Popover>
           )}
           <Tooltip content="上传图片">

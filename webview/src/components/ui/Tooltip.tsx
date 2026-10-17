@@ -1,11 +1,13 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip'
-import type { ReactElement, ReactNode } from 'react'
+import { cloneElement, useId, useState, type ReactElement, type ReactNode } from 'react'
 import { FLOATING_ARROW_HEIGHT, FloatingArrow } from './FloatingArrow'
 import { mergeClassNames } from './utils'
 
 export interface TooltipProps {
   /** 触发元素 */
   children: ReactElement
+  /** 是否禁用提示 */
+  disabled?: boolean
   /** 提示内容 */
   content: ReactNode
   /** 弹出方向 */
@@ -25,12 +27,23 @@ export function Tooltip({
   className,
   content,
   delayDuration = 300,
+  disabled = false,
   side = 'top'
 }: TooltipProps) {
+  const tooltipId = useId()
+  const [open, setOpen] = useState(false)
+  const trigger = children as ReactElement<{ 'aria-describedby'?: string }>
+  const describedBy =
+    [trigger.props['aria-describedby'], open && !disabled ? tooltipId : undefined]
+      .filter(Boolean)
+      .join(' ') || undefined
+
   return (
     <TooltipPrimitive.Provider delay={delayDuration} timeout={100}>
-      <TooltipPrimitive.Root>
-        <TooltipPrimitive.Trigger render={children} />
+      <TooltipPrimitive.Root disabled={disabled} onOpenChange={setOpen}>
+        <TooltipPrimitive.Trigger
+          render={cloneElement(trigger, { 'aria-describedby': describedBy })}
+        />
         <TooltipPrimitive.Portal>
           <TooltipPrimitive.Positioner
             className="v2ex-floating-positioner"
@@ -38,7 +51,11 @@ export function Tooltip({
             align={align}
             sideOffset={6 + FLOATING_ARROW_HEIGHT}
           >
-            <TooltipPrimitive.Popup className={mergeClassNames('v2ex-tooltip', className)}>
+            <TooltipPrimitive.Popup
+              id={tooltipId}
+              role="tooltip"
+              className={mergeClassNames('v2ex-tooltip', className)}
+            >
               {content}
               <TooltipPrimitive.Arrow render={<FloatingArrow className="v2ex-tooltip__arrow" />} />
             </TooltipPrimitive.Popup>

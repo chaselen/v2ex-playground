@@ -68,6 +68,8 @@ export default function ThemePreviewApp() {
   const [node, setNode] = useState<Node | undefined>({ name: 'qna', title: '问与答' })
   const [inputValue, setInputValue] = useState('V2EX')
   const [otpValue, setOtpValue] = useState('12')
+  const [dateStart, setDateStart] = useState('')
+  const [dateEnd, setDateEnd] = useState('')
   const [previewPage, setPreviewPage] = useState(4)
   const [fillViewport, setFillViewport] = useState(true)
   const [scrollRows, setScrollRows] = useState(3)
@@ -236,6 +238,54 @@ export default function ThemePreviewApp() {
           </RadioGroup>
         </PreviewSection>
 
+        <PreviewSection title="控件禁用态对照">
+          <NodeSelectButton node={node} aria-label="可用节点选择器" />
+          <NodeSelectButton node={node} disabled aria-label="禁用节点选择器" />
+          <NodeSelectButton node={node} loading aria-label="加载中节点选择器" />
+          <NodeSelectButton disabled aria-label="禁用空节点选择器" />
+          <Pagination
+            page={2}
+            totalPages={12}
+            showQuickJumper
+            disabled
+            onPageChange={() => undefined}
+          />
+
+          <Input prefix={<Search aria-hidden="true" />} placeholder="可输入" />
+          <Input prefix={<Search aria-hidden="true" />} placeholder="禁用输入" disabled />
+          <Textarea placeholder="可编辑文本" />
+          <Textarea placeholder="禁用文本域" disabled />
+          <Select
+            aria-label="可用选择器"
+            placeholder="请选择"
+            options={[{ value: 'one', label: '选项一' }]}
+          />
+          <Select aria-label="禁用选择器" placeholder="请选择（禁用）" options={[]} disabled />
+          <DatePicker aria-label="可用日期" />
+          <DatePicker aria-label="禁用日期" clearable value="2026-01-15" disabled />
+          <OtpInput length={6} value="123" disabled onValueChange={() => undefined} />
+          <RadioGroup aria-label="单选禁用态对照" defaultValue="enabled">
+            <RadioGroupItem value="enabled" label="可用" />
+            <RadioGroupItem value="disabled" label="禁用" disabled />
+          </RadioGroup>
+          <RadioGroup aria-label="禁用选中项" defaultValue="disabled" disabled>
+            <RadioGroupItem value="disabled" label="已选中（禁用）" />
+          </RadioGroup>
+          <RadioGroup aria-label="分段禁用态对照" variant="segmented" defaultValue="enabled">
+            <RadioGroupItem value="enabled" label="可用" />
+            <RadioGroupItem value="disabled" label="禁用" disabled />
+          </RadioGroup>
+          <Tabs defaultValue="enabled">
+            <TabsList>
+              <TabsTrigger value="enabled">可用标签</TabsTrigger>
+              <TabsTrigger value="disabled" disabled>
+                禁用标签
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="enabled">禁用项悬停时应保持禁用样式</TabsContent>
+          </Tabs>
+        </PreviewSection>
+
         <PreviewSection title="操作与状态">
           <div className="theme-preview-row">
             <Tooltip content="VS Code Hover Widget">
@@ -255,7 +305,7 @@ export default function ThemePreviewApp() {
             >
               <Button variant="danger">Danger Confirm</Button>
             </ConfirmPopover>
-            <Popover content={<div>VS Code Widget 浮层</div>}>
+            <Popover tooltip="点击打开浮层" content={<div>VS Code Widget 浮层</div>}>
               <Button>Popover</Button>
             </Popover>
             <DropdownMenu
@@ -288,12 +338,12 @@ export default function ThemePreviewApp() {
                 <Input aria-label="右键菜单状态保留" defaultValue="切换禁用状态后保留输入" />
               </div>
             </ContextMenu>
-            <ConfirmPopover title="确认组合触发器操作？" onConfirm={() => Toast.success('已确认')}>
-              <span>
-                <Tooltip content="组合触发器提示">
-                  <Button>组合触发器</Button>
-                </Tooltip>
-              </span>
+            <ConfirmPopover
+              tooltip="组合触发器提示"
+              title="确认组合触发器操作？"
+              onConfirm={() => Toast.success('已确认')}
+            >
+              <Button>组合触发器</Button>
             </ConfirmPopover>
           </div>
           <Dialog
@@ -383,9 +433,21 @@ export default function ThemePreviewApp() {
               options={[{ label: '禁用选择器', value: 'disabled' }]}
             />
             <div className="theme-preview-date-range" aria-label="日期范围">
-              <DatePicker aria-label="开始日期" placeholder="开始日期" />
+              <DatePicker
+                clearable
+                aria-label="开始日期"
+                placeholder="开始日期"
+                value={dateStart}
+                onValueChange={setDateStart}
+              />
               <span aria-hidden="true">~</span>
-              <DatePicker aria-label="结束日期" placeholder="结束日期" />
+              <DatePicker
+                clearable
+                aria-label="结束日期"
+                placeholder="结束日期"
+                value={dateEnd}
+                onValueChange={setDateEnd}
+              />
             </div>
           </div>
         </PreviewSection>

@@ -1,7 +1,8 @@
 import type { ControlSize } from './controlSize'
 import { LoaderCircle } from 'lucide-react'
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { forwardRef, useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { mergeClassNames } from './utils'
+import { initializeFocusVisibility } from './focusVisibility'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'subtle' | 'ghost' | 'danger'
 
@@ -14,6 +15,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   compact?: boolean
   /** 异步操作进行中 */
   loading?: boolean
+  /** 禁用时保留焦点和 Tab 停靠，用于异步操作关闭浮层后的焦点恢复 */
+  focusableWhenDisabled?: boolean
   /** 按钮前置图标 */
   icon?: ReactNode
 }
@@ -26,7 +29,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     compact = false,
     disabled,
     icon,
+    focusableWhenDisabled = false,
     loading = false,
+    onClick,
     size = 'default',
     type = 'button',
     variant = 'secondary',
@@ -34,6 +39,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   },
   ref
 ) {
+  useEffect(initializeFocusVisibility, [])
+
+  const isDisabled = Boolean(
+    disabled || loading || props['aria-disabled'] === true || props['aria-disabled'] === 'true'
+  )
+
   return (
     <button
       {...props}
@@ -46,8 +57,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         compact && 'v2ex-button--compact',
         className
       )}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
+      disabled={isDisabled && !focusableWhenDisabled}
+      aria-disabled={isDisabled && focusableWhenDisabled ? true : props['aria-disabled']}
+      tabIndex={isDisabled && focusableWhenDisabled ? 0 : props.tabIndex}
+      onClick={event => {
+        if (isDisabled) {
+          event.preventDefault()
+          event.stopPropagation()
+          return
+        }
+        onClick?.(event)
+      }}
+      aria-busy={loading || props['aria-busy'] || undefined}
     >
       {loading ? (
         <LoaderCircle className="v2ex-button__spinner" aria-hidden="true" />

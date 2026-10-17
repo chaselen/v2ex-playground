@@ -1,3 +1,5 @@
+@use '../../styles/focus';
+
 .theme-preview-light {
   --vscode-scrollbarSlider-activeBackground: rgba(0, 0, 0, 0.6);
   --vscode-editor-background: #ffffff;
@@ -226,7 +228,7 @@
     background: var(--v2ex-hover-bg);
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: -1px;
   }

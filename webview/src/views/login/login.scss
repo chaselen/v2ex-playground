@@ -1,4 +1,5 @@
 @use '@/styles/page-layout';
+@use '../../styles/focus';
 
 .login-scroll {
   height: 100%;
@@ -112,7 +113,7 @@
     text-decoration: underline;
   }
 
-  &:focus-visible {
+  @include focus.keyboard-focus {
     outline: 1px solid var(--v2ex-focus-border);
     outline-offset: 2px;
   }
@@ -304,6 +305,10 @@
     color: var(--v2ex-input-fg);
     background: var(--v2ex-selection-bg);
   }
+}
+
+:where(.login-cookie-editor:hover) > .v2ex-textarea:not(:disabled) {
+  border-color: var(--v2ex-input-hover-border);
 }
 
 .login-cookie-editor--disabled {
