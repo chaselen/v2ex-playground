@@ -2,4 +2,7 @@
 
 .empty-panel {
   @include mixins.empty-panel;
+
+  // 登录入口保持靠上，不随父容器剩余高度垂直居中
+  flex: none;
 }
