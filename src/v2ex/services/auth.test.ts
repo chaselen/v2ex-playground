@@ -51,7 +51,7 @@ describe('AuthService two-factor submission', () => {
   test('reports the server problem and keeps the current credential for retry', async () => {
     const { service, session } = createAuthService(
       undefined,
-      '<div class="problem">验证码错误，请重试</div>'
+      '<div class="problem"> <strong>验证码错误，</strong>请重试\n </div>'
     )
     await expect(service.submitTwoFactorCode('123456')).rejects.toThrow('验证码错误，请重试')
     expect(session.getLoginCookie()).toBe('A2=valid')
@@ -77,4 +77,20 @@ describe('AuthService login validation', () => {
     await expect(service.checkCookie()).rejects.toThrow('登录状态检查失败')
     expect(session.getLoginCookie()).toBe('A2=valid')
   })
+})
+
+test('recognizes the final cooldown URL even when its HTML cannot be parsed and skips captcha loading', async () => {
+  const session = new V2exSession()
+  const http = (session as unknown as { http: AxiosInstance }).http
+  const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => ({
+    config,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    data: '<html>changed cooldown page</html>',
+    request: { res: { responseUrl: 'https://www.v2ex.com/signin/cooldown' } }
+  }))
+  http.defaults.adapter = adapter
+  await expect(new AuthService(session).loadSigninChallenge()).rejects.toThrow('登录受限')
+  expect(adapter).toHaveBeenCalledTimes(1)
 })

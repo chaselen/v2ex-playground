@@ -1,4 +1,4 @@
-import vscode from 'vscode'
+import type vscode from 'vscode'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import type {
@@ -77,7 +77,7 @@ export class TwoFactorPanelController implements WebviewRpcController<TwoFactorP
   /** 提交两步验证码 */
   async rpc_verify(code: string) {
     await this.options.verify(code)
-    vscode.window.showInformationMessage('V2EX 两步验证成功')
+    if (this.settled) return
     this.resolve(true)
     this.panel.dispose()
   }

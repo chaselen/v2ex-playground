@@ -21,6 +21,7 @@ let activeRequest: ActiveTwoFactorRequest | undefined
 export function requestTwoFactorVerification(
   verification: TwoFactorVerification
 ): Promise<boolean> {
+  if (verification.signal?.aborted) return Promise.resolve(false)
   if (activeRequest?.verification === verification) {
     activeRequest.panel.reveal()
     return activeRequest.task
@@ -31,7 +32,10 @@ export function requestTwoFactorVerification(
     verify: code => verification.submitCode(code)
   })
   const request: ActiveTwoFactorRequest = { verification, panel, task: panel.wait() }
+  const cancel = () => panel.dispose()
+  verification.signal?.addEventListener('abort', cancel, { once: true })
   request.task = request.task.finally(() => {
+    verification.signal?.removeEventListener('abort', cancel)
     if (activeRequest === request) {
       activeRequest = undefined
     }

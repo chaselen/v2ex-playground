@@ -1,6 +1,7 @@
 import vscode from 'vscode'
 import MainViewProvider from '@/providers/MainViewProvider'
-import login, { LoginResult } from '@/commands/login'
+import login from '@/commands/login'
+import logout from '@/commands/logout'
 import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
@@ -34,6 +35,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     loginCookieStore: new LoginCredentialStore(context),
     onLoginExpired: async () => {
       logger.warn('登录状态已失效')
+      await updateLoginMenuContext()
       await mainViewProvider.reloadViewData()
       refreshTopicPanelsForAuthChange()
       void vscode.window
@@ -55,6 +57,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   })
   G.V2ex = client
   context.subscriptions.push(client)
+
+  // 与页面一致，将仍待验证的持久化会话视为可退出状态
+  function updateLoginMenuContext() {
+    return vscode.commands.executeCommand(
+      'setContext',
+      'v2ex.hasLoginSession',
+      client.hasLoginSession()
+    )
+  }
+  await updateLoginMenuContext()
 
   // 刷新登录状态，并在登录有效时尝试自动签到
   const refreshLoginAndAutoSignIn = async () => {
@@ -94,13 +106,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.login', async () => {
       const loginResult = await login()
-      if (loginResult === LoginResult.success || loginResult === LoginResult.logout) {
+      if (loginResult === 'authenticated') {
+        await updateLoginMenuContext()
         mainViewProvider.reloadViewData()
         refreshTopicPanelsForAuthChange()
-      }
-      if (loginResult === LoginResult.success) {
         autoDailySignIn({ notifyOnSuccess: true }).catch(err => logger.error('自动签到失败', err))
       }
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.logout', async () => {
+      await logout()
+      await updateLoginMenuContext()
+      await mainViewProvider.reloadViewData()
+      refreshTopicPanelsForAuthChange()
     })
   )
 

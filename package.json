@@ -44,6 +44,11 @@
         "icon": "$(sign-in)"
       },
       {
+        "command": "v2ex.logout",
+        "title": "退出登录",
+        "icon": "$(sign-out)"
+      },
+      {
         "command": "v2ex.settings",
         "title": "设置",
         "icon": "$(gear)"
@@ -103,6 +108,10 @@
         {
           "command": "v2ex.createTopic",
           "when": "false"
+        },
+        {
+          "command": "v2ex.logout",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -123,12 +132,17 @@
         },
         {
           "command": "v2ex.login",
-          "when": "view == v2ex-main",
+          "when": "view == v2ex-main && !v2ex.hasLoginSession",
           "group": "more@0"
         },
         {
           "command": "v2ex.settings",
           "when": "view == v2ex-main",
+          "group": "more@2"
+        },
+        {
+          "command": "v2ex.logout",
+          "when": "view == v2ex-main && v2ex.hasLoginSession",
           "group": "more@1"
         }
       ]

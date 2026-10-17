@@ -29,6 +29,7 @@ export default defineConfig({
         recentBrowse: resolve(import.meta.dirname, 'recent-browse.html'),
         createTopic: resolve(import.meta.dirname, 'create-topic.html'),
         twoFactor: resolve(import.meta.dirname, 'two-factor.html'),
+        login: resolve(import.meta.dirname, 'login.html'),
         theme: resolve(import.meta.dirname, 'theme.html')
       }
     }

@@ -137,7 +137,7 @@ describe('V2exClient authentication', () => {
           checkCookieMock.mockResolvedValue({ isValid: true, username })
           await expect(client.switchLoginCookie('A2=new')).resolves.toBe('authenticated')
         } else if (action === 'logout') {
-          await client.logout()
+          await clearLogin(client)
         } else {
           await getClientSession(client).expireLogin()
         }
@@ -363,7 +363,7 @@ describe('V2exClient authentication', () => {
     const client = await V2exClient.create({ loginCookieStore: store })
 
     const switching = client.switchLoginCookie('A2=new')
-    await client.logout()
+    await clearLogin(client)
     checkResult.resolve({ isValid: true, username: 'NewUser' })
 
     await expect(switching).resolves.toBe('canceled')
@@ -378,7 +378,7 @@ describe('V2exClient authentication', () => {
     const client = await V2exClient.create({ loginCookieStore: store })
     await client.ensureAuthenticated()
 
-    await client.logout()
+    await clearLogin(client)
 
     expect(client.getLoginCookie()).toBe('')
     expect(client.getAuthenticatedUsername()).toBeUndefined()
@@ -397,7 +397,7 @@ describe('V2exClient authentication', () => {
     await client.ensureAuthenticated()
     save.mockImplementationOnce(() => credentialDeletion.promise)
 
-    const logout = client.logout()
+    const logout = clearLogin(client)
     const refresh = client.refreshAuthentication()
     await vi.waitFor(() => expect(save).toHaveBeenCalledWith(''))
     credentialDeletion.resolve()
@@ -427,7 +427,7 @@ describe('V2exClient authentication', () => {
     })
     save.mockImplementationOnce(() => credentialDeletion.promise)
 
-    const logout = client.logout()
+    const logout = clearLogin(client)
     await expect(getSessionOptions(session).onTwoFactorRequired?.()).resolves.toBe(true)
     const persistence = getSessionOptions(session).onTwoFactorVerified?.()
     await vi.waitFor(() => expect(save).toHaveBeenCalledWith(''))
@@ -446,7 +446,7 @@ describe('V2exClient authentication', () => {
     await client.ensureAuthenticated()
     save.mockRejectedValueOnce(new Error('SecretStorage unavailable'))
 
-    await expect(client.logout()).rejects.toThrow('SecretStorage unavailable')
+    await expect(clearLogin(client)).rejects.toThrow('SecretStorage unavailable')
 
     expect(client.getLoginCookie()).toBe('A2=current')
     expect(client.getAuthenticatedUsername()).toBe('CurrentUser')
@@ -474,7 +474,7 @@ describe('V2exClient authentication', () => {
 
     const switching = client.switchLoginCookie('A2=new')
     await started.promise
-    const logout = client.logout().catch(error => error)
+    const logout = clearLogin(client).catch(error => error)
     saving.resolve()
 
     await expect(switching).resolves.toBe('canceled')
@@ -505,7 +505,7 @@ describe('V2exClient authentication', () => {
     const switching = client.switchLoginCookie('A2=new')
     const result = expect(switching).rejects.toThrow('恢复原登录凭据失败')
     await started.promise
-    const logout = client.logout().catch(error => error)
+    const logout = clearLogin(client).catch(error => error)
     saving.resolve()
     await result
     expect(await logout).toBeInstanceOf(Error)
@@ -645,7 +645,7 @@ describe('V2exClient authentication', () => {
       .mockRejectedValueOnce(new Error('storage unavailable'))
       .mockRejectedValueOnce(new Error('storage unavailable'))
     await expect(getClientSession(client).expireLogin()).rejects.toThrow('storage unavailable')
-    await expect(client.logout()).rejects.toThrow('storage unavailable')
+    await expect(clearLogin(client)).rejects.toThrow('storage unavailable')
     await vi.advanceTimersByTimeAsync(30_000)
     expect(await load()).toBe('')
     expect(save).toHaveBeenCalledTimes(3)
@@ -665,7 +665,7 @@ describe('V2exClient authentication', () => {
     }))
     await getClientSession(client).get('/')
     save.mockRejectedValueOnce(new Error('storage unavailable'))
-    await expect(client.logout()).rejects.toThrow('storage unavailable')
+    await expect(clearLogin(client)).rejects.toThrow('storage unavailable')
     await vi.advanceTimersByTimeAsync(30_000)
     expect(client.getAuthenticatedUsername()).toBe('User')
     expect(await load()).toBe('A2=valid; A2O=renewed')
@@ -698,7 +698,8 @@ describe('V2exClient authentication', () => {
       await client.ensureAuthenticated()
       setAdapter(client, () => ({ status: 200, headers: { 'set-cookie': 'A2O=renewed; Path=/' } }))
       await getClientSession(client).get('/')
-      await client[action]()
+      if (action === 'logout') await clearLogin(client)
+      else client.dispose()
       await vi.advanceTimersByTimeAsync(60_000)
       expect(save).toHaveBeenCalledTimes(action === 'logout' ? 1 : 0)
       expect(await load()).toBe(action === 'logout' ? '' : 'A2=valid')
@@ -706,3 +707,8 @@ describe('V2exClient authentication', () => {
     }
   )
 })
+
+/** 独立验证本地凭据清理时序；用户退出通过公开 logout() 测试覆盖 */
+function clearLogin(client: V2exClient): Promise<void> {
+  return (client as unknown as { clearLogin(): Promise<void> }).clearLogin()
+}

@@ -1664,8 +1664,10 @@
 .v2ex-dialog__body {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.v2ex-dialog__body-content {
   padding: 14px;
-  overflow: auto;
 }
 
 .v2ex-dialog__footer {

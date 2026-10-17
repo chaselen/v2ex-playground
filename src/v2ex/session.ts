@@ -48,6 +48,9 @@ const isRedirectCheckPath = picomatch([
 /** 随 Axios 配置合并保留的两步验证重试标记 */
 type TwoFactorRequestConfig = AxiosResponse['config'] & { v2exTwoFactorRetried?: boolean }
 
+/** 登录 POST 的 2FA 跳转由认证服务处理，避免重放密码表单 */
+type SessionRequestConfig = AxiosRequestConfig & { v2exSkipTwoFactor?: boolean }
+
 /** V2EX 会话配置 */
 export interface V2exSessionOptions {
   onLoginExpired?: LoginExpiredHandler
@@ -135,7 +138,7 @@ export class V2exSession {
   post<T = unknown>(
     url: string,
     data?: unknown,
-    config?: AxiosRequestConfig
+    config?: SessionRequestConfig
   ): Promise<AxiosResponse<T>> {
     return this.http.post<T>(url, data, config)
   }
@@ -268,6 +271,7 @@ export class V2exSession {
   private isTwoFactorResponse(response: AxiosResponse): boolean {
     const requestUrl = getConfigUrl(response.config, this.baseUrl)
     if (!isV2exSessionUrl(requestUrl) || requestUrl.pathname === '/2fa') return false
+    if (this.isSigninSubmission(response)) return false
     const location = getHeader(response.headers, 'location')
     if (location && response.status >= 300 && response.status < 400) {
       return isV2exSessionPath(new URL(location, requestUrl), '/2fa')
@@ -286,7 +290,11 @@ export class V2exSession {
     const responseUrl = explicitRedirect
       ? new URL(location, requestUrl)
       : new URL(getResponseUrl(response, this.baseUrl))
-    if (isV2exSessionPath(responseUrl, '/2fa') && requestUrl.pathname !== '/2fa') {
+    if (
+      isV2exSessionPath(responseUrl, '/2fa') &&
+      requestUrl.pathname !== '/2fa' &&
+      !this.isSigninSubmission(response)
+    ) {
       throw new TwoFactorRequiredError('需要输入 V2EX 两步验证码')
     }
     if (isV2exSessionPath(responseUrl, '/signin') && requestUrl.pathname !== '/signin') {
@@ -308,6 +316,14 @@ export class V2exSession {
       throw new LoginRequiredError('你要查看的页面需要先登录')
     }
     throw new Error('未知错误')
+  }
+
+  private isSigninSubmission(response: AxiosResponse): boolean {
+    return (
+      getConfigUrl(response.config, this.baseUrl).pathname === '/signin' &&
+      response.config.method === 'post' &&
+      (response.config as SessionRequestConfig).v2exSkipTwoFactor === true
+    )
   }
 
   /** 清空失效会话；并发清理共用任务，失败后允许重试 */

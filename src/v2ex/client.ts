@@ -2,6 +2,7 @@ import type { HttpFailureHandler } from '@/core/httpFailureLogging'
 import { HelpService } from './services/help'
 import { AccountService } from './services/account'
 import { AuthService } from './services/auth'
+import { PasswordResetService } from './services/passwordReset'
 import { MemberService } from './services/member'
 import { NodeService } from './services/node'
 import { SearchService } from './services/search'
@@ -14,7 +15,9 @@ import type {
   CheckCookieResult,
   LoginExpiredHandler,
   TwoFactorRequiredHandler,
-  TwoFactorVerification
+  TwoFactorVerification,
+  PasswordLoginAttempt,
+  PasswordResetAttempt
 } from './types'
 
 /** 普通响应中的认证 Cookie 更新合并为最多每分钟一次保存 */
@@ -101,6 +104,8 @@ export class V2exClient {
   /** 当前已通知失效的认证修订号 */
   private loginExpirationRevision?: number
   private disposed = false
+  private logoutTask?: Promise<boolean>
+  private twoFactorAbort = new AbortController()
 
   /** 客户端配置 */
   private readonly options: V2exClientOptions
@@ -149,6 +154,7 @@ export class V2exClient {
   /** 释放凭据保存和清理重试任务 */
   dispose(): void {
     this.disposed = true
+    this.twoFactorAbort.abort()
     this.clearCredentialSaveTimer()
   }
 
@@ -190,7 +196,10 @@ export class V2exClient {
    * 在隔离会话中验证并切换登录 Cookie
    * @param cookie 候选登录 Cookie
    */
-  async switchLoginCookie(cookie: string): Promise<LoginCookieSwitchResult> {
+  async switchLoginCookie(
+    cookie: string,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<LoginCookieSwitchResult> {
     const loginCookie = normalizeLoginCookie(cookie)
     if (!loginCookie) return 'invalid'
 
@@ -198,33 +207,121 @@ export class V2exClient {
     let twoFactorCanceled = false
     const candidate = new V2exClient(loginCookie, {
       onTwoFactorRequired: async verification => {
+        if (options.signal?.aborted || this.authRevision !== revision) return false
         const verified = (await this.options.onTwoFactorRequired?.(verification)) ?? false
         twoFactorCanceled = !verified
-        return verified
+        return verified && !options.signal?.aborted && this.authRevision === revision
       },
       onHttpFailure: this.options.onHttpFailure
     })
 
-    let result: CheckCookieResult
+    const cancel = () => candidate.dispose()
+    const parentSignal = this.twoFactorAbort.signal
+    parentSignal.addEventListener('abort', cancel, { once: true })
+    options.signal?.addEventListener('abort', cancel, { once: true })
+    if (options.signal?.aborted) cancel()
     try {
-      result = await candidate.auth.checkCookie()
-    } catch (err) {
-      if (twoFactorCanceled && err instanceof TwoFactorRequiredError) {
-        return 'canceled'
+      let result: CheckCookieResult
+      try {
+        result = await candidate.auth.checkCookie()
+      } catch (err) {
+        if (
+          (twoFactorCanceled || options.signal?.aborted || parentSignal.aborted) &&
+          err instanceof TwoFactorRequiredError
+        ) {
+          return 'canceled'
+        }
+        throw err
       }
-      throw err
-    }
-    if (!result.isValid) return 'invalid'
+      if (!result.isValid) return 'invalid'
 
+      return await this.commitCandidate(
+        candidate,
+        result,
+        revision,
+        () => !options.signal?.aborted && !parentSignal.aborted
+      )
+    } finally {
+      options.signal?.removeEventListener('abort', cancel)
+      parentSignal.removeEventListener('abort', cancel)
+      candidate.dispose()
+    }
+  }
+
+  /** 创建独立的找回密码流程，调用方在关闭表单后释放 */
+  createPasswordReset(): PasswordResetAttempt {
+    return new PasswordResetService()
+  }
+
+  /** 创建独立的密码登录流程，挑战 Cookie 不进入正式业务会话 */
+  createPasswordLogin(): PasswordLoginAttempt {
+    const revision = this.authRevision
+    let active = true
+    let busy = false
+    let twoFactorCanceled = false
+    const candidate = new V2exClient('', {
+      onTwoFactorRequired: async verification => {
+        if (!active || this.authRevision !== revision) return false
+        const verified = (await this.options.onTwoFactorRequired?.(verification)) ?? false
+        twoFactorCanceled = !verified
+        return verified && active && this.authRevision === revision
+      },
+      onHttpFailure: this.options.onHttpFailure
+    })
+    const parentSignal = this.twoFactorAbort.signal
+    const dispose = () => {
+      active = false
+      candidate.dispose()
+      parentSignal.removeEventListener('abort', dispose)
+    }
+    parentSignal.addEventListener('abort', dispose, { once: true })
+    const run = async <T>(operation: () => Promise<T>): Promise<T> => {
+      if (!active || this.authRevision !== revision)
+        throw new Error('登录流程已结束，请重新打开登录页面')
+      if (busy) throw new Error('登录请求正在处理中')
+      busy = true
+      try {
+        return await operation()
+      } finally {
+        busy = false
+      }
+    }
+    return {
+      loadChallenge: () => run(() => candidate.auth.loadSigninChallenge()),
+      submit: input =>
+        run(async () => {
+          twoFactorCanceled = false
+          await candidate.auth.submitPasswordLogin(input)
+          let result: CheckCookieResult
+          try {
+            result = await candidate.auth.checkCookie()
+          } catch (error) {
+            if (twoFactorCanceled && error instanceof TwoFactorRequiredError) return 'canceled'
+            throw error
+          }
+          if (!result.isValid) return 'invalid'
+          return this.commitCandidate(candidate, result, revision, () => active)
+        }),
+      dispose
+    }
+  }
+
+  /** 候选验证成功后，在凭据写入队列内原子提交 */
+  private async commitCandidate(
+    candidate: V2exClient,
+    result: Extract<CheckCookieResult, { isValid: true }>,
+    revision: number,
+    isActive = () => true
+  ): Promise<LoginCookieSwitchResult> {
     const committed = await this.enqueueCredentialMutation(async () => {
-      if (this.authRevision !== revision) return false
+      if (this.authRevision !== revision || !isActive()) return false
       const previousCookie = this.options.loginCookieStore
         ? normalizeLoginCookie(await this.options.loginCookieStore.load())
         : this.persistedLoginCookie
-      if (this.authRevision !== revision) return false
+      if (this.authRevision !== revision || !isActive()) return false
       const candidateCookie = candidate.getLoginCookie()
       await this.saveLoginCookie(candidateCookie)
-      if (this.authRevision !== revision) {
+      if (this.authRevision !== revision || !isActive()) {
         try {
           await this.saveLoginCookie(previousCookie)
         } catch (error) {
@@ -238,8 +335,65 @@ export class V2exClient {
     return committed ? 'authenticated' : 'canceled'
   }
 
-  /** 主动退出登录 */
-  async logout(): Promise<void> {
+  /**
+   * 注销网站会话后清理本地凭据；并发调用复用同一任务
+   * @returns 完成当前会话退出时为 true，被其他认证操作取代时为 false
+   */
+  logout(): Promise<boolean> {
+    if (this.logoutTask) return this.logoutTask
+    const task = this.logoutFromSite().finally(() => {
+      if (this.logoutTask === task) this.logoutTask = undefined
+    })
+    this.logoutTask = task
+    return task
+  }
+
+  private async logoutFromSite(): Promise<boolean> {
+    this.clearCredentialSaveTimer()
+    const revision = ++this.authRevision
+    this.twoFactorVerification = this.createTwoFactorVerification()
+    const snapshot = new V2exSession(this.session.getCookie(), {
+      onHttpFailure: this.options.onHttpFailure,
+      onTwoFactorRequired: async () => {
+        if (this.authRevision !== revision) return false
+        const verified = await this.options.onTwoFactorRequired?.(verification)
+        return !!verified && this.authRevision === revision
+      }
+    })
+    const auth = new AuthService(snapshot)
+    const verification: TwoFactorVerification = {
+      signal: this.twoFactorAbort.signal,
+      submitCode: async code => {
+        if (verification.signal?.aborted || this.authRevision !== revision)
+          throw new Error('登录状态已更新，请重新操作')
+        await auth.submitTwoFactorCode(code)
+        if (verification.signal?.aborted || this.authRevision !== revision)
+          throw new Error('登录状态已更新，请重新操作')
+      }
+    }
+    try {
+      if (snapshot.getLoginCookie()) await auth.signout()
+    } catch (error) {
+      if (this.authRevision !== revision) return false
+      if (this.getLoginCookie() !== this.persistedLoginCookie) {
+        this.scheduleCredentialSave(LOGIN_COOKIE_SAVE_RETRY_DELAY)
+      }
+      throw error
+    }
+    if (this.authRevision !== revision) return false
+    try {
+      await this.clearLogin()
+    } catch (error) {
+      // 源站会话已经注销，不能因本地删除失败继续显示已登录
+      if (this.authRevision === revision + 1)
+        await this.session.expireLogin().catch(() => undefined)
+      throw error
+    }
+    return true
+  }
+
+  /** 仅清理本地凭据，由已完成网站退出的流程调用 */
+  private async clearLogin(): Promise<void> {
     this.clearCredentialSaveTimer()
     const revision = ++this.authRevision
     this.twoFactorVerification = this.createTwoFactorVerification()
@@ -316,14 +470,18 @@ export class V2exClient {
 
   /** 创建只作用于当前认证状态的两步验证操作 */
   private createTwoFactorVerification(): TwoFactorVerification {
+    this.twoFactorAbort.abort()
+    this.twoFactorAbort = new AbortController()
+    const signal = this.twoFactorAbort.signal
     const revision = this.authRevision
     return {
+      signal,
       submitCode: async code => {
-        if (this.authRevision !== revision) {
+        if (signal.aborted || this.disposed || this.authRevision !== revision) {
           throw new Error('登录状态已更新，请重新操作')
         }
         await this.auth.submitTwoFactorCode(code)
-        if (this.authRevision !== revision) {
+        if (signal.aborted || this.disposed || this.authRevision !== revision) {
           throw new Error('登录状态已更新，请重新操作')
         }
       }
@@ -363,6 +521,8 @@ export class V2exClient {
    * @param username 已验证用户名
    */
   private replaceLoginCookie(cookie: string, username: string): void {
+    // 切换成功后，后续退出必须绑定新账号，不能复用旧账号的退出任务
+    this.logoutTask = undefined
     this.clearCredentialSaveTimer()
     this.loginExpirationRevision = undefined
     this.authRevision += 1

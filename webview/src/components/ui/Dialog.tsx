@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
 import type { ReactNode } from 'react'
 import { Button } from './Button'
+import { ScrollArea } from './ScrollArea'
 import { mergeClassNames } from './utils'
 
 export interface DialogProps {
@@ -21,6 +22,8 @@ export interface DialogProps {
   className?: string
   /** 关闭后焦点位置，默认由 Base UI 恢复 */
   finalFocus?: DialogPrimitive.Popup.Props['finalFocus']
+  /** 打开后焦点位置，默认由 Base UI 选择 */
+  initialFocus?: DialogPrimitive.Popup.Props['initialFocus']
   /** 打开状态变化，可通过事件详情取消关闭 */
   onOpenChange: NonNullable<DialogPrimitive.Root.Props['onOpenChange']>
 }
@@ -33,6 +36,7 @@ export function Dialog({
   description,
   footer,
   finalFocus,
+  initialFocus,
   onOpenChange,
   open,
   title
@@ -53,6 +57,7 @@ export function Dialog({
         <DialogPrimitive.Popup
           className={mergeClassNames('v2ex-dialog', className)}
           finalFocus={finalFocus}
+          initialFocus={initialFocus}
         >
           <header className="v2ex-dialog__header">
             <DialogPrimitive.Title className="v2ex-dialog__title">{title}</DialogPrimitive.Title>
@@ -77,7 +82,9 @@ export function Dialog({
               对话框内容
             </DialogPrimitive.Description>
           )}
-          <div className="v2ex-dialog__body">{children}</div>
+          <ScrollArea className="v2ex-dialog__body" contentClassName="v2ex-dialog__body-content">
+            {children}
+          </ScrollArea>
           {footer && <footer className="v2ex-dialog__footer">{footer}</footer>}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>

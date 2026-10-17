@@ -15,6 +15,15 @@ export class TwoFactorRequiredError extends Error {}
 /** 账号访问受限 */
 export class AccountRestrictedError extends Error {}
 
+/** 当前 IP 登录尝试过多，源站进入冷却期 */
+export class LoginCooldownError extends Error {
+  constructor(
+    message = '登录受限：当前 IP 在短时间内的登录尝试次数过多，暂时不能继续尝试。可能需要等待至多 1 天后再试。'
+  ) {
+    super(message)
+  }
+}
+
 /** 登录失效回调 */
 export type LoginExpiredHandler = () => void | Promise<void>
 
@@ -33,6 +42,8 @@ export type CheckCookieResult =
 
 /** 两步验证码提交操作 */
 export interface TwoFactorVerification {
+  /** 验证所属认证流程结束时取消关联 UI */
+  readonly signal?: AbortSignal
   /** 提交两步验证码 */
   submitCode(code: string): Promise<void>
 }
@@ -636,4 +647,35 @@ export interface TopicManagementState {
 /** 已确认的展示管理请求 */
 export interface TopicManagementInput extends TopicManagementState {
   action: TopicManagementAction
+}
+
+/** 账号密码登录的单次提交内容，不得持久化或记录日志 */
+export interface PasswordLoginInput {
+  username: string
+  password: string
+  captcha: string
+}
+
+/** 请求重设密码邮件；仅保留在当前表单内存 */
+export interface PasswordResetInput {
+  username: string
+  email: string
+  captcha: string
+}
+
+/** 与登录挑战隔离的找回密码流程 */
+export interface PasswordResetAttempt {
+  loadChallenge(): Promise<string>
+  /** 返回源站结果说明，不将 HTTP 200 本身视为邮件发送成功 */
+  submit(input: PasswordResetInput): Promise<string>
+  dispose(): void
+}
+
+/** 隔离的账号密码登录流程，关闭页面后必须释放 */
+export interface PasswordLoginAttempt {
+  /** 获取新的表单及验证码图片；返回 data URI */
+  loadChallenge(): Promise<string>
+  /** 提交当前挑战；失败后必须重新获取挑战 */
+  submit(input: PasswordLoginInput): Promise<'authenticated' | 'canceled' | 'invalid'>
+  dispose(): void
 }
