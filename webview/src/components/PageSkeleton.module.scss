@@ -356,10 +356,14 @@
   border-radius: var(--v2ex-radius-lg);
 }
 
-.tag-title,
-.node-title {
+.tag-title {
   width: 180px;
   margin: 8px 0;
+}
+
+.node-title {
+  width: 180px;
+  margin: 0 0 8px;
 }
 
 .node-header-main {

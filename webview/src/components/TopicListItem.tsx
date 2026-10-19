@@ -10,6 +10,8 @@ interface TopicListItemProps {
   appearance?: 'row' | 'card'
   /** 是否展示作者 */
   showAuthor?: boolean
+  /** 是否展示节点 */
+  showNode?: boolean
   /** 打开主题 */
   onOpenTopic: (topic: Topic) => void
   /** 打开用户 */
@@ -27,6 +29,7 @@ export default function TopicListItem(props: TopicListItemProps) {
     topic,
     appearance = 'row',
     showAuthor = false,
+    showNode = true,
     onOpenTopic,
     onOpenMember,
     onOpenNode
@@ -56,7 +59,7 @@ export default function TopicListItem(props: TopicListItemProps) {
         )}
       </div>
       <div className={styles.meta}>
-        {!!topic.node.title && (
+        {showNode && !!topic.node.title && (
           <NodeButton
             className={styles.node}
             aria-label={`打开节点：${topic.node.title}`}

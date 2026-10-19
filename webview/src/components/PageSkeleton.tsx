@@ -245,9 +245,8 @@ function NodeTopicsPlaceholder({ rows }: SkeletonRowsProps) {
         <div className={styles['node-header-main']}>
           <Skeleton.Avatar size="large" shape="square" />
           <div className={styles['node-header-text']}>
-            <Skeleton.Paragraph rows={1} className={styles.eyebrow} />
             <Skeleton.Title className={styles['node-title']} />
-            <Skeleton.Paragraph rows={2} className={styles['node-description']} />
+            <Skeleton.Paragraph rows={1} className={styles['node-description']} />
             <Skeleton.Paragraph rows={1} className={styles.summary} />
           </div>
         </div>

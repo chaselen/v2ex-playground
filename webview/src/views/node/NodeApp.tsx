@@ -126,7 +126,6 @@ export default function NodeApp() {
                   shape="square"
                 />
                 <div className="node-header-text">
-                  <span className="node-eyebrow">节点</span>
                   <h1>{node?.title || '节点'}</h1>
                   {!!node?.description && <p className="node-description">{node.description}</p>}
                   <p className="node-count">{summaryParts.join(' · ')}</p>
@@ -190,6 +189,7 @@ export default function NodeApp() {
                       topic={topic}
                       appearance="card"
                       showAuthor
+                      showNode={false}
                       onOpenTopic={openTopic}
                       onOpenMember={openMember}
                       onOpenNode={openNode}
