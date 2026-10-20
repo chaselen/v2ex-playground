@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bookmark, BookmarkPlus, Eye, EyeOff, Inbox, RefreshCw, SquarePen } from 'lucide-react'
+import { Bookmark, BookmarkPlus, Eye, EyeOff, Inbox, RefreshCw, Rss, SquarePen } from 'lucide-react'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicListItem from '@/components/TopicListItem'
 import {
@@ -113,6 +113,18 @@ export default function NodeApp() {
     }
   }
 
+  /** 复制当前节点的订阅地址 */
+  async function copySubscription(format: 'xml' | 'json') {
+    if (!node?.name) return
+    const label = format === 'xml' ? 'RSS' : 'JSON Feed'
+    try {
+      await vscode.copySubscription(format)
+      Toast.success(`已复制 ${label} 订阅地址`)
+    } catch {
+      Toast.error(`复制 ${label} 订阅地址失败，请重试`)
+    }
+  }
+
   /** 打开话题 */
   function openTopic(topic: Topic) {
     vscode.openTopic(topic.id, topic.title)
@@ -132,12 +144,6 @@ export default function NodeApp() {
     }
   }
 
-  /** 主题数与收藏人数摘要 */
-  const summaryParts = [
-    `共 ${data?.totalCount.toLocaleString() || 0} 个主题`,
-    typeof node?.collectCount === 'number' ? `${node.collectCount.toLocaleString()} 人收藏` : null
-  ].filter(Boolean)
-
   return (
     <ScrollArea fillViewport viewportRef={scrollRef} className="node-scroll" role="main">
       <main className="node-container">
@@ -155,22 +161,56 @@ export default function NodeApp() {
                   shape="square"
                 />
                 <div className="node-header-text">
-                  <h1>{node?.title || '节点'}</h1>
+                  <div className="node-heading">
+                    <h1>{node?.title || '节点'}</h1>
+                    <div className="node-count">
+                      <span className="node-count-summary">
+                        共 <strong>{data.totalCount.toLocaleString()}</strong> 个主题
+                        {typeof node?.collectCount === 'number' && (
+                          <> · {node.collectCount.toLocaleString()} 人收藏</>
+                        )}
+                      </span>
+                      <Button
+                        size="small"
+                        compact
+                        aria-label="复制 RSS 订阅地址"
+                        icon={<Rss aria-hidden="true" />}
+                        variant="ghost"
+                        disabled={!node?.name}
+                        onClick={() => void copySubscription('xml')}
+                      >
+                        RSS
+                      </Button>
+                      <Button
+                        size="small"
+                        compact
+                        aria-label="复制 JSON Feed 订阅地址"
+                        icon={<Rss aria-hidden="true" />}
+                        variant="ghost"
+                        disabled={!node?.name}
+                        onClick={() => void copySubscription('json')}
+                      >
+                        JSON Feed
+                      </Button>
+                    </div>
+                  </div>
                   {!!node?.description && <p className="node-description">{node.description}</p>}
-                  <p className="node-count">{summaryParts.join(' · ')}</p>
                 </div>
               </div>
               <div className="node-header-actions">
-                <Button
-                  size="small"
-                  aria-label={`在${node?.title || '当前节点'}创建新主题`}
-                  icon={<SquarePen aria-hidden="true" />}
-                  variant="primary"
-                  disabled={loading || ignoring}
-                  onClick={() => void vscode.createTopic()}
-                >
-                  创建新主题
-                </Button>
+                {state.loggedIn && (
+                  <Button
+                    className="node-create-topic"
+                    size="small"
+                    aria-label={`在${node?.title || '当前节点'}创建新主题`}
+                    icon={<SquarePen aria-hidden="true" />}
+                    variant="primary"
+                    disabled={loading || ignoring}
+                    onClick={() => void vscode.createTopic()}
+                  >
+                    创建新主题
+                  </Button>
+                )}
                 {canCollect && (
                   <Button
                     size="small"

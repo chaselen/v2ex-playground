@@ -131,6 +131,16 @@ export class NodePanelController
     this.navigation.openCreateTopic(this.nodeName)
   }
 
+  /** 通过宿主剪贴板复制当前节点的订阅地址，避免 Webview 权限限制 */
+  async rpc_copySubscription(format: 'xml' | 'json') {
+    if (format !== 'xml' && format !== 'json') {
+      throw new Error('不支持的订阅格式')
+    }
+    await vscode.env.clipboard.writeText(
+      `https://www.v2ex.com/feed/${encodeURIComponent(this.nodeName)}.${format}`
+    )
+  }
+
   /** 收藏当前节点 */
   rpc_collectNode() {
     return this.mutateCollection(true)
