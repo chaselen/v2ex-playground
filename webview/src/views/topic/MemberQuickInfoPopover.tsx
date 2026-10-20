@@ -291,7 +291,6 @@ export default function MemberQuickInfoPopover({
                     {member.isPro && <UserBadge pro />}
                     {!member.isSelf && typeof member.isBlocked === 'boolean' && (
                       <ConfirmPopover
-                        closeImmediately
                         title={member.isBlocked ? '取消屏蔽该用户？' : '确认屏蔽该用户？'}
                         description={
                           member.isBlocked

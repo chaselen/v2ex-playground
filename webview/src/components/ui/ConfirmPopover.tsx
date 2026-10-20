@@ -21,7 +21,7 @@ export interface ConfirmPopoverProps extends PopoverTooltipProps {
   titleIcon?: ReactNode
   /** 确认按钮是否为危险操作 */
   danger?: boolean
-  /** 确认后立即关闭浮层；共享 Button 在请求期间保留焦点，但不可重复激活 */
+  /** 默认确认后立即关闭浮层；设为 false 时等待操作完成后关闭。共享 Button 在请求期间保留焦点，但不可重复激活 */
   closeImmediately?: boolean
   /** 是否禁用 */
   disabled?: boolean
@@ -43,7 +43,7 @@ export function ConfirmPopover({
   cancelText = '取消',
   children,
   className,
-  closeImmediately = false,
+  closeImmediately = true,
   confirmText = '确认',
   danger = false,
   description,
