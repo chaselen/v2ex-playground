@@ -2,11 +2,11 @@ import * as cheerio from 'cheerio/slim'
 import { parsePagerTotalPage } from '../parsers/common'
 import { parseTopicListCells } from '../parsers/topic'
 import type { V2exSession } from '../session'
-import type { Node, NodeTopicList } from '../types'
+import type { Node, NodeInfo, NodeTopicList } from '../types'
 
 /** V2EX 节点领域服务 */
 export class NodeService {
-  private cachedNodes: Node[] = []
+  private cachedNodes: NodeInfo[] = []
 
   constructor(
     private readonly session: V2exSession,
@@ -27,8 +27,16 @@ export class NodeService {
     }
   }
 
+  /** 通过节点编号或名称获取节点资料；两个查询条件必须且只能提供一个 */
+  async getInfo(
+    query: { id: number; name?: never } | { name: string; id?: never }
+  ): Promise<NodeInfo> {
+    const { data } = await this.session.get<V2exApiNode>('/api/nodes/show.json', { params: query })
+    return this.mapApiNode(data)
+  }
+
   /** 获取所有节点 */
-  async getAll(): Promise<Node[]> {
+  async getAll(): Promise<NodeInfo[]> {
     if (this.cachedNodes.length) return this.cachedNodes
     const { data } = await this.session.get<V2exApiNode[]>('/api/nodes/all.json')
     this.cachedNodes = (Array.isArray(data) ? data : [])
@@ -59,6 +67,37 @@ export class NodeService {
   /** 取消收藏节点 */
   async cancelCollect(nodeName: string): Promise<void> {
     await this.updateCollection(nodeName, 'unfavorite', '取消收藏节点失败')
+  }
+
+  /** 忽略节点，使其内容不再出现在首页及热议列表 */
+  async ignore(nodeName: string): Promise<Node> {
+    return this.updateIgnored(nodeName, true)
+  }
+
+  /** 取消忽略节点 */
+  async cancelIgnore(nodeName: string): Promise<Node> {
+    return this.updateIgnored(nodeName, false)
+  }
+
+  /** 从节点 API 获取稳定编号，再提交忽略或取消忽略操作 */
+  private async updateIgnored(nodeName: string, ignored: boolean): Promise<Node> {
+    const { id: nodeId } = await this.getInfo({ name: nodeName })
+    const action = ignored ? 'ignore' : 'unignore'
+    const path = `/go/${nodeName}`
+    const once = await this.session.getOnce()
+    const response = await this.session.get<string>(
+      `/settings/${action}/node/${nodeId}?once=${once}`,
+      { headers: { Referer: new URL(path, this.baseUrl).toString() } }
+    )
+    const result = cheerio.load(response.data)
+    const problem = result('.problem').first().text().trim()
+    // 以服务端成功提示确认操作结果，避免将普通节点页面误判为操作成功
+    const message = result('.message').first().text().trim()
+    const success = ignored ? '节点已经被忽略' : '节点已经被取消忽略'
+    if (problem || !message.includes(success)) {
+      throw new Error(problem || message || (ignored ? '忽略节点失败' : '取消忽略节点失败'))
+    }
+    return { ...this.parsePageInfo(result, nodeName), isIgnored: ignored }
   }
 
   /**
@@ -109,19 +148,30 @@ export class NodeService {
       avatar: this.normalizeAvatar(avatar),
       description: description || undefined,
       isCollected,
+      isIgnored:
+        $('a[href^="/settings/unignore/node/"]').length > 0
+          ? true
+          : $('a[href^="/settings/ignore/node/"]').length > 0
+            ? false
+            : undefined,
       collectCount
     }
   }
 
   /**
-   * 将 `/api/nodes/all.json` 节点映射为领域类型
+   * 将节点 API 资料映射为领域类型
    * @param item API 节点
    */
-  private mapApiNode(item: V2exApiNode): Node {
+  private mapApiNode(item: V2exApiNode): NodeInfo {
+    const id = item?.id
+    if (typeof id !== 'number' || !Number.isSafeInteger(id) || id <= 0) {
+      throw new Error('未找到有效的节点编号')
+    }
     const collectCount = typeof item.stars === 'number' && item.stars >= 0 ? item.stars : undefined
     const topicCount = typeof item.topics === 'number' && item.topics >= 0 ? item.topics : undefined
 
     return {
+      id,
       name: item.name?.trim() || '',
       title: item.title?.trim() || item.name?.trim() || '',
       avatar: this.normalizeAvatar(
@@ -152,8 +202,10 @@ export class NodeService {
   }
 }
 
-/** V2EX `/api/nodes/all.json` 节点字段 */
+/** V2EX 节点 API 使用到的字段（all.json / show.json） */
 interface V2exApiNode {
+  /** 节点编号 */
+  id: number
   /** 节点 name */
   name?: string
   /** 节点标题 */

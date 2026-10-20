@@ -261,10 +261,18 @@ export interface Node {
   description?: string
   /** 是否已收藏；未登录时通常为 false */
   isCollected?: boolean
+  /** 当前是否忽略该节点；未提供操作入口时为 undefined */
+  isIgnored?: boolean
   /** 收藏人数 */
   collectCount?: number
   /** 节点主题总数 */
   topicCount?: number
+}
+
+/** 节点详情与全部节点 API 共用的资料，包含可用于节点操作的稳定编号 */
+export interface NodeInfo extends Node {
+  /** 节点编号 */
+  id: number
 }
 
 /**

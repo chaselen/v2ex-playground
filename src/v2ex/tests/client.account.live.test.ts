@@ -13,6 +13,12 @@ const client = new V2exClient(v2exCookie)
 const authTest = v2exCookie ? test : test.skip
 
 describe('V2exClient account', () => {
+  authTest('reads ignored node count from block settings', async () => {
+    const count = await client.account.getIgnoredNodeCount()
+    expect(Number.isInteger(count)).toBe(true)
+    expect(count).toBeGreaterThanOrEqual(0)
+  })
+
   authTest('gets account overview with V2EX_COOKIE', async () => {
     expectAccountOverview(await client.account.getAccountOverview())
   })

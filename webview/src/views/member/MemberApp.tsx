@@ -47,6 +47,12 @@ type MemberAction = 'following' | 'blocking'
 /** 本人页关系列表分段 */
 type MemberRelationTab = 'following' | 'blocked'
 
+/** 已忽略节点只有数量，不对应成员内容接口 */
+type MemberTab = MemberContentTabKey | 'ignoredNodes'
+
+/** 本人页批量清除的设置 */
+type ClearSettingsKind = 'blocked' | 'ignored' | 'ignoredNodes'
+
 /** 用户页固定标签 */
 const memberTabs: Array<{ key: MemberContentTabKey; label: string }> = [
   { key: 'topics', label: '最近发帖' },
@@ -63,11 +69,13 @@ const memberTabs: Array<{ key: MemberContentTabKey; label: string }> = [
  * 获取当前用户页可见内容标签
  * @param isSelf 是否本人页
  * @param ignoredTopicCount 已忽略主题数量
+ * @param ignoredNodeCount 已忽略节点数量
  */
 function getVisibleMemberTabs(
   isSelf: boolean,
-  ignoredTopicCount: number
-): Array<{ key: MemberContentTabKey; label: string }> {
+  ignoredTopicCount: number,
+  ignoredNodeCount: number | undefined
+): Array<{ key: MemberTab; label: string }> {
   if (!isSelf) {
     return memberTabs
   }
@@ -75,8 +83,12 @@ function getVisibleMemberTabs(
   return [
     ...memberTabs,
     {
+      key: 'ignoredNodes',
+      label: ignoredNodeCount === undefined ? '已忽略节点' : `已忽略节点(${ignoredNodeCount})`
+    },
+    {
       key: 'ignored',
-      label: `已忽略(${ignoredTopicCount})`
+      label: `已忽略主题(${ignoredTopicCount})`
     }
   ]
 }
@@ -93,7 +105,7 @@ export default function MemberApp() {
     message: '',
     showRefresh: false
   })
-  const [activeTab, setActiveTab] = useState<MemberContentTabKey>('topics')
+  const [activeTab, setActiveTab] = useState<MemberTab>('topics')
   const [loadingContent, setLoadingContent] = useState(false)
   /** 本人页关系列表当前分段 */
   const [relationTab, setRelationTab] = useState<MemberRelationTab>('following')
@@ -106,12 +118,62 @@ export default function MemberApp() {
   }>()
   /** 本人页已忽略列表正在取消忽略的主题编号 */
   const [unignoringTopicId, setUnignoringTopicId] = useState<number>()
+  /** 当前正在清除的设置 */
+  const [clearing, setClearing] = useState<ClearSettingsKind>()
   /** 用户关系操作错误 */
   const [memberActionError, setMemberActionError] = useState('')
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const profileCacheRef = useRef(new Map<string, MemberProfile>())
   const { startRequest } = useLatestRequest()
   const profile = state.profile
+  const memberActionBusy = Boolean(
+    clearing || memberAction || listedMemberAction || unignoringTopicId
+  )
+
+  /** 清除本人指定设置，并使分页缓存失效 */
+  async function clearBlockSettings(kind: ClearSettingsKind) {
+    if (!profile || memberActionBusy || loadingContent) return
+    setClearing(kind)
+    setMemberActionError('')
+    try {
+      const nextProfile =
+        kind === 'blocked'
+          ? await vscode.clearBlockedMembers()
+          : kind === 'ignoredNodes'
+            ? await vscode.clearIgnoredNodes()
+            : await vscode.clearIgnoredTopics()
+      profileCacheRef.current.clear()
+      cacheProfile(nextProfile)
+      setState(current => ({ ...current, profile: nextProfile }))
+    } catch (err) {
+      setMemberActionError(err instanceof Error ? err.message : '清除失败')
+    } finally {
+      setClearing(undefined)
+    }
+  }
+
+  function renderClearButton(kind: ClearSettingsKind) {
+    const label =
+      kind === 'blocked'
+        ? '一键清除所有屏蔽'
+        : kind === 'ignoredNodes'
+          ? '一键清除所有忽略节点'
+          : '一键清除所有忽略主题'
+    return (
+      <ConfirmPopover
+        title={`${label}？`}
+        description="清除后无法一键恢复，请确认后继续。"
+        confirmText="确认清除"
+        danger
+        disabled={memberActionBusy || loadingContent}
+        onConfirm={() => clearBlockSettings(kind)}
+      >
+        <Button size="small" variant="secondary" loading={clearing === kind}>
+          {label}
+        </Button>
+      </ConfirmPopover>
+    )
+  }
 
   /**
    * 缓存用户内容
@@ -128,6 +190,7 @@ export default function MemberApp() {
    * 刷新用户页
    */
   function refreshMember() {
+    if (clearing) return
     profileCacheRef.current.clear()
     vscode.refresh()
   }
@@ -144,7 +207,7 @@ export default function MemberApp() {
    * @param action 用户关系操作
    */
   async function mutateMemberAction(action: MemberAction) {
-    if (!profile || memberAction || listedMemberAction || unignoringTopicId) {
+    if (!profile || memberActionBusy) {
       return
     }
 
@@ -186,7 +249,7 @@ export default function MemberApp() {
    * @param memberId 用户编号
    */
   async function mutateListedMember(tab: MemberRelationTab, memberId: number) {
-    if (!profile || memberAction || listedMemberAction || unignoringTopicId || memberId <= 0) {
+    if (!profile || memberActionBusy || memberId <= 0) {
       return
     }
 
@@ -218,7 +281,7 @@ export default function MemberApp() {
    * @param topicId 主题编号
    */
   async function unignoreListedTopic(topicId: number) {
-    if (!profile || memberAction || listedMemberAction || unignoringTopicId || topicId <= 0) {
+    if (!profile || memberActionBusy || topicId <= 0) {
       return
     }
 
@@ -296,8 +359,14 @@ export default function MemberApp() {
    * 切换标签
    * @param tab 标签
    */
-  async function changeTab(tab: MemberContentTabKey) {
+  async function changeTab(tab: MemberTab) {
+    if (clearing) return
     setActiveTab(tab)
+    if (tab === 'ignoredNodes') {
+      startRequest()
+      setLoadingContent(false)
+      return
+    }
     await requestMemberContent('loadMemberTab', tab, 1)
   }
 
@@ -306,6 +375,7 @@ export default function MemberApp() {
    * @param page 页码
    */
   function loadPage(page: number) {
+    if (clearing || activeTab === 'ignoredNodes') return
     requestMemberContent('loadMemberPage', activeTab, page).catch(err => console.error(err))
   }
 
@@ -346,7 +416,10 @@ export default function MemberApp() {
       setMemberActionError('')
       if (nextState.profile?.content.tab) {
         cacheProfile(nextState.profile)
-        setActiveTab(nextState.profile.content.tab)
+        const contentTab = nextState.profile.content.tab
+        setActiveTab(current =>
+          current === 'ignoredNodes' && nextState.isSelf ? current : contentTab
+        )
       }
     }
 
@@ -359,8 +432,12 @@ export default function MemberApp() {
     return dispose
   }, [])
 
-  /** 当前可见内容标签；本人页追加「已忽略」 */
-  const visibleTabs = getVisibleMemberTabs(state.isSelf, profile?.ignoredTopicIds?.length ?? 0)
+  /** 当前可见内容标签；本人页追加忽略节点与主题 */
+  const visibleTabs = getVisibleMemberTabs(
+    state.isSelf,
+    profile?.ignoredTopicIds?.length ?? 0,
+    profile?.ignoredNodeCount
+  )
 
   return (
     <ScrollArea fillViewport viewportRef={scrollRef} className="member-scroll" role="main">
@@ -421,7 +498,6 @@ export default function MemberApp() {
                   <div className="member-profile-actions">
                     {typeof profile.member.isFollowing === 'boolean' && (
                       <ConfirmPopover
-                        closeImmediately
                         title={
                           profile.member.isFollowing
                             ? `确认要取消对 ${profile.member.username} 的关注？`
@@ -447,7 +523,6 @@ export default function MemberApp() {
                     )}
                     {typeof profile.member.isBlocked === 'boolean' && (
                       <ConfirmPopover
-                        closeImmediately
                         title={profile.member.isBlocked ? '取消屏蔽该用户？' : '确认屏蔽该用户？'}
                         description={
                           profile.member.isBlocked
@@ -518,6 +593,7 @@ export default function MemberApp() {
                     }
                   />
                 </RadioGroup>
+                {relationTab === 'blocked' && renderClearButton('blocked')}
               </header>
               {relationTab === 'following'
                 ? renderRelationMembers({
@@ -525,7 +601,7 @@ export default function MemberApp() {
                     members: profile.followingMembers,
                     emptyText: '在其他用户的个人页点击“加入特别关注”后，会显示在这里',
                     listedMemberAction,
-                    busy: Boolean(memberAction || listedMemberAction || unignoringTopicId),
+                    busy: memberActionBusy,
                     openMember,
                     onRemove: memberId => mutateListedMember('following', memberId)
                   })
@@ -534,7 +610,7 @@ export default function MemberApp() {
                     members: profile.blockedMembers,
                     emptyText: '暂无屏蔽用户。在其他用户的个人页点击“屏蔽用户”后，会显示在这里',
                     listedMemberAction,
-                    busy: Boolean(memberAction || listedMemberAction || unignoringTopicId),
+                    busy: memberActionBusy,
                     openMember,
                     onRemove: memberId => mutateListedMember('blocked', memberId)
                   })}
@@ -546,7 +622,7 @@ export default function MemberApp() {
               value={activeTab}
               className="member-tabs"
               onValueChange={value =>
-                changeTab(value as MemberContentTabKey).catch(err => console.error(err))
+                changeTab(value as MemberTab).catch(err => console.error(err))
               }
             >
               <TabsList>
@@ -558,21 +634,44 @@ export default function MemberApp() {
               </TabsList>
               {visibleTabs.map(tab => (
                 <TabsContent value={tab.key} key={tab.key}>
-                  {tab.key === activeTab
-                    ? renderContent(
-                        profile,
-                        activeTab,
-                        loadingContent,
-                        loadPage,
-                        openTopic,
-                        openMember,
-                        {
-                          busy: Boolean(memberAction || listedMemberAction || unignoringTopicId),
-                          unignoringTopicId,
-                          onUnignore: unignoreListedTopic
+                  {(tab.key === 'ignored' || tab.key === 'ignoredNodes') && state.isSelf && (
+                    <div className="member-content-actions">{renderClearButton(tab.key)}</div>
+                  )}
+                  {tab.key === activeTab && activeTab === 'ignoredNodes' ? (
+                    <div className="member-content-state">
+                      <Empty
+                        title={
+                          profile.ignoredNodeCount === undefined
+                            ? '无法读取已忽略节点数量'
+                            : profile.ignoredNodeCount === 0
+                              ? '暂无忽略的节点'
+                              : '无法获取已忽略节点列表'
                         }
-                      )
-                    : null}
+                        description={
+                          profile.ignoredNodeCount === undefined
+                            ? '请刷新页面后重试。'
+                            : profile.ignoredNodeCount > 0
+                              ? '由于 V2EX 本身的限制，仅能获取已忽略节点的数量，无法获取对应列表。可在节点页取消忽略，或在此一键清除。'
+                              : '在节点页点击“忽略节点”后，可在这里查看数量并一键清除。'
+                        }
+                        icon={<Inbox aria-hidden="true" />}
+                      />
+                    </div>
+                  ) : tab.key === activeTab && activeTab !== 'ignoredNodes' ? (
+                    renderContent(
+                      profile,
+                      activeTab,
+                      loadingContent,
+                      loadPage,
+                      openTopic,
+                      openMember,
+                      {
+                        busy: memberActionBusy,
+                        unignoringTopicId,
+                        onUnignore: unignoreListedTopic
+                      }
+                    )
+                  ) : null}
                 </TabsContent>
               ))}
             </Tabs>

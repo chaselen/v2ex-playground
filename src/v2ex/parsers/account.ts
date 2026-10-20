@@ -4,6 +4,17 @@ import { parsePagerTotalPage } from './common'
 import { parseTopicListCells } from './topic'
 import type { AccountOverview, FollowingMember, Topic } from '../types'
 
+/** 只读取设置页的忽略节点计数；该页的忽略主题计数不可靠 */
+export function parseIgnoredNodeCount(html: string): number {
+  const $ = cheerio.load(html)
+  const stat = $('.block-stat')
+    .filter((_, element) => $(element).find('span').first().text().trim() === '忽略节点')
+    .first()
+  const text = stat.find('strong').first().text().trim().replace(/,/g, '')
+  if (!/^\d+$/.test(text)) throw new Error('无法读取已忽略节点数量')
+  return Number(text)
+}
+
 /**
  * 从页面 HTML 脚本中解析屏蔽用户编号
  *

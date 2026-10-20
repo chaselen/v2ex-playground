@@ -30,6 +30,10 @@ export interface NodePanelRpcCommands
   loadPage(page: number): void
   /** 收藏当前节点并刷新页面状态 */
   collectNode(): void
+  /** 忽略当前节点并刷新页面状态 */
+  ignoreNode(): NodePanelViewState
+  /** 取消忽略当前节点并刷新页面状态 */
+  cancelIgnoreNode(): NodePanelViewState
   /** 取消收藏当前节点并刷新页面状态 */
   cancelCollectNode(): void
 }

@@ -36,10 +36,26 @@ function createNodePageHtml(options: {
 }
 
 describe('NodeService', () => {
+  test.each([{ id: 864 }, { name: 'promotions' }])('按单一条件获取节点资料：%o', async query => {
+    const get = vi.fn().mockResolvedValue({
+      data: { id: 864, name: 'promotions', title: '推广', stars: 10, topics: 20 }
+    })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    await expect(service.getInfo(query)).resolves.toMatchObject({
+      id: 864,
+      name: 'promotions',
+      title: '推广',
+      collectCount: 10,
+      topicCount: 20
+    })
+    expect(get).toHaveBeenCalledWith('/api/nodes/show.json', { params: query })
+  })
+
   test('maps topic and collection counts from all-nodes API', async () => {
     const get = vi.fn().mockResolvedValue({
       data: [
         {
+          id: 300,
           name: 'programmer',
           title: '程序员',
           topics: 54321,
@@ -51,6 +67,7 @@ describe('NodeService', () => {
 
     await expect(service.getAll()).resolves.toEqual([
       expect.objectContaining({
+        id: 300,
         name: 'programmer',
         collectCount: 1234,
         topicCount: 54321
@@ -128,5 +145,68 @@ describe('NodeService', () => {
       maxRedirects: 0,
       validateStatus: expect.any(Function)
     })
+  })
+})
+
+describe('NodeService ignored nodes', () => {
+  test.each([
+    ['ignore', 'ignore', true],
+    ['cancelIgnore', 'unignore', false]
+  ] as const)(
+    '%s 通过 API 取得编号，携带 Referer 和最新 once 提交',
+    async (method, action, ignored) => {
+      const getOnce = vi.fn().mockResolvedValue('fresh')
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce({ data: { id: 864, name: 'promotions' } })
+        .mockResolvedValueOnce({
+          data:
+            createNodePageHtml({ title: '推广', collected: true, collectCount: 10 }) +
+            `<div class="message">推广 ${ignored ? '节点已经被忽略' : '节点已经被取消忽略'}，里面的内容已更新</div>`
+        })
+      const service = new NodeService(
+        { get, getOnce } as unknown as V2exSession,
+        'https://www.v2ex.com'
+      )
+      const node = await service[method]('promotions')
+      expect(node).toMatchObject({
+        name: 'promotions',
+        title: '推广',
+        isIgnored: ignored,
+        isCollected: true
+      })
+      expect(get).toHaveBeenCalledTimes(2)
+      expect(get).toHaveBeenNthCalledWith(1, '/api/nodes/show.json', {
+        params: { name: 'promotions' }
+      })
+      expect(get).toHaveBeenNthCalledWith(2, `/settings/${action}/node/864?once=fresh`, {
+        headers: { Referer: 'https://www.v2ex.com/go/promotions' }
+      })
+      expect(getOnce).toHaveBeenCalledTimes(1)
+    }
+  )
+
+  test.each([undefined, 0, -1, 1.5])('API 编号无效时不提交操作：%s', async id => {
+    const get = vi.fn().mockResolvedValue({ data: { id } })
+    const getOnce = vi.fn()
+    const service = new NodeService(
+      { get, getOnce } as unknown as V2exSession,
+      'https://www.v2ex.com'
+    )
+    await expect(service.ignore('promotions')).rejects.toThrow('未找到有效的节点编号')
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(getOnce).not.toHaveBeenCalled()
+  })
+
+  test('操作返回错误提示时报告失败', async () => {
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { id: 864 } })
+      .mockResolvedValueOnce({ data: '<div class="problem">令牌无效</div>' })
+    const service = new NodeService(
+      { get, getOnce: vi.fn().mockResolvedValue('fresh') } as unknown as V2exSession,
+      'https://www.v2ex.com'
+    )
+    await expect(service.ignore('promotions')).rejects.toThrow('令牌无效')
   })
 })

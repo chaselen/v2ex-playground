@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bookmark, BookmarkPlus, Inbox, RefreshCw, SquarePen } from 'lucide-react'
+import { Bookmark, BookmarkPlus, Eye, EyeOff, Inbox, RefreshCw, SquarePen } from 'lucide-react'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicListItem from '@/components/TopicListItem'
-import { ScrollArea, Alert, Avatar, Button, Empty, Pagination, Toast } from '@/components/ui'
+import {
+  ScrollArea,
+  Alert,
+  Avatar,
+  Button,
+  ConfirmPopover,
+  Empty,
+  Pagination,
+  Toast
+} from '@/components/ui'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import type { Topic } from '@extension/v2ex/types'
 import type {
@@ -18,6 +27,7 @@ const vscode = createVsCodeClient<NodePanelRpcCommands, NodePanelWebviewEvents>(
 export default function NodeApp() {
   const [state, setState] = useState<NodePanelViewState>({ status: 'loading', loggedIn: false })
   const [collecting, setCollecting] = useState(false)
+  const [ignoring, setIgnoring] = useState(false)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const data = state.data
   const loading = state.status === 'loading'
@@ -41,6 +51,7 @@ export default function NodeApp() {
 
   /** 刷新当前页主题列表 */
   async function refresh() {
+    if (collecting || ignoring) return
     try {
       await vscode.refresh()
       scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -54,6 +65,7 @@ export default function NodeApp() {
    * @param page 页码
    */
   async function loadPage(page: number) {
+    if (loading || collecting || ignoring) return
     try {
       await vscode.loadPage(page)
       scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -64,7 +76,7 @@ export default function NodeApp() {
 
   /** 收藏或取消收藏当前节点 */
   async function toggleCollect() {
-    if (collecting) {
+    if (loading || collecting || ignoring) {
       return
     }
 
@@ -81,6 +93,23 @@ export default function NodeApp() {
       Toast.error((err as Error).message || (isCollected ? '取消收藏节点失败' : '收藏节点失败'))
     } finally {
       setCollecting(false)
+    }
+  }
+
+  /** 切换节点忽略状态 */
+  async function toggleIgnored() {
+    if (collecting || ignoring || loading) return
+    setIgnoring(true)
+    try {
+      const nextState = node?.isIgnored
+        ? await vscode.cancelIgnoreNode()
+        : await vscode.ignoreNode()
+      setState(nextState)
+      Toast.success(node?.isIgnored ? '已取消忽略节点' : '已忽略节点')
+    } catch (err) {
+      Toast.error((err as Error).message || '更新节点忽略状态失败')
+    } finally {
+      setIgnoring(false)
     }
   }
 
@@ -133,16 +162,18 @@ export default function NodeApp() {
               </div>
               <div className="node-header-actions">
                 <Button
+                  size="small"
                   aria-label={`在${node?.title || '当前节点'}创建新主题`}
                   icon={<SquarePen aria-hidden="true" />}
                   variant="primary"
-                  disabled={loading}
+                  disabled={loading || ignoring}
                   onClick={() => void vscode.createTopic()}
                 >
                   创建新主题
                 </Button>
                 {canCollect && (
                   <Button
+                    size="small"
                     aria-label={isCollected ? '取消收藏节点' : '收藏节点'}
                     icon={
                       isCollected ? (
@@ -151,19 +182,45 @@ export default function NodeApp() {
                         <BookmarkPlus aria-hidden="true" />
                       )
                     }
-                    variant="subtle"
+                    variant="secondary"
                     loading={collecting}
-                    disabled={loading}
+                    disabled={loading || ignoring}
                     onClick={() => void toggleCollect()}
                   >
                     {isCollected ? '取消收藏' : '加入收藏'}
                   </Button>
                 )}
+                {state.loggedIn && typeof node?.isIgnored === 'boolean' && (
+                  <ConfirmPopover
+                    title={node.isIgnored ? '取消忽略这个节点？' : '忽略这个节点？'}
+                    description={
+                      node.isIgnored
+                        ? '该节点的内容将重新出现在首页及热议列表中'
+                        : '该节点的内容将不再出现在首页及热议列表中'
+                    }
+                    disabled={loading || collecting || ignoring}
+                    danger={!node.isIgnored}
+                    onConfirm={toggleIgnored}
+                  >
+                    <Button
+                      size="small"
+                      variant={node.isIgnored ? 'secondary' : 'danger'}
+                      loading={ignoring}
+                      icon={
+                        node.isIgnored ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />
+                      }
+                    >
+                      {node.isIgnored ? '取消忽略节点' : '忽略节点'}
+                    </Button>
+                  </ConfirmPopover>
+                )}
                 <Button
+                  size="small"
                   aria-label="刷新节点主题"
                   icon={<RefreshCw aria-hidden="true" />}
                   variant="ghost"
                   loading={loading}
+                  disabled={collecting || ignoring}
                   onClick={() => void refresh()}
                 >
                   刷新
@@ -202,7 +259,7 @@ export default function NodeApp() {
                   totalPages={data.totalPage}
                   showQuickJumper
                   hideOnSinglePage
-                  disabled={loading || collecting}
+                  disabled={loading || collecting || ignoring}
                   onPageChange={page => void loadPage(page)}
                 />
               </>

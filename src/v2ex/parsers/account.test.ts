@@ -6,7 +6,8 @@ import {
   parseAccountTopics,
   parseBlockedMemberIds,
   parseFollowingMembers,
-  parseIgnoredTopicIds
+  parseIgnoredTopicIds,
+  parseIgnoredNodeCount
 } from './account'
 
 describe('parseAccountOverview', () => {
@@ -211,5 +212,21 @@ describe('parseAccountTopics', () => {
     expect(result.totalPage).toBe(4)
     expect(result.list).toHaveLength(1)
     expect(result.list[0]).toMatchObject({ id: 2, title: '收藏主题', replies: 3 })
+  })
+})
+
+describe('parseIgnoredNodeCount', () => {
+  it('按标签读取节点数，不使用错误的主题计数或屏蔽数', () => {
+    expect(
+      parseIgnoredNodeCount(`<div class="block-stat"><span>屏蔽人数</span><strong>4</strong></div>
+      <div class="block-stat"><span>忽略主题</span><strong>0</strong></div>
+      <div class="block-stat"><span>忽略节点</span><strong>1,234</strong></div>`)
+    ).toBe(1234)
+  })
+  it('保留零计数，缺少计数时不伪装为空列表', () => {
+    expect(
+      parseIgnoredNodeCount('<div class="block-stat"><span>忽略节点</span><strong>0</strong></div>')
+    ).toBe(0)
+    expect(() => parseIgnoredNodeCount('<html>请登录</html>')).toThrow('无法读取已忽略节点数量')
   })
 })

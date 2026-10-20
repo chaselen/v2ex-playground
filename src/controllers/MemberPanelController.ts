@@ -187,6 +187,42 @@ export class MemberPanelController
     return this.mutateMemberRelation('unfollow')
   }
 
+  /** 清除本人全部屏蔽用户 */
+  async rpc_clearBlockedMembers(): Promise<MemberProfile> {
+    return this.clearBlockSettings('blocked')
+  }
+
+  /** 清除本人全部忽略主题 */
+  async rpc_clearIgnoredTopics(): Promise<MemberProfile> {
+    return this.clearBlockSettings('ignored')
+  }
+
+  /** 清除本人全部忽略节点 */
+  async rpc_clearIgnoredNodes(): Promise<MemberProfile> {
+    return this.clearBlockSettings('ignoredNodes')
+  }
+
+  /** 清除成功后同步资料与当前内容 */
+  private async clearBlockSettings(
+    kind: 'blocked' | 'ignored' | 'ignoredNodes'
+  ): Promise<MemberProfile> {
+    if (!this.isSelf || !this.profile) throw new Error('仅本人页可清除屏蔽与忽略设置')
+    if (!(await G.V2ex.ensureAuthenticated())) throw new LoginRequiredError('清除前请先登录')
+    if (kind === 'blocked') {
+      await G.V2ex.account.clearBlockedMembers()
+      this.profile = { ...this.profile, blockedMembers: [] }
+    } else if (kind === 'ignoredNodes') {
+      await G.V2ex.account.clearIgnoredNodes()
+      this.profile = { ...this.profile, ignoredNodeCount: 0 }
+    } else {
+      await G.V2ex.account.clearIgnoredTopics()
+      this.profile = { ...this.profile, ignoredTopicIds: [] }
+      if (this.profile.content.tab === 'ignored') await this.applyIgnoredTopicsContent([], 1)
+    }
+    this.render(this.profile)
+    return this.profile
+  }
+
   /** 屏蔽用户 */
   rpc_blockMember() {
     return this.mutateMemberRelation('block')
@@ -253,7 +289,8 @@ export class MemberPanelController
       content,
       relationMembers?.followingMembers,
       relationMembers?.blockedMembers,
-      relationMembers?.ignoredTopicIds
+      relationMembers?.ignoredTopicIds,
+      relationMembers?.ignoredNodeCount
     )
     this.panel.title = formatPanelTitle(this.profile.member.username)
     setRemotePanelIcon(this.panel, this.profile.member.avatar).catch(err =>
@@ -449,7 +486,8 @@ export class MemberPanelController
       content,
       relationMembers.followingMembers,
       relationMembers.blockedMembers,
-      relationMembers.ignoredTopicIds
+      relationMembers.ignoredTopicIds,
+      relationMembers.ignoredNodeCount
     )
     this.render(this.profile)
     return this.profile
@@ -462,20 +500,23 @@ export class MemberPanelController
    * @param followingMembers 特别关注列表
    * @param blockedMembers 屏蔽列表
    * @param ignoredTopicIds 忽略主题编号
+   * @param ignoredNodeCount 忽略节点数量
    */
   private createProfile(
     member: MemberInfo,
     content: MemberContent,
     followingMembers = this.profile?.followingMembers,
     blockedMembers = this.profile?.blockedMembers,
-    ignoredTopicIds = this.profile?.ignoredTopicIds
+    ignoredTopicIds = this.profile?.ignoredTopicIds,
+    ignoredNodeCount = this.profile?.ignoredNodeCount
   ): MemberProfile {
     return {
       member,
       content,
       followingMembers,
       blockedMembers,
-      ignoredTopicIds
+      ignoredTopicIds,
+      ignoredNodeCount
     }
   }
 
@@ -484,15 +525,28 @@ export class MemberPanelController
     followingMembers: FollowingMember[]
     blockedMembers: BlockedMember[]
     ignoredTopicIds: number[]
+    ignoredNodeCount: number | undefined
   }> {
-    const [followingMembers, relationLists] = await Promise.all([
+    const [followingMembers, relationLists, ignoredNodeCount] = await Promise.all([
       this.loadFollowingMembers(),
-      this.loadBlockedAndIgnored()
+      this.loadBlockedAndIgnored(),
+      this.loadIgnoredNodeCount()
     ])
     return {
       followingMembers,
       blockedMembers: relationLists.blockedMembers,
-      ignoredTopicIds: relationLists.ignoredTopicIds
+      ignoredTopicIds: relationLists.ignoredTopicIds,
+      ignoredNodeCount
+    }
+  }
+
+  /** 节点计数失败不阻断资料页，也不把未知数量当成零 */
+  private async loadIgnoredNodeCount(): Promise<number | undefined> {
+    try {
+      return await G.V2ex.account.getIgnoredNodeCount()
+    } catch (err) {
+      logger.error('忽略节点数量加载失败', err, { username: this.username })
+      return undefined
     }
   }
 

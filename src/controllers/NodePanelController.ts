@@ -141,6 +141,27 @@ export class NodePanelController
     return this.mutateCollection(false)
   }
 
+  /** 忽略当前节点 */
+  rpc_ignoreNode() {
+    return this.mutateIgnored(true)
+  }
+
+  /** 取消忽略当前节点 */
+  rpc_cancelIgnoreNode() {
+    return this.mutateIgnored(false)
+  }
+
+  private async mutateIgnored(ignored: boolean) {
+    if (!(await G.V2ex.ensureAuthenticated())) throw new LoginRequiredError('操作前请先登录')
+    const data = this.viewState.data
+    if (!data) throw new Error('节点尚未加载完成')
+    const node = ignored
+      ? await G.V2ex.nodes.ignore(this.nodeName)
+      : await G.V2ex.nodes.cancelIgnore(this.nodeName)
+    this.postViewState({ status: 'result', data: { ...data, node } })
+    return this.viewState
+  }
+
   /**
    * 收藏或取消收藏后刷新账户概览与页面
    * @param collect 是否收藏

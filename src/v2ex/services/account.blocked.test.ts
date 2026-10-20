@@ -280,3 +280,67 @@ describe('AccountService blocked members', () => {
     ])
   })
 })
+
+describe('AccountService clear block settings', () => {
+  it.each([
+    ['clearBlockedMembers', 'blocked'],
+    ['clearIgnoredTopics', 'ignored_topics'],
+    ['clearIgnoredNodes', 'ignored_nodes']
+  ] as const)('%s 使用最新 once 且仅请求清除接口', async (method, kind) => {
+    const getOnce = vi.fn().mockResolvedValue('123')
+    const get = vi.fn().mockResolvedValueOnce({
+      data: `<div class="message">${kind === 'blocked' ? '你刚刚清除了你所有的屏蔽设定' : kind === 'ignored_nodes' ? '你刚刚清除了你所有选择忽略的节点' : '你刚刚清除了你所有选择忽略的主题'}</div>`,
+      request: { res: { responseUrl: 'https://www.v2ex.com/settings/block' } }
+    })
+    const service = createAccountService({
+      get,
+      getOnce,
+      onResponse: vi.fn()
+    } as unknown as V2exSession)
+    await service[method]()
+    expect(getOnce).toHaveBeenCalledTimes(1)
+    expect(get.mock.calls.map(([url]) => url)).toEqual([`/settings/reset/${kind}?once=123`])
+    expect(getOnce.mock.invocationCallOrder[0]).toBeLessThan(get.mock.invocationCallOrder[0])
+  })
+
+  it('获取 once 失败时不发送清除请求', async () => {
+    const get = vi.fn()
+    const getOnce = vi.fn().mockRejectedValue(new Error('获取 once 失败'))
+    const service = createAccountService({
+      get,
+      getOnce,
+      onResponse: vi.fn()
+    } as unknown as V2exSession)
+    await expect(service.clearBlockedMembers()).rejects.toThrow('获取 once 失败')
+    expect(get).not.toHaveBeenCalled()
+  })
+
+  it('清除请求失败时向调用方抛出错误', async () => {
+    const getOnce = vi.fn().mockResolvedValue('123')
+    const get = vi.fn().mockRejectedValue(new Error('清除请求失败'))
+    const service = createAccountService({
+      get,
+      getOnce,
+      onResponse: vi.fn()
+    } as unknown as V2exSession)
+    await expect(service.clearBlockedMembers()).rejects.toThrow('清除请求失败')
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+  it.each([
+    ['/settings/block', '<div class="problem">令牌无效</div>', '令牌无效'],
+    ['/settings/block', '', '清除未成功'],
+    ['/settings/block', '<div class="message">操作失败</div>', '操作失败'],
+    ['/signin', '<div class="message">你刚刚清除了你所有选择忽略的主题</div>', '你刚刚清除了']
+  ])('拒绝缺少成功判据的响应：%s %s', async (path, data, message) => {
+    const get = vi
+      .fn()
+      .mockResolvedValue({ data, request: { res: { responseUrl: `https://www.v2ex.com${path}` } } })
+    const service = createAccountService({
+      get,
+      getOnce: vi.fn().mockResolvedValue('123'),
+      onResponse: vi.fn()
+    } as unknown as V2exSession)
+    await expect(service.clearIgnoredTopics()).rejects.toThrow(message)
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+})

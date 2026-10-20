@@ -1,13 +1,14 @@
 import * as cheerio from 'cheerio/slim'
 import type { AxiosResponse } from 'axios'
 import picomatch from 'picomatch'
-import { getConfigUrl, isV2exSessionUrl } from '../clientUtils'
+import { getConfigUrl, getResponseUrl, isV2exSessionUrl } from '../clientUtils'
 import {
   isSameAccountOverview,
   parseAccountOverview,
   parseBlockedMemberIds,
   parseFollowingMembers,
   parseIgnoredTopicIds,
+  parseIgnoredNodeCount,
   parseOnlineCount,
   parseAccountTopics
 } from '../parsers/account'
@@ -161,6 +162,46 @@ export class AccountService {
     return {
       blockedMemberIds: parseBlockedMemberIds(html),
       ignoredTopicIds: parseIgnoredTopicIds(html)
+    }
+  }
+
+  /** 获取已忽略节点数量；V2EX 不提供对应列表 */
+  async getIgnoredNodeCount(): Promise<number> {
+    const { data: html } = await this.session.get<string>('/settings/block')
+    return parseIgnoredNodeCount(html)
+  }
+
+  /** 清除当前账户的全部忽略节点 */
+  async clearIgnoredNodes(): Promise<void> {
+    await this.resetBlockSettings('ignored_nodes')
+  }
+
+  /** 清除当前账户的全部屏蔽用户 */
+  async clearBlockedMembers(): Promise<void> {
+    await this.resetBlockSettings('blocked')
+  }
+
+  /** 清除当前账户的全部忽略主题 */
+  async clearIgnoredTopics(): Promise<void> {
+    await this.resetBlockSettings('ignored_topics')
+  }
+
+  /** 提交前获取最新 once，清除对应设置 */
+  private async resetBlockSettings(
+    kind: 'blocked' | 'ignored_topics' | 'ignored_nodes'
+  ): Promise<void> {
+    const once = await this.session.getOnce()
+    const response = await this.session.get<string>(`/settings/reset/${kind}?once=${once}`)
+    const $ = cheerio.load(response.data)
+    const problem = $('.problem').first().text().trim()
+    const message = $('.message').first().text().trim()
+    const url = new URL(getResponseUrl(response, this.session.baseUrl))
+    // 清除接口重定向回屏蔽设置页，已验证的成功提示：
+    // blocked：你刚刚清除了你所有的屏蔽设定
+    // ignored_nodes：你刚刚清除了你所有选择忽略的节点
+    // ignored_topics：你刚刚清除了你所有选择忽略的主题
+    if (problem || url.pathname !== '/settings/block' || !message.includes('你刚刚清除了')) {
+      throw new Error(problem || message || '清除未成功，请刷新后核对')
     }
   }
 

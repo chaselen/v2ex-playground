@@ -105,6 +105,10 @@
 }
 
 .member-relations-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
@@ -208,8 +212,12 @@
 
 .member-tabs {
   .v2ex-tabs__bar {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
+}
+
+.member-content-actions {
+  margin-bottom: 12px;
 }
 
 .member-topic-list,
@@ -239,8 +247,6 @@
 
   &:hover,
   &:focus-within {
-    background: var(--v2ex-hover-bg);
-
     .member-ignored-action {
       opacity: 1;
       pointer-events: auto;

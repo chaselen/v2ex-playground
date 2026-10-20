@@ -25,8 +25,10 @@ export interface MemberProfile {
   followingMembers?: FollowingMember[]
   /** 当前登录用户的屏蔽列表，仅本人页提供 */
   blockedMembers?: BlockedMember[]
-  /** 当前登录用户忽略的主题编号，仅本人页提供，用于「已忽略」标签计数 */
+  /** 当前登录用户忽略的主题编号，仅本人页提供，用于「已忽略主题」标签计数 */
   ignoredTopicIds?: number[]
+  /** 当前登录用户忽略的节点数量，仅本人页提供；读取失败时为 undefined */
+  ignoredNodeCount?: number
 }
 
 /**
@@ -52,6 +54,12 @@ export interface MemberPanelViewState {
  */
 export interface MemberPanelRpcCommands
   extends WebviewCommonRpcCommands, WebviewStateRpcCommands<MemberPanelViewState> {
+  /** 清除本人全部屏蔽用户 */
+  clearBlockedMembers(): MemberProfile
+  /** 清除本人全部忽略主题 */
+  clearIgnoredTopics(): MemberProfile
+  /** 清除本人全部忽略节点 */
+  clearIgnoredNodes(): MemberProfile
   refresh(): void
   loadMemberTab(tab: MemberContentTabKey, page?: number): MemberProfile
   loadMemberPage(tab: MemberContentTabKey, page?: number): MemberProfile
