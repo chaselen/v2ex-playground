@@ -1,4 +1,4 @@
-import { getTopicLink, getMemberLink, getNodeLink, getTagLink, getHelpSlug } from '@/v2ex'
+import { getTopicLink, getMemberLink, getNodeLink, getTagLink } from '@/v2ex'
 import { HelpPanelController } from '@/controllers/HelpPanelController'
 import Config from '@/config'
 import { MemberPanelController } from '@/controllers/MemberPanelController'
@@ -272,22 +272,4 @@ export function openHelp(slug = 'home', anchor?: string) {
   }
   helpPanel.reveal()
   void helpPanel.load(slug, false, anchor)
-}
-
-/** 将原站帮助链接交给插件内面板，其他链接保留外部打开行为 */
-export function tryOpenHelp(path: string): boolean {
-  try {
-    const url = new URL(path)
-    if (
-      !['https:', 'http:'].includes(url.protocol) ||
-      !['www.v2ex.com', 'v2ex.com', 'edge.v2ex.com'].includes(url.hostname)
-    )
-      return false
-    const slug = getHelpSlug(url.pathname)
-    if (!slug) return false
-    openHelp(slug, url.hash ? decodeURIComponent(url.hash.slice(1)) : undefined)
-    return true
-  } catch {
-    return false
-  }
 }

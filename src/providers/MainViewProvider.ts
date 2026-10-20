@@ -6,14 +6,8 @@ import autoDailySignIn, {
 } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic } from '@/v2ex'
-import {
-  tryOpenHelp,
-  openBalance,
-  openMember,
-  openNode,
-  openTopic
-} from '@/features/panelNavigation'
-import { openExternal } from '@/features/openExternal'
+import { openBalance, openMember, openNode, openTopic } from '@/features/panelNavigation'
+import { openWebviewUrl } from '@/features/webviewNavigation'
 import { downloadImage } from '@/features/imageDownload'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import { getReadTopicIds, isTopicRead, onTopicRead } from '@/features/recentBrowse'
@@ -247,10 +241,9 @@ export default class MainViewProvider
     await vscode.commands.executeCommand('v2ex.createTopic')
   }
 
-  /** 打开外部链接 */
-  rpc_openExternal(path: string) {
-    if (tryOpenHelp(path)) return
-    openExternal(path)
+  /** 按 URL 打开插件页面或浏览器 */
+  rpc_openExternal(path: string, title?: string) {
+    openWebviewUrl(path, title)
   }
 
   /** 下载远程图片 */

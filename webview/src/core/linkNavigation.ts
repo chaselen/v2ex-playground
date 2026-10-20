@@ -1,7 +1,5 @@
 import type { WebviewCommonRpcCommands } from '@extension/shared/webview'
 import { createVsCodeClient } from './vscode'
-import { getMemberUsernameFromHref } from './memberLink'
-import { getV2exTopicId, isV2exHostname } from './topicLink'
 
 /** 站内链接导航使用的 VS Code 通信客户端 */
 const vscode = createVsCodeClient<WebviewCommonRpcCommands>()
@@ -31,13 +29,6 @@ export interface LinkNavigationOptions {
   }
 }
 
-/** Webview 链接导航目标 */
-type LinkNavigationTarget =
-  | { type: 'topic'; topicId: string | number; title?: string }
-  | { type: 'member'; username: string }
-  | { type: 'node'; name: string; title: string }
-  | { type: 'external'; path: string }
-
 /**
  * 统一处理 Webview 中的站内链接和外部链接点击
  * @param event 点击事件
@@ -58,119 +49,29 @@ export function handleWebviewLinkClick(
     return false
   }
 
-  // 先完成目标解析，再统一拦截事件，避免未识别的链接失去默认行为
-  const target = resolveLinkNavigationTarget(anchor, options)
-  if (!target) {
-    return false
-  }
-
-  interceptLinkClick(event)
-  openLinkNavigationTarget(target)
-  return true
-}
-
-/**
- * 阻止 Webview 继续处理已接管的链接点击
- * @param event 点击事件
- */
-function interceptLinkClick(event: LinkClickEvent) {
-  event.preventDefault()
-  event.stopPropagation()
-}
-
-/**
- * 解析 Webview 链接导航目标
- * @param anchor 链接元素
- * @param options 导航补充参数
- */
-function resolveLinkNavigationTarget(
-  anchor: HTMLAnchorElement,
-  options: LinkNavigationOptions
-): LinkNavigationTarget | undefined {
   const href = anchor.getAttribute('href') || ''
-  const title = anchor.textContent?.trim()
-  const url = resolveLinkUrl(href)
-  const internalPath = url && isV2exHostname(url.hostname) ? url.pathname : ''
-
-  // 只匹配 pathname，避免查询参数中的 /t/123 等文本被误判为站内链接
-  const topicId = getV2exTopicId(anchor.href, document.baseURI)
-  if (topicId) {
-    return { type: 'topic', topicId, title: title || options.topicTitle }
+  const title = anchor.textContent?.trim() || options.topicTitle
+  let url: URL | undefined
+  try {
+    if (href) url = new URL(href, document.baseURI)
+  } catch {
+    // 无效链接可使用消息携带的话题信息回退
   }
 
-  const username = getMemberUsernameFromHref(href, document.baseURI)
-  if (username) {
-    return { type: 'member', username }
+  if (url && ['http:', 'https:'].includes(url.protocol)) {
+    event.preventDefault()
+    event.stopPropagation()
+    vscode.openExternal(url.href, title)
+    return true
   }
 
-  const nodeName = extractPathValue(internalPath, 'go')
-  if (nodeName) {
-    return { type: 'node', name: nodeName, title: title || nodeName }
-  }
-
-  // 部分消息链接没有可解析的 href，需要使用消息数据中的话题信息
+  // 消息中的空链接或 javascript 占位链接仍使用已知话题信息
   if (anchor.classList.contains('topic-link') && options.fallbackTopic) {
-    return {
-      type: 'topic',
-      topicId: options.fallbackTopic.topicId,
-      title: options.fallbackTopic.title || title
-    }
+    event.preventDefault()
+    event.stopPropagation()
+    vscode.openTopic(options.fallbackTopic.topicId, options.fallbackTopic.title || title)
+    return true
   }
 
-  // 未识别为站内目标的有效链接统一交给扩展侧在浏览器中打开
-  if (url && url.href !== 'javascript:;') {
-    return { type: 'external', path: url.href }
-  }
-
-  return undefined
-}
-
-/**
- * 打开 Webview 链接导航目标
- * @param target 导航目标
- */
-function openLinkNavigationTarget(target: LinkNavigationTarget) {
-  switch (target.type) {
-    case 'topic':
-      vscode.openTopic(target.topicId, target.title)
-      return
-    case 'member':
-      vscode.openMember(target.username)
-      return
-    case 'node':
-      vscode.openNode(target.name, target.title)
-      return
-    case 'external':
-      vscode.openExternal(target.path)
-  }
-}
-
-/**
- * 解析链接地址
- * @param href 链接地址
- */
-function resolveLinkUrl(href: string, baseUrl: string = document.baseURI): URL | undefined {
-  try {
-    return href ? new URL(href, baseUrl) : undefined
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * 从站内路径中提取并解码参数
- * @param href 链接地址
- * @param segment 路径段
- */
-function extractPathValue(href: string, segment: 'go'): string {
-  const value = href.match(new RegExp(`^/${segment}/([^/]+)/?$`))?.[1]
-  if (!value) {
-    return ''
-  }
-
-  try {
-    return decodeURIComponent(value)
-  } catch {
-    return ''
-  }
+  return false
 }

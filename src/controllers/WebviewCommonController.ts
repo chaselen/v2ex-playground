@@ -1,5 +1,4 @@
-import { tryOpenHelp } from '@/features/panelNavigation'
-import { openExternal } from '@/features/openExternal'
+import { openWebviewUrl } from '@/features/webviewNavigation'
 import { downloadImage } from '@/features/imageDownload'
 import type { WebviewCommonRpcCommands, WebviewRpcController } from '@/shared/webview'
 
@@ -22,10 +21,9 @@ export abstract class WebviewCommonController<
    */
   constructor(protected readonly navigation: Deps) {}
 
-  /** 打开外部链接 */
-  rpc_openExternal(path: string) {
-    if (tryOpenHelp(path)) return
-    openExternal(path)
+  /** 优先打开插件支持的站内页面，其余链接交给浏览器 */
+  rpc_openExternal(path: string, title?: string) {
+    openWebviewUrl(path, title)
   }
 
   /** 打开话题面板 */
