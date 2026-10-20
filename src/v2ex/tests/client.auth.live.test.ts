@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest'
+import axios from 'axios'
 import { V2exClient } from '../client'
 import { LoginCooldownError } from '../types'
 import { normalizeLoginCookie } from '../cookie'
-import { V2exSession } from '../session'
+import { V2exSession, V2EX_REQUEST_HEADERS, V2EX_REQUEST_TIMEOUT } from '../session'
 import {
   parseSignoutPath,
   parsePasswordResetForm,
@@ -83,11 +84,24 @@ describe('V2exClient authentication', () => {
     expect(problem).toContain('• 输入的验证码不正确')
   })
 
-  test('recognizes the live Chinese signin cooldown page without attempting login', async () => {
-    const session = new V2exSession()
-    const response = await session.get<string>('/signin/cooldown')
-    expect(() => parseSigninForm(response.data)).toThrow(LoginCooldownError)
-    expect(() => parseSigninForm(response.data)).toThrow('至多 1 天')
+  test('reads the live cooldown page or its unrestricted redirect without attempting login', async () => {
+    // 未受限 IP 会跳回登录页；直接观察响应，避免将正常跳转当作会话失效
+    const response = await axios.get<string>('https://www.v2ex.com/signin/cooldown', {
+      headers: V2EX_REQUEST_HEADERS,
+      timeout: V2EX_REQUEST_TIMEOUT,
+      maxRedirects: 0,
+      validateStatus: status => status === 200 || status === 302
+    })
+    if (response.status === 302) {
+      expect(new URL(response.headers.location, 'https://www.v2ex.com').href).toBe(
+        'https://www.v2ex.com/signin'
+      )
+      const page = await new V2exSession().get<string>('/signin')
+      expect(parseSigninForm(page.data).once).toMatch(/^\d+$/)
+    } else {
+      expect(() => parseSigninForm(response.data)).toThrow(LoginCooldownError)
+      expect(() => parseSigninForm(response.data)).toThrow('至多 1 天')
+    }
   })
 
   const v2exCookie = process.env.V2EX_COOKIE

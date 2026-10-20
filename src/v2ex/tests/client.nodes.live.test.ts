@@ -52,10 +52,16 @@ describe('V2exClient nodes', () => {
       }
     } finally {
       try {
-        if (original) await client.nodes.ignore('promotions')
-        else await client.nodes.cancelIgnore('promotions')
+        // 重复取消忽略不会返回成功提示，仅在状态确实变化时恢复
+        const current = (await client.nodes.getTopics('promotions')).node.isIgnored
+        if (current !== original) {
+          if (original) await client.nodes.ignore('promotions')
+          else await client.nodes.cancelIgnore('promotions')
+        }
+        expect((await client.nodes.getTopics('promotions')).node.isIgnored).toBe(original)
       } finally {
         get.mockRestore()
+        client.dispose()
       }
     }
   })
