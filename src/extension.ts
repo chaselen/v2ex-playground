@@ -11,6 +11,7 @@ import {
   openRecentBrowse,
   openCreateTopic,
   openSearch,
+  openMember,
   refreshTopicPanelsForAuthChange
 } from '@/features/panelNavigation'
 import { startConnectivityCheck } from '@/features/connectivityCheck'
@@ -125,6 +126,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   )
 
   // 注册页面与设置命令
+  context.subscriptions.push(
+    vscode.commands.registerCommand('v2ex.myProfile', async () => {
+      if (!(await client.ensureAuthenticated())) {
+        await updateLoginMenuContext()
+        return
+      }
+      const username = client.getAuthenticatedUsername()
+      if (username) openMember(username)
+    })
+  )
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.search', () => openSearch()))
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.createTopic', () => openCreateTopic())
