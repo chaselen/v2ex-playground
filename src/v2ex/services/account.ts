@@ -284,9 +284,7 @@ export class AccountService {
       throw new Error('无效的消息编号')
     }
     const once = await this.session.getOnce()
-    await this.session.post(
-      `/delete/notification/${notificationId}?once=${encodeURIComponent(once)}`
-    )
+    await this.session.post(`/delete/notification/${notificationId}?once=${once}`)
   }
 
   /** 获取余额详情 */

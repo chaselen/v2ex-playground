@@ -136,9 +136,7 @@ export class NodePanelController
     if (format !== 'xml' && format !== 'json') {
       throw new Error('不支持的订阅格式')
     }
-    await vscode.env.clipboard.writeText(
-      `https://www.v2ex.com/feed/${encodeURIComponent(this.nodeName)}.${format}`
-    )
+    await vscode.env.clipboard.writeText(`https://www.v2ex.com/feed/${this.nodeName}.${format}`)
   }
 
   /** 收藏当前节点 */

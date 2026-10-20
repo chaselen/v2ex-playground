@@ -61,6 +61,7 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 ## 数据与接口
 
 - 不猜测字段、类型、HTML 结构、参数或错误格式；先核对现有类型、解析器、夹具与调用路径
+- URL 拼接按字段契约决定是否编码：节点 `name`（`nodeName`）仅含英文字母、数字、下划线或连字符，`topicId`、`once` 为纯数字，均无需 `encodeURIComponent`；标签、搜索词等可能包含特殊字符的值仍需编码
 - HTML 解析以中文页面为契约，保留 `Accept-Language: zh-CN,zh;q=0.9`。curl 等独立核对请求也必须携带该头，专门验证多语言时除外
 - 领域数据变化先更新 `src/v2ex/types.ts`，再同步 service、parser、门面、共享契约和消费方；新增能力按需从 `src/v2ex/index.ts` 导出
 - 解析规则变化同步更新测试；依赖真实结构的关键行为须有相关 live 测试覆盖
