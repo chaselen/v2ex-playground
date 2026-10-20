@@ -75,7 +75,7 @@ describe('password login candidates', () => {
   test('canceling candidate two-factor verification preserves the original account', async () => {
     const original = handle
     handle = config => {
-      if (config.url === '/' && String(config.headers.get('Cookie')).includes('A2=new'))
+      if (config.url === '/?tab=all' && String(config.headers.get('Cookie')).includes('A2=new'))
         return { status: 302, headers: { location: '/2fa' } }
       return original(config)
     }
@@ -138,7 +138,7 @@ describe('password login candidates', () => {
           headers: { location: '/2fa', 'set-cookie': ['A2=new; Domain=.v2ex.com; Path=/'] }
         }
       if (
-        config.url === '/' &&
+        config.url === '/?tab=all' &&
         String(config.headers.get('Cookie')).includes('A2=new') &&
         !String(config.headers.get('Cookie')).includes('A2O=verified')
       )
@@ -175,7 +175,7 @@ describe('password login candidates', () => {
       release = resolve
     })
     handle = async config => {
-      if (config.url === '/' && String(config.headers.get('Cookie')).includes('A2=new'))
+      if (config.url === '/?tab=all' && String(config.headers.get('Cookie')).includes('A2=new'))
         await waiting
       return original(config)
     }
@@ -186,7 +186,8 @@ describe('password login candidates', () => {
     await vi.waitFor(() =>
       expect(
         requests.some(
-          config => config.url === '/' && String(config.headers.get('Cookie')).includes('A2=new')
+          config =>
+            config.url === '/?tab=all' && String(config.headers.get('Cookie')).includes('A2=new')
         )
       ).toBe(true)
     )
@@ -275,7 +276,7 @@ describe('source logout', () => {
   function installSignout(fail = false) {
     let revoked = false
     handle = config => {
-      if (config.url === '/')
+      if (config.url === '/?tab=all')
         return {
           data: revoked
             ? anonymous
@@ -393,7 +394,7 @@ describe('authentication lifecycle regressions', () => {
     async mode => {
       const original = handle
       handle = config => {
-        if (config.url === '/' && String(config.headers.get('Cookie')).includes('A2=new'))
+        if (config.url === '/?tab=all' && String(config.headers.get('Cookie')).includes('A2=new'))
           return { status: 302, headers: { location: '/2fa' } }
         return original(config)
       }
@@ -500,7 +501,7 @@ test('disposing the client prevents a pending Cookie login from persisting crede
   })
   let validating = false
   handle = async config => {
-    if (config.url === '/' && String(config.headers.get('Cookie')).includes('A2=new')) {
+    if (config.url === '/?tab=all' && String(config.headers.get('Cookie')).includes('A2=new')) {
       validating = true
       await waiting
     }
@@ -558,7 +559,10 @@ describe('confirmed logout with internal cookies', () => {
     await instance.ensureAuthenticated()
     const start = requests.length
     await expect(instance.logout()).resolves.toBe(true)
-    expect(requests.slice(start).map(request => request.url)).toEqual(['/', '/signout?once=123'])
+    expect(requests.slice(start).map(request => request.url)).toEqual([
+      '/?tab=all',
+      '/signout?once=123'
+    ])
     expect(instance.isAuthenticated()).toBe(false)
     expect(instance.getLoginCookie()).toBe('')
     expect(stored()).toBe('')

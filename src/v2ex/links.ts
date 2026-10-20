@@ -29,6 +29,25 @@ export function isV2exPath(url: URL, path: string): boolean {
   return isV2exUrl(url) && url.pathname === path
 }
 
+/** 站点默认图标。关闭「节点图标作为 favicon」后，主题页 icon 会退回这些地址 */
+const GENERIC_V2EX_ICON =
+  /^\/static\/(?:favicon\.ico|icon-\d+\.png|apple-touch-icon(?:-\d+)?(?:\.png)?)$/
+
+/**
+ * 判断地址是否为 V2EX 站点默认图标，而不是节点图标
+ * @param iconUrl 图标地址，可以是绝对地址或站内路径
+ * @example isGenericV2exIcon('/static/favicon.ico') // true
+ * @example isGenericV2exIcon('https://cdn.v2ex.com/navatar/94f6/d7e0/300_large.png') // false
+ */
+export function isGenericV2exIcon(iconUrl: string): boolean {
+  try {
+    const url = new URL(iconUrl, V2EX_BASE_URL)
+    return isV2exUrl(url) && GENERIC_V2EX_ICON.test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
 /**
  * 从链接中提取主题id，仅提取编号，不校验所属站点
  * @param topicLink 主题链接

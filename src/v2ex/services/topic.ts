@@ -77,7 +77,11 @@ export class TopicService {
   async getListByTab(tab: string): Promise<Topic[]> {
     const { data: html } = await this.session.get<string>(`/?tab=${tab}`)
     const $ = cheerio.load(html)
-    return parseTopicListCells($, $('#Main > .box').eq(0).children('.cell.item'))
+    // 节点导航与收藏节点由个人设置控制，按列表内容定位，避免依赖首页盒子顺序
+    const topicBox = $('#Main > .box')
+      .filter((_, element) => $(element).children('.cell.item').length > 0)
+      .first()
+    return parseTopicListCells($, topicBox.children('.cell.item'))
   }
 
   /** 根据标签获取话题列表 */

@@ -121,6 +121,7 @@ export function expectAccountOverview(overview: AccountOverview) {
   expect(overview.gold).toBeGreaterThanOrEqual(0)
   expect(overview.silver).toBeGreaterThanOrEqual(0)
   expect(overview.bronze).toBeGreaterThanOrEqual(0)
+  expect(overview.showBalance).toEqual(expect.any(Boolean))
 }
 
 /**

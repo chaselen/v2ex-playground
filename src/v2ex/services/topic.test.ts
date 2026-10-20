@@ -9,6 +9,30 @@ function topicHtml(action = ''): string {
   return `<div class="topic_buttons"><a class="tb">加入收藏</a>${action ? `<a class="tb">${action}</a>` : ''}</div>`
 }
 
+describe('TopicService homepage topics', () => {
+  test('skips the homepage node directory and reads the topic box', async () => {
+    const html = `
+      <div id="Main">
+        <div class="box">
+          <div class="cell">V2EX / 节点导航</div>
+          <a href="/go/qna">问与答</a>
+        </div>
+        <div class="box">
+          <div class="cell item">
+            <a class="topic-link" href="/t/12">标题</a>
+            <a class="node" href="/go/sandbox">沙盒</a>
+            <span class="topic_info"><strong><a href="/member/a">a</a></strong></span>
+          </div>
+        </div>
+      </div>`
+    const get = vi.fn().mockResolvedValue({ data: html })
+    const service = new TopicService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+
+    await expect(service.getListByTab('tech')).resolves.toMatchObject([{ id: 12, title: '标题' }])
+    expect(get).toHaveBeenCalledWith('/?tab=tech')
+  })
+})
+
 describe('TopicService topic ignore actions', () => {
   test('ignores a topic with the current once token', async () => {
     const getOnce = vi.fn().mockResolvedValue('once-token')

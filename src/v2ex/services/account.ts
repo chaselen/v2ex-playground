@@ -91,17 +91,17 @@ export class AccountService {
     return { dispose: () => this.onlineCountChangedHandlers.delete(handler) }
   }
 
-  /** 获取账户概览 */
+  /** 获取账户概览；显式指定首页标签，避免个人设置中的首页跳转 */
   async getAccountOverview(options: { force?: boolean } = {}): Promise<AccountOverview> {
     if (!options.force && this.accountOverview) return this.accountOverview
-    await this.session.get<string>('/')
+    await this.session.get<string>('/?tab=all')
     return this.accountOverview || createEmptyAccountOverview()
   }
 
   /** 获取在线人数 */
   async getOnlineCount(options: { force?: boolean } = {}): Promise<number | undefined> {
     if (!options.force && this.onlineCount !== undefined) return this.onlineCount
-    await this.session.get<string>('/')
+    await this.session.get<string>('/?tab=all')
     return this.onlineCount
   }
 
@@ -356,7 +356,8 @@ function createEmptyAccountOverview(): AccountOverview {
     unreadNoticeCount: 0,
     gold: 0,
     silver: 0,
-    bronze: 0
+    bronze: 0,
+    showBalance: false
   }
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
-import type { AxiosResponse } from 'axios'
+import type { AxiosInstance, AxiosResponse } from 'axios'
 import { AccountService } from './account'
-import type { V2exSession } from '../session'
+import { V2exSession } from '../session'
 
 /**
  * 创建可从测试中完成的 Promise
@@ -13,6 +13,36 @@ function createDeferred<T>() {
   })
   return { promise, resolve }
 }
+
+test('refreshes account and online count through an explicit tab despite a custom homepage', async () => {
+  const session = new V2exSession('A2=valid')
+  const http = (session as unknown as { http: AxiosInstance }).http
+  const requests: string[] = []
+  http.defaults.adapter = async config => {
+    requests.push(config.url!)
+    return {
+      config,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      data:
+        config.url === '/?tab=all'
+          ? `
+        <body><div id="Rightbar"><div class="box">
+          <div id="member-activity"></div><a href="/member/alice">alice</a>
+        </div></div><footer>123 人在线</footer></body>
+      `
+          : '<div id="Main">记事本</div>'
+    }
+  }
+  const service = new AccountService(session, { getSummaryById: vi.fn() })
+  await expect(service.getAccountOverview({ force: true })).resolves.toMatchObject({
+    username: 'alice',
+    showBalance: false
+  })
+  await expect(service.getOnlineCount({ force: true })).resolves.toBe(123)
+  expect(requests).toEqual(['/?tab=all', '/?tab=all'])
+})
 
 describe('AccountService authentication session', () => {
   test('returns failed without sending requests when no login cookie exists', async () => {

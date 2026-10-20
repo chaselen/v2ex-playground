@@ -119,6 +119,7 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 - [主题写操作接口契约](docs/topic-write-contract.md) — 发布、编辑、移动与附言的请求差异、权限与成功判据
 - [Webview RPC 通信](docs/webview-rpc.md) — 消息协议、约定式控制器、事件推送和安全边界
 - [Webview UI 与主题](docs/webview-ui.md) — Base UI、Lucide 图标、VS Code 语义变量和组件扩展约束
+- [官方个人主页设置](docs/profile-settings.md) — 设置对页面契约的影响、兼容方式与验证边界
 
 ## 提交
 

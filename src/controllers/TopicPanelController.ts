@@ -1,4 +1,10 @@
-import { getTopicLink, AccountRestrictedError, LoginRequiredError, TopicDetail } from '@/v2ex'
+import {
+  getTopicLink,
+  AccountRestrictedError,
+  LoginRequiredError,
+  TopicDetail,
+  isGenericV2exIcon
+} from '@/v2ex'
 import vscode from 'vscode'
 import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
 import { showNodeQuickPick } from '@/features/nodeQuickPick'
@@ -603,7 +609,7 @@ export class TopicPanelController
       logger.error('最近浏览详情保存失败', err, { topicId: detail.id })
     )
     this.panel.title = formatPanelTitle(detail.title)
-    setRemotePanelIcon(this.panel, detail.topicIcon).catch(err =>
+    setRemotePanelIcon(this.panel, resolveTopicPanelIcon(detail)).catch(err =>
       logger.error('话题面板图标更新失败', err)
     )
     this.render(detail)
@@ -690,6 +696,21 @@ export class TopicPanelController
     this.render(detail)
     return detail
   }
+}
+
+/**
+ * 选择话题面板图标
+ *
+ * 主题页 favicon 在「节点图标作为 favicon」打开时是节点 navatar。
+ * 关闭后只剩站点默认图标，改用节点头像代理，避免面板图标变成 V2EX 站标。
+ * @param detail 话题详情
+ */
+function resolveTopicPanelIcon(detail: TopicDetail): string {
+  if (detail.topicIcon && !isGenericV2exIcon(detail.topicIcon)) {
+    return detail.topicIcon
+  }
+
+  return detail.node.name ? getV2exNodeAvatarUrl(detail.node.name, 'large') : ''
 }
 
 /**

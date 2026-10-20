@@ -66,6 +66,19 @@ describe('AuthService two-factor submission', () => {
 })
 
 describe('AuthService login validation', () => {
+  test('checks an explicit homepage tab when the custom homepage has no account sidebar', async () => {
+    const { service, requests } = createAuthService(
+      undefined,
+      `
+      <div id="Rightbar"><div class="box">
+        <div id="member-activity"></div><a href="/member/alice">alice</a>
+      </div></div>
+    `
+    )
+    await expect(service.checkCookie()).resolves.toEqual({ isValid: true, username: 'alice' })
+    expect(requests.mock.calls[0][0].url).toBe('/?tab=all')
+  })
+
   test('reports a homepage signin redirect as an invalid credential', async () => {
     const { service, session } = createAuthService('/signin')
     await expect(service.checkCookie()).resolves.toEqual({ isValid: false })

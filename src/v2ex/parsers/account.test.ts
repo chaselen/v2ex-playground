@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio/slim'
 import { describe, expect, it } from 'vitest'
 import {
   parseAccountOverview,
+  isSameAccountOverview,
   parseAccountTopics,
   parseBlockedMemberIds,
   parseFollowingMembers,
@@ -51,9 +52,61 @@ describe('parseAccountOverview', () => {
       nodeCollectionCount: 19,
       topicCollectionCount: 352,
       specialFollowingCount: 10,
-      activityPercent: 75
+      activityPercent: 75,
+      showBalance: false,
+      gold: 0,
+      silver: 0,
+      bronze: 0
     })
   })
+
+  it('关闭显示余额时标记金额不可展示', () => {
+    const $ = cheerio.load(`
+      <div id="Rightbar">
+        <div class="box">
+          <div id="member-activity"><div class="member-activity-done" style="width: 100%;"></div></div>
+          <a href="/member/Livid">Livid</a>
+        </div>
+      </div>
+    `)
+
+    expect(parseAccountOverview($)).toMatchObject({
+      showBalance: false,
+      gold: 0,
+      silver: 0,
+      bronze: 0
+    })
+  })
+
+  it('按币种解析右栏余额', () => {
+    const $ = cheerio.load(`
+      <div id="Rightbar">
+        <div class="box">
+          <div id="member-activity"></div>
+          <a href="/member/Livid">Livid</a>
+          <a class="balance_area" href="/balance">25 <img alt="S"> 4 <img alt="B"></a>
+        </div>
+      </div>
+    `)
+
+    expect(parseAccountOverview($)).toMatchObject({
+      showBalance: true,
+      gold: 0,
+      silver: 25,
+      bronze: 4
+    })
+  })
+})
+
+it('余额显示设置变化时触发概览更新，即使金额均为零', () => {
+  const overview = parseAccountOverview(
+    cheerio.load(`
+    <div id="Rightbar"><div class="box">
+      <div id="member-activity"></div><a href="/member/alice">alice</a>
+    </div></div>
+  `)
+  )!
+  expect(isSameAccountOverview(overview, { ...overview, showBalance: true })).toBe(false)
 })
 
 describe('parseFollowingMembers', () => {

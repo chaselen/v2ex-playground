@@ -120,7 +120,7 @@ describe('V2exClient authentication', () => {
 
   authTest('recognizes the source signout entry without revoking the test session', async () => {
     const session = new V2exSession(v2exCookie)
-    const { data } = await session.get<string>('/')
+    const { data } = await session.get<string>('/?tab=all')
     expect(parseSignoutPath(data)).toMatch(/^\/signout\?once=\d+$/)
   })
 

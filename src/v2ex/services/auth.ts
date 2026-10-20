@@ -102,7 +102,7 @@ export class AuthService {
   /** 使用源站导航中的新鲜令牌登出；调用方负责清理本地凭据 */
   async signout(): Promise<void> {
     try {
-      const { data } = await this.session.get<string>('/')
+      const { data } = await this.session.get<string>('/?tab=all')
       const path = parseSignoutPath(data)
       if (!path) {
         if (!(await this.checkCookie()).isValid) return
@@ -131,12 +131,12 @@ export class AuthService {
     }
   }
 
-  /** 检查当前 Cookie 是否有效 */
+  /** 检查当前 Cookie 是否有效；显式指定首页标签，避免跳转到没有账户侧栏的页面 */
   async checkCookie(): Promise<CheckCookieResult> {
     if (!this.session.getCookie()) return { isValid: false }
     let html: string
     try {
-      html = (await this.session.get<string>('/')).data
+      html = (await this.session.get<string>('/?tab=all')).data
     } catch (error) {
       if (error instanceof LoginRequiredError) return { isValid: false }
       throw error

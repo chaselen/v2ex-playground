@@ -7,7 +7,8 @@ import {
   getTagLink,
   parseTopicIdByLink,
   isV2exUrl,
-  isV2exPath
+  isV2exPath,
+  isGenericV2exIcon
 } from '../index'
 
 describe('public help link helper', () => {
@@ -22,6 +23,16 @@ describe('public help link helper', () => {
       expect(getHelpSlug(path)).toBeUndefined()
     }
   )
+})
+
+describe('site icons', () => {
+  test('区分站点默认图标和节点图标', () => {
+    expect(isGenericV2exIcon('/static/favicon.ico')).toBe(true)
+    expect(isGenericV2exIcon('https://www.v2ex.com/static/icon-192.png')).toBe(true)
+    expect(isGenericV2exIcon('https://www.v2ex.com/static/apple-touch-icon-180.png?v=1')).toBe(true)
+    expect(isGenericV2exIcon('https://cdn.v2ex.com/navatar/94f6/d7e0/300_xxlarge.png')).toBe(false)
+    expect(isGenericV2exIcon('https://example.com/static/favicon.ico')).toBe(false)
+  })
 })
 
 describe('public resource links', () => {

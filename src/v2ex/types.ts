@@ -359,6 +359,11 @@ export interface AccountOverview extends CoinBalance {
   activityPercent: number
   /** 未读提醒数量 */
   unreadNoticeCount: number
+  /**
+   * 右栏是否展示余额。
+   * 个人主页关闭「显示余额」后页面没有 `.balance_area`，金银铜会解析成 0，不能当成真实余额。
+   */
+  showBalance: boolean
 }
 
 /** 账户流水收支方向 */

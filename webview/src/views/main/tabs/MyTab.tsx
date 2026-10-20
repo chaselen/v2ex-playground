@@ -887,12 +887,16 @@ export default function MyTab(props: MyTabProps) {
               aria-label="账户余额"
               onClick={() => vscode.openBalance()}
             >
-              <CurrencyBalance
-                gold={overview.gold}
-                silver={overview.silver}
-                bronze={overview.bronze}
-                coinClassName={styles['my-coin']}
-              />
+              {overview.showBalance ? (
+                <CurrencyBalance
+                  gold={overview.gold}
+                  silver={overview.silver}
+                  bronze={overview.bronze}
+                  coinClassName={styles['my-coin']}
+                />
+              ) : (
+                <span>余额</span>
+              )}
             </button>
             <button
               type="button"

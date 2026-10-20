@@ -80,7 +80,8 @@ export function parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | u
     unreadNoticeCount: 0,
     gold: 0,
     silver: 0,
-    bronze: 0
+    bronze: 0,
+    showBalance: false
   }
 
   const accountBox = $('#Rightbar > .box').has('#member-activity').first()
@@ -131,7 +132,10 @@ export function parseAccountOverview($: cheerio.CheerioAPI): AccountOverview | u
   const unreadText = $('#Rightbar a[href="/notifications"]').first().text().trim()
   overview.unreadNoticeCount = Number(unreadText.match(/(\d+)\s*未读提醒/)?.[1] || 0)
 
-  const balance = parseCoinBalance($('#Rightbar .balance_area').first())
+  const balanceArea = $('#Rightbar .balance_area').first()
+  // 关闭「显示余额」时右栏没有该区域；缺席不是 0 余额
+  overview.showBalance = balanceArea.length > 0
+  const balance = parseCoinBalance(balanceArea)
   overview.gold = balance.gold
   overview.silver = balance.silver
   overview.bronze = balance.bronze
@@ -197,6 +201,7 @@ export function isSameAccountOverview(
     overview.specialFollowingCount === oldOverview.specialFollowingCount &&
     overview.activityPercent === oldOverview.activityPercent &&
     overview.unreadNoticeCount === oldOverview.unreadNoticeCount &&
+    overview.showBalance === oldOverview.showBalance &&
     overview.gold === oldOverview.gold &&
     overview.silver === oldOverview.silver &&
     overview.bronze === oldOverview.bronze

@@ -86,6 +86,22 @@ export function parseTagTopicList($: cheerio.CheerioAPI, tag: string): TagTopicL
 }
 
 /**
+ * 选择主题图标
+ *
+ * 打开「节点图标作为 favicon」时优先选择节点 navatar，避免误取站点默认图标。
+ * 关闭后只剩 `/static/favicon.ico`、`icon-192.png` 等站点图标。
+ * @param $ cheerio 实例
+ */
+function selectTopicIcon($: cheerio.CheerioAPI): string {
+  const icons = $('head link[rel~="icon"]')
+    .map((_, element) => $(element).attr('href')?.trim() || '')
+    .get()
+    .filter(icon => icon.length > 0)
+
+  return icons.find(icon => icon.includes('/navatar/')) || icons[0] || ''
+}
+
+/**
  * 解析话题元信息
  * @param $ cheerio 实例
  * @param topicId 话题id
@@ -135,7 +151,7 @@ export function parseTopicMeta(
     .find('a.tag[href^="/tag/"]')
     .map((_, element) => $(element).text().trim())
     .get()
-  const topicIcon = $('head link[rel~="icon"]').first().attr('href')
+  const topicIcon = selectTopicIcon($)
   topic.topicIcon = topicIcon ? new URL(topicIcon, baseUrl).toString() : ''
   topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''
   const headerMeta = $('.header > .gray')

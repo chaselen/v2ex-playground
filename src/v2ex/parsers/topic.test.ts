@@ -53,6 +53,33 @@ describe('topic outdated notice parsing', () => {
   )
 })
 
+describe('topic icon parsing', () => {
+  test('prefers the node navatar when the site icon is also present', () => {
+    const $ = cheerio.load(`
+      <head>
+        <link rel="icon" href="/static/icon-192.png">
+        <link rel="shortcut icon" href="//cdn.v2ex.com/navatar/94f6/d7e0/300_xxlarge.png">
+      </head>
+      <div class="header"><h1>话题</h1><div class="gray"><span title="2026-07-15 08:58:03 +08:00">刚刚</span></div></div>
+    `)
+
+    expect(parseTopicMeta($, 1, 'https://www.v2ex.com').topicIcon).toBe(
+      'https://cdn.v2ex.com/navatar/94f6/d7e0/300_xxlarge.png'
+    )
+  })
+
+  test('keeps the site icon when node favicon is disabled', () => {
+    const $ = cheerio.load(`
+      <head><link rel="icon" href="/static/icon-192.png"></head>
+      <div class="header"><h1>话题</h1><div class="gray"><span title="2026-07-15 08:58:03 +08:00">刚刚</span></div></div>
+    `)
+
+    expect(parseTopicMeta($, 1, 'https://www.v2ex.com').topicIcon).toBe(
+      'https://www.v2ex.com/static/icon-192.png'
+    )
+  })
+})
+
 describe('topic time parsing', () => {
   it('格式化发帖时间', () => {
     const $ = cheerio.load(`
