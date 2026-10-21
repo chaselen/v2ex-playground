@@ -73,11 +73,29 @@ test('validates password reset fields and rejects error and incomplete responses
   ).toThrow('输入的验证码不正确')
   expect(() => parsePasswordResetResult(resetForm)).toThrow('请求未完成')
   expect(() => parsePasswordResetResult('<html>Unexpected response</html>')).toThrow('无法识别')
-  expect(
-    parsePasswordResetResult(
-      '<div id="Main"><div class="box"><div class="header">标题</div><div class="inner">源站返回的结果说明</div></div></div>'
-    )
-  ).toBe('源站返回的结果说明')
+})
+
+test('extracts password reset source text from the result cell without navigation', () => {
+  const message =
+    '一封包含了重设密码指令的邮件已经发送到你的注册邮箱，按照邮件中的提示（24 小时内有效），即可重设你的密码。'
+  const html = `<div id="Main">
+    <div class="sep20"></div>
+    <div class="box">
+      <div class="header"><a href="/">V2EX</a> <span class="chevron">&nbsp;›&nbsp;</span> 通过电子邮件重设密码</div>
+      <div class="cell">
+        ${message}
+      </div>
+      <div class="inner">← <a href="/">返回首页</a></div>
+    </div>
+  </div>`
+  expect(parsePasswordResetResult(html)).toBe(message)
+  expect(parsePasswordResetResult(html.replace(message, '源站更新后的提示'))).toBe(
+    '源站更新后的提示'
+  )
+  expect(() => parsePasswordResetResult(html.replace(message, '   '))).toThrow('无法识别')
+  expect(() => parsePasswordResetResult(html.replace('class="cell"', 'class="other"'))).toThrow(
+    '无法识别'
+  )
 })
 
 test('preserves separate password reset errors as plain text list items', () => {

@@ -173,6 +173,7 @@ export default function PasswordResetDialog({
                 variant="ghost"
                 size="small"
                 icon={<RefreshCw />}
+                tabIndex={-1}
                 onClick={refresh}
                 disabled={busy}
               >

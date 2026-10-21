@@ -78,14 +78,13 @@ export function parsePasswordResetForm(html: string): string {
   return once
 }
 
-/** 展示源站结果原文，拒绝仍含表单、错误或无法识别的响应 */
+/** 仅提取结果 cell 的源站提示，排除标题与返回首页导航 */
 export function parsePasswordResetResult(html: string): string {
   const $ = cheerio.load(html)
   const problem = parseAuthProblem(html)
   if (problem) throw new Error(problem)
   if ($('form[action="/forgot"]').length) throw new Error('请求未完成，请检查填写内容并重试')
-  const content = $('#Main .box').first().clone()
-  content.find('.header, script, style').remove()
+  const content = $('#Main > .box').first().children('.cell').first()
   const message = content.text().replace(/\s+/g, ' ').trim()
   if (!message) throw new Error('无法识别找回密码请求结果，请前往源站确认')
   return message
