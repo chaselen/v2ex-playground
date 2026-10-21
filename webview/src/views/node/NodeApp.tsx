@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bookmark, BookmarkPlus, Eye, EyeOff, Inbox, RefreshCw, Rss, SquarePen } from 'lucide-react'
+import {
+  Bookmark,
+  BookmarkPlus,
+  Eye,
+  EyeOff,
+  FileJson,
+  Inbox,
+  RefreshCw,
+  Rss,
+  SquarePen
+} from 'lucide-react'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicListItem from '@/components/TopicListItem'
 import {
@@ -10,7 +20,8 @@ import {
   ConfirmPopover,
   Empty,
   Pagination,
-  Toast
+  Toast,
+  Tooltip
 } from '@/components/ui'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import type { Topic } from '@extension/v2ex/types'
@@ -170,28 +181,30 @@ export default function NodeApp() {
                           <> · {node.collectCount.toLocaleString()} 人收藏</>
                         )}
                       </span>
-                      <Button
-                        size="small"
-                        compact
-                        aria-label="复制 RSS 订阅地址"
-                        icon={<Rss aria-hidden="true" />}
-                        variant="ghost"
-                        disabled={!node?.name}
-                        onClick={() => void copySubscription('xml')}
-                      >
-                        RSS
-                      </Button>
-                      <Button
-                        size="small"
-                        compact
-                        aria-label="复制 JSON Feed 订阅地址"
-                        icon={<Rss aria-hidden="true" />}
-                        variant="ghost"
-                        disabled={!node?.name}
-                        onClick={() => void copySubscription('json')}
-                      >
-                        JSON Feed
-                      </Button>
+                      <div className="node-subscriptions" role="group" aria-label="订阅节点">
+                        <Tooltip content="复制 RSS 订阅地址">
+                          <Button
+                            size="small"
+                            compact
+                            aria-label="复制 RSS 订阅地址"
+                            icon={<Rss aria-hidden="true" />}
+                            variant="ghost"
+                            disabled={!node?.name}
+                            onClick={() => void copySubscription('xml')}
+                          />
+                        </Tooltip>
+                        <Tooltip content="复制 JSON Feed 订阅地址">
+                          <Button
+                            size="small"
+                            compact
+                            aria-label="复制 JSON Feed 订阅地址"
+                            icon={<FileJson aria-hidden="true" />}
+                            variant="ghost"
+                            disabled={!node?.name}
+                            onClick={() => void copySubscription('json')}
+                          />
+                        </Tooltip>
+                      </div>
                     </div>
                   </div>
                   {!!node?.description && <p className="node-description">{node.description}</p>}

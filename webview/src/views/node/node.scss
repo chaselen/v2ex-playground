@@ -83,6 +83,16 @@
   font-size: 12px;
 }
 
+.node-subscriptions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+
+  .v2ex-button {
+    width: 28px;
+  }
+}
+
 .node-count-summary {
   padding-right: 12px;
   margin-right: 4px;
