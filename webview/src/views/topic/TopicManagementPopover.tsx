@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, ChevronDown, CircleHelp, Settings2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, CircleHelp } from 'lucide-react'
 import { Button, Popover, Toast } from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import type { TopicManagementAction } from '@extension/v2ex/types'
@@ -70,13 +70,7 @@ export default function TopicManagementPopover({ actions }: { actions: TopicMana
           </div>
         }
       >
-        <Button
-          ref={triggerRef}
-          className={styles.trigger}
-          size="small"
-          variant="secondary"
-          icon={<Settings2 aria-hidden="true" />}
-        >
+        <Button ref={triggerRef} className={styles.trigger} size="small" variant="secondary">
           管理 <ChevronDown aria-hidden="true" />
         </Button>
       </Popover>
