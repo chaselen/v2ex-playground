@@ -5,7 +5,7 @@ import logout from '@/commands/logout'
 import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
-import openTopic from '@/commands/openTopic'
+import openPage from '@/commands/openPage'
 import autoDailySignIn, { startDailySignInScheduler } from '@/features/dailySignIn'
 import {
   openRecentBrowse,
@@ -140,7 +140,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.createTopic', () => openCreateTopic())
   )
-  context.subscriptions.push(vscode.commands.registerCommand('v2ex.openTopic', () => openTopic()))
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex.openPage', () => openPage()))
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.recentBrowse', () => openRecentBrowse())
   )

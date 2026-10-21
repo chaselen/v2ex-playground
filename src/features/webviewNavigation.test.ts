@@ -1,10 +1,11 @@
 import { beforeEach, expect, test, vi } from 'vitest'
-import { openWebviewUrl } from './webviewNavigation'
+import { canOpenWebviewUrl, openWebviewUrl } from './webviewNavigation'
 
 const mocks = vi.hoisted(() => ({
   openMember: vi.fn(),
   openTopic: vi.fn(),
   openNode: vi.fn(),
+  openTag: vi.fn(),
   openBalance: vi.fn(),
   openCreateTopic: vi.fn(),
   openHelp: vi.fn(),
@@ -13,6 +14,65 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/features/panelNavigation', () => mocks)
 vi.mock('@/features/openExternal', () => ({ openExternal: mocks.openExternal }))
 beforeEach(() => vi.resetAllMocks())
+
+test.each(['%20', '%09', '%20%09%0A'])(
+  'rejects blank decoded node names during validation and navigation: %s',
+  name => {
+    const url = `https://www.v2ex.com/go/${name}`
+    expect(canOpenWebviewUrl(url)).toBe(false)
+    expect(mocks.openNode).not.toHaveBeenCalled()
+    expect(() => openWebviewUrl(url)).not.toThrow()
+    expect(mocks.openNode).not.toHaveBeenCalled()
+    expect(mocks.openExternal).toHaveBeenCalledExactlyOnceWith(url)
+  }
+)
+
+test.each([
+  ['https://www.v2ex.com/tag/TypeScript', 'TypeScript'],
+  ['http://v2ex.com/tag/VS%20Code/', 'VS Code'],
+  ['https://edge.v2ex.com/tag/%E4%B8%AD%E6%96%87?p=2#topics', '中文'],
+  ['https://www.v2ex.com/tag/%20TypeScript%20', 'TypeScript']
+])('opens decoded tags using the tag panel: %s', (url, tag) => {
+  expect(canOpenWebviewUrl(url)).toBe(true)
+  expect(mocks.openTag).not.toHaveBeenCalled()
+  openWebviewUrl(url)
+  expect(mocks.openTag).toHaveBeenCalledExactlyOnceWith(tag)
+  expect(mocks.openExternal).not.toHaveBeenCalled()
+})
+
+test.each([
+  'https://www.v2ex.com/tag/',
+  'https://www.v2ex.com/tag/%20',
+  'https://www.v2ex.com/tag/%FF',
+  'https://www.v2ex.com/tag/one/two',
+  'https://example.com/tag/TypeScript',
+  'ftp://www.v2ex.com/tag/TypeScript'
+])('keeps invalid or unsupported tag URLs in the browser: %s', url => {
+  expect(canOpenWebviewUrl(url)).toBe(false)
+  openWebviewUrl(url)
+  expect(mocks.openTag).not.toHaveBeenCalled()
+  expect(mocks.openExternal).toHaveBeenCalledExactlyOnceWith(url)
+})
+
+test.each(['0', '000', '9007199254740992', '9007199254740993'])(
+  'rejects invalid topic IDs during validation and navigation: %s',
+  topicId => {
+    const url = `https://www.v2ex.com/t/${topicId}`
+    expect(canOpenWebviewUrl(url)).toBe(false)
+    expect(mocks.openTopic).not.toHaveBeenCalled()
+    openWebviewUrl(url)
+    expect(mocks.openTopic).not.toHaveBeenCalled()
+    expect(mocks.openExternal).toHaveBeenCalledExactlyOnceWith(url)
+  }
+)
+
+test('validates supported URLs without opening a panel', () => {
+  const url = 'https://www.v2ex.com/t/9007199254740991'
+  expect(canOpenWebviewUrl(url)).toBe(true)
+  expect(mocks.openTopic).not.toHaveBeenCalled()
+  openWebviewUrl(url)
+  expect(mocks.openTopic).toHaveBeenCalledExactlyOnceWith('9007199254740991', undefined)
+})
 
 test.each([
   'https://www.v2ex.com',

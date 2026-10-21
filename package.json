@@ -24,8 +24,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "v2ex.openTopic",
-        "title": "打开帖子",
+        "command": "v2ex.openPage",
+        "title": "打开页面",
         "icon": "$(go-to-file)"
       },
       {
@@ -91,7 +91,7 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "v2ex.openTopic",
+          "command": "v2ex.openPage",
           "when": "false"
         },
         {
@@ -125,7 +125,7 @@
       ],
       "view/title": [
         {
-          "command": "v2ex.openTopic",
+          "command": "v2ex.openPage",
           "when": "view == v2ex-main",
           "group": "navigation@0"
         },
