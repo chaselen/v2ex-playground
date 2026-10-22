@@ -1,3 +1,4 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import vscode from 'vscode'
 import {
   clearRecentBrowseTopics,
@@ -6,23 +7,17 @@ import {
 } from '@/features/recentBrowse'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import type {
   DeleteRecentBrowseTopicRequest,
   RecentBrowsePanelRpcCommands,
   RecentBrowsePanelWebviewEvents,
   RecentBrowseQuery,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 
 /** 最近浏览面板控制器 */
-export class RecentBrowsePanelController
-  extends WebviewCommonController
-  implements WebviewRpcController<RecentBrowsePanelRpcCommands>
-{
+export class RecentBrowsePanelController implements WebviewPageRpcController<RecentBrowsePanelRpcCommands> {
   /** 最近浏览面板 */
   private readonly panel: vscode.WebviewPanel
 
@@ -36,7 +31,7 @@ export class RecentBrowsePanelController
    * @param deps 外部面板导航依赖
    */
   constructor(deps: WebviewNavigationDeps) {
-    super(deps)
+    const commonRpc = new WebviewCommonRpc(deps)
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.recentBrowse',
       title: '最近浏览',
@@ -46,8 +41,9 @@ export class RecentBrowsePanelController
     })
     this.rpc = new WebviewRpcBridge<RecentBrowsePanelRpcCommands, RecentBrowsePanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
+    commonRpc.bindBrowseSettings(this.panel, this.rpc)
     this.panel.onDidDispose(() => this.rpc.dispose())
   }
 

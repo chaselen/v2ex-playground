@@ -33,7 +33,7 @@ vi.mock('./webviewPanel', () => ({
   createV2exWebviewPanel: () => ({ webview: {}, onDidDispose() {}, title: '' }),
   formatPanelTitle: (title: string) => title
 }))
-vi.mock('./WebviewCommonController', () => ({ WebviewCommonController: class {} }))
+vi.mock('./WebviewCommonRpc', () => ({ WebviewCommonRpc: class {} }))
 vi.mock('@/core/WebviewRpcBridge', () => ({
   WebviewRpcBridge: class {
     post() {}

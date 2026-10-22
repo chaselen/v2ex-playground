@@ -1,3 +1,4 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import {
   getTopicLink,
   AccountRestrictedError,
@@ -16,7 +17,6 @@ import type {
 } from '@/v2ex'
 
 import G from '@/global'
-import Config from '@/config'
 import { uploadImage } from '@/core/imageUpload'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
@@ -30,10 +30,7 @@ import {
   loadTopicShareImages,
   saveTopicShareImage
 } from '@/features/topicShareImage'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import {
   TopicPanelRpcCommands,
   TopicPanelViewState,
@@ -44,7 +41,7 @@ import {
   TopicMemberRelationTarget,
   MemberQuickInfo,
   ImageUploadInput,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 
 /** 用户屏蔽关系操作 */
@@ -61,10 +58,7 @@ export interface TopicPanelDeps extends WebviewNavigationDeps {
 /**
  * 话题面板控制器
  */
-export class TopicPanelController
-  extends WebviewCommonController<TopicPanelDeps>
-  implements WebviewRpcController<TopicPanelRpcCommands>
-{
+export class TopicPanelController implements WebviewPageRpcController<TopicPanelRpcCommands> {
   /** 防止同一面板的内容更新与展示管理并发提交 */
   private submittingAuthorOperation = false
 
@@ -121,16 +115,17 @@ export class TopicPanelController
   /** 回复翻页请求序号 */
   private replyPageRequestId = 0
 
-  /** 配置变更监听 */
-  private readonly configListener: vscode.Disposable
-
   /**
    * @param id 话题 id
    * @param title 话题展示标题
-   * @param deps 外部面板导航依赖
+   * @param navigation 外部面板导航依赖
    */
-  constructor(id: string | number, title: string | undefined, deps: TopicPanelDeps) {
-    super(deps)
+  constructor(
+    id: string | number,
+    title: string | undefined,
+    private readonly navigation: TopicPanelDeps
+  ) {
+    const commonRpc = new WebviewCommonRpc(navigation)
     const topicId = normalizeTopicId(id)
     this.key = getTopicLink(topicId)
     this.topicId = topicId
@@ -144,20 +139,10 @@ export class TopicPanelController
     })
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
-    this.configListener = vscode.workspace.onDidChangeConfiguration(event => {
-      if (
-        event.affectsConfiguration('v2ex.browse.showImagesInTopic') ||
-        event.affectsConfiguration('v2ex.browse.showAvatar')
-      ) {
-        this.postViewState(this.viewState)
-      }
-    })
-    this.panel.onDidDispose(() => {
-      this.configListener.dispose()
-      this.rpc.dispose()
-    })
+    commonRpc.bindBrowseSettings(this.panel, this.rpc)
+    this.panel.onDidDispose(() => this.rpc.dispose())
   }
 
   /**
@@ -171,7 +156,6 @@ export class TopicPanelController
    * 销毁当前面板
    */
   dispose() {
-    this.configListener.dispose()
     this.rpc.dispose()
     this.panel.dispose()
   }
@@ -256,24 +240,13 @@ export class TopicPanelController
   private postViewState(state: TopicPanelViewState) {
     this.viewState = state
     this.rpc.post('topicStateChanged', {
-      state: this.getViewState()
+      state: this.viewState
     })
-  }
-
-  /**
-   * 获取包含当前配置的话题视图状态
-   */
-  private getViewState(): TopicPanelViewState {
-    return {
-      ...this.viewState,
-      showImages: Config.showImagesInTopic(),
-      showAvatar: Config.showAvatar()
-    }
   }
 
   /** 获取当前视图状态 */
   rpc_ready() {
-    return this.getViewState()
+    return this.viewState
   }
 
   /** 打开标签主题面板 */

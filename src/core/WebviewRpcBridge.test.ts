@@ -1,3 +1,4 @@
+import { composeWebviewRpcControllers } from './composeWebviewRpcControllers'
 import { describe, expect, test, vi } from 'vitest'
 import type vscode from 'vscode'
 import { WebviewRpcBridge } from './WebviewRpcBridge'
@@ -91,5 +92,64 @@ describe('WebviewRpcBridge', () => {
     bridge.dispose()
 
     expect(target.disposable.dispose).toHaveBeenCalledOnce()
+  })
+})
+
+describe('composed Webview RPC controllers', () => {
+  test('routes page and common commands with each handler’s original this', async () => {
+    const target = createWebview()
+    class CommonRpc {
+      private value = 'common'
+      rpc_getLabel = () => this.value
+      dispose() {
+        throw new Error('不应注册生命周期方法')
+      }
+    }
+    const handlers = composeWebviewRpcControllers(new TestRpcController(), new CommonRpc())
+    new WebviewRpcBridge<TestRpcCommands & { getLabel(): string }>(target.webview, handlers)
+    expect(handlers).not.toHaveProperty('dispose')
+    target.receive({ command: 'increment', requestId: 'page', args: [{ amount: 3 }] })
+    target.receive({ command: 'getLabel', requestId: 'common', args: [] })
+    await vi.waitFor(() => {
+      expect(target.postMessage).toHaveBeenCalledWith({
+        command: '__response',
+        requestId: 'page',
+        ok: true,
+        data: 4,
+        error: undefined
+      })
+      expect(target.postMessage).toHaveBeenCalledWith({
+        command: '__response',
+        requestId: 'common',
+        ok: true,
+        data: 'common',
+        error: undefined
+      })
+    })
+  })
+
+  test('rejects duplicate commands instead of silently overriding one handler', () => {
+    expect(() =>
+      composeWebviewRpcControllers(new TestRpcController(), new TestRpcController())
+    ).toThrow('重复的 Webview RPC 处理器: increment')
+  })
+
+  test('keeps an override within one handler and does not evaluate RPC getters', () => {
+    class Parent {
+      rpc_value() {
+        return 1
+      }
+    }
+    class Child extends Parent {
+      rpc_value() {
+        return 2
+      }
+      get rpc_invalid(): number {
+        throw new Error('组合时不应执行 getter')
+      }
+    }
+    const handlers = composeWebviewRpcControllers(new Child())
+    expect(handlers.rpc_value()).toBe(2)
+    expect(handlers).not.toHaveProperty('rpc_invalid')
   })
 })

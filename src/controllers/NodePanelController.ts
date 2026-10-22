@@ -1,3 +1,4 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import { getNodeLink, LoginRequiredError } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
@@ -5,10 +6,7 @@ import { logger } from '@/core/logger'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 
 import { notifyCollectionNodesChanged } from '@/features/nodeCollection'
 import type {
@@ -16,7 +14,7 @@ import type {
   NodePanelTopicList,
   NodePanelViewState,
   NodePanelWebviewEvents,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 
 /** 节点面板导航依赖 */
@@ -26,10 +24,7 @@ interface NodePanelNavigationDeps extends WebviewNavigationDeps {
 }
 
 /** 节点主题面板控制器 */
-export class NodePanelController
-  extends WebviewCommonController<NodePanelNavigationDeps>
-  implements WebviewRpcController<NodePanelRpcCommands>
-{
+export class NodePanelController implements WebviewPageRpcController<NodePanelRpcCommands> {
   /** 节点面板缓存 key */
   readonly key: string
 
@@ -54,10 +49,14 @@ export class NodePanelController
   /**
    * @param nodeName 节点 name
    * @param title 初始面板标题
-   * @param deps 外部面板导航依赖
+   * @param navigation 外部面板导航依赖
    */
-  constructor(nodeName: string, title: string, deps: NodePanelNavigationDeps) {
-    super(deps)
+  constructor(
+    nodeName: string,
+    title: string,
+    private readonly navigation: NodePanelNavigationDeps
+  ) {
+    const commonRpc = new WebviewCommonRpc(navigation)
     this.nodeName = nodeName
     this.key = getNodeLink(this.nodeName)
     this.panel = createV2exWebviewPanel({
@@ -69,8 +68,9 @@ export class NodePanelController
     })
     this.rpc = new WebviewRpcBridge<NodePanelRpcCommands, NodePanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
+    commonRpc.bindBrowseSettings(this.panel, this.rpc)
     this.panel.onDidDispose(() => this.rpc.dispose())
   }
 

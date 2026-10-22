@@ -1,25 +1,20 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import { getTagLink } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
 import { logger } from '@/core/logger'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import type {
   TagPanelRpcCommands,
   TagPanelViewState,
   TagPanelWebviewEvents,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 
 /** 标签主题面板控制器 */
-export class TagPanelController
-  extends WebviewCommonController
-  implements WebviewRpcController<TagPanelRpcCommands>
-{
+export class TagPanelController implements WebviewPageRpcController<TagPanelRpcCommands> {
   /** 标签面板缓存 key */
   readonly key: string
 
@@ -40,7 +35,7 @@ export class TagPanelController
    * @param deps 外部面板导航依赖
    */
   constructor(tag: string, deps: WebviewNavigationDeps) {
-    super(deps)
+    const commonRpc = new WebviewCommonRpc(deps)
     this.tag = normalizeTag(tag)
     this.key = getTagLink(this.tag)
     this.panel = createV2exWebviewPanel({
@@ -52,8 +47,9 @@ export class TagPanelController
     })
     this.rpc = new WebviewRpcBridge<TagPanelRpcCommands, TagPanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
+    commonRpc.bindBrowseSettings(this.panel, this.rpc)
     this.panel.onDidDispose(() => this.rpc.dispose())
   }
 

@@ -1,20 +1,18 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import G from '@/global'
 import { createV2exWebviewPanel, formatPanelTitle } from './webviewPanel'
-import { WebviewCommonController, type WebviewNavigationDeps } from './WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from './WebviewCommonRpc'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { openExternal } from '@/features/openExternal'
 import type {
   HelpRpcCommands,
   HelpViewState,
   HelpWebviewEvents,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 
 /** 可复用的帮助面板，保留最新状态并隔离并发导航结果 */
-export class HelpPanelController
-  extends WebviewCommonController
-  implements WebviewRpcController<HelpRpcCommands>
-{
+export class HelpPanelController implements WebviewPageRpcController<HelpRpcCommands> {
   private readonly panel = createV2exWebviewPanel({
     viewType: 'v2ex.help',
     title: '站点帮助',
@@ -22,15 +20,16 @@ export class HelpPanelController
     enableFindWidget: true,
     useDefaultIcon: true
   })
-  private readonly rpc = new WebviewRpcBridge<HelpRpcCommands, HelpWebviewEvents>(
-    this.panel.webview,
-    this
-  )
+  private readonly rpc: WebviewRpcBridge<HelpRpcCommands, HelpWebviewEvents>
   private state: HelpViewState = { status: 'loading', slug: 'home' }
   private revision = 0
 
   constructor(deps: WebviewNavigationDeps) {
-    super(deps)
+    const commonRpc = new WebviewCommonRpc(deps)
+    this.rpc = new WebviewRpcBridge<HelpRpcCommands, HelpWebviewEvents>(
+      this.panel.webview,
+      composeWebviewRpcControllers(this, commonRpc)
+    )
     this.panel.onDidDispose(() => {
       this.revision++
       this.rpc.dispose()

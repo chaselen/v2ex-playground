@@ -1,5 +1,9 @@
+import type {
+  BrowseSettingsWebviewEvents,
+  WebviewCommonRpcCommands,
+  WebviewStateRpcCommands
+} from './commonView'
 import type { NodeTopicList } from '../v2ex/types'
-import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 
 /** 节点主题面板数据 */
 export interface NodePanelTopicList extends NodeTopicList {
@@ -41,7 +45,7 @@ export interface NodePanelRpcCommands
 }
 
 /** 节点主题面板发往 Webview 的事件 */
-export interface NodePanelWebviewEvents {
+export interface NodePanelWebviewEvents extends BrowseSettingsWebviewEvents {
   nodeStateChanged: {
     /** 最新页面状态 */
     state: NodePanelViewState

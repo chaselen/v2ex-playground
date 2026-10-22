@@ -1,3 +1,4 @@
+import { useBrowseSettings } from '@/hooks/useBrowseSettings'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScrollArea, Alert, Button, Toast } from '@/components/ui'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -31,8 +32,6 @@ export default function TopicApp() {
     message: '',
     showLogin: false,
     showRefresh: false,
-    showImages: true,
-    showAvatar: true,
     canOperate: false
   })
   const [previewTopicId, setPreviewTopicId] = useState<string>()
@@ -44,8 +43,7 @@ export default function TopicApp() {
   const topic = state.topic
   const contentActions = topic?.contentActions ?? []
   const managementActions = topic?.managementActions ?? []
-  const showImages = state.showImages !== false
-  const showAvatar = state.showAvatar !== false
+  const { showImagesInTopic: showImages, showAvatar } = useBrowseSettings()
 
   /** 应用当前主面板的话题详情 */
   const applyTopicChange = useCallback((nextTopic: TopicDetail) => {
@@ -98,8 +96,6 @@ export default function TopicApp() {
         message: nextState.message || '',
         showLogin: Boolean(nextState.showLogin),
         showRefresh: Boolean(nextState.showRefresh),
-        showImages: nextState.showImages !== false,
-        showAvatar: nextState.showAvatar !== false,
         canOperate: Boolean(nextState.canOperate),
         status: nextState.status
       })

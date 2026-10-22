@@ -1,6 +1,6 @@
+import type { BrowseSettingsWebviewEvents, WebviewCommonRpcCommands } from './commonView'
 import type { AccountOverview, V2exNotification } from '../v2ex/types'
 import type { DailySignInState } from './dailySignIn'
-import type { WebviewCommonRpcCommands } from './commonView'
 
 /**
  * Webview 节点项
@@ -224,7 +224,7 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
 /**
  * 主面板发往 Webview 的事件
  */
-export interface MainViewWebviewEvents {
+export interface MainViewWebviewEvents extends BrowseSettingsWebviewEvents {
   initData: InitData
   accountOverviewChanged: AccountOverviewChangedData
   dailySignInStatusChanged: DailySignInState

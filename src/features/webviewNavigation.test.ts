@@ -1,5 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
-import { canOpenWebviewUrl, openWebviewUrl } from './webviewNavigation'
+import { canOpenWebviewUrl } from './webviewRoute'
+import { createWebviewNavigator } from './webviewNavigation'
 
 const mocks = vi.hoisted(() => ({
   openMember: vi.fn(),
@@ -11,8 +12,7 @@ const mocks = vi.hoisted(() => ({
   openHelp: vi.fn(),
   openExternal: vi.fn()
 }))
-vi.mock('@/features/panelNavigation', () => mocks)
-vi.mock('@/features/openExternal', () => ({ openExternal: mocks.openExternal }))
+const openWebviewUrl = createWebviewNavigator(mocks)
 beforeEach(() => vi.resetAllMocks())
 
 test.each(['%20', '%09', '%20%09%0A'])(

@@ -1,5 +1,9 @@
+import type {
+  BrowseSettingsWebviewEvents,
+  WebviewCommonRpcCommands,
+  WebviewStateRpcCommands
+} from './commonView'
 import type { TagTopicList } from '../v2ex/types'
-import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 
 /** 标签主题面板状态 */
 export interface TagPanelViewState {
@@ -19,7 +23,7 @@ export interface TagPanelRpcCommands
 }
 
 /** 标签主题面板发往 Webview 的事件 */
-export interface TagPanelWebviewEvents {
+export interface TagPanelWebviewEvents extends BrowseSettingsWebviewEvents {
   tagStateChanged: {
     /** 最新页面状态 */
     state: TagPanelViewState

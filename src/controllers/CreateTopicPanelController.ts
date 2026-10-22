@@ -1,3 +1,4 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import vscode from 'vscode'
 import G from '@/global'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
@@ -12,17 +13,14 @@ import { logger } from '@/core/logger'
 import { showNodeQuickPick } from '@/features/nodeQuickPick'
 import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import type {
   CreateTopicDraft,
   CreateTopicPanelRpcCommands,
   CreateTopicPanelViewState,
   CreateTopicPanelWebviewEvents,
   ImageUploadInput,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 import type { CreateTopicInput, Node, TopicSyntax } from '@/v2ex'
 import {
@@ -33,10 +31,7 @@ import {
 } from '@/v2ex'
 
 /** 创作新主题面板控制器 */
-export class CreateTopicPanelController
-  extends WebviewCommonController
-  implements WebviewRpcController<CreateTopicPanelRpcCommands>
-{
+export class CreateTopicPanelController implements WebviewPageRpcController<CreateTopicPanelRpcCommands> {
   /** 创作面板 */
   private readonly panel: vscode.WebviewPanel
   /** Webview RPC 桥接器 */
@@ -55,7 +50,7 @@ export class CreateTopicPanelController
    * @param initialNodeName 初次打开时需要预选的节点 name
    */
   constructor(deps: WebviewNavigationDeps, initialNodeName?: string) {
-    super(deps)
+    const commonRpc = new WebviewCommonRpc(deps)
     this.pendingNodeName = initialNodeName?.trim() || ''
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.createTopic',
@@ -65,7 +60,7 @@ export class CreateTopicPanelController
     })
     this.rpc = new WebviewRpcBridge<CreateTopicPanelRpcCommands, CreateTopicPanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
     this.panel.onDidDispose(() => this.rpc.dispose())
   }

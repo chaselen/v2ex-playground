@@ -1,3 +1,5 @@
+import { createWebviewNavigator } from './webviewNavigation'
+import { openExternal } from './openExternal'
 import { getTopicLink, getMemberLink, getNodeLink, getTagLink } from '@/v2ex'
 import { HelpPanelController } from '@/controllers/HelpPanelController'
 import Config from '@/config'
@@ -42,10 +44,23 @@ let recentBrowsePanel: RecentBrowsePanelController | undefined
 /** 创作新主题页面控制器 */
 let createTopicPanel: CreateTopicPanelController | undefined
 
+/** 将 Webview URL 导航到对应面板，未支持的地址交给浏览器 */
+export const openWebviewUrl = createWebviewNavigator({
+  openTopic,
+  openMember,
+  openNode,
+  openTag,
+  openHelp,
+  openCreateTopic,
+  openBalance,
+  openExternal
+})
+
 /**
  * 控制器面板导航依赖
  */
 const panelDeps = {
+  openExternal: openWebviewUrl,
   openMember,
   openTopic,
   openNode,

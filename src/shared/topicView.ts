@@ -1,3 +1,8 @@
+import type {
+  BrowseSettingsWebviewEvents,
+  WebviewCommonRpcCommands,
+  WebviewStateRpcCommands
+} from './commonView'
 import type { ImageUploadInput } from './image'
 import type {
   TopicInfo,
@@ -11,7 +16,6 @@ import type {
   TopicManagementState,
   TopicSyntax
 } from '../v2ex/types'
-import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 export type { MemberInfo } from '../v2ex/types'
 
 /** 话题操作目标 */
@@ -62,10 +66,6 @@ export interface TopicPanelViewState {
   showLogin?: boolean
   /** 是否显示刷新按钮 */
   showRefresh?: boolean
-  /** 查看帖子时是否显示图片 */
-  showImages?: boolean
-  /** 查看帖子时是否显示头像 */
-  showAvatar?: boolean
   /** 是否可执行登录态操作 */
   canOperate?: boolean
 }
@@ -149,7 +149,7 @@ export interface TopicPanelRpcCommands
 /**
  * 话题面板发往 Webview 的事件
  */
-export interface TopicPanelWebviewEvents {
+export interface TopicPanelWebviewEvents extends BrowseSettingsWebviewEvents {
   topicStateChanged: {
     /** 页面状态 */
     state: TopicPanelViewState

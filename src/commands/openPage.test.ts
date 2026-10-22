@@ -12,8 +12,10 @@ const mocks = vi.hoisted(() => ({
   openExternal: vi.fn()
 }))
 vi.mock('vscode', () => ({ default: { window: { showInputBox: mocks.input } } }))
-vi.mock('@/features/panelNavigation', () => mocks)
-vi.mock('@/features/openExternal', () => ({ openExternal: mocks.openExternal }))
+vi.mock('@/features/panelNavigation', async () => {
+  const { createWebviewNavigator } = await import('@/features/webviewNavigation')
+  return { ...mocks, openWebviewUrl: createWebviewNavigator(mocks) }
+})
 import openPage from './openPage'
 
 beforeEach(() => vi.resetAllMocks())

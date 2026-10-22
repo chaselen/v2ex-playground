@@ -1,6 +1,7 @@
 import { getTopicLink } from '@/v2ex'
 import vscode from 'vscode'
-import { canOpenWebviewUrl, openWebviewUrl } from '@/features/webviewNavigation'
+import { canOpenWebviewUrl } from '@/features/webviewRoute'
+import { openWebviewUrl } from '@/features/panelNavigation'
 
 /** 使用原生输入框获取帖子 ID 或页面链接，并通过共享导航打开 */
 export default async function openPage() {

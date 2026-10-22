@@ -1,25 +1,20 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import vscode from 'vscode'
 import { LoginRequiredError, type BalanceDetail } from '@/v2ex'
 import G from '@/global'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import type {
   BalancePanelRpcCommands,
   BalancePanelViewState,
   BalancePanelWebviewEvents,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 
 /** 账户余额面板控制器 */
-export class BalancePanelController
-  extends WebviewCommonController
-  implements WebviewRpcController<BalancePanelRpcCommands>
-{
+export class BalancePanelController implements WebviewPageRpcController<BalancePanelRpcCommands> {
   /** 账户余额面板 */
   private readonly panel: vscode.WebviewPanel
 
@@ -36,7 +31,7 @@ export class BalancePanelController
    * @param deps 外部面板导航依赖
    */
   constructor(deps: WebviewNavigationDeps) {
-    super(deps)
+    const commonRpc = new WebviewCommonRpc(deps)
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.balance',
       title: '账户余额',
@@ -46,7 +41,7 @@ export class BalancePanelController
     })
     this.rpc = new WebviewRpcBridge<BalancePanelRpcCommands, BalancePanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
     this.panel.onDidDispose(() => this.rpc.dispose())
   }

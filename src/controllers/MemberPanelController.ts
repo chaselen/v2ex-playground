@@ -1,3 +1,4 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import { getMemberLink, LoginRequiredError } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
@@ -5,10 +6,7 @@ import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 
 import type {
   BlockedMember,
@@ -22,7 +20,7 @@ import type {
   MemberPanelRpcCommands,
   MemberPanelViewState,
   MemberPanelWebviewEvents,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 
 /** 用户关系操作 */
@@ -34,10 +32,7 @@ const IGNORED_TOPICS_PAGE_SIZE = 20
 /**
  * 用户面板控制器
  */
-export class MemberPanelController
-  extends WebviewCommonController
-  implements WebviewRpcController<MemberPanelRpcCommands>
-{
+export class MemberPanelController implements WebviewPageRpcController<MemberPanelRpcCommands> {
   /** 用户面板缓存 key */
   readonly key: string
 
@@ -68,7 +63,7 @@ export class MemberPanelController
    * @param deps 外部面板导航依赖
    */
   constructor(username: string, deps: WebviewNavigationDeps) {
-    super(deps)
+    const commonRpc = new WebviewCommonRpc(deps)
     this.username = username
     this.key = getMemberLink(this.username)
     this.panel = createV2exWebviewPanel({
@@ -80,7 +75,7 @@ export class MemberPanelController
     })
     this.rpc = new WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
     this.panel.onDidDispose(() => {
       this.rpc.dispose()

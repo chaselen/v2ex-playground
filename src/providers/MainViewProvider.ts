@@ -1,3 +1,5 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
+import { WebviewCommonRpc } from '@/controllers/WebviewCommonRpc'
 import vscode, { Uri } from 'vscode'
 import autoDailySignIn, {
   dailySignIn,
@@ -6,9 +8,13 @@ import autoDailySignIn, {
 } from '@/features/dailySignIn'
 import G from '@/global'
 import { LoginRequiredError, Topic } from '@/v2ex'
-import { openBalance, openMember, openNode, openTopic } from '@/features/panelNavigation'
-import { openWebviewUrl } from '@/features/webviewNavigation'
-import { downloadImage } from '@/features/imageDownload'
+import {
+  openWebviewUrl,
+  openBalance,
+  openMember,
+  openNode,
+  openTopic
+} from '@/features/panelNavigation'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import { getReadTopicIds, isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import { onCollectionNodesChanged } from '@/features/nodeCollection'
@@ -36,7 +42,7 @@ import {
   NodeChildrenData,
   DailySignInState,
   WebviewTopic,
-  WebviewRpcController
+  WebviewPageRpcController
 } from '@/shared/webview'
 import type { AccountOverview } from '@/v2ex'
 
@@ -57,7 +63,7 @@ function updateViewTitle(view: vscode.WebviewView, detail?: string): void {
 }
 
 export default class MainViewProvider
-  implements vscode.WebviewViewProvider, WebviewRpcController<MainViewRpcCommands>
+  implements vscode.WebviewViewProvider, WebviewPageRpcController<MainViewRpcCommands>
 {
   private _view?: vscode.WebviewView
   private _rpc?: WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>
@@ -85,9 +91,15 @@ export default class MainViewProvider
 
     webviewView.webview.html = await renderWebviewHtml(webviewView.webview, 'main.html')
 
+    const commonRpc = new WebviewCommonRpc({
+      openExternal: openWebviewUrl,
+      openMember,
+      openTopic,
+      openNode
+    })
     this._rpc = new WebviewRpcBridge<MainViewRpcCommands, MainViewWebviewEvents>(
       webviewView.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
     this._accountOverviewChangedDisposable?.dispose()
     this._accountOverviewChangedDisposable = G.V2ex.account.onAccountOverviewChanged(
@@ -115,6 +127,7 @@ export default class MainViewProvider
     this._collectionNodesChangedDisposable = onCollectionNodesChanged(data =>
       this._rpc?.post('collectionNodesChanged', data)
     )
+    commonRpc.bindBrowseSettings(webviewView, this._rpc)
     const visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       if (webviewView.visible) {
         this.autoSignInWhenVisible()
@@ -216,21 +229,6 @@ export default class MainViewProvider
     return this._handleCancelCollectNode(nodeName)
   }
 
-  /** 打开话题面板 */
-  rpc_openTopic(topicId: string | number, title?: string) {
-    openTopic(topicId, title)
-  }
-
-  /** 打开用户面板 */
-  rpc_openMember(username: string) {
-    openMember(username)
-  }
-
-  /** 打开节点主题面板 */
-  rpc_openNode(name: string, title?: string) {
-    openNode(name, title)
-  }
-
   /** 打开账户余额面板 */
   rpc_openBalance() {
     openBalance()
@@ -239,16 +237,6 @@ export default class MainViewProvider
   /** 打开创作新主题面板 */
   async rpc_createTopic() {
     await vscode.commands.executeCommand('v2ex.createTopic')
-  }
-
-  /** 按 URL 打开插件页面或浏览器 */
-  rpc_openExternal(path: string, title?: string) {
-    openWebviewUrl(path, title)
-  }
-
-  /** 下载远程图片 */
-  rpc_downloadImage(imageSrc: string) {
-    void downloadImage(imageSrc)
   }
 
   /** 打开搜索面板 */

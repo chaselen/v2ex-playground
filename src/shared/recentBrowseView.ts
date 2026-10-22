@@ -1,5 +1,5 @@
+import type { BrowseSettingsWebviewEvents, WebviewCommonRpcCommands } from './commonView'
 import type { RecentBrowseListData } from './recentBrowse'
-import type { WebviewCommonRpcCommands } from './commonView'
 
 /** 最近浏览列表查询 */
 export interface RecentBrowseQuery {
@@ -29,4 +29,4 @@ export interface RecentBrowsePanelRpcCommands extends WebviewCommonRpcCommands {
 /**
  * 最近浏览面板发往 Webview 的事件
  */
-export interface RecentBrowsePanelWebviewEvents {}
+export interface RecentBrowsePanelWebviewEvents extends BrowseSettingsWebviewEvents {}

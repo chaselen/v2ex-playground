@@ -1,24 +1,19 @@
+import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import vscode from 'vscode'
 import G from '@/global'
 import { showNodeQuickPick } from '@/features/nodeQuickPick'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
-import {
-  WebviewCommonController,
-  type WebviewNavigationDeps
-} from '@/controllers/WebviewCommonController'
+import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import type {
   SearchPanelRpcCommands,
   SearchPanelWebviewEvents,
-  WebviewRpcController,
+  WebviewPageRpcController,
   SoV2exSearchParams
 } from '@/shared/webview'
 
 /** 搜索面板控制器 */
-export class SearchPanelController
-  extends WebviewCommonController
-  implements WebviewRpcController<SearchPanelRpcCommands>
-{
+export class SearchPanelController implements WebviewPageRpcController<SearchPanelRpcCommands> {
   /** 搜索面板 */
   private readonly panel: vscode.WebviewPanel
 
@@ -29,7 +24,7 @@ export class SearchPanelController
    * @param deps 外部面板导航依赖
    */
   constructor(deps: WebviewNavigationDeps) {
-    super(deps)
+    const commonRpc = new WebviewCommonRpc(deps)
     this.panel = createV2exWebviewPanel({
       viewType: 'v2ex.search',
       title: '搜索',
@@ -39,7 +34,7 @@ export class SearchPanelController
     })
     this.rpc = new WebviewRpcBridge<SearchPanelRpcCommands, SearchPanelWebviewEvents>(
       this.panel.webview,
-      this
+      composeWebviewRpcControllers(this, commonRpc)
     )
     this.panel.onDidDispose(() => this.rpc.dispose())
   }

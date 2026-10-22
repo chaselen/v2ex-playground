@@ -8,6 +8,10 @@
 
 桥接器仅允许调用 `rpc_<command>` 方法，生命周期方法不能使用该前缀。`WebviewRpcController<Commands>` 检查处理器与契约一致，但消息仍须通过运行时校验；无效消息忽略，未知命令返回失败响应。
 
+公共 RPC 由 `WebviewCommonRpc` 提供，页面通过 `composeWebviewRpcControllers()` 组合公共与页面处理器，Provider 和面板 Controller 不依靠继承复用能力。组合结果仍需通过桥接器的完整契约类型检查；运行时仅注册 `rpc_` 方法、保留各处理器的 `this`，重复命令在注册时抛错，避免处理器被静默覆盖。浏览设置的推送订阅绑定到具体视图，随视图销毁释放。
+
+导航依赖保持单向：`webviewRoute.ts` 只解析 URL 并返回导航意图；`webviewNavigation.ts` 使用注入的动作执行导航；`panelNavigation.ts` 提供实际面板管理与浏览器打开动作。解析和执行模块不反向导入面板管理模块。
+
 请求通过唯一 `requestId` 关联响应，失败响应转换为 Error。事件用于状态增量同步，不承担请求响应。超时只结束客户端等待，不能撤回已经执行的远程写操作；迟到响应被忽略。
 
 ## 状态初始化
