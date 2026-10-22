@@ -86,6 +86,8 @@ function createNodeChildren(tab: MainTabKey, node: NodeItem): TreeItem[] {
     title: topic.title,
     type: 'topic',
     topicId: topic.id,
+    authorName: topic.authorName,
+    authorAvatar: topic.authorAvatar,
     replies: topic.replies,
     isRead: topic.isRead,
     isLeaf: true
@@ -324,6 +326,8 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
             as="button"
             topicId={data.topicId!}
             title={title}
+            authorName={data.authorName}
+            authorAvatar={data.authorAvatar}
             replies={data.replies}
             isRead={data.isRead}
             className={styles['topic-row']}

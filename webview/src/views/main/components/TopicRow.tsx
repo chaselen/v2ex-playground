@@ -1,7 +1,8 @@
+import { useBrowseSettings } from '@/hooks/useBrowseSettings'
 import type { MouseEvent } from 'react'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
 import TopicShareContextMenu from '@/components/TopicShareContextMenu'
-import { Badge } from '@/components/ui'
+import { Avatar, Badge } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import styles from './TopicRow.module.scss'
 
@@ -13,6 +14,10 @@ interface TopicRowProps {
   topicId: number
   /** 主题标题 */
   title: string
+  /** 作者名称 */
+  authorName?: string
+  /** 作者头像 */
+  authorAvatar?: string
   /** 回复数 */
   replies?: number
   /** 渲染元素 */
@@ -30,7 +35,18 @@ interface TopicRowProps {
  * @param props 组件参数
  */
 export default function TopicRow(props: TopicRowProps) {
-  const { topicId, title, replies, as = 'div', className, openOnClick = true, isRead } = props
+  const { showAvatar } = useBrowseSettings()
+  const {
+    topicId,
+    title,
+    authorName,
+    authorAvatar,
+    replies,
+    as = 'div',
+    className,
+    openOnClick = true,
+    isRead
+  } = props
 
   /**
    * 打开主题
@@ -43,6 +59,15 @@ export default function TopicRow(props: TopicRowProps) {
 
   const content = (
     <>
+      {showAvatar && !!authorName && (
+        <Avatar
+          src={authorAvatar}
+          alt={authorName}
+          size="small"
+          shape="square"
+          className={styles.avatar}
+        />
+      )}
       <span className={styles['topic-title']}>{title}</span>
       {!!replies && replies > 0 && (
         <Badge count={replies} overflowCount={99} countClassName={styles.badge} />

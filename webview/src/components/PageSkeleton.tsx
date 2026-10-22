@@ -257,12 +257,12 @@ function NodeTopicsPlaceholder({ rows }: SkeletonRowsProps) {
   )
 }
 
-/** 最近浏览计数和带头像的话题列表占位 */
+/** 最近浏览计数和话题列表占位 */
 function RecentPlaceholder({ rows }: SkeletonRowsProps) {
   return (
     <div>
       <Skeleton.Paragraph rows={1} className={styles.summary} />
-      <TopicRows rows={rows} avatars />
+      <TopicRows rows={rows} avatars={false} />
     </div>
   )
 }

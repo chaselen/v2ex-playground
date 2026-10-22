@@ -1,3 +1,4 @@
+import { useBrowseSettings } from '@/hooks/useBrowseSettings'
 import { useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type Ref } from 'react'
 import { CircleCheck, CircleHelp, Gift, Inbox, SquarePen, Trash2, UserRound } from 'lucide-react'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -165,6 +166,7 @@ function openMember(username: string) {
 export default function MyTab(props: MyTabProps) {
   const { ref, loading, loggedIn, overview, overviewError, onRetryOverview, onOpenNodeCollection } =
     props
+  const { showAvatar } = useBrowseSettings()
   const [activeContentTab, setActiveContentTab] = useState<MyContentTabKey>('topicCollection')
   const [topicLists, setTopicLists] = useState<MyTopicListsState>({
     topicCollection: createMyTopicListState(),
@@ -504,6 +506,8 @@ export default function MyTab(props: MyTabProps) {
         as="button"
         className={styles['my-topic-item']}
         title={topic.title}
+        authorName={topic.authorName}
+        authorAvatar={topic.authorAvatar}
         replies={topic.replies}
         isRead={topic.isRead}
       />
@@ -566,22 +570,27 @@ export default function MyTab(props: MyTabProps) {
    */
   function renderNotificationItem(notification: V2exNotification) {
     return (
-      <div className={styles['my-notification-item']} key={notification.id}>
-        <button
-          type="button"
-          className={`${styles['my-link']} ${styles['my-notification-avatar-link']}`}
-          title={notification.username}
-          onClick={() => openMember(notification.username)}
-        >
-          <Avatar
-            size="small"
-            shape="square"
-            src={notification.avatar}
-            alt={notification.username}
-            className={styles['my-notification-avatar']}
-            fallback={<UserRound aria-hidden="true" />}
-          />
-        </button>
+      <div
+        className={`${styles['my-notification-item']} ${showAvatar ? '' : styles['my-notification-item--without-avatar']}`}
+        key={notification.id}
+      >
+        {showAvatar && (
+          <button
+            type="button"
+            className={`${styles['my-link']} ${styles['my-notification-avatar-link']}`}
+            title={notification.username}
+            onClick={() => openMember(notification.username)}
+          >
+            <Avatar
+              size="small"
+              shape="square"
+              src={notification.avatar}
+              alt={notification.username}
+              className={styles['my-notification-avatar']}
+              fallback={<UserRound aria-hidden="true" />}
+            />
+          </button>
+        )}
         <div
           className={styles['my-notification-body']}
           onClick={event => handleNotificationClick(event, notification)}

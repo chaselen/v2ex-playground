@@ -37,6 +37,10 @@ export interface TreeItem {
   title?: string
   /** 节点图标地址；自定义 / 收藏节点列表使用 */
   avatar?: string
+  /** 帖子作者 */
+  authorName?: string
+  /** 帖子作者头像 */
+  authorAvatar?: string
   replies?: number
   isRead?: boolean
   page?: number

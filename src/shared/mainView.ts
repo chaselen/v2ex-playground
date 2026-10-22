@@ -1,5 +1,5 @@
 import type { BrowseSettingsWebviewEvents, WebviewCommonRpcCommands } from './commonView'
-import type { AccountOverview, V2exNotification } from '../v2ex/types'
+import type { AccountOverview, Topic, V2exNotification } from '../v2ex/types'
 import type { DailySignInState } from './dailySignIn'
 
 /**
@@ -49,21 +49,14 @@ export function getExploreNodes(loggedIn: boolean): WebviewNode[] {
 /**
  * Webview 话题项
  */
-export interface WebviewTopic {
-  /** 话题 id */
-  id: number
-  /** 话题标题 */
-  title: string
+export interface WebviewTopic extends Pick<
+  Topic,
+  'id' | 'title' | 'authorName' | 'authorAvatar' | 'replies' | 'displayTime' | 'lastReplyUser'
+> {
   /** 节点 name，如 programmer */
   nodeName?: string
   /** 节点展示标题，如“程序员” */
   nodeTitle?: string
-  /** 回复数 */
-  replies: number
-  /** 列表展示时间，可能为中文相对时间或本地化日期 */
-  displayTime?: string
-  /** 最后回复用户 */
-  lastReplyUser?: string
   /** 是否已读 */
   isRead?: boolean
 }

@@ -99,6 +99,7 @@ export default function TagApp() {
                     topic={topic}
                     appearance="card"
                     showAuthor
+                    withAuthorAvatar
                     onOpenTopic={openTopic}
                     onOpenMember={openMember}
                     onOpenNode={openNode}

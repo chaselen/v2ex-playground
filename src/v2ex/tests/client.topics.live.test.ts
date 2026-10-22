@@ -91,6 +91,7 @@ describe.sequential('V2exClient topics', () => {
 
     expect(topics.length).toBeGreaterThan(0)
     expectTopic(topics[0])
+    expect(topics[0].authorAvatar).toMatch(/^https:\/\//)
     expect(onlineCount).toEqual(expect.any(Number))
     expect(onlineCount).toBeGreaterThan(0)
   })
@@ -111,6 +112,7 @@ describe.sequential('V2exClient topics', () => {
     expectNode(result.node)
     expect(result.list.length).toBeGreaterThan(0)
     expectTopic(result.list[0])
+    expect(result.list[0].authorAvatar).toMatch(/^https:\/\//)
     expect(result.list[0].node).toEqual(result.node)
   })
 
@@ -121,6 +123,7 @@ describe.sequential('V2exClient topics', () => {
     expect(result.totalCount).toBe(result.list.length)
     expect(result.totalCount).toBeGreaterThan(0)
     expectTopic(result.list[0])
+    expect(result.list[0].authorAvatar).toMatch(/^https:\/\//)
     expect(result.list[0].authorName).toEqual(expect.any(String))
   })
 

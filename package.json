@@ -188,7 +188,7 @@
         "v2ex.browse.showAvatar": {
           "type": "boolean",
           "default": true,
-          "description": "查看帖子时显示作者和回复者头像"
+          "description": "在帖子列表和评论中显示用户头像"
         }
       }
     }

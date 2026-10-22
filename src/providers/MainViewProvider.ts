@@ -649,6 +649,8 @@ export default class MainViewProvider
       title: topic.title,
       nodeName: topic.node?.name,
       nodeTitle: topic.node?.title,
+      authorName: topic.authorName,
+      authorAvatar: topic.authorAvatar,
       replies: topic.replies,
       displayTime: topic.displayTime,
       lastReplyUser: topic.lastReplyUser,

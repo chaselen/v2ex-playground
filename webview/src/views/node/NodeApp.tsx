@@ -299,6 +299,7 @@ export default function NodeApp() {
                       topic={topic}
                       appearance="card"
                       showAuthor
+                      withAuthorAvatar
                       showNode={false}
                       onOpenTopic={openTopic}
                       onOpenMember={openMember}

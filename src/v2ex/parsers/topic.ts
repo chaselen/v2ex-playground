@@ -48,6 +48,7 @@ export function parseTopicListCells(
     const publishedTime = getV2exTimeSpan(topicInfo)
     const hasLastReply = /Lastly replied by|最后回复/.test(topicInfo.text())
     const memberLinks = topicInfo.find('strong a[href^="/member/"]')
+    const authorAvatar = $(cell).find('a[href^="/member/"] img.avatar').first()
     const publishedAt = publishedTime.attr('title')
 
     list.push({
@@ -59,7 +60,8 @@ export function parseTopicListCells(
             name: nodeHref.split('go/')[1] || '',
             title: nodeElement.text().trim()
           },
-      authorName: memberLinks.first().text().trim(),
+      authorName: authorAvatar.attr('alt')?.trim() || memberLinks.first().text().trim(),
+      authorAvatar: authorAvatar.attr('src'),
       replies: Number(countElement.text().trim()) || 0,
       displayTime: publishedTime.text().trim(),
       publishedAt: publishedAt ? dayjs(publishedAt).format('YYYY-MM-DD HH:mm:ss') : undefined,

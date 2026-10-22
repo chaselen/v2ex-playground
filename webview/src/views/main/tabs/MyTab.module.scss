@@ -384,6 +384,10 @@
   }
 }
 
+.my-notification-item--without-avatar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .my-notification-footer {
   display: flex;
   align-items: center;

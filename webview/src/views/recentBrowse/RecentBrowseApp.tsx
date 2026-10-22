@@ -1,10 +1,10 @@
+import TopicAuthor from '@/components/TopicAuthor'
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { Eye, Inbox, RefreshCw, Search, Trash2, UserRound } from 'lucide-react'
+import { Eye, Inbox, RefreshCw, Search, Trash2 } from 'lucide-react'
 import NodeButton from '@/components/NodeButton'
 import PageSkeleton from '@/components/PageSkeleton'
 import {
   ScrollArea,
-  Avatar,
   Button,
   ConfirmPopover,
   Empty,
@@ -196,22 +196,6 @@ export default function RecentBrowseApp() {
 
     return (
       <article key={topic.topicId} className="recent-topic" title={title}>
-        <span
-          className="recent-topic-avatar-link"
-          role="button"
-          tabIndex={-1}
-          title={authorName || '作者'}
-          onClick={() => openAuthor(topic.authorName)}
-        >
-          <Avatar
-            size="small"
-            shape="square"
-            src={topic.authorAvatar}
-            alt={authorName || '作者'}
-            className="recent-topic-avatar"
-            fallback={<UserRound aria-hidden="true" />}
-          />
-        </span>
         <span className="recent-topic-end">
           <time
             className="recent-topic-read-time"
@@ -258,7 +242,7 @@ export default function RecentBrowseApp() {
                 href="javascript:;"
                 onClick={() => openAuthor(topic.authorName)}
               >
-                {authorName}
+                <TopicAuthor name={authorName} avatar={topic.authorAvatar} />
               </a>
             )}
             {!!topic.publishedAt && (

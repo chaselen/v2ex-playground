@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio/slim'
 import { describe, expect, it, test } from 'vitest'
 import {
   parseReplies,
+  parseTopicListCells,
   parseTagTopicList,
   parseTopicMeta,
   parseTopicInfo,
@@ -221,6 +222,7 @@ describe('topic tag parsing', () => {
         <div class="box">
           <div class="header">测试标签</div>
           <div class="cell item">
+            <a href="/member/author"><img class="avatar" src="https://cdn.v2ex.com/avatar/author.png" alt="author" /></a>
             <a class="topic-link" href="/t/123#reply2">测试主题</a>
             <a class="node" href="/go/programmer">程序员</a>
             <span class="topic_info">
@@ -243,6 +245,7 @@ describe('topic tag parsing', () => {
           title: '测试主题',
           node: { name: 'programmer', title: '程序员' },
           authorName: 'author',
+          authorAvatar: 'https://cdn.v2ex.com/avatar/author.png',
           replies: 2,
           displayTime: '1 小时前',
           publishedAt: '2026-07-15 08:58:03',
@@ -512,4 +515,41 @@ test('keeps content capabilities separate from display management capabilities',
   const topic = parseTopicMeta($, 12, 'https://www.v2ex.com')
   expect(topic.contentActions).toEqual(['append'])
   expect(topic.managementActions).toEqual(['fade'])
+})
+
+describe('topic list author avatars', () => {
+  it.each([
+    ['alt="author"', 'author'],
+    ['', 'fallbackAuthor']
+  ])('从头像提取作者名，缺少 alt 时回退到文字链接：%s', (alt, authorName) => {
+    const $ = cheerio.load(`
+      <div class="cell">
+        <a href="/member/author"><img class="avatar" src="author.png" ${alt} /></a>
+        <a class="topic-link" href="/t/123">测试主题</a>
+        <span class="topic_info">
+          <strong><a href="/member/author">fallbackAuthor</a></strong>
+          最后回复来自 <strong><a href="/member/replier">replier</a></strong>
+        </span>
+      </div>
+    `)
+    expect(parseTopicListCells($, $('.cell'))[0]).toMatchObject({
+      authorName,
+      authorAvatar: 'author.png',
+      lastReplyUser: 'replier'
+    })
+  })
+
+  it('不把节点图片当作作者头像，兼容不含头像的列表', () => {
+    const $ = cheerio.load(`
+      <div class="cell">
+        <a class="topic-link" href="/t/123">无作者头像</a>
+        <a class="node" href="/go/test"><img class="avatar" src="node.png" /></a>
+        <span class="topic_info"><strong><a href="/member/author">author</a></strong></span>
+      </div>
+    `)
+    expect(parseTopicListCells($, $('.cell'))[0]).toMatchObject({
+      authorName: 'author',
+      authorAvatar: undefined
+    })
+  })
 })

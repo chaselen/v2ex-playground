@@ -86,6 +86,9 @@ export interface Topic {
   /** 节点 */
   node: Node
 
+  /** 作者头像；源页面未提供时省略 */
+  authorAvatar?: string
+
   /** 作者名称 */
   authorName?: string
 

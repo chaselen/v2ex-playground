@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+import TopicAuthor from '@/components/TopicAuthor'
 import type { Node, Topic } from '@extension/v2ex/types'
 import NodeButton from '@/components/NodeButton'
 import { Badge } from '@/components/ui'
@@ -10,6 +12,8 @@ interface TopicListItemProps {
   appearance?: 'row' | 'card'
   /** 是否展示作者 */
   showAuthor?: boolean
+  /** 是否接入作者头像显示设置 */
+  withAuthorAvatar?: boolean
   /** 是否展示节点 */
   showNode?: boolean
   /** 打开主题 */
@@ -29,6 +33,7 @@ export default function TopicListItem(props: TopicListItemProps) {
     topic,
     appearance = 'row',
     showAuthor = false,
+    withAuthorAvatar = false,
     showNode = true,
     onOpenTopic,
     onOpenMember,
@@ -69,7 +74,11 @@ export default function TopicListItem(props: TopicListItemProps) {
           </NodeButton>
         )}
         {showAuthor && !!topic.authorName && (
-          <MemberButton username={topic.authorName} onOpenMember={onOpenMember} />
+          <MemberButton username={topic.authorName} onOpenMember={onOpenMember}>
+            {withAuthorAvatar && (
+              <TopicAuthor name={topic.authorName} avatar={topic.authorAvatar} />
+            )}
+          </MemberButton>
         )}
         {!!topic.displayTime && (
           <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span>
@@ -88,12 +97,16 @@ export default function TopicListItem(props: TopicListItemProps) {
  * 用户链接按钮
  * @param props 组件属性
  */
-function MemberButton(props: { username: string; onOpenMember: (username: string) => void }) {
-  const { username, onOpenMember } = props
+function MemberButton(props: {
+  username: string
+  children?: ReactNode
+  onOpenMember: (username: string) => void
+}) {
+  const { username, children, onOpenMember } = props
 
   return (
     <button type="button" className={styles['meta-button']} onClick={() => onOpenMember(username)}>
-      {username}
+      {children || username}
     </button>
   )
 }
