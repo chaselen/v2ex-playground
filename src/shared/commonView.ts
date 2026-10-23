@@ -1,10 +1,12 @@
 import type { WebviewRpcController } from './webviewRpc'
 import type { BrowseSettings } from './browseSettings'
+import type { SyntaxThemeRpcCommands } from './syntaxTheme'
 
 /**
  * Webview 公共 RPC 命令
  */
-export interface WebviewCommonRpcCommands extends BrowseSettingsRpcCommands {
+export interface WebviewCommonRpcCommands
+  extends BrowseSettingsRpcCommands, SyntaxThemeRpcCommands {
   /** 按 URL 打开插件页面或浏览器，title 用于面板标题 */
   openExternal(path: string, title?: string): void
   openTopic(topicId: string | number, title?: string): void

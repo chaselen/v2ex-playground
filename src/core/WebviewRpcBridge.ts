@@ -1,5 +1,6 @@
 import vscode from 'vscode'
 import { logger } from '@/core/logger'
+import { getSyntaxTheme, watchSyntaxTheme } from 'vscode-tint/vscode'
 import {
   WEBVIEW_RESPONSE_COMMAND,
   WEBVIEW_RPC_METHOD_PREFIX,
@@ -17,6 +18,9 @@ type AnyWebviewRpcHandler = (...args: unknown[]) => Promise<unknown> | unknown
  */
 export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<string, never>> {
   private readonly listener: vscode.Disposable
+  private syntaxThemeListener?: vscode.Disposable
+  private syntaxThemeRevision = 0
+  private disposed = false
 
   /**
    * @param webview VS Code Webview
@@ -35,6 +39,8 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
    * 释放消息监听
    */
   dispose() {
+    this.disposed = true
+    this.syntaxThemeListener?.dispose()
     this.listener.dispose()
   }
 
@@ -92,6 +98,18 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
     const handler = (this.controller as unknown as Record<string, AnyWebviewRpcHandler>)[methodName]
     if (typeof handler !== 'function') {
       throw new Error(`未注册 Webview RPC 处理器: ${message.command}`)
+    }
+    if (message.command === 'getSyntaxTheme' && !this.syntaxThemeListener && !this.disposed) {
+      this.syntaxThemeListener = watchSyntaxTheme(() => {
+        const revision = ++this.syntaxThemeRevision
+        void getSyntaxTheme()
+          .then(theme => {
+            if (!this.disposed && revision === this.syntaxThemeRevision) {
+              this.rawPost('syntaxThemeChanged', { theme })
+            }
+          })
+          .catch(error => logger.warn('更新代码高亮主题失败', error))
+      })
     }
     return handler.apply(this.controller, message.args)
   }

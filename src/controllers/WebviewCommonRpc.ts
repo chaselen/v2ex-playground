@@ -1,6 +1,7 @@
 import type vscode from 'vscode'
 import Config from '@/config'
 import { downloadImage } from '@/features/imageDownload'
+import { getSyntaxTheme } from 'vscode-tint/vscode'
 import type {
   BrowseSettingsWebviewEvents,
   WebviewCommonRpcCommands,
@@ -29,6 +30,11 @@ export class WebviewCommonRpc implements WebviewRpcController<WebviewCommonRpcCo
   /** 获取当前浏览设置 */
   rpc_getBrowseSettings() {
     return Config.getBrowseSettings()
+  }
+
+  /** 获取当前主题的语法前景色 */
+  rpc_getSyntaxTheme() {
+    return getSyntaxTheme()
   }
 
   /** 绑定浏览设置推送，订阅随对应视图销毁释放 */

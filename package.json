@@ -233,7 +233,6 @@
     "entities": "^7.0.1",
     "esbuild": "^0.28.0",
     "file-type": "^22.2.0",
-    "highlight.js": "^11.11.1",
     "lucide-react": "^1.57.0",
     "oxfmt": "^0.73.0",
     "picomatch": "^4.0.7",
@@ -241,9 +240,12 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "sass": "^1.105.1",
+    "tm-grammars": "1.32.22",
     "tough-cookie": "^6.0.1",
     "typescript": "^5.9.3",
     "vite": "^8.3.4",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "vscode-oniguruma": "2.0.1",
+    "vscode-tint": "0.2.0"
   }
 }

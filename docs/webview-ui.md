@@ -8,6 +8,18 @@
 
 语义状态字色优先使用通用 foreground；`inputValidation.*` 仅作为背景、边框回退，避免部分主题中提示文字失去对比度。高对比 token 仅在高对比主题启用：Trae 等宿主可能注入空值或透明 contrast token，将其放到常规主题回退链最前会导致边框和 Tabs 指示器消失。
 
+## 代码高亮
+
+代码高亮使用 npm 正式版 `vscode-tint`，固定版本并提交 lockfile；依赖放在 `devDependencies`，通过 esbuild / Vite 打包进扩展，不使用 CDN、Git 依赖或本地链接。`tm-grammars` 和 `vscode-oniguruma` 是完整引擎的显式可选 peer 依赖，WASM 通过 Vite `?url` 作为本地资源分发。
+
+扩展宿主通过 `vscode-tint/vscode` 读取当前主题与用户 token 自定义并监听变化；Webview 通过 `/presets/textmate` 创建完整引擎，只提供主题、本地 WASM 和正文时间预算；预设自动配置 grammar、HTML/CSS 标签模板注入，以及延迟加载的 highlight.js 检测器。底层入口仍保留给自定义场景。主题解析、grammar、scope 匹配、metadata 和正则适配由 npm 包维护，项目仅保留 RPC、资源加载、DOM 和渲染生命周期接线。
+
+正文高亮的 TextMate 单行 / 代码块预算为 1000ms / 1500ms，以容纳 HTML 内嵌多语言首次编译；保留库的代码与单行长度上限。显式未知语言、纯文本、超长输入或分词超时使用完整转义文本回退；初始化失败允许后续代码块重新尝试；正常回退原因记录在代码元素的 `data-syntax-highlight-fallback` 中，加载错误不伪装为回退原因。没有声明语言时将自动检测交给引擎，不把上一次检测结果作为显式语言缓存：HTML 文档可能报告 `xml`，仅自动模式会按文档标记选择包含 CSS / JS 的 HTML grammar。TSX 应显式指定，自动识别仍可能猜错。
+
+主题事件传递完整规则，异步主题更新串行完成后重绘当前代码块，并丢弃过期主题与旧输入的渲染结果。背景与字体仍由宿主语义变量控制，未匹配 token 继承正文色；不包含语言服务的 semantic tokens。RPC 订阅先于初始读取，桥接器销毁时释放宿主监听。
+
+升级 npm 包时运行宿主和 Webview 接线测试、真实 npm 引擎与 WASM 集成测试、两侧类型检查及构建，确认 grammar 动态导入和 WASM 仍进入 `html/`，在宿主验证主题切换和内容重绘。包、grammar 与引擎许可随 `resources/third-party-notices.txt` 分发。
+
 ## 宿主与浮层限制
 
 - Chromium 原生日期输入的弹出日历无法跟随宿主主题，日期选择使用共享 DatePicker

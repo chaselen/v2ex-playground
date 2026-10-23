@@ -2,7 +2,14 @@ import { composeWebviewRpcControllers } from './composeWebviewRpcControllers'
 import { describe, expect, test, vi } from 'vitest'
 import type vscode from 'vscode'
 import { WebviewRpcBridge } from './WebviewRpcBridge'
+import { getSyntaxTheme, watchSyntaxTheme } from 'vscode-tint/vscode'
+import type { SyntaxTheme } from 'vscode-tint'
 import type { WebviewRpcController, WebviewRequestMessage } from '@/shared/webview'
+
+vi.mock('vscode-tint/vscode', () => ({
+  getSyntaxTheme: vi.fn(),
+  watchSyntaxTheme: vi.fn(() => ({ dispose: vi.fn() }))
+}))
 
 vi.mock('@/core/logger', () => ({
   logger: {
@@ -92,6 +99,51 @@ describe('WebviewRpcBridge', () => {
     bridge.dispose()
 
     expect(target.disposable.dispose).toHaveBeenCalledOnce()
+  })
+
+  test('语法主题按需订阅，丢弃乱序更新，销毁后不推送', async () => {
+    let changed = () => {}
+    const stopWatching = vi.fn()
+    vi.mocked(watchSyntaxTheme).mockImplementation(listener => {
+      changed = listener
+      return { dispose: stopWatching }
+    })
+    const pending: ((theme: SyntaxTheme) => void)[] = []
+    vi.mocked(getSyntaxTheme).mockImplementation(
+      () => new Promise(resolve => pending.push(resolve))
+    )
+    const target = createWebview()
+    const bridge = new WebviewRpcBridge(target.webview, {
+      rpc_getSyntaxTheme: () => ({})
+    })
+    expect(watchSyntaxTheme).not.toHaveBeenCalled()
+    target.receive({ command: 'getSyntaxTheme', requestId: 'theme:1', args: [] })
+    target.receive({ command: 'getSyntaxTheme', requestId: 'theme:2', args: [] })
+    expect(watchSyntaxTheme).toHaveBeenCalledOnce()
+    changed()
+    changed()
+    pending[1]({ settings: [{ scope: 'string', settings: { foreground: '#222222' } }] })
+    await vi.waitFor(() =>
+      expect(target.postMessage).toHaveBeenCalledWith({
+        command: 'syntaxThemeChanged',
+        theme: { settings: [{ scope: 'string', settings: { foreground: '#222222' } }] }
+      })
+    )
+    pending[0]({ settings: [{ scope: 'string', settings: { foreground: '#111111' } }] })
+    await Promise.resolve()
+    expect(target.postMessage).not.toHaveBeenCalledWith({
+      command: 'syntaxThemeChanged',
+      theme: { settings: [{ scope: 'string', settings: { foreground: '#111111' } }] }
+    })
+    changed()
+    bridge.dispose()
+    pending[2]({ settings: [{ scope: 'string', settings: { foreground: '#333333' } }] })
+    await Promise.resolve()
+    expect(stopWatching).toHaveBeenCalledOnce()
+    expect(target.postMessage).not.toHaveBeenCalledWith({
+      command: 'syntaxThemeChanged',
+      theme: { settings: [{ scope: 'string', settings: { foreground: '#333333' } }] }
+    })
   })
 })
 

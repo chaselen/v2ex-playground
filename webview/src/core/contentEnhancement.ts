@@ -508,7 +508,7 @@ function appendTopicPreviewButton(anchor: HTMLAnchorElement, openTopicPreview: O
  */
 export async function enhanceCodeBlocks(root: ParentNode) {
   const codeBlocks = Array.from(root.querySelectorAll<HTMLElement>('pre > code')).filter(
-    code => !code.classList.contains('hljs')
+    code => !code.dataset.highlighted && !code.dataset.syntaxHighlightPending
   )
 
   if (!codeBlocks.length) {
@@ -521,7 +521,7 @@ export async function enhanceCodeBlocks(root: ParentNode) {
 
   try {
     const { highlightCodeBlocks } = await import('./syntaxHighlighting')
-    highlightCodeBlocks(codeBlocks)
+    await highlightCodeBlocks(codeBlocks)
   } catch {
     codeBlocks.forEach(code => {
       delete code.dataset.syntaxHighlightPending

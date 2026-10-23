@@ -17,6 +17,7 @@
 !resources/**/*.svg
 !resources/*.png
 !resources/gfwlist.txt
+!resources/third-party-notices.txt
 
 # 即使目录被放行，也排除无运行价值的文件
 **/.DS_Store

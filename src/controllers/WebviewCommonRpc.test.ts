@@ -22,6 +22,7 @@ vi.mock('@/config', () => ({
   }
 }))
 vi.mock('@/features/imageDownload', () => ({ downloadImage: vi.fn() }))
+vi.mock('vscode-tint/vscode', () => ({ getSyntaxTheme: vi.fn() }))
 
 /** 创建可主动销毁的视图，验证不同视图的设置订阅相互独立 */
 function createView() {
