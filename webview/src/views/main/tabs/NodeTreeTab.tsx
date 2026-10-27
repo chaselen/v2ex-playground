@@ -451,7 +451,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
       <ScrollArea fillViewport className={styles['node-tree-panel']}>
         {renderContent()}
       </ScrollArea>
-      {!loading && (tab === 'custom' || (tab === 'collection' && loggedIn)) && (
+      {!loading && (tab === 'custom' || (tab === 'collection' && loggedIn && !error)) && (
         <div className={styles['tree-footer']}>
           <Button
             className={styles['add-node-button']}
