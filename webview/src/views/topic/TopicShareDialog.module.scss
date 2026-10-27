@@ -56,6 +56,33 @@
   color: var(--v2ex-content-fg);
   background: var(--v2ex-webview-bg);
   box-shadow: var(--v2ex-shadow-floating);
+
+  // 分享图无法滚动，长代码与宽表格需要在卡片内换行展开
+  :global(.topic-content) {
+    pre {
+      overflow: visible;
+      white-space: pre-wrap;
+
+      > code {
+        min-width: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: normal;
+      }
+    }
+
+    table {
+      display: table;
+      table-layout: fixed;
+      overflow: visible;
+
+      td,
+      th {
+        overflow-wrap: anywhere;
+        word-break: normal;
+      }
+    }
+  }
 }
 
 .cardHeader {
