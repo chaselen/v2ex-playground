@@ -8,7 +8,6 @@ import {
 } from '@/v2ex'
 import vscode from 'vscode'
 import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
-import { showNodeQuickPick } from '@/features/nodeQuickPick'
 import type {
   TopicContentAction,
   TopicContentInput,
@@ -289,18 +288,9 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
     return loadTopicShareImages(imageSources, this.panel.webview, format)
   }
 
-  /** 复用全量节点选择器 */
-  async rpc_pickTopicContentNode(currentNodeName?: string) {
-    const node = await showNodeQuickPick(await G.V2ex.nodes.getAll(), {
-      title: '移动主题',
-      placeHolder: '选择目标节点',
-      currentNodeName: currentNodeName || this.detail.node.name,
-      countField: 'topicCount',
-      sortByCountDescending: true
-    })
-    return node
-      ? { name: node.name, title: node.title, avatar: getV2exNodeAvatarUrl(node.name) }
-      : undefined
+  /** 获取可移动到的节点列表 */
+  rpc_getNodes() {
+    return G.V2ex.nodes.getAll()
   }
 
   /** 信息页的访问权限由源站校验，支持详情预览中的主题 */

@@ -59,6 +59,27 @@ const previewThemes = [
   }
 ]
 
+/** 节点下拉框使用的本地回归数据 */
+async function loadPreviewNodes(): Promise<Node[]> {
+  return [
+    { name: 'qna', title: '问与答' },
+    { name: 'programmer', title: '程序员' },
+    { name: 'all4all', title: '二手交易' },
+    { name: 'jobs', title: '酷工作' },
+    { name: 'share', title: '分享发现' },
+    { name: 'create', title: '分享创造' },
+    { name: 'apple', title: 'Apple' },
+    { name: 'career', title: '职场话题' },
+    { name: 'macos', title: 'macOS' },
+    { name: 'pointless', title: '无要点' },
+    { name: 'linux', title: 'Linux' },
+    { name: 'python', title: 'Python' },
+    { name: 'javascript', title: 'JavaScript' },
+    { name: 'android', title: 'Android' },
+    { name: 'netlify', title: 'Netlify' }
+  ]
+}
+
 /** VS Code 主题适配回归页 */
 export default function ThemePreviewApp() {
   const [activeTheme, setActiveTheme] = useState('暗色')
@@ -239,10 +260,20 @@ export default function ThemePreviewApp() {
         </PreviewSection>
 
         <PreviewSection title="控件禁用态对照">
-          <NodeSelectButton node={node} aria-label="可用节点选择器" />
-          <NodeSelectButton node={node} disabled aria-label="禁用节点选择器" />
-          <NodeSelectButton node={node} loading aria-label="加载中节点选择器" />
-          <NodeSelectButton disabled aria-label="禁用空节点选择器" />
+          <NodeSelectButton loadNodes={loadPreviewNodes} node={node} aria-label="可用节点选择器" />
+          <NodeSelectButton
+            loadNodes={loadPreviewNodes}
+            node={node}
+            disabled
+            aria-label="禁用节点选择器"
+          />
+          <NodeSelectButton
+            loadNodes={loadPreviewNodes}
+            node={node}
+            loading
+            aria-label="加载中节点选择器"
+          />
+          <NodeSelectButton loadNodes={loadPreviewNodes} disabled aria-label="禁用空节点选择器" />
           <Pagination
             page={2}
             totalPages={12}
@@ -385,7 +416,7 @@ export default function ThemePreviewApp() {
                 options={[{ label: 'V2EX', value: 'v2ex' }]}
               />
               <DatePicker size={size} aria-label={`${size} 日期`} />
-              <NodeSelectButton size={size} node={node} />
+              <NodeSelectButton loadNodes={loadPreviewNodes} size={size} node={node} />
               <RadioGroup size={size} aria-label={`${size} 单选组`} defaultValue="any">
                 <RadioGroupItem value="any" label="任意关键词" />
                 <RadioGroupItem value="all" label="全部关键词" />
@@ -421,10 +452,11 @@ export default function ThemePreviewApp() {
               ]}
             />
             <NodeSelectButton
+              loadNodes={loadPreviewNodes}
               node={node}
               clearable
               onClear={() => setNode(undefined)}
-              onClick={() => setNode({ name: 'qna', title: '问与答' })}
+              onValueChange={setNode}
             />
             <Select
               aria-label="禁用选择器"

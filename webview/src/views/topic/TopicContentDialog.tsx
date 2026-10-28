@@ -176,16 +176,10 @@ export default function TopicContentDialog({
                     id="topic-content-node"
                     node={targetNode}
                     disabled={disabled || !ready}
-                    onClick={async () => {
-                      try {
-                        const node = await vscode.pickTopicContentNode(targetNode.name)
-                        if (node) {
-                          setTargetNode(node)
-                          change('nodeName', node.name)
-                        }
-                      } catch (reason) {
-                        setError(reason instanceof Error ? reason.message : String(reason))
-                      }
+                    loadNodes={() => vscode.getNodes()}
+                    onValueChange={node => {
+                      setTargetNode(node)
+                      change('nodeName', node.name)
                     }}
                   />
                 </div>

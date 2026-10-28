@@ -1,7 +1,6 @@
 import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import vscode from 'vscode'
 import G from '@/global'
-import { showNodeQuickPick } from '@/features/nodeQuickPick'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
@@ -52,17 +51,9 @@ export class SearchPanelController implements WebviewPageRpcController<SearchPan
     this.panel.onDidDispose(listener)
   }
 
-  /** 打开搜索节点选择器 */
-  async rpc_selectNode(currentNodeName?: string) {
-    const nodes = await G.V2ex.nodes.getAll()
-    const selected = await showNodeQuickPick(nodes, {
-      title: '选择搜索节点',
-      placeHolder: '输入节点标题或 name 搜索',
-      currentNodeName,
-      countField: 'topicCount',
-      sortByCountDescending: true
-    })
-    return selected ? nodes.find(node => node.name === selected.name) : undefined
+  /** 获取搜索节点列表 */
+  rpc_getNodes() {
+    return G.V2ex.nodes.getAll()
   }
 
   /** 执行站内搜索 */

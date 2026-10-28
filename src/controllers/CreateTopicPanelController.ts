@@ -10,7 +10,6 @@ import {
   saveCreateTopicDraft
 } from '@/features/createTopicDraft'
 import { logger } from '@/core/logger'
-import { showNodeQuickPick } from '@/features/nodeQuickPick'
 import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
@@ -137,21 +136,9 @@ export class CreateTopicPanelController implements WebviewPageRpcController<Crea
     await this.reload(true)
   }
 
-  /** 打开节点选择器 */
-  async rpc_selectNode(currentNodeName?: string) {
-    const selected = await showNodeQuickPick(this.nodes, {
-      title: '选择主题节点',
-      placeHolder: '输入节点标题或 name 搜索',
-      currentNodeName,
-      countField: 'topicCount',
-      sortByCountDescending: true
-    })
-    if (!selected) return undefined
-    return {
-      name: selected.name,
-      title: selected.title,
-      avatar: getV2exNodeAvatarUrl(selected.name, 'normal')
-    }
+  /** 获取创作表单允许发布的节点 */
+  rpc_getNodes() {
+    return this.nodes
   }
 
   /** 保存当前草稿 */

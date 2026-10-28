@@ -77,8 +77,8 @@ export interface TopicPanelRpcCommands
   extends WebviewCommonRpcCommands, WebviewStateRpcCommands<TopicPanelViewState> {
   /** 加载源站话题信息 */
   getTopicInfo(topicId: number): TopicInfo
-  /** 选择目标节点，返回展示信息 */
-  pickTopicContentNode(currentNodeName?: string): Node | undefined
+  /** 获取可移动到的节点列表 */
+  getNodes(): Node[]
   /** 读取编辑、移动或附言的初始化数据 */
   prepareTopicContent(action: TopicContentAction): TopicContentState
   /** 提交内容操作并返回最新详情 */

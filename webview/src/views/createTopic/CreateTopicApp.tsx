@@ -47,6 +47,7 @@ export default function CreateTopicApp() {
   const [composerResetKey, setComposerResetKey] = useState(0)
   const [draftSaved, setDraftSaved] = useState(true)
   const titleRef = useRef<HTMLInputElement>(null)
+  const nodeSelectRef = useRef<HTMLButtonElement>(null)
   const draftUsernameRef = useRef('')
 
   useEffect(
@@ -93,12 +94,6 @@ export default function CreateTopicApp() {
     setDraft(current => ({ ...current, [key]: value }))
   }
 
-  /** 选择主题节点 */
-  async function selectNode() {
-    const node = await vscode.selectNode(draft.node?.name)
-    if (node) updateDraft('node', node)
-  }
-
   /** 发布主题 */
   async function publishTopic() {
     if (state.status !== 'form' || publishing) return
@@ -110,7 +105,7 @@ export default function CreateTopicApp() {
     }
     if (!draft.node) {
       Toast.warning('请选择主题节点')
-      await selectNode()
+      nodeSelectRef.current?.click()
       return
     }
 
@@ -289,9 +284,11 @@ export default function CreateTopicApp() {
               </div>
               <div className="create-topic-node-tools">
                 <NodeSelectButton
+                  ref={nodeSelectRef}
                   node={draft.node}
+                  loadNodes={() => vscode.getNodes()}
+                  onValueChange={node => updateDraft('node', node)}
                   disabled={formDisabled}
-                  onClick={() => void selectNode()}
                 />
                 <a
                   className="create-topic-help-link"

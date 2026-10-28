@@ -21,7 +21,6 @@ import {
   RadioGroupItem,
   Select,
   Spinner,
-  Toast,
   ToastViewport
 } from '@/components/ui'
 import type {
@@ -240,14 +239,8 @@ export default function SearchApp() {
                       clearable
                       onClear={() => updateFilter('node', undefined)}
                       disabled={loading}
-                      onClick={async () => {
-                        try {
-                          const node = await vscode.selectNode(filters.node?.name)
-                          if (node) updateFilter('node', node)
-                        } catch (error) {
-                          Toast.error(error instanceof Error ? error.message : '加载节点失败')
-                        }
-                      }}
+                      loadNodes={() => vscode.getNodes()}
+                      onValueChange={node => updateFilter('node', node)}
                     />
                   </div>
                 </div>

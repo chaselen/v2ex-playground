@@ -34,8 +34,8 @@ export interface CreateTopicPanelRpcCommands
   reload(): void
   /** 执行登录并重新加载表单 */
   login(): void
-  /** 打开节点选择器 */
-  selectNode(currentNodeName?: string): Node | undefined
+  /** 获取可选节点列表 */
+  getNodes(): Node[]
   /** 保存当前草稿 */
   saveDraft(draft: CreateTopicDraft): void
   /** 发布新主题 */

@@ -2387,3 +2387,53 @@
 .v2ex-button--compact {
   padding-inline: 3px;
 }
+
+.v2ex-searchable-select {
+  display: flex;
+  width: max(280px, var(--anchor-width));
+  max-width: var(--available-width);
+  flex-direction: column;
+}
+
+.v2ex-searchable-select__scroll {
+  max-height: inherit;
+
+  .v2ex-scroll-area__viewport {
+    overscroll-behavior: contain;
+  }
+}
+
+.v2ex-searchable-select__list {
+  padding: 4px;
+}
+
+.v2ex-searchable-select__search {
+  flex: none;
+  padding: 6px;
+}
+
+.v2ex-searchable-select__input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--v2ex-input-border);
+  border-radius: var(--v2ex-radius-sm);
+  outline: none;
+  color: var(--v2ex-input-fg);
+  background: var(--v2ex-input-bg);
+  font: inherit;
+
+  &::placeholder {
+    color: var(--v2ex-placeholder-fg);
+  }
+
+  &:focus {
+    border-color: var(--v2ex-focus-border);
+  }
+}
+
+.v2ex-searchable-select__status {
+  padding: 10px;
+  color: var(--v2ex-muted-fg);
+}
