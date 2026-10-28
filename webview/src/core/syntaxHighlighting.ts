@@ -72,7 +72,7 @@ async function highlightCodeBlock(code: HTMLElement) {
     const highlighter = await getHighlighter()
     await themeReady
     const version = themeRevision
-    // 不将上次检测结果作为显式语言传回：否则自动识别为 xml 的 HTML 会失去嵌入语法
+    // 重绘只读取原始语言声明，让无声明的代码在内容变化后仍可重新识别
     const result = await highlighter.highlight(source, { language: getDeclaredLanguage(code) })
     if (rendering.get(code) !== generation) return
     if (version !== themeRevision) {

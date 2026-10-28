@@ -84,6 +84,12 @@ describe('highlightCodeBlocks', () => {
   it('使用预设和本地 WASM，HTML 重绘仍保持自动模式', async () => {
     const { highlightCodeBlocks } = await import('./syntaxHighlighting')
     const source = '<!doctype html><html><script>const x = 1</script></html>'
+    mocks.highlight.mockResolvedValue({
+      html: '<span>HTML output</span>',
+      language: 'html',
+      highlighted: true,
+      className: 'vscode-tint-textmate'
+    })
     const code = createCodeBlock(source)
     mocks.blocks = [code]
     await highlightCodeBlocks([code])
