@@ -4,8 +4,10 @@ import { setDefaultPanelIcon } from '@/features/panelIcon'
 import { renderWebviewHtml } from '@/core/webviewHtml'
 import { logger } from '@/core/logger'
 
-/** 面板标题最大长度 */
-const defaultPanelTitleMaxLength = 15
+/** 面板标题的宽度预算，半角字符占 1，中文等非 ASCII 字符占 2 */
+const defaultPanelTitleMaxWidth = 24
+
+const panelTitleSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 
 /** 固定资源图标文件名 */
 type ResourcePanelIcon =
@@ -36,13 +38,19 @@ interface V2exWebviewPanelOptions {
 }
 
 /**
- * 截断面板标题
+ * 按近似显示宽度截断面板标题，保留完整字素；省略号不计入宽度预算
  * @param title 原始标题
  */
 export function formatPanelTitle(title: string): string {
-  return title.length <= defaultPanelTitleMaxLength
-    ? title
-    : title.slice(0, defaultPanelTitleMaxLength) + '...'
+  let width = 0
+  for (const { segment, index } of panelTitleSegmenter.segment(title)) {
+    const segmentWidth = /^[\x00-\x7f]+$/.test(segment) ? 1 : 2
+    if (width + segmentWidth > defaultPanelTitleMaxWidth) {
+      return title.slice(0, index) + '...'
+    }
+    width += segmentWidth
+  }
+  return title
 }
 
 /**
