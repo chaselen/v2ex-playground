@@ -44,6 +44,23 @@ export function ContextMenu({
     if (disabled) setOpen(false)
   }, [disabled])
 
+  useEffect(() => {
+    if (!open) return
+
+    // 宿主编辑器中的点击不会进入 Webview，需在窗口失焦时收起菜单
+    const closeMenu = () => setOpen(false)
+    const handleVisibilityChange = () => {
+      if (document.hidden) closeMenu()
+    }
+
+    window.addEventListener('blur', closeMenu)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      window.removeEventListener('blur', closeMenu)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [open])
+
   return (
     <ContextMenuPrimitive.Root disabled={disabled} open={open && !disabled} onOpenChange={setOpen}>
       <ContextMenuPrimitive.Trigger render={children} />
