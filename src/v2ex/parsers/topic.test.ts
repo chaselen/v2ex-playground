@@ -11,6 +11,40 @@ import {
 } from './topic'
 import { readFileSync } from 'node:fs'
 
+describe('topic reply container parsing', () => {
+  it('按回复容器定位回复、总数和标签，不受其他盒子影响', () => {
+    const replyBox = `
+      <div class="box">
+        <div class="cell">
+          <a class="tag" href="/tag/test">test</a>
+          <span class="gray">1 条回复</span>
+        </div>
+        <div id="r_123" class="cell">
+          <a class="dark">replier</a>
+          <span class="ago" title="2026-07-15 09:10:11 +08:00">10 分钟前</span>
+          <span class="no">1</span>
+          <div class="reply_content">Reply content</div>
+        </div>
+      </div>`
+    const $ = cheerio.load(`
+      <div id="Main">
+        <div class="box"><div class="header"><h1>测试话题</h1></div></div>
+        <div id="topic-tip-box" class="box"></div>
+        <div id="topic-replies">${replyBox}</div>
+        <div class="box"><div class="cell">回复表单</div></div>
+      </div>
+    `)
+
+    expect(parseTopicMeta($, 1, 'https://www.v2ex.com')).toMatchObject({
+      replyCount: 1,
+      tags: ['test']
+    })
+    expect(parseReplies($)).toMatchObject([
+      { replyId: '123', userName: 'replier', content: 'Reply content', floor: '1' }
+    ])
+  })
+})
+
 describe('topic outdated notice parsing', () => {
   it('从主题容器读取旧帖提醒，与正文和附言分离', () => {
     const notice = '这是一个创建于 2234 天前的主题，其中的信息可能已经有所发展或是发生改变。'
@@ -96,7 +130,7 @@ describe('topic time parsing', () => {
             </div>
           </div>
         </div>
-        <div class="box"><div class="cell"><span class="gray">0 条回复</span></div></div>
+        <div id="topic-replies"><div class="box"><div class="cell"><span class="gray">0 条回复</span></div></div></div>
       </div>
     `)
 
@@ -110,13 +144,15 @@ describe('topic time parsing', () => {
     const $ = cheerio.load(`
       <div id="Main">
         <div class="box"></div>
-        <div class="box">
-          <div class="cell"><span class="gray">1 条回复</span></div>
-          <div id="r_123" class="cell">
-            <a class="dark">replier</a>
-            <span class="ago" title="2026-07-15 09:10:11 +08:00">10 分钟前</span>
-            <span class="no">1</span>
-            <div class="reply_content">回复内容</div>
+        <div id="topic-replies">
+          <div class="box">
+            <div class="cell"><span class="gray">1 条回复</span></div>
+            <div id="r_123" class="cell">
+              <a class="dark">replier</a>
+              <span class="ago" title="2026-07-15 09:10:11 +08:00">10 分钟前</span>
+              <span class="no">1</span>
+              <div class="reply_content">回复内容</div>
+            </div>
           </div>
         </div>
       </div>
@@ -135,32 +171,34 @@ describe('topic time parsing', () => {
     const $ = cheerio.load(`
       <div id="Main">
         <div class="box"></div>
-        <div class="box">
-          <div class="cell"><span class="gray">3 条回复</span></div>
-          <div id="r_1" class="cell">
-            <strong><a href="/member/itechify" class="dark">itechify</a></strong>
-            <div class="badges"><div class="badge pro">PRO</div></div>
-            <span class="ago" title="2026-07-19 02:45:39 +08:00">2 天前</span>
-            <span class="no">1</span>
-            <div class="reply_content">仅 PRO</div>
-          </div>
-          <div id="r_2" class="cell">
-            <strong><a href="/member/Livid" class="dark">Livid</a></strong>
-            <div class="badges">
-              <div class="badge mod">MOD</div>
-              <div class="badge op">OP</div>
-              <div class="badge pro">PRO</div>
+        <div id="topic-replies">
+          <div class="box">
+            <div class="cell"><span class="gray">3 条回复</span></div>
+            <div id="r_1" class="cell">
+              <strong><a href="/member/itechify" class="dark">itechify</a></strong>
+              <div class="badges"><div class="badge pro">PRO</div></div>
+              <span class="ago" title="2026-07-19 02:45:39 +08:00">2 天前</span>
+              <span class="no">1</span>
+              <div class="reply_content">仅 PRO</div>
             </div>
-            <span class="ago" title="2026-07-19 10:07:40 +08:00">2 天前</span>
-            <span class="no">3</span>
-            <div class="reply_content">MOD OP PRO</div>
-          </div>
-          <div id="r_3" class="cell">
-            <strong><a href="/member/nobody" class="dark">nobody</a></strong>
-            <div class="badges"></div>
-            <span class="ago" title="2026-07-19 11:00:00 +08:00">2 天前</span>
-            <span class="no">4</span>
-            <div class="reply_content">无标签</div>
+            <div id="r_2" class="cell">
+              <strong><a href="/member/Livid" class="dark">Livid</a></strong>
+              <div class="badges">
+                <div class="badge mod">MOD</div>
+                <div class="badge op">OP</div>
+                <div class="badge pro">PRO</div>
+              </div>
+              <span class="ago" title="2026-07-19 10:07:40 +08:00">2 天前</span>
+              <span class="no">3</span>
+              <div class="reply_content">MOD OP PRO</div>
+            </div>
+            <div id="r_3" class="cell">
+              <strong><a href="/member/nobody" class="dark">nobody</a></strong>
+              <div class="badges"></div>
+              <span class="ago" title="2026-07-19 11:00:00 +08:00">2 天前</span>
+              <span class="no">4</span>
+              <div class="reply_content">无标签</div>
+            </div>
           </div>
         </div>
       </div>
@@ -204,10 +242,12 @@ describe('topic tag parsing', () => {
             </div>
           </div>
         </div>
-        <div class="box">
-          <div class="cell">
-            <a href="/tag/TypeScript" class="tag">TypeScript</a>
-            <a href="/tag/VS%20Code" class="tag">VS Code</a>
+        <div id="topic-replies">
+          <div class="box">
+            <div class="cell">
+              <a href="/tag/TypeScript" class="tag">TypeScript</a>
+              <a href="/tag/VS%20Code" class="tag">VS Code</a>
+            </div>
           </div>
         </div>
       </div>
@@ -281,7 +321,7 @@ describe('topic ignore state parsing', () => {
             <div id="topic_thank"><a class="tb" href="#;">感谢</a></div>
           </div>
         </div>
-        <div class="box"><div class="cell"><span class="gray">0 条回复</span></div></div>
+        <div id="topic-replies"><div class="box"><div class="cell"><span class="gray">0 条回复</span></div></div></div>
       </div>
     `)
 

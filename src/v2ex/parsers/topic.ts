@@ -251,12 +251,7 @@ function parseReplyCount(topicBox: CheerioSelection): number {
  * @param $ cheerio 实例
  */
 function getTopicReplyBox($: cheerio.CheerioAPI): CheerioSelection {
-  let topicBoxIndex = 1
-  const boxes = $('#Main > .box')
-  if (boxes.eq(1).attr('id') === 'topic-tip-box') {
-    topicBoxIndex = 2
-  }
-  return boxes.eq(topicBoxIndex)
+  return $('#topic-replies > .box').first()
 }
 
 /** 仅接受信息页表格，登录页、无权限页与重定向后的详情页不能视为成功 */
