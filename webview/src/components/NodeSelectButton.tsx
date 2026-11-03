@@ -5,6 +5,7 @@ import { Avatar, Button, type ButtonProps } from '@/components/ui'
 import { mergeClassNames } from '@/components/ui/utils'
 import type { Node } from '@extension/v2ex/types'
 import { ClearButton } from '@/components/ui/ClearButton'
+import NodeSelectOption from './NodeSelectOption'
 import styles from './NodeSelectButton.module.scss'
 
 /** 节点选择器属性，节点来源与选中状态由调用方提供 */
@@ -85,21 +86,7 @@ const NodeSelectButton = forwardRef<HTMLButtonElement, NodeSelectButtonProps>(
           options={nodes.map(node => ({
             value: node.name,
             searchText: `${node.title} ${node.name}`,
-            label: (
-              <span className={styles.option}>
-                <Avatar
-                  src={node.avatar}
-                  alt=""
-                  size="small"
-                  shape="square"
-                  fallback={<MapPin aria-hidden="true" />}
-                />
-                <span className={styles.optionText}>
-                  <span className={styles.title}>{node.title}</span>
-                  <span className={styles.optionName}>{node.name}</span>
-                </span>
-              </span>
-            )
+            label: <NodeSelectOption node={node} />
           }))}
           onOpenChange={open => {
             if (open) void loadOptions()

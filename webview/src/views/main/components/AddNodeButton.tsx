@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
-import { Bookmark, Check, MapPin, Plus } from 'lucide-react'
-import { Avatar, Button } from '@/components/ui'
+import { Bookmark, Check, Plus } from 'lucide-react'
+import { Button } from '@/components/ui'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { createVsCodeClient } from '@/core/vscode'
 import type { MainViewRpcCommands, WebviewNode } from '@extension/shared/mainView'
 import type { Node } from '@extension/v2ex/types'
-import styles from './AddNodeButton.module.scss'
+import NodeSelectOption from '@/components/NodeSelectOption'
 
 const vscode = createVsCodeClient<MainViewRpcCommands>()
 
@@ -67,20 +67,10 @@ export default function AddNodeButton({
           searchText: `${node.title} ${node.name}`,
           disabled: added,
           label: (
-            <span className={styles.option}>
-              <Avatar
-                src={node.avatar}
-                alt=""
-                size="small"
-                shape="square"
-                fallback={<MapPin aria-hidden="true" />}
-              />
-              <span className={styles.text}>
-                <span className={styles.title}>{node.title}</span>
-                <span className={styles.name}>{node.name}</span>
-              </span>
-              <span className={styles.meta}>
-                {added ? (
+            <NodeSelectOption
+              node={node}
+              meta={
+                added ? (
                   <>
                     <Check aria-hidden="true" />
                     {collection ? '已收藏' : '已添加'}
@@ -90,9 +80,9 @@ export default function AddNodeButton({
                     <Bookmark aria-hidden="true" />
                     {node.collectCount.toLocaleString('zh-CN')}
                   </>
-                ) : null}
-              </span>
-            </span>
+                ) : null
+              }
+            />
           )
         }
       })}

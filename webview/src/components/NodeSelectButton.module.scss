@@ -89,26 +89,3 @@
     height: 18px;
   }
 }
-
-.option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  width: 100%;
-}
-
-.optionText {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.optionName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--v2ex-muted-fg);
-  font-size: 11px;
-}
