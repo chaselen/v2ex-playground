@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
-import { ChevronRight, Inbox, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronRight, Inbox, RefreshCw, Trash2 } from 'lucide-react'
+import AddNodeButton from '../components/AddNodeButton'
 import PageSkeleton from '@/components/PageSkeleton'
 import { ScrollArea, Button, ConfirmPopover, Empty } from '@/components/ui'
 import LoginPrompt from '../components/LoginPrompt'
@@ -20,7 +21,7 @@ interface NodeTreeTabProps {
   /** 标签加载错误 */
   error?: string | null
   /** 添加节点 */
-  onAddNode?: () => void
+  onAddNode?: (nodeName: string) => Promise<void>
   /** 是否正在添加节点 */
   addNodeLoading?: boolean
   /** 重试加载标签 */
@@ -453,16 +454,13 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
       </ScrollArea>
       {!loading && (tab === 'custom' || (tab === 'collection' && loggedIn && !error)) && (
         <div className={styles['tree-footer']}>
-          <Button
+          <AddNodeButton
             className={styles['add-node-button']}
-            variant="primary"
-            size="small"
-            icon={<Plus aria-hidden="true" />}
+            nodes={nodes}
+            collection={tab === 'collection'}
             loading={addNodeLoading}
-            onClick={onAddNode}
-          >
-            添加节点
-          </Button>
+            onAddNode={onAddNode}
+          />
         </div>
       )}
     </div>

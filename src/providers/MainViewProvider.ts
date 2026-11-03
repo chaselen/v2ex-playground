@@ -24,10 +24,6 @@ import { renderWebviewHtml } from '@/core/webviewHtml'
 import { addCustomNode, getCustomNodes, removeCustomNode } from '@/features/customNodes'
 import { toWebviewNodesWithAvatars } from '@/features/nodeAvatars'
 import {
-  showAddCollectionNodeQuickPick,
-  showAddCustomNodeQuickPick
-} from '@/features/nodeQuickPick'
-import {
   getExploreNodes,
   InitData,
   MainTabKey,
@@ -209,14 +205,19 @@ export default class MainViewProvider
     return this._handleDailySignIn()
   }
 
+  /** 获取节点选择器数据 */
+  rpc_getAvailableNodes() {
+    return G.V2ex.nodes.getAll()
+  }
+
   /** 添加自定义节点 */
-  rpc_addNode() {
-    return this._handleAddNode()
+  rpc_addNode(nodeName: string) {
+    return this._handleAddNode(nodeName)
   }
 
   /** 添加收藏节点 */
-  rpc_collectNode() {
-    return this._handleCollectNode()
+  rpc_collectNode(nodeName: string) {
+    return this._handleCollectNode(nodeName)
   }
 
   /** 删除自定义节点 */
@@ -427,21 +428,10 @@ export default class MainViewProvider
   /**
    * 添加自定义节点
    */
-  private async _handleAddNode(): Promise<NodeListData> {
-    const nodes = await vscode.window.withProgress(
-      {
-        title: '获取节点信息',
-        location: vscode.ProgressLocation.Notification
-      },
-      () => G.V2ex.nodes.getAll()
-    )
-
-    const customNodeNames = new Set(getCustomNodes().map(node => node.name))
-    const select = await showAddCustomNodeQuickPick(nodes, customNodeNames)
-
-    if (!select) {
-      return this._getCustomNodesData()
-    }
+  private async _handleAddNode(nodeName: string): Promise<NodeListData> {
+    const nodes = await G.V2ex.nodes.getAll()
+    const select = nodes.find(node => node.name === nodeName)
+    if (!select) throw new Error('节点不存在，请重新选择')
 
     const isAdd = await addCustomNode({
       name: select.name,
@@ -458,27 +448,16 @@ export default class MainViewProvider
   }
 
   /** 添加收藏节点 */
-  private async _handleCollectNode(): Promise<NodeListData> {
+  private async _handleCollectNode(nodeName: string): Promise<NodeListData> {
     if (!(await G.V2ex.ensureAuthenticated())) {
       throw new LoginRequiredError('收藏节点前请先登录')
     }
 
-    const { allNodes, collectionNodes } = await vscode.window.withProgress(
-      {
-        title: '获取节点信息',
-        location: vscode.ProgressLocation.Notification
-      },
-      async () => ({
-        allNodes: await G.V2ex.nodes.getAll(),
-        collectionNodes: await G.V2ex.nodes.getCollection()
-      })
-    )
+    const allNodes = await G.V2ex.nodes.getAll()
+    const select = allNodes.find(node => node.name === nodeName)
+    if (!select) throw new Error('节点不存在，请重新选择')
+    const collectionNodes = await G.V2ex.nodes.getCollection()
     const collectionNodeNames = new Set(collectionNodes.map(node => node.name))
-    const select = await showAddCollectionNodeQuickPick(allNodes, collectionNodeNames)
-
-    if (!select) {
-      return { nodes: toWebviewNodesWithAvatars(collectionNodes) }
-    }
 
     if (collectionNodeNames.has(select.name)) {
       vscode.window.showInformationMessage('节点已经收藏，无需再添加')

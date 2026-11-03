@@ -1,5 +1,5 @@
 import type { BrowseSettingsWebviewEvents, WebviewCommonRpcCommands } from './commonView'
-import type { AccountOverview, Topic, V2exNotification } from '../v2ex/types'
+import type { AccountOverview, Node, Topic, V2exNotification } from '../v2ex/types'
 import type { DailySignInState } from './dailySignIn'
 
 /**
@@ -201,8 +201,10 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
   deleteNotification(notificationId: number): void
   getDailySignInStatus(): DailySignInState
   dailySignIn(): DailySignInState
-  addNode(): NodeListData
-  collectNode(): NodeListData
+  /** 获取可添加节点，选择和过滤由 Webview 完成 */
+  getAvailableNodes(): Node[]
+  addNode(nodeName: string): NodeListData
+  collectNode(nodeName: string): NodeListData
   removeNode(nodeName: string): NodeListData
   cancelCollectNode(nodeName: string): void
   openBalance(): void

@@ -217,20 +217,20 @@ export function useNodeTreeTabs() {
   /**
    * 添加自定义节点
    */
-  async function addNode() {
+  async function addNode(nodeName: string) {
     try {
-      const data = await vscode.addNode()
+      const data = await vscode.addNode(nodeName)
       onCustomNodesUpdated(data)
     } catch (err) {
-      console.error(err)
+      Toast.error((err as Error).message || '添加节点失败')
     }
   }
 
   /** 添加收藏节点 */
-  async function collectNode() {
+  async function collectNode(nodeName: string) {
     setCollectingNode(true)
     try {
-      const data = await vscode.collectNode()
+      const data = await vscode.collectNode(nodeName)
       applyCollectionNodes(data)
     } catch (err) {
       Toast.error((err as Error).message || '收藏节点失败')

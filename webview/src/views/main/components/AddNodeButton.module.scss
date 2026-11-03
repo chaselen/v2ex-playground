@@ -1,0 +1,40 @@
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.title,
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name,
+.meta {
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
