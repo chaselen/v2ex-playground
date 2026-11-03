@@ -42,8 +42,10 @@
     }
   }
 
-  @include focus.keyboard-focus($enabled-only: true) {
+  @include focus.keyboard-focus($enabled-only: true, $also: '&[data-popup-open]:not(:disabled)') {
     border-color: var(--v2ex-focus-border);
+    outline: 1px solid var(--v2ex-focus-border);
+    outline-offset: -1px;
   }
 
   :global(.v2ex-button__label) {
@@ -88,7 +90,25 @@
   }
 }
 
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
 .optionName {
-  margin-left: 10px;
-  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
 }

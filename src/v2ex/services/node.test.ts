@@ -36,6 +36,43 @@ function createNodePageHtml(options: {
 }
 
 describe('NodeService', () => {
+  test('保留 API 和节点页返回的站点默认头像', async () => {
+    const avatar = '/static/img/node_default_large.png'
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce({ data: [{ id: 300, name: '2019', avatar_large: avatar }] })
+      .mockResolvedValueOnce({
+        data: createNodePageHtml({ title: '2019', collected: false, collectCount: 0 }).replace(
+          '//cdn.v2ex.com/navatar/test.png',
+          avatar
+        )
+      })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    const expected = `https://www.v2ex.com${avatar}`
+    expect((await service.getAll())[0].avatar).toBe(expected)
+    expect((await service.getTopics('2019')).node.avatar).toBe(expected)
+  })
+
+  test.each([
+    [
+      {
+        avatar_large: '//cdn.v2ex.com/large.png',
+        avatar_normal: '//cdn.v2ex.com/normal.png',
+        avatar_mini: '//cdn.v2ex.com/mini.png'
+      },
+      'large'
+    ],
+    [
+      { avatar_normal: '//cdn.v2ex.com/normal.png', avatar_mini: '//cdn.v2ex.com/mini.png' },
+      'normal'
+    ],
+    [{ avatar_mini: '//cdn.v2ex.com/mini.png' }, 'mini']
+  ])('优先使用高清头像并兼容缺少大图的节点：%s', async (avatars, size) => {
+    const get = vi.fn().mockResolvedValue({ data: [{ id: 300, name: 'programmer', ...avatars }] })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    expect((await service.getAll())[0].avatar).toBe(`https://cdn.v2ex.com/${size}.png`)
+  })
+
   test.each([{ id: 864 }, { name: 'promotions' }])('按单一条件获取节点资料：%o', async query => {
     const get = vi.fn().mockResolvedValue({
       data: { id: 864, name: 'promotions', title: '推广', stars: 10, topics: 20 }

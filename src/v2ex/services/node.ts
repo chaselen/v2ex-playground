@@ -175,7 +175,7 @@ export class NodeService {
       name: item.name?.trim() || '',
       title: item.title?.trim() || item.name?.trim() || '',
       avatar: this.normalizeAvatar(
-        item.avatar_mini || item.avatar_normal || item.avatar_large || undefined
+        item.avatar_large || item.avatar_normal || item.avatar_mini || undefined
       ),
       collectCount,
       topicCount
@@ -184,7 +184,7 @@ export class NodeService {
 
   /**
    * 规范化节点图标地址
-   * API / 页面常对无自定义图标节点返回 `/static/img/node_default_*.png`，这类占位图视为无图标
+   * 保留站点默认节点头像，并将 API / 页面的相对地址转换为绝对地址
    * @param avatarSrc 原始图标地址
    */
   private normalizeAvatar(avatarSrc?: string): string | undefined {
@@ -193,9 +193,7 @@ export class NodeService {
     }
 
     try {
-      const avatar = new URL(avatarSrc, this.baseUrl).toString()
-      /* node_default_* 是站点统一占位图，不作为真实节点图标返回 */
-      return avatar.includes('node_default') ? undefined : avatar
+      return new URL(avatarSrc, this.baseUrl).toString()
     } catch {
       return undefined
     }

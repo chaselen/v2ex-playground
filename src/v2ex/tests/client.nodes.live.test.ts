@@ -78,7 +78,7 @@ describe('V2exClient nodes', () => {
     expect(nodes.every(node => typeof node.topicCount === 'number')).toBe(true)
     expect(nodes.some(node => Boolean(node.avatar))).toBe(true)
     expect(nodes.every(node => !node.avatar || /^https:\/\//.test(node.avatar))).toBe(true)
-    expect(nodes.every(node => !node.avatar?.includes('node_default'))).toBe(true)
+    expect(nodes.some(node => node.avatar?.includes('/static/img/node_default'))).toBe(true)
 
     const programmer = nodes.find(node => node.name === 'programmer')
     expect(programmer).toMatchObject({

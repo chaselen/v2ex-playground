@@ -3,7 +3,6 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { ChevronDown, MapPin } from 'lucide-react'
 import { Avatar, Button, type ButtonProps } from '@/components/ui'
 import { mergeClassNames } from '@/components/ui/utils'
-import { getV2exNodeAvatarUrl } from '@extension/features/nodeAvatars'
 import type { Node } from '@extension/v2ex/types'
 import { ClearButton } from '@/components/ui/ClearButton'
 import styles from './NodeSelectButton.module.scss'
@@ -78,6 +77,7 @@ const NodeSelectButton = forwardRef<HTMLButtonElement, NodeSelectButtonProps>(
         )}
       >
         <SearchableSelect
+          virtualItemHeight={48}
           value={node?.name}
           disabled={props.disabled || props.loading}
           loading={loading}
@@ -86,10 +86,19 @@ const NodeSelectButton = forwardRef<HTMLButtonElement, NodeSelectButtonProps>(
             value: node.name,
             searchText: `${node.title} ${node.name}`,
             label: (
-              <>
-                <span>{node.title}</span>
-                <span className={styles.optionName}>{node.name}</span>
-              </>
+              <span className={styles.option}>
+                <Avatar
+                  src={node.avatar}
+                  alt=""
+                  size="small"
+                  shape="square"
+                  fallback={<MapPin aria-hidden="true" />}
+                />
+                <span className={styles.optionText}>
+                  <span className={styles.title}>{node.title}</span>
+                  <span className={styles.optionName}>{node.name}</span>
+                </span>
+              </span>
             )
           }))}
           onOpenChange={open => {
@@ -108,7 +117,7 @@ const NodeSelectButton = forwardRef<HTMLButtonElement, NodeSelectButtonProps>(
                 node ? (
                   <Avatar
                     className={styles.avatar}
-                    src={node.avatar || getV2exNodeAvatarUrl(node.name)}
+                    src={node.avatar}
                     alt=""
                     shape="square"
                     fallback={<MapPin aria-hidden="true" />}

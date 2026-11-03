@@ -2437,3 +2437,8 @@
   padding: 10px;
   color: var(--v2ex-muted-fg);
 }
+
+.v2ex-searchable-select__virtual-scroll {
+  flex-shrink: 1;
+  min-height: 0;
+}

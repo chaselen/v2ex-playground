@@ -217,6 +217,7 @@
   },
   "devDependencies": {
     "@base-ui/react": "^1.9.0",
+    "@tanstack/react-virtual": "^3.14.25",
     "@types/node": "~22.18.0",
     "@types/picomatch": "^4.0.3",
     "@types/qrcode": "^1.5.6",
