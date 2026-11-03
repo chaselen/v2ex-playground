@@ -1,12 +1,14 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import { Image, Smile } from 'lucide-react'
-import { ScrollArea, Button, Popover, Spinner, Textarea, Toast, Tooltip } from '@/components/ui'
+import { ScrollArea, Button, Popover, Spinner, Toast, Tooltip } from '@/components/ui'
 import { proxyImgurImageSrc } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { isApplePlatform } from '@/core/platform'
 import { imageEmoticonLinks, isImageEmoticon } from '@/core/imageEmoticons'
 import { createVsCodeClient } from '@/core/vscode'
 import { mergeClassNames } from '@/components/ui/utils'
+import MentionTextarea from './MentionTextarea'
+import type { MentionUser } from './mentions'
 import { emoticonGroups, replaceImageEmoticonTokens } from './emoticons'
 import styles from './ReplyComposer.module.scss'
 import type { TopicPanelRpcCommands } from '@extension/shared/webview'
@@ -105,6 +107,10 @@ export interface ReplyComposerHandle {
 
 /** 正文编辑组件属性 */
 interface ReplyComposerProps {
+  /** 发帖人及当前回复页的用户 */
+  mentionUsers?: MentionUser[]
+  /** 是否显示联想用户头像 */
+  showAvatar?: boolean
   /** 是否显示图片 */
   showImages: boolean
   /** 重置编辑状态的标识 */
@@ -186,6 +192,8 @@ function getImgurImageMaxSize(file: File) {
 const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(function ReplyComposer(
   {
     showImages,
+    mentionUsers,
+    showAvatar = false,
     resetKey,
     value: controlledValue,
     onChange,
@@ -678,6 +686,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       !submitContent ||
       disabled ||
       posting ||
+      event.nativeEvent.isComposing ||
       event.key !== 'Enter' ||
       (!event.metaKey && !event.ctrlKey)
     ) {
@@ -738,14 +747,16 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             draggingImage && styles.editorFrameDragging
           )}
         >
-          <Textarea
+          <MentionTextarea
+            users={mentionUsers}
+            showAvatar={showAvatar}
             autoFocus={autoFocus}
             value={value}
             maxLength={maxLength ?? undefined}
             rows={rows}
             placeholder={placeholder}
             disabled={disabled || posting || uploadingImage}
-            onChange={event => updateContent(event.currentTarget.value)}
+            onContentChange={updateContent}
           />
           <span className={styles.characterCount}>
             {value.length}

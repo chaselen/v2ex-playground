@@ -779,6 +779,11 @@ export default function TopicDetailView({
         {showReplyComposer &&
           (canOperate ? (
             <ReplyComposer
+              showAvatar={showAvatar}
+              mentionUsers={[
+                { name: topic.authorName, avatar: topic.authorAvatar },
+                ...topic.replies.map(reply => ({ name: reply.userName, avatar: reply.userAvatar }))
+              ]}
               ref={replyComposerRef}
               showImages={showImages}
               resetKey={topic.id}

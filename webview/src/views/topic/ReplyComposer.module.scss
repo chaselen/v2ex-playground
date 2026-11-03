@@ -68,8 +68,8 @@
     background: transparent;
     resize: vertical;
 
-    &:focus-visible {
-      box-shadow: none;
+    &:focus-visible:not(:disabled) {
+      outline: none;
     }
   }
 }
@@ -283,5 +283,31 @@
   span {
     font-size: 20px;
     line-height: 1;
+  }
+}
+
+.mentionPopup:global(.v2ex-popover) {
+  min-width: 160px;
+  padding: 4px;
+}
+
+.mentionScroll {
+  max-height: min(240px, calc(var(--available-height) - 10px));
+
+  :global(.v2ex-scroll-area__viewport) {
+    overscroll-behavior: contain;
+  }
+}
+
+.mentionItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--v2ex-radius-sm);
+  cursor: pointer;
+
+  &[data-highlighted] {
+    background: var(--v2ex-hover-bg);
   }
 }
