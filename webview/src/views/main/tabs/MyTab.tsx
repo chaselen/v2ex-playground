@@ -817,22 +817,26 @@ export default function MyTab(props: MyTabProps) {
     <ScrollArea fillViewport className={styles['my-panel']}>
       <div className={styles['my-panel-content']}>
         <article className={styles['my-card']}>
-          <header className={styles['my-profile']}>
-            <button
-              type="button"
-              className={`${styles['my-link']} ${styles['my-avatar-link']}`}
-              title={overview.username}
-              onClick={() => openMember(overview.username)}
-            >
-              <Avatar
-                size="large"
-                shape="square"
-                src={overview.avatar}
-                alt={overview.username}
-                className={styles['my-avatar']}
-                fallback={<UserRound aria-hidden="true" />}
-              />
-            </button>
+          <header
+            className={`${styles['my-profile']} ${showAvatar ? '' : styles['my-profile--without-avatar']}`}
+          >
+            {showAvatar && (
+              <button
+                type="button"
+                className={`${styles['my-link']} ${styles['my-avatar-link']}`}
+                title={overview.username}
+                onClick={() => openMember(overview.username)}
+              >
+                <Avatar
+                  size="large"
+                  shape="square"
+                  src={overview.avatar}
+                  alt={overview.username}
+                  className={styles['my-avatar']}
+                  fallback={<UserRound aria-hidden="true" />}
+                />
+              </button>
+            )}
             <div className={styles['my-identity']}>
               <button
                 type="button"

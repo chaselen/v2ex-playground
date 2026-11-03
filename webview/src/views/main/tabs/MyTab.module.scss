@@ -53,6 +53,10 @@
   padding: 10px 12px 8px;
 }
 
+.my-profile--without-avatar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .my-create-topic {
   width: 28px;
   min-width: 28px;
