@@ -601,27 +601,6 @@ export default function MyTab(props: MyTabProps) {
                 __html: normalizeHtml(notification.summaryHtml)
               }}
             />
-            <div className={styles['my-notification-footer']}>
-              {!!notification.time && <time>{notification.time}</time>}
-              <ConfirmPopover
-                title="删除这条消息？"
-                confirmText="删除"
-                danger
-                disabled={notificationList.loading || deletingNotification !== null}
-                onConfirm={() => deleteNotification(notification)}
-              >
-                <Button
-                  variant="ghost"
-                  size="small"
-                  className={styles['my-notification-delete']}
-                  aria-label="删除消息"
-                  title="删除消息"
-                  loading={deletingNotification === notification.id}
-                  disabled={notificationList.loading || deletingNotification !== null}
-                  icon={<Trash2 aria-hidden="true" />}
-                />
-              </ConfirmPopover>
-            </div>
           </div>
           {!!notification.payloadHtml && (
             <div
@@ -631,6 +610,27 @@ export default function MyTab(props: MyTabProps) {
               }}
             />
           )}
+          {!!notification.time && (
+            <time className={styles['my-notification-time']}>{notification.time}</time>
+          )}
+          <ConfirmPopover
+            title="删除这条消息？"
+            confirmText="删除"
+            danger
+            disabled={notificationList.loading || deletingNotification !== null}
+            onConfirm={() => deleteNotification(notification)}
+          >
+            <Button
+              variant="ghost"
+              size="small"
+              className={styles['my-notification-delete']}
+              aria-label="删除消息"
+              title="删除消息"
+              loading={deletingNotification === notification.id}
+              disabled={notificationList.loading || deletingNotification !== null}
+              icon={<Trash2 aria-hidden="true" />}
+            />
+          </ConfirmPopover>
         </div>
       </div>
     )
