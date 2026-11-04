@@ -310,7 +310,8 @@ export function parseTopicInfo(html: string, topicId: number): TopicInfo {
     if (cells.length !== 2) return
     const label = cells.eq(0).text().trim()
     const value = cells.eq(1).text().trim()
-    if (label) fields.push({ label, value })
+    const href = cells.eq(1).find('a[href]').first().attr('href')
+    if (label) fields.push({ label, value, ...(href ? { href } : {}) })
   })
   if (!fields.some(field => field.label === 'ID' && field.value === String(topicId))) {
     throw new Error('无法读取帖子信息，请确认登录状态和访问权限后重试')

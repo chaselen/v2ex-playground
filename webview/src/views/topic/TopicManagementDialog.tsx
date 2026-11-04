@@ -103,7 +103,7 @@ export default function TopicManagementDialog({
         {preparing ? (
           <div className={styles.loading} role="status">
             <Spinner />
-            正在核对操作说明…
+            正在加载
           </div>
         ) : (
           confirmation && <p>{confirmation}</p>

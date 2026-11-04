@@ -335,13 +335,15 @@ describe('parseTopicInfo', () => {
     const html = `<div id="Main"><div class="topic_content"><table>
       <tr><td>ID</td><td>703733</td></tr>
       <tr><td>创建者</td><td><a href="/member/chaselen">chaselen</a></td></tr>
+      <tr><td>所在节点</td><td><a href="/go/sandbox">沙盒</a></td></tr>
       <tr><td>创建时间</td><td>2020-09-03 08:36:53 +08:00 · 2020 年 9 月 3 日</td></tr>
       <tr><td>查看人数</td><td>2772</td></tr>
       <tr><td>是否处于置顶状态</td><td>否</td></tr>
     </table></div></div>`
     expect(parseTopicInfo(html, 703733).fields).toEqual([
       { label: 'ID', value: '703733' },
-      { label: '创建者', value: 'chaselen' },
+      { label: '创建者', value: 'chaselen', href: '/member/chaselen' },
+      { label: '所在节点', value: '沙盒', href: '/go/sandbox' },
       { label: '创建时间', value: '2020-09-03 08:36:53 +08:00 · 2020 年 9 月 3 日' },
       { label: '查看人数', value: '2772' },
       { label: '是否处于置顶状态', value: '否' }

@@ -105,10 +105,10 @@ export interface Topic {
   lastReplyUser?: string
 }
 
-/** 源站话题信息页中的文本字段，保留站点标签和时间格式 */
+/** 源站话题信息页中的字段，保留站点标签、链接和时间格式 */
 export interface TopicInfo {
   /** 按源站顺序展示的信息 */
-  fields: { label: string; value: string }[]
+  fields: { label: string; value: string; href?: string }[]
 }
 
 /**

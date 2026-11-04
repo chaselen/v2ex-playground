@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Alert, Button, Dialog, Skeleton } from '@/components/ui'
-import { createVsCodeClient } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
+import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import type { TopicPanelRpcCommands } from '@extension/shared/topicView'
 import type { TopicInfo } from '@extension/v2ex/types'
 import styles from './TopicInfoDialog.module.scss'
@@ -52,10 +53,18 @@ export default function TopicInfoDialog({
         </div>
       ) : info ? (
         <dl className={styles.fields}>
-          {info.fields.map(({ label, value }) => (
+          {info.fields.map(({ label, value, href }) => (
             <div className={styles.row} key={label}>
               <dt>{label}</dt>
-              <dd>{value || '—'}</dd>
+              <dd>
+                {href && value ? (
+                  <a href={resolveWebviewUrl(href)} onClick={handleWebviewLinkClick}>
+                    {value}
+                  </a>
+                ) : (
+                  value || '—'
+                )}
+              </dd>
             </div>
           ))}
         </dl>
