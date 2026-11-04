@@ -1,6 +1,6 @@
 import { parseTopicIdByLink } from '../links'
 import * as cheerio from 'cheerio/slim'
-import { parsePagerTotalPage, type CheerioSelection } from './common'
+import { findOutsideRichText, parsePagerTotalPage, type CheerioSelection } from './common'
 import { parseTopicListCells } from './topic'
 import type { MemberContent, MemberContentTabKey, MemberInfo, MemberReply } from '../types'
 
@@ -11,9 +11,8 @@ import type { MemberContent, MemberContentTabKey, MemberInfo, MemberReply } from
  */
 export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string): MemberInfo {
   const profileBox = findMemberProfileBox($)
-  const avatar = profileBox.find('img.avatar[data-uid]').first()
-  const grayText = profileBox
-    .find('span.gray')
+  const avatar = findOutsideRichText(profileBox, 'img.avatar').first()
+  const grayText = findOutsideRichText(profileBox, '.gray')
     .filter((_, element) => {
       const text = $(element).text()
       return text.includes('member #') || text.includes('号会员')
@@ -26,7 +25,7 @@ export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string)
   /** 用户数字编号 */
   const memberId =
     Number(avatar.attr('data-uid')) ||
-    Number(grayText.match(/member #(\d+)/i)?.[1] || 0) ||
+    Number(grayText.match(/(?:member #|第\s*)(\d+)(?:\s*号会员)?/i)?.[1] || 0) ||
     Number(ldJson?.identifier || 0)
   const joinedAt =
     grayText.match(/(?:joined on|加入于)\s*([\d-]+\s+[\d:]+\s+[+-][\d:]+)/i)?.[1]?.trim() ||
@@ -41,16 +40,17 @@ export function parseMemberInfo($: cheerio.CheerioAPI, fallbackUsername: string)
   const member: MemberInfo = {
     avatar: avatar.attr('src') || String(ldJson?.image || ''),
     username:
-      profileBox.find('h1').first().text().trim() ||
+      findOutsideRichText(profileBox, 'h1').first().text().trim() ||
       avatar.attr('alt') ||
       String(ldJson?.name || '') ||
       fallbackUsername,
     tagline:
-      profileBox.find('span.bigger').first().text().trim() || String(ldJson?.description || ''),
+      findOutsideRichText(profileBox, '.bigger').first().text().trim() ||
+      String(ldJson?.description || ''),
     bio: '',
     memberId,
     joinedAt,
-    isPro: profileBox.find('.badges .badge.pro').length > 0,
+    isPro: findOutsideRichText(profileBox, '.badges .badge.pro').length > 0,
     activityRank
   }
 
@@ -76,8 +76,7 @@ function parseMemberActionState(
   action: 'follow' | 'block'
 ): boolean | undefined {
   const actionPattern = new RegExp(`/(un)?${action}/\\d+\\?once=`)
-  const actionElement = profileBox
-    .find('[onclick]')
+  const actionElement = findOutsideRichText(profileBox, '[onclick]')
     .filter((_, element) => actionPattern.test(String($(element).attr('onclick') || '')))
     .first()
   if (!actionElement.length) {
@@ -91,20 +90,18 @@ function parseMemberActionState(
 /**
  * 解析用户页内容
  * @param $ cheerio 实例
- * @param username 用户名
  * @param tab 标签
  * @param page 页码
  */
 export function parseMemberContent(
   $: cheerio.CheerioAPI,
-  username: string,
   tab: MemberContentTabKey,
   page: number
 ): MemberContent {
   const content: MemberContent = {
     tab,
     page,
-    totalPage: parsePagerTotalPage($),
+    totalPage: parsePagerTotalPage($, $('#Main')),
     totalCount: parseMemberContentTotalCount($),
     topics: [],
     replies: [],
@@ -118,15 +115,11 @@ export function parseMemberContent(
   }
 
   const topicBox = findMemberTopicBox($)
-  content.hidden =
-    topicBox.text().includes('topics list is hidden') ||
-    topicBox.text().includes('主题列表被隐藏') ||
-    $('#Main').text().includes('topics list is hidden') ||
-    $('#Main').text().includes('主题列表被隐藏')
-  content.message = parseMemberTopicMessage($, topicBox, username)
+  content.message = parseMemberTopicMessage($, topicBox)
+  content.hidden = Boolean(content.message)
 
   if (!content.hidden) {
-    content.topics = parseTopicListCells($, topicBox.children('.cell.item'))
+    content.topics = parseTopicListCells($, findOutsideRichText(topicBox, '.cell.item'))
   }
 
   return content
@@ -137,12 +130,10 @@ export function parseMemberContent(
  * @param $ cheerio 实例
  */
 function findMemberProfileBox($: cheerio.CheerioAPI): CheerioSelection {
-  const boxes = $('#Main > .box')
-  const profileBox = boxes
-    .filter((_, element) => $(element).find('img.avatar[data-uid]').length > 0)
-    .first()
-
-  return profileBox
+  const main = $('#Main')
+  const title = findOutsideRichText(main, 'h1').first()
+  if (title.length) return title.closest('.box')
+  return findOutsideRichText(main, 'img.avatar[data-uid]').first().closest('.box')
 }
 
 /**
@@ -156,8 +147,11 @@ function parseMemberLdJson($: cheerio.CheerioAPI): Record<string, unknown> | und
   }
 
   try {
-    const parsed = JSON.parse(rawJson) as { mainEntity?: Record<string, unknown> }
-    return parsed.mainEntity
+    const parsed = JSON.parse(rawJson) as {
+      dateCreated?: unknown
+      mainEntity?: Record<string, unknown>
+    }
+    return parsed.mainEntity ? { dateCreated: parsed.dateCreated, ...parsed.mainEntity } : undefined
   } catch {
     return undefined
   }
@@ -168,48 +162,27 @@ function parseMemberLdJson($: cheerio.CheerioAPI): Record<string, unknown> | und
  * @param $ cheerio 实例
  */
 function findMemberTopicBox($: cheerio.CheerioAPI): CheerioSelection {
-  const boxes = $('#Main > .box')
-  const tabBox = boxes.filter((_, element) => $(element).children('.cell_tabs').length > 0).first()
-  if (tabBox.length) {
-    return tabBox
-  }
-
-  return boxes.filter((_, element) => $(element).children('.cell.item').length > 0).first()
+  const main = $('#Main')
+  const tabs = findOutsideRichText(main, '.cell_tabs').first()
+  if (tabs.length) return tabs.closest('.box')
+  const item = findOutsideRichText(main, '.cell.item').first()
+  if (item.length) return item.closest('.box')
+  return findOutsideRichText(main, '.header').first().closest('.box')
 }
 
 /**
  * 解析用户主题列表提示
  * @param topicBox 主题列表容器
- * @param username 用户名
  */
-function parseMemberTopicMessage(
-  $: cheerio.CheerioAPI,
-  topicBox: CheerioSelection,
-  username: string
-): string {
-  const hiddenText =
-    topicBox.find('.topic_content .gray').first().text().trim() ||
-    $('#Main .topic_content .gray')
-      .filter(
-        (_, element) =>
-          $(element).text().includes('topics list is hidden') ||
-          $(element).text().includes('主题列表被隐藏')
-      )
-      .first()
-      .text()
-      .trim()
-  if (hiddenText) {
-    return hiddenText
-  }
-
-  if (
-    topicBox.text().includes('topics list is hidden') ||
-    topicBox.text().includes('主题列表被隐藏')
-  ) {
-    return `${username} 已隐藏主题列表`
-  }
-
-  return ''
+function parseMemberTopicMessage($: cheerio.CheerioAPI, topicBox: CheerioSelection): string {
+  const hiddenText = topicBox
+    .find('.topic_content')
+    .not('.reply_content *, .topic_content .topic_content')
+    .filter((_, element) => /topics list is hidden|主题列表被隐藏/.test($(element).text()))
+    .first()
+    .text()
+    .trim()
+  return hiddenText || ''
 }
 
 /**
@@ -217,7 +190,7 @@ function parseMemberTopicMessage(
  * @param $ cheerio 实例
  */
 function parseMemberContentTotalCount($: cheerio.CheerioAPI): number {
-  const text = $('#Main > .box .header .fr strong.gray').first().text().trim()
+  const text = findOutsideRichText($('#Main'), '.header .fr .gray').first().text().trim()
   return Number(text.replace(/,/g, '')) || 0
 }
 
@@ -228,9 +201,18 @@ function parseMemberContentTotalCount($: cheerio.CheerioAPI): number {
 function parseMemberReplies($: cheerio.CheerioAPI): MemberReply[] {
   const replies: MemberReply[] = []
 
-  $('#Main > .box .dock_area').each((_, element) => {
+  findOutsideRichText($('#Main'), '.dock_area').each((_, element) => {
     const dock = $(element)
-    const body = dock.next('.inner, .cell')
+    let contentHtml = ''
+    // 允许分隔元素和正文包装，但不能跨过下一条回复摘要借用其正文
+    for (let sibling = dock.next(); sibling.length; sibling = sibling.next()) {
+      if (sibling.is('.dock_area') || findOutsideRichText(sibling, '.dock_area').length) break
+      const body = sibling.is('.reply_content') ? sibling : sibling.find('.reply_content').first()
+      if (body.length) {
+        contentHtml = body.html()?.trim() || ''
+        break
+      }
+    }
     const summary = dock.find('.gray').first()
     const topic = summary.find('a[href*="/t/"]').last()
     const topicPath = topic.attr('href') || ''
@@ -248,7 +230,7 @@ function parseMemberReplies($: cheerio.CheerioAPI): MemberReply[] {
       topicAuthor: topicAuthor.text().trim(),
       time: dock.find('.fade').first().attr('title') || dock.find('.fade').first().text().trim(),
       summaryHtml: summary.html()?.trim() || '',
-      contentHtml: body.find('.reply_content').first().html()?.trim() || ''
+      contentHtml
     })
   })
 

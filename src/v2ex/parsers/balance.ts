@@ -110,25 +110,32 @@ export function parseCoinBalance(balanceArea: CheerioSelection): CoinBalance {
   } as const
   let pendingAmount = 0
 
-  balanceArea.contents().each((_, element) => {
-    if (element.type === 'text') {
-      // 金额总是在对应币种图片前的文本节点中
-      const matchedAmount = element.data.match(/[\d,]+/g)?.pop()
-      pendingAmount = matchedAmount ? Number(matchedAmount.replace(/,/g, '')) || 0 : 0
-      return
-    }
+  // 递归保持文本与币种图片的文档顺序，允许展示层增加包装元素
+  function readContents(container: CheerioSelection): void {
+    const contents = container.contents()
+    contents.each((index, element) => {
+      if (element.type === 'text') {
+        // 金额总是在对应币种图片前的文本节点中
+        const matchedAmount = element.data.match(/[\d,]+/g)?.pop()
+        if (matchedAmount) pendingAmount = Number(matchedAmount.replace(/,/g, '')) || 0
+        return
+      }
 
-    if (element.type !== 'tag' || element.name !== 'img') {
-      return
-    }
+      if (element.type !== 'tag') return
+      if (element.name !== 'img') {
+        if (!['script', 'style'].includes(element.name)) readContents(contents.eq(index))
+        return
+      }
 
-    // 图片 alt 表示币种，缺失的币种保持默认 0
-    const coinType = coinMap[element.attribs?.alt as keyof typeof coinMap]
-    if (coinType) {
-      balance[coinType] = pendingAmount
-    }
-    pendingAmount = 0
-  })
+      // 图片 alt 表示币种，缺失的币种保持默认 0
+      const coinType = coinMap[element.attribs?.alt as keyof typeof coinMap]
+      if (coinType) {
+        balance[coinType] = pendingAmount
+      }
+      pendingAmount = 0
+    })
+  }
+  readContents(balanceArea)
 
   return balance
 }

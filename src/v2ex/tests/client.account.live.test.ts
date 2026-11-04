@@ -54,6 +54,9 @@ describe('V2exClient account', () => {
     expect(Array.isArray(result.list)).toBe(true)
     if (result.list.length) {
       expectNotification(result.list[0])
+      for (const notification of result.list) {
+        expect(notification.summaryHtml.trim()).not.toBe('')
+      }
     }
   })
 

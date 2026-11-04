@@ -95,7 +95,7 @@ describe('topic icon parsing', () => {
         <link rel="icon" href="/static/icon-192.png">
         <link rel="shortcut icon" href="//cdn.v2ex.com/navatar/94f6/d7e0/300_xxlarge.png">
       </head>
-      <div class="header"><h1>话题</h1><div class="gray"><span title="2026-07-15 08:58:03 +08:00">刚刚</span></div></div>
+      <div class="header"><h1>话题</h1><small class="gray"><span title="2026-07-15 08:58:03 +08:00">刚刚</span></small></div>
     `)
 
     expect(parseTopicMeta($, 1, 'https://www.v2ex.com').topicIcon).toBe(
@@ -106,7 +106,7 @@ describe('topic icon parsing', () => {
   test('keeps the site icon when node favicon is disabled', () => {
     const $ = cheerio.load(`
       <head><link rel="icon" href="/static/icon-192.png"></head>
-      <div class="header"><h1>话题</h1><div class="gray"><span title="2026-07-15 08:58:03 +08:00">刚刚</span></div></div>
+      <div class="header"><h1>话题</h1><small class="gray"><span title="2026-07-15 08:58:03 +08:00">刚刚</span></small></div>
     `)
 
     expect(parseTopicMeta($, 1, 'https://www.v2ex.com').topicIcon).toBe(
@@ -123,11 +123,11 @@ describe('topic time parsing', () => {
           <div class="header">
             <h1>测试话题</h1>
             <a href="/go/test">测试节点</a>
-            <div class="gray">
+            <small class="gray">
               <a href="/member/tester">tester</a>
               · <span title="2026-07-15 08:58:03 +08:00">1 小时前</span>
               · 10 次点击
-            </div>
+            </small>
           </div>
         </div>
         <div id="topic-replies"><div class="box"><div class="cell"><span class="gray">0 条回复</span></div></div></div>
@@ -235,11 +235,11 @@ describe('topic tag parsing', () => {
           <div class="header">
             <h1>测试话题</h1>
             <a href="/go/test">测试节点</a>
-            <div class="gray">
+            <small class="gray">
               <a href="/member/tester">tester</a>
               · <span title="2026-07-15 08:58:03 +08:00">1 小时前</span>
               · 10 次点击
-            </div>
+            </small>
           </div>
         </div>
         <div id="topic-replies">
@@ -308,11 +308,11 @@ describe('topic ignore state parsing', () => {
           <div class="header">
             <h1>测试话题</h1>
             <a href="/go/test">测试节点</a>
-            <div class="gray">
+            <small class="gray">
               <a href="/member/tester">tester</a>
               · <span title="2026-07-15 08:58:03 +08:00">1 小时前</span>
               · 10 次点击
-            </div>
+            </small>
           </div>
           <div class="topic_buttons">
             <div class="topic_stats">10 次点击</div>
@@ -548,8 +548,8 @@ describe('placement script formatting', () => {
 
 test('keeps content capabilities separate from display management capabilities', () => {
   const $ =
-    cheerio.load(`<div class="header"><small class="gray"><a href="/append/topic/12">APPEND</a></small></div>
-    <div id="Main"><div class="box"><div class="inner"><div class="fr">
+    cheerio.load(`<div id="Main"><div class="box"><div class="header"><h1>主题</h1><small class="gray"><a href="/append/topic/12">APPEND</a></small></div>
+    <div class="inner"><div class="fr">
       <a onclick="confirm('你确认要将此主题下沉 10 天？') &amp;&amp; location.assign('/fade/topic/12')">下沉</a>
     </div></div></div></div>`)
   const topic = parseTopicMeta($, 12, 'https://www.v2ex.com')
@@ -592,4 +592,164 @@ describe('topic list author avatars', () => {
       authorAvatar: undefined
     })
   })
+})
+
+describe('topic structure resilience', () => {
+  test('handles nested times, reordered buttons and incomplete append labels', () => {
+    const $ = cheerio.load(`<div id="Main"><div class="box">
+      <div class="header"><h1>主题</h1><small class="gray">
+        <a href="/member/alice">alice</a>
+        <em><span title="2020-09-03 08:36:53 +08:00">发布日期</span></em>
+        <span title="其他提示">提示</span>
+      </small></div>
+      <div class="subtle"><span class="fade">附言</span><div class="topic_content">Supplement</div></div>
+      <div class="subtle"><span class="fade">附言 <span title="2020-09-04 08:36:53 +08:00">昨天</span></span></div>
+      <div class="topic_buttons"><section>
+        <a class="tb">忽略主题</a>
+        <a class="tb" href="/unfavorite/topic/1?once=456">取消收藏</a>
+        <div id="topic_thank"></div>
+      </section></div>
+    </div></div><div class="subtle">侧栏提示</div>`)
+    expect(parseTopicMeta($, 1, 'https://www.v2ex.com')).toMatchObject({
+      publishedAt: '2020-09-03 08:36:53',
+      displayTime: '发布日期',
+      appends: [
+        { time: '', content: 'Supplement' },
+        { time: '昨天', content: '' }
+      ],
+      isCollected: true,
+      collectParamT: null,
+      canIgnore: true,
+      canThank: true
+    })
+  })
+
+  test('ignores unrelated cells and reply body metadata lookalikes', () => {
+    const $ = cheerio.load(`<div id="topic-replies"><div class="box">
+      <div class="cell" id="advertisement">广告</div>
+      <div class="cell" id="r_invalid">无效编号</div>
+      <div class="cell" id="r_123">
+        <a class="dark" href="/member/alice"><b>alice</b></a>
+        <span class="ago" title="2020-09-03 08:41:14 +08:00">发布日期</span>
+        <span class="no">1</span>
+        <div class="reply_content"><span title="2026-01-01 12:00:00 +08:00">引用时间</span>
+          <a class="dark">bob</a><span class="no">999</span><span class="small fade">999</span>
+          <div class="badges"><span class="badge mod"></span></div>
+          <div class="thank_area thanked"></div>
+        </div>
+      </div>
+    </div></div>`)
+    expect(parseReplies($)).toHaveLength(1)
+    expect(parseReplies($)[0]).toMatchObject({
+      replyId: '123',
+      userName: 'alice',
+      floor: '1',
+      thanks: 0,
+      repliedAt: '2020-09-03 08:41:14',
+      isMod: false,
+      thanked: false
+    })
+  })
+
+  test.each([
+    '',
+    '<span title="2030 次查看">提示</span>',
+    '<span class="ago" title="invalid">刚刚</span>'
+  ])('does not manufacture timestamps when source time is unavailable: %s', time => {
+    const $ = cheerio.load(`<div class="header"><small class="gray">${time}</small></div>
+        <div id="topic-replies"><div class="box"><div class="cell" id="r_1">${time}</div></div></div>`)
+    expect(parseTopicMeta($, 1, 'https://www.v2ex.com').publishedAt).toBe('')
+    expect(parseReplies($)[0].repliedAt).toBe('')
+  })
+})
+
+describe('public topic HTML snapshot', () => {
+  test('parses the captured Chinese page header, appends and reply structure', () => {
+    const html = readFileSync(new URL('./fixtures/topicDetail.html', import.meta.url), 'utf8')
+    const $ = cheerio.load(html)
+    expect(parseTopicMeta($, 703733, 'https://www.v2ex.com')).toMatchObject({
+      title: '写了一个 VSCode 上可以逛 V2EX 的插件',
+      authorName: 'chaselen',
+      node: { name: 'create', title: '分享创造' },
+      publishedAt: '2020-09-03 08:36:53',
+      appends: [
+        { time: '2020 年 9 月 3 日' },
+        { time: '2020 年 9 月 9 日' },
+        { time: '2020 年 9 月 17 日' }
+      ],
+      replyCount: 48
+    })
+    expect(parseReplies($)).toMatchObject([
+      {
+        replyId: '9452335',
+        userName: 'polaa',
+        floor: '1',
+        thanks: 1,
+        repliedAt: '2020-09-03 08:41:14'
+      }
+    ])
+  })
+})
+
+const topicStructureSamples = JSON.parse(
+  readFileSync(new URL('./fixtures/topicStructures.json', import.meta.url), 'utf8')
+) as {
+  id: number
+  html: string
+  expected: {
+    title: string
+    authorName: string
+    publishedAt: string
+    hasContent: boolean
+    replies: number
+    replyCount: number
+  }
+}[]
+
+describe('topic selector boundaries on captured pages', () => {
+  test.each(topicStructureSamples)(
+    'reads captured topic $id despite layout wrappers and lookalikes',
+    ({ id, html, expected }) => {
+      const $ = cheerio.load(html)
+      const original = parseTopicMeta($, id, 'https://www.v2ex.com')
+      expect(original).toMatchObject({
+        title: expected.title,
+        authorName: expected.authorName,
+        publishedAt: expected.publishedAt,
+        replyCount: expected.replyCount
+      })
+      expect(Boolean(original.content)).toBe(expected.hasContent)
+      expect(parseReplies($)).toHaveLength(expected.replies)
+      const lookalikes = `<div class="header"><h1>假标题</h1><small class="gray"><a href="/member/fake">fake</a><a href="/edit/topic/${id}">编辑</a></small></div>
+      <div class="topic_buttons"><a class="tb">取消收藏</a></div><div class="outdated">假提醒</div><div class="subtle"><div class="topic_content">假附言</div></div>`
+      const header = $('#Main .header').first()
+      header.find('h1, .gray, .fr').wrap('<section></section>')
+      header.closest('.box').wrap('<section></section>')
+      $('#topic-replies > .box').wrap('<section></section>')
+      $('#topic-replies .cell').wrap('<section></section>')
+      $('#Main .subtle').wrap('<section></section>')
+      $('#Main').prepend('<div class="box">额外提示</div>')
+      const content = $('#Main .topic_content').first()
+      // 空正文主题也必须抵御回复正文中的同名结构
+      const target = content.length ? content : $('.reply_content').first()
+      target.prepend(lookalikes)
+      $('body').prepend(`<aside>${lookalikes}</aside>`)
+      const changed = parseTopicMeta($, id, 'https://www.v2ex.com')
+      expect(changed).toMatchObject({
+        title: original.title,
+        authorName: original.authorName,
+        publishedAt: original.publishedAt,
+        node: original.node,
+        replyCount: original.replyCount,
+        tags: original.tags,
+        outdatedNotice: original.outdatedNotice,
+        appends: original.appends,
+        contentActions: original.contentActions,
+        isCollected: original.isCollected,
+        collectParamT: original.collectParamT
+      })
+      expect(Boolean(changed.content)).toBe(expected.hasContent)
+      expect(parseReplies($)).toHaveLength(expected.replies)
+    }
+  )
 })

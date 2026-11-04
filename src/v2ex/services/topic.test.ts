@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 
 /** 模拟服务端提供或省略忽略操作入口 */
 function topicHtml(action = ''): string {
-  return `<div class="topic_buttons"><a class="tb">加入收藏</a>${action ? `<a class="tb">${action}</a>` : ''}</div>`
+  return `<div id="Main"><div class="box"><div class="header"><h1>测试主题</h1></div><div class="topic_buttons"><a class="tb">加入收藏</a>${action ? `<a class="tb">${action}</a>` : ''}</div></div></div>`
 }
 
 describe('TopicService homepage topics', () => {

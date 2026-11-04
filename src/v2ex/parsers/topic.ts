@@ -32,7 +32,7 @@ export function parseTopicListCells(
   const list: Topic[] = []
 
   cells.each((_, cell) => {
-    const topicElement = $(cell).find('a.topic-link')
+    const topicElement = $(cell).find('a.topic-link').first()
     const topicHref = topicElement.attr('href')
     const topicId = topicHref ? parseTopicIdByLink(topicHref) : undefined
 
@@ -64,7 +64,7 @@ export function parseTopicListCells(
       authorAvatar: authorAvatar.attr('src'),
       replies: Number(countElement.text().trim()) || 0,
       displayTime: publishedTime.text().trim(),
-      publishedAt: publishedAt ? dayjs(publishedAt).format('YYYY-MM-DD HH:mm:ss') : undefined,
+      publishedAt: publishedAt ? formatTopicTime(publishedAt) : undefined,
       lastReplyUser: hasLastReply ? memberLinks.last().text().trim() : ''
     })
   })
@@ -103,6 +103,19 @@ function selectTopicIcon($: cheerio.CheerioAPI): string {
   return icons.find(icon => icon.includes('/navatar/')) || icons[0] || ''
 }
 
+/** 只读取主题结构，排除正文、附言正文与回复中出现的同名元素 */
+function findTopicElements(scope: CheerioSelection, selector: string): CheerioSelection {
+  return scope.find(selector).not('.topic_content *, .reply_content *, #topic-replies *')
+}
+
+/** 通过主题标题定位头部，避免依赖主内容区盒子的排列顺序 */
+function getTopicHeader($: cheerio.CheerioAPI): CheerioSelection {
+  const scope = $('#Main').length ? $('#Main') : $.root()
+  const headers = findTopicElements(scope, '.header')
+  const topicHeader = headers.filter((_, element) => $(element).find('h1').length > 0).first()
+  return topicHeader.length ? topicHeader : headers.first()
+}
+
 /**
  * 解析话题元信息
  * @param $ cheerio 实例
@@ -114,9 +127,11 @@ export function parseTopicMeta(
   topicId: number,
   baseUrl: string
 ): TopicDetail {
+  const header = getTopicHeader($)
+  const box = header.closest('.box').length ? header.closest('.box') : $('#Main > .box').first()
   const topic: TopicDetail = {
     id: topicId,
-    title: $('.header > h1').text(),
+    title: header.find('h1').first().text(),
     node: {
       name: '',
       title: ''
@@ -144,34 +159,38 @@ export function parseTopicMeta(
     replyTotalPage: 1,
     replies: []
   }
-  const node = $('.header a[href^=/go/]')
+  const node = header.find('a[href^="/go/"]').first()
   topic.node.name = node.attr('href')?.split('go/')[1] || ''
   topic.node.title = node.text().trim()
-  topic.tags = getTopicReplyBox($)
-    .children('.cell')
-    .first()
+  topic.tags = getReplyHeaderCells($)
     .find('a.tag[href^="/tag/"]')
     .map((_, element) => $(element).text().trim())
     .get()
   const topicIcon = selectTopicIcon($)
   topic.topicIcon = topicIcon ? new URL(topicIcon, baseUrl).toString() : ''
-  topic.authorAvatar = $('.header > .fr img.avatar').attr('src') || ''
-  const headerMeta = $('.header > .gray')
+  topic.authorAvatar = header.find('.fr img.avatar').first().attr('src') || ''
+  const headerMeta = header.find('.gray').first()
   const meta = headerMeta.text().split('·')
-  topic.authorName = headerMeta.find('a[href^=/member]').text().trim()
+  topic.authorName = headerMeta.find('a[href^="/member/"]').first().text().trim()
   topic.isAuthorPro = headerMeta.find('.badges .badge.pro').length > 0
-  const publishedTime = getV2exTimeSpan(headerMeta, { direct: true })
+  const publishedTime = getV2exTimeSpan(headerMeta)
   topic.displayTime = publishedTime.text().trim()
-  topic.publishedAt = dayjs(publishedTime.attr('title')!).format('YYYY-MM-DD HH:mm:ss')
+  topic.publishedAt = formatTopicTime(publishedTime.attr('title'))
   topic.visitCount = Number(
     meta.find(item => /(?:views|次点击)/i.test(item))?.match(/\d+/)?.[0] || 0
   )
-  topic.outdatedNotice = $('#Main > .box').first().children('.outdated').text().trim() || undefined
-  topic.content = $('#Main .topic_content').html() || ''
-  $('.subtle').each((_, element) => {
+  topic.outdatedNotice = findTopicElements(box, '.outdated').text().trim() || undefined
+  topic.content =
+    findTopicElements(box, '.topic_content')
+      .filter((_, element) => !$(element).parents('.subtle').length)
+      .first()
+      .html() || ''
+  findTopicElements(box, '.subtle').each((_, element) => {
+    const label = findTopicElements($(element), '.fade').first()
+    const time = getV2exTimeSpan(label).text().trim()
     topic.appends.push({
-      time: $(element).children('.fade').text().split('·')[1].trim(),
-      content: $(element).children('.topic_content').html() || ''
+      time: time || label.text().split('·').slice(1).join('·').trim(),
+      content: $(element).find('.topic_content').first().html() || ''
     })
   })
 
@@ -181,30 +200,34 @@ export function parseTopicMeta(
   const management = parseTopicManagement($, topicId)
   topic.managementActions = (['boost', 'fade'] as const).filter(action => !!management[action])
 
-  const topicButtons = $('.topic_buttons')
+  const topicButtons = findTopicElements(box, '.topic_buttons').first()
   if (topicButtons.length) {
-    const countStr = topicButtons.children('.topic_stats').text()
+    const countStr = topicButtons.find('.topic_stats').text()
     if (/(\d+)\s*人收藏/.test(countStr)) {
       topic.collectCount = parseInt(RegExp.$1)
     }
     if (/(\d+)\s*人感谢/.test(countStr)) {
       topic.thankCount = parseInt(RegExp.$1)
     }
-    const collectButton = topicButtons.children('a.tb').eq(0)
+    const collectButton = topicButtons
+      .find('a.tb')
+      .filter((_, element) => /^(加入收藏|取消收藏)$/.test($(element).text().trim()))
+      .first()
     topic.isCollected = collectButton.text().indexOf('取消收藏') >= 0
-    topic.collectParamT = collectButton.attr('href')?.split('?t=')[1] || null
+    topic.collectParamT = new URLSearchParams(
+      collectButton.attr('href')?.split('?')[1]?.split('#')[0]
+    ).get('t')
     const ignoreButton = topicButtons
-      .children('a.tb')
+      .find('a.tb')
       .filter((_, element) => /^(忽略主题|取消忽略)$/.test($(element).text().trim()))
       .first()
     topic.isIgnored = ignoreButton.text().trim() === '取消忽略'
     topic.canIgnore = ignoreButton.length > 0
-    topic.canThank = topicButtons.children('#topic_thank').length > 0
+    topic.canThank = topicButtons.find('#topic_thank').length > 0
     topic.isThanked = topicButtons.find('.topic_thanked').length > 0
   }
 
-  const topicBox = getTopicReplyBox($)
-  topic.replyCount = parseReplyCount(topicBox)
+  topic.replyCount = parseReplyCount(getReplyHeaderCells($))
   return topic
 }
 
@@ -215,34 +238,48 @@ export function parseTopicMeta(
 export function parseReplies($: cheerio.CheerioAPI): TopicReply[] {
   const replies: TopicReply[] = []
   const topicBox = getTopicReplyBox($)
-  topicBox.children('div[id].cell').each((_, element) => {
-    const replyTime = getV2exTimeSpan($(element))
-    const badges = $(element).find('.badges').first()
+  topicBox
+    .find('.cell[id^="r_"]')
+    .filter((_, element) => !$(element).parents('.reply_content, [id^="r_"]').length)
+    .each((_, element) => {
+      if (!/^r_\d+$/.test($(element).attr('id') || '')) return
+      // 正文可包含时间、链接和徽章同名结构，只从正文以外读取回复元信息
+      const metadata = $(element).clone()
+      metadata.find('.reply_content').remove()
+      const replyTime = getV2exTimeSpan(metadata)
+      const badges = metadata.find('.badges').first()
 
-    replies.push({
-      replyId: $(element).attr('id')?.split('r_')[1] || '0',
-      userAvatar: $(element).find('img.avatar').attr('src') || '',
-      userName: $(element).find('a.dark').html() || '',
-      isMod: badges.find('.badge.mod').length > 0,
-      isOp: badges.find('.badge.op').length > 0,
-      isPro: badges.find('.badge.pro').length > 0,
-      time: replyTime.text().trim(),
-      repliedAt: dayjs(replyTime.attr('title')!).format('YYYY-MM-DD HH:mm:ss'),
-      floor: $(element).find('span.no').text(),
-      content: $(element).find('.reply_content').html() || '',
-      thanks: parseInt($(element).find('span.small.fade').text().trim() || '0'),
-      thanked: $(element).find('.thank_area.thanked').length > 0
+      replies.push({
+        replyId: $(element).attr('id')?.split('r_')[1] || '0',
+        userAvatar: metadata.find('img.avatar').first().attr('src') || '',
+        userName: metadata.find('a.dark').first().text() || '',
+        isMod: badges.find('.badge.mod').length > 0,
+        isOp: badges.find('.badge.op').length > 0,
+        isPro: badges.find('.badge.pro').length > 0,
+        time: replyTime.text().trim(),
+        repliedAt: formatTopicTime(replyTime.attr('title')),
+        floor: metadata.find('span.no').first().text(),
+        content: $(element).find('.reply_content').html() || '',
+        thanks: parseInt(metadata.find('span.small.fade').first().text().trim() || '0'),
+        thanked: metadata.find('.thank_area.thanked').length > 0
+      })
     })
-  })
   return replies
+}
+
+/** 缺失或无效的源站时间保持为空，避免 dayjs(undefined) 生成当前时间 */
+function formatTopicTime(value: string | undefined): string {
+  if (!value) return ''
+  const time = dayjs(value)
+  return time.isValid() ? time.format('YYYY-MM-DD HH:mm:ss') : ''
 }
 
 /**
  * 解析回复总数
- * @param topicBox 回复列表外层容器
+ * @param headerCells 回复区中不属于回复正文的统计单元格
  */
-function parseReplyCount(topicBox: CheerioSelection): number {
-  const headerText = topicBox.children('div.cell').first().find('span.gray').first().text()
+function parseReplyCount(headerCells: CheerioSelection): number {
+  const headerText = headerCells.find('.gray').text()
   return Number(headerText.match(/(\d+)\s*条回复/)?.[1] || 0)
 }
 
@@ -251,7 +288,17 @@ function parseReplyCount(topicBox: CheerioSelection): number {
  * @param $ cheerio 实例
  */
 function getTopicReplyBox($: cheerio.CheerioAPI): CheerioSelection {
-  return $('#topic-replies > .box').first()
+  return $('#topic-replies').first()
+}
+
+/** 回复统计和标签只从非回复单元格读取，允许容器内增加布局包装 */
+function getReplyHeaderCells($: cheerio.CheerioAPI): CheerioSelection {
+  return getTopicReplyBox($)
+    .find('.cell')
+    .filter(
+      (_, element) =>
+        !$(element).is('[id^="r_"]') && !$(element).parents('.reply_content, [id^="r_"]').length
+    )
 }
 
 /** 仅接受信息页表格，登录页、无权限页与重定向后的详情页不能视为成功 */
@@ -310,7 +357,7 @@ export function parseTopicContentActions(
   $: cheerio.CheerioAPI,
   topicId: number
 ): TopicContentAction[] {
-  const headerMeta = $('.header > .gray')
+  const headerMeta = getTopicHeader($).find('.gray').first()
   return (['edit', 'move', 'append'] as const).filter(
     action => headerMeta.find(`a[href="/${action}/topic/${topicId}"]`).length > 0
   )

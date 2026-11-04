@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio/slim'
-import { parsePagerTotalPage } from '../parsers/common'
+import { findOutsideRichText, parsePagerTotalPage } from '../parsers/common'
 import { parseTopicListCells } from '../parsers/topic'
 import type { V2exSession } from '../session'
 import type { Node, NodeInfo, NodeTopicList } from '../types'
@@ -20,10 +20,16 @@ export class NodeService {
     const node = this.parsePageInfo($, nodeName)
     return {
       node,
-      totalPage: parsePagerTotalPage($),
+      totalPage: parsePagerTotalPage($, $('#Main')),
       totalCount:
-        Number($('.node-header .topic-count strong').first().text().replace(/,/g, '')) || 0,
-      list: parseTopicListCells($, $('#TopicsNode .cell[class*="t_"]'), node)
+        Number(
+          findNodeElements($, '.node-header .topic-count strong').first().text().replace(/,/g, '')
+        ) || 0,
+      list: parseTopicListCells(
+        $,
+        findOutsideRichText($('#TopicsNode'), 'a.topic-link').closest('.cell'),
+        node
+      )
     }
   }
 
@@ -50,10 +56,10 @@ export class NodeService {
     const { data: html } = await this.session.get<string>('/my/nodes')
     const $ = cheerio.load(html)
     const nodes: Node[] = []
-    $('#my-nodes > a.fav-node').each((_, element) => {
+    findOutsideRichText($('#my-nodes'), 'a.fav-node[href^="/go/"]').each((_, element) => {
       nodes.push({
         name: $(element).attr('href')?.split('go/')[1] || '',
-        title: $(element).children('.fav-node-name').text().trim().split(' ')[0]
+        title: $(element).find('.fav-node-name').first().text().trim()
       })
     })
     return nodes
@@ -113,7 +119,7 @@ export class NodeService {
   ): Promise<void> {
     const { data: html } = await this.session.get<string>(`/go/${nodeName}`)
     const $ = cheerio.load(html)
-    const href = $(`a[href^="/${action}/node/"]`).first().attr('href')
+    const href = findNodeElements($, `a[href^="/${action}/node/"]`).first().attr('href')
     const url = new URL(href || '/', this.baseUrl)
     const nodeId = Number(url.pathname.match(new RegExp(`^/${action}/node/(\\d+)$`))?.[1])
     const once = url.searchParams.get('once')
@@ -130,12 +136,16 @@ export class NodeService {
 
   /** 解析节点页面信息 */
   private parsePageInfo($: cheerio.CheerioAPI, nodeName: string): Node {
-    const header = $('.node-header').first()
-    const avatar = header.find('.page-content-header > img').first().attr('src')
-    const description = header.find('.intro').first().text().trim()
-    const isCollected = $('a[href^="/unfavorite/node/"]').length > 0
-    const collectCountMatch = $('.cell.flex-one-row')
+    const header = findNodeElements($, '.node-header').first()
+    const avatar = header
+      .find('.page-content-header img')
+      .not('.intro img, .node-feed img')
       .first()
+      .attr('src')
+    const description = header.find('.intro').first().text().trim()
+    const isCollected = findNodeElements($, 'a[href^="/unfavorite/node/"]').length > 0
+    const collectCountMatch = findNodeElements($, '.cell')
+      .filter((_, element) => !$(element).closest('.node-header, #TopicsNode').length)
       .text()
       .match(/([\d,]+)\s*人收藏了这个节点/)
     const collectCount = collectCountMatch
@@ -149,9 +159,9 @@ export class NodeService {
       description: description || undefined,
       isCollected,
       isIgnored:
-        $('a[href^="/settings/unignore/node/"]').length > 0
+        findNodeElements($, 'a[href^="/settings/unignore/node/"]').length > 0
           ? true
-          : $('a[href^="/settings/ignore/node/"]').length > 0
+          : findNodeElements($, 'a[href^="/settings/ignore/node/"]').length > 0
             ? false
             : undefined,
       collectCount
@@ -198,6 +208,11 @@ export class NodeService {
       return undefined
     }
   }
+}
+
+/** 节点状态与操作只来自主内容区，忽略节点介绍等富文本中的同名链接 */
+function findNodeElements($: cheerio.CheerioAPI, selector: string) {
+  return findOutsideRichText($('#Main'), selector).not('.intro, .intro *')
 }
 
 /** V2EX 节点 API 使用到的字段（all.json / show.json） */

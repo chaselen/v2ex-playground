@@ -23,7 +23,7 @@ describe('MemberService', () => {
                 <h1>chaselen</h1>
                 <span class="bigger">qm</span>
                 <span class="gray">
-                  V2EX member #159728, joined on 2016-02-20 23:12:13 +08:00
+                  V2EX 第 159728 号会员，加入于 2016-02-20 23:12:13 +08:00
                 </span>
               </div>
               <div class="cell">不应被视为 bio 的其他资料</div>

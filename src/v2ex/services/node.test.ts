@@ -1,5 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { NodeService } from './node'
+import { readFileSync } from 'node:fs'
+import { load } from 'cheerio/slim'
 import type { V2exSession } from '../session'
 
 /** 构造带节点页关键结构的 HTML */
@@ -17,21 +19,21 @@ function createNodePageHtml(options: {
     : `<a href="/favorite/node/${nodeId}?once=${once}">加入收藏</a>`
 
   return `
-    <div class="node-header">
-      <div class="page-content-header">
+    <div id="Main"><div class="box node-header">
+      <div class="cell page-content-header">
         <img src="//cdn.v2ex.com/navatar/test.png">
         <div class="node-breadcrumb">V2EX <span class="chevron">&nbsp;›&nbsp;</span> ${options.title}</div>
         <div class="intro">节点简介</div>
         <div class="topic-count">主题总数 <strong>12</strong></div>
       </div>
     </div>
-    <div id="TopicsNode"></div>
+    <div class="box"><div id="TopicsNode"></div>
     <div class="cell flex-one-row gap10">
       <span class="gray">第 1 到 20 / 共 12 个主题</span>
       <div class="spacer"></div>
       <div>${options.collectCount} 人收藏了这个节点</div>
       ${collectAction}
-    </div>
+    </div></div></div>
   `
 }
 
@@ -245,5 +247,62 @@ describe('NodeService ignored nodes', () => {
       'https://www.v2ex.com'
     )
     await expect(service.ignore('promotions')).rejects.toThrow('令牌无效')
+  })
+})
+
+const nodePageSamples = JSON.parse(
+  readFileSync(new URL('../parsers/fixtures/nodePages.json', import.meta.url), 'utf8')
+) as {
+  name: string
+  html: string
+  expected: { title: string; totalCount: number; collectCount: number; topics: number }
+}[]
+
+describe('node selectors on captured pages', () => {
+  test.each(nodePageSamples)(
+    'reads $name without topic class names or layout depth',
+    async ({ name, html, expected }) => {
+      const get = vi.fn().mockResolvedValue({ data: html })
+      const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+      const original = await service.getTopics(name)
+      expect(original.node).toMatchObject({
+        title: expected.title,
+        collectCount: expected.collectCount
+      })
+      expect(original.totalCount).toBe(expected.totalCount)
+      expect(original.list).toHaveLength(expected.topics)
+      const $ = load(html)
+      $('.page-content-header > img').wrap('<section></section>')
+      $('#Main > .box').wrap('<section></section>')
+      $('#TopicsNode .cell').attr('class', 'cell').wrap('<section></section>')
+      $('.cell.flex-one-row').removeClass('flex-one-row')
+      $('.intro').prepend(
+        `<a href="/unfavorite/node/999?once=123"></a><a href="/settings/unignore/node/999"></a>`
+      )
+      $('body').prepend(
+        `<aside><div class="node-header"><div class="node-breadcrumb">fake</div></div><a href="/unfavorite/node/999">fake</a><div class="cell">9999 人收藏了这个节点</div></aside>`
+      )
+      get.mockResolvedValue({ data: $.html() })
+      expect(await service.getTopics(name)).toEqual(original)
+    }
+  )
+
+  test('keeps full favorite node titles and accepts layout wrappers', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: `<div id="my-nodes"><section><a class="fav-node" href="/go/apple_tv"><span><span class="fav-node-name">Apple TV</span></span><span class="fade">123</span></a></section></div>`
+    })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    await expect(service.getCollection()).resolves.toEqual([
+      { name: 'apple_tv', title: 'Apple TV' }
+    ])
+  })
+
+  test('does not submit a collection link quoted in the node introduction', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: `<div id="Main"><div class="node-header"><div class="intro"><a href="/favorite/node/999?once=123">加入收藏</a></div></div></div>`
+    })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    await expect(service.collect('python')).rejects.toThrow('未找到节点收藏参数')
+    expect(get).toHaveBeenCalledTimes(1)
   })
 })

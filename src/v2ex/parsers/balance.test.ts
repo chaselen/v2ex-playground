@@ -168,3 +168,12 @@ describe('balance parsers', () => {
     })
   })
 })
+
+test('keeps coin amounts aligned across presentation wrappers and whitespace', () => {
+  const $ = cheerio.load(`<div id="Main"><div class="balance_area">
+    <span><strong>1,234</strong> <img alt="G"></span>
+    <span> <b>32</b> </span> <span><img alt="S"></span>
+    <span>63 <img alt="B"></span>
+  </div></div>`)
+  expect(parseBalance($, 1)).toMatchObject({ gold: 1234, silver: 32, bronze: 63 })
+})

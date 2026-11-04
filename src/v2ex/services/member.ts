@@ -111,7 +111,7 @@ export class MemberService {
     const tab = this.normalizeTab(options.tab)
     const page = normalizePage(options.page)
     const { data: html } = await this.session.get<string>(this.getContentPath(username, tab, page))
-    return parseMemberContent(cheerio.load(html), username, tab, page)
+    return parseMemberContent(cheerio.load(html), tab, page)
   }
 
   /**
