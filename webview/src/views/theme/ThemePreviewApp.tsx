@@ -528,8 +528,19 @@ export default function ThemePreviewApp() {
           <Alert variant="warning" title="警告提示" description="检查语义色及其对比度" />
           <Alert variant="danger" title="错误提示" description="检查错误前景、背景与边框" />
           <div className="theme-preview-row">
+            <Button onClick={() => Toast.info('链接已复制到剪贴板')}>Info Toast</Button>
             <Button onClick={() => Toast.success('操作成功')}>Success Toast</Button>
+            <Button onClick={() => Toast.warning('请先登录后再进行操作')}>Warning Toast</Button>
             <Button onClick={() => Toast.error('操作失败')}>Error Toast</Button>
+            <Button
+              onClick={() =>
+                Toast.error(
+                  '暂时无法加载话题内容，请检查网络连接后重试。你可以稍后重新打开此页面。'
+                )
+              }
+            >
+              Long Toast
+            </Button>
           </div>
           <Empty
             className="theme-preview-empty"

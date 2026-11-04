@@ -71,7 +71,7 @@ function ToastList() {
         key={item.id}
       >
         <ToastPrimitive.Content className="v2ex-toast__content">
-          <Icon className="v2ex-toast__icon" fill="currentColor" aria-hidden="true" />
+          <Icon className="v2ex-toast__icon" aria-hidden="true" />
           <ToastPrimitive.Title className="v2ex-toast__message" />
           <ToastPrimitive.Close className="v2ex-toast__close" aria-label="关闭通知">
             <X aria-hidden="true" />

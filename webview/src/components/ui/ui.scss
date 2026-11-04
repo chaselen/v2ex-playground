@@ -1762,20 +1762,22 @@
 .v2ex-toast__content {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
+  align-items: start;
+  gap: 10px;
 }
 
 .v2ex-toast {
-  padding: 10px;
-  border: 1px solid var(--v2ex-info-border);
-  border-radius: var(--v2ex-radius-md);
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--v2ex-hc-border, var(--v2ex-control-border));
+  border-radius: var(--v2ex-radius-lg);
   color: var(--v2ex-widget-fg);
   background: var(--v2ex-overlay-bg);
-  box-shadow: var(--v2ex-shadow-elevated);
+  box-shadow: var(--v2ex-shadow-floating);
 
   transform: translateX(var(--toast-swipe-movement-x, 0px));
-  transition: transform var(--v2ex-motion-normal) ease-out;
+  transition:
+    transform var(--v2ex-motion-normal) ease-out,
+    opacity var(--v2ex-motion-normal) ease-out;
 
   &[data-starting-style] {
     opacity: 0;
@@ -1795,24 +1797,12 @@
   }
 }
 
-.v2ex-toast--success {
-  border-color: var(--v2ex-success-border);
-}
-
-.v2ex-toast--warning {
-  border-color: var(--v2ex-warning-border);
-}
-
-.v2ex-toast--danger {
-  border-color: var(--v2ex-danger-border);
-}
-
 .v2ex-toast__icon {
   width: 18px;
   height: 18px;
+  margin-top: 2px;
   color: var(--v2ex-info-fg);
-  stroke: var(--v2ex-overlay-bg);
-  stroke-width: 2.25;
+  stroke-width: 2;
 }
 
 .v2ex-toast--success .v2ex-toast__icon {
@@ -1831,15 +1821,17 @@
   min-width: 0;
   margin: 0;
   font: inherit;
-  line-height: 1.45;
+  line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
 .v2ex-toast__close {
   display: inline-flex;
-  width: 20px;
-  height: 20px;
-  padding: 2px;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
   border: 0;
   border-radius: var(--v2ex-radius-sm);
   outline: none;
