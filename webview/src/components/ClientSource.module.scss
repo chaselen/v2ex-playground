@@ -1,0 +1,23 @@
+.source {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+  color: var(--v2ex-muted-fg);
+  white-space: nowrap;
+
+  svg {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  &[tabindex] {
+    cursor: default;
+
+    &:focus-visible {
+      outline: 1px solid var(--v2ex-focus-border);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+}

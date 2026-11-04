@@ -3,6 +3,7 @@ import { Check, Copy, Download, Heart, Inbox } from 'lucide-react'
 import QRCode from 'qrcode'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import UserBadge from '@/components/UserBadge'
+import TimeWithSource from '@/components/TimeWithSource'
 import {
   ScrollArea,
   Button,
@@ -485,9 +486,12 @@ export default function TopicShareDialog({
             )}
             <strong>{reply.userName}</strong>
             <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
-            <span className="time" title={reply.repliedAt || reply.time}>
-              {reply.time}
-            </span>
+            <TimeWithSource
+              className="time"
+              time={reply.time}
+              title={reply.repliedAt || reply.time}
+              via={reply.via}
+            />
             {thankCount > 0 && (
               <span className={`thanks ${styles.cardReplyThanks}`} title={`${thankCount} 人感谢`}>
                 <Heart aria-hidden="true" />
@@ -545,7 +549,7 @@ export default function TopicShareDialog({
                     )}
                     <strong>{topic.authorName}</strong>
                   </span>
-                  <span>{publishedDate}</span>
+                  <TimeWithSource time={publishedDate} via={topic.via} />
                 </div>
               </header>
 

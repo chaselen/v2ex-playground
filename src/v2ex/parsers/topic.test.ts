@@ -140,6 +140,42 @@ describe('topic time parsing', () => {
     })
   })
 
+  it.each(['iPhone', 'Android', 'iPad', 'iPod', 'Custom Client', undefined])(
+    '保留主题客户端 %s',
+    via => {
+      const $ = cheerio.load(`
+      <div class="header"><h1>测试话题</h1><small class="gray">
+        <a href="/member/tester">tester</a> ·
+        <span title="2026-11-04 09:07:58 +08:00">2 小时前</span>
+        ${via ? `via ${via}` : ''} · 2264 次点击
+      </small></div>
+    `)
+      expect(parseTopicMeta($, 1254304, 'https://www.v2ex.com')).toMatchObject({
+        displayTime: '2 小时前',
+        publishedAt: '2026-11-04 09:07:58',
+        via,
+        visitCount: 2264
+      })
+    }
+  )
+
+  it.each(['iPhone', 'iPad', 'iPod', 'iOS', 'Android', 'Custom Client', undefined])(
+    '拆分回复时间与客户端 %s',
+    via => {
+      const $ = cheerio.load(`
+      <div id="topic-replies"><div class="cell" id="r_1">
+        <span class="ago" title="2026-11-04 09:10:08 +08:00">2 小时前${via ? ` via ${via}` : ''}</span>
+        <div class="reply_content">回复内容</div>
+      </div></div>
+    `)
+      expect(parseReplies($)[0]).toMatchObject({
+        time: '2 小时前',
+        via,
+        repliedAt: '2026-11-04 09:10:08'
+      })
+    }
+  )
+
   it('格式化回复时间', () => {
     const $ = cheerio.load(`
       <div id="Main">

@@ -127,6 +127,32 @@ describe.sequential('V2exClient topics', () => {
     expect(result.list[0].authorName).toEqual(expect.any(String))
   })
 
+  test('preserves topic and reply clients from a public topic', async () => {
+    const topicId = 1254304
+    const detail = await client.topics.getDetail(topicId)
+    expect(detail.via).toBe('iPhone')
+    expect(detail.publishedAt).toBe('2026-11-04 09:07:58')
+    expect(detail.displayTime).not.toContain('via')
+    const response = await fetch(`https://www.v2ex.com/t/${topicId}?p=1`, {
+      headers: { 'Accept-Language': 'zh-CN,zh;q=0.9' }
+    })
+    expect(response.ok).toBe(true)
+    const $ = load(await response.text())
+    const samples = $('#topic-replies .cell[id^="r_"]')
+      .toArray()
+      .flatMap(element => {
+        const time = $(element).find('.ago').first().text().trim()
+        const via = time.match(/\bvia\s+(.+)$/)?.[1]
+        return via ? [{ replyId: $(element).attr('id')!.slice(2), via }] : []
+      })
+    expect(samples.map(sample => sample.via)).toEqual(expect.arrayContaining(['Android', 'iPhone']))
+    for (const sample of samples) {
+      const reply = detail.replies.find(reply => reply.replyId === sample.replyId)
+      expect(reply?.via).toBe(sample.via)
+      expect(reply?.time).not.toContain('via')
+    }
+  })
+
   test('gets topic detail from a known public topic', async () => {
     const detail = await client.topics.getDetail(703733)
 

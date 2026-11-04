@@ -51,6 +51,9 @@ $reply-right-inset: 10px;
   margin-top: 12px;
 
   .time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     min-width: 0;
     overflow: hidden;
     color: var(--v2ex-muted-fg);

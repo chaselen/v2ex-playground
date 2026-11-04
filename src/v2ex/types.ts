@@ -111,6 +111,9 @@ export interface TopicInfo {
   fields: { label: string; value: string; href?: string }[]
 }
 
+/** 发帖与回复的客户端标记；保留未知客户端名称 */
+export type ClientVia = 'iPhone' | 'Android' | 'iPad' | 'iPod' | (string & {})
+
 /**
  * 话题详情
  */
@@ -141,6 +144,8 @@ export interface TopicDetail {
   displayTime: string
   /** 完整发布时间，格式为 YYYY-MM-DD HH:mm:ss */
   publishedAt: string
+  /** 发帖客户端 */
+  via?: ClientVia
   /** 点击次数 */
   visitCount: number
   /** 旧帖提醒文案 */
@@ -205,6 +210,8 @@ export interface TopicReply {
   time: string
   /** 完整回复时间，格式为 YYYY-MM-DD HH:mm:ss */
   repliedAt: string
+  /** 回复客户端 */
+  via?: ClientVia
   /** 楼层 */
   floor: string
   /** 回复内容 */

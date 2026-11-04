@@ -176,6 +176,11 @@ export function parseTopicMeta(
   const publishedTime = getV2exTimeSpan(headerMeta)
   topic.displayTime = publishedTime.text().trim()
   topic.publishedAt = formatTopicTime(publishedTime.attr('title'))
+  topic.via =
+    headerMeta
+      .text()
+      .match(/\bvia\s+([^·]+)/)?.[1]
+      ?.trim() || undefined
   topic.visitCount = Number(
     meta.find(item => /(?:views|次点击)/i.test(item))?.match(/\d+/)?.[0] || 0
   )
@@ -248,6 +253,8 @@ export function parseReplies($: cheerio.CheerioAPI): TopicReply[] {
       metadata.find('.reply_content').remove()
       const replyTime = getV2exTimeSpan(metadata)
       const badges = metadata.find('.badges').first()
+      const timeText = replyTime.text().trim()
+      const viaMatch = timeText.match(/\s+via\s+(.+)$/)
 
       replies.push({
         replyId: $(element).attr('id')?.split('r_')[1] || '0',
@@ -256,7 +263,8 @@ export function parseReplies($: cheerio.CheerioAPI): TopicReply[] {
         isMod: badges.find('.badge.mod').length > 0,
         isOp: badges.find('.badge.op').length > 0,
         isPro: badges.find('.badge.pro').length > 0,
-        time: replyTime.text().trim(),
+        time: viaMatch ? timeText.slice(0, viaMatch.index).trim() : timeText,
+        via: viaMatch?.[1].trim(),
         repliedAt: formatTopicTime(replyTime.attr('title')),
         floor: metadata.find('span.no').first().text(),
         content: $(element).find('.reply_content').html() || '',

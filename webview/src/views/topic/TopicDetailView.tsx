@@ -20,6 +20,7 @@ import {
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import NodeButton from '@/components/NodeButton'
 import UserBadge from '@/components/UserBadge'
+import TimeWithSource from '@/components/TimeWithSource'
 import CollapsibleReplyContent from './CollapsibleReplyContent'
 import { getReplyDisplayContent } from './replyContent'
 import {
@@ -342,9 +343,12 @@ export default function TopicDetailView({
             <div className="reply-meta">
               {renderMemberLink(reply.userName)}
               <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
-              <span className="time" title={reply.repliedAt || reply.time}>
-                {reply.time}
-              </span>
+              <TimeWithSource
+                className="time"
+                time={reply.time}
+                title={reply.repliedAt || reply.time}
+                via={reply.via}
+              />
               {reply.thanks > 0 && (
                 <span className="thanks" title={`${reply.thanks} 人感谢`}>
                   <Heart aria-hidden="true" />
@@ -611,8 +615,12 @@ export default function TopicDetailView({
           {renderMemberLink(topic.authorName, true)}
           <UserBadge pro={topic.isAuthorPro} />
           <span className="time">
-            <span title={topic.publishedAt || topic.displayTime}>{topic.displayTime}</span> ·{' '}
-            {topic.visitCount} 次点击
+            <TimeWithSource
+              time={topic.displayTime}
+              title={topic.publishedAt || topic.displayTime}
+              via={topic.via}
+            />
+            <span>· {topic.visitCount} 次点击</span>
           </span>
           {topic.canViewInfo && canOperate && (
             <Tooltip content="帖子信息">

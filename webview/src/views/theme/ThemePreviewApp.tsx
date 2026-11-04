@@ -1,3 +1,4 @@
+import TimeWithSource from '@/components/TimeWithSource'
 import NodeSelectButton from '@/components/NodeSelectButton'
 import type { Node } from '@extension/v2ex/types'
 import { useState, type ReactNode } from 'react'
@@ -218,6 +219,17 @@ export default function ThemePreviewApp() {
             title="暂无内容"
             description="空状态使用统一插画"
           />
+        </PreviewSection>
+
+        <PreviewSection title="客户端来源">
+          <div className="theme-preview-row">
+            <TimeWithSource time="2 小时前" via="Android" />
+            <TimeWithSource time="2019 年 1 月 15 日" via="iPhone" />
+            <TimeWithSource time="2019-01-15" via="iPad" />
+            <TimeWithSource time="2019-01-15" via="iPod" />
+            <TimeWithSource time="2019-01-15" via="iOS" />
+            <TimeWithSource time="刚刚" via="Custom Client" />
+          </div>
         </PreviewSection>
 
         <PreviewSection title="表单与分页">
