@@ -57,6 +57,8 @@ export interface V2exSessionOptions {
   onTwoFactorRequired?: () => boolean | Promise<boolean>
   /** 两步验证完成且原请求重试成功 */
   onTwoFactorVerified?: () => void | Promise<void>
+  /** 检测到 Cloudflare 验证时通知宿主 */
+  onCloudflareChallenge?: () => void
   onHttpFailure?: HttpFailureHandler
 }
 
@@ -152,7 +154,15 @@ export class V2exSession {
   /** 注册统一请求、响应和失败处理 */
   private setupInterceptors(): void {
     this.http.interceptors.request.use(config => this.attachCookieToRequest(config))
-    this.http.interceptors.response.use(response => this.handleResponse(response))
+    this.http.interceptors.response.use(
+      response => this.handleResponse(response),
+      error => {
+        if (axios.isAxiosError(error) && error.response) {
+          this.checkCloudflareChallenge(error.response)
+        }
+        return Promise.reject(error)
+      }
+    )
     if (this.options.onHttpFailure) {
       installHttpFailureLogging(this.http, this.options.onHttpFailure)
     }
@@ -187,12 +197,27 @@ export class V2exSession {
   /** 统一处理 V2EX 响应 */
   private async handleResponse(response: AxiosResponse): Promise<AxiosResponse> {
     if (!isV2exSessionUrl(getConfigUrl(response.config, this.baseUrl))) return response
+    this.checkCloudflareChallenge(response)
     this.updateCookieFromResponse(response)
     const twoFactorResponse = await this.handleTwoFactorResponse(response)
     if (twoFactorResponse !== response) return twoFactorResponse
     await this.checkRedirectFromResponse(response)
     this.responseHandlers.forEach(handler => handler(response))
     return response
+  }
+
+  /** 验证页不能交给业务解析，也不代表登录凭据失效 */
+  private checkCloudflareChallenge(response: AxiosResponse): void {
+    if (!isV2exSessionUrl(new URL(getResponseUrl(response, this.baseUrl)))) return
+    if (getHeader(response.headers, 'cf-mitigated') !== 'challenge') return
+    this.options.onCloudflareChallenge?.()
+    throw new axios.AxiosError(
+      'V2EX 触发 Cloudflare 验证，请更换代理节点后重试',
+      axios.AxiosError.ERR_BAD_RESPONSE,
+      response.config,
+      response.request,
+      response
+    )
   }
 
   /** 写入 Cookie 或 Set-Cookie 字符串 */

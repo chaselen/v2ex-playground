@@ -45,6 +45,8 @@ export interface V2exClientOptions {
   onLoginExpired?: LoginExpiredHandler
   /** 需要两步验证时的回调 */
   onTwoFactorRequired?: TwoFactorRequiredHandler
+  /** 检测到 Cloudflare 验证时通知宿主 */
+  onCloudflareChallenge?: () => void
   /** HTTP 请求失败回调 */
   onHttpFailure?: HttpFailureHandler
   /** 后台凭据保存失败通知，不改变已完成业务操作的结果 */
@@ -131,6 +133,7 @@ export class V2exClient {
       onLoginExpired: () => this.handleLoginExpired(),
       onTwoFactorRequired: () => this.handleTwoFactorRequired(),
       onTwoFactorVerified: () => this.handleTwoFactorVerified(),
+      onCloudflareChallenge: options.onCloudflareChallenge,
       onHttpFailure: options.onHttpFailure
     })
     this.baseUrl = this.session.baseUrl
@@ -212,6 +215,7 @@ export class V2exClient {
         twoFactorCanceled = !verified
         return verified && !options.signal?.aborted && this.authRevision === revision
       },
+      onCloudflareChallenge: this.options.onCloudflareChallenge,
       onHttpFailure: this.options.onHttpFailure
     })
 
@@ -266,6 +270,7 @@ export class V2exClient {
         twoFactorCanceled = !verified
         return verified && active && this.authRevision === revision
       },
+      onCloudflareChallenge: this.options.onCloudflareChallenge,
       onHttpFailure: this.options.onHttpFailure
     })
     const parentSignal = this.twoFactorAbort.signal
@@ -353,6 +358,7 @@ export class V2exClient {
     const revision = ++this.authRevision
     this.twoFactorVerification = this.createTwoFactorVerification()
     const snapshot = new V2exSession(this.session.getCookie(), {
+      onCloudflareChallenge: this.options.onCloudflareChallenge,
       onHttpFailure: this.options.onHttpFailure,
       onTwoFactorRequired: async () => {
         if (this.authRevision !== revision) return false

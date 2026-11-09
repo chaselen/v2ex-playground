@@ -32,6 +32,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // 创建主视图与 V2EX 客户端
   const mainViewProvider = new MainViewProvider()
+  let lastCloudflareWarningAt = -Infinity
   const client = await V2exClient.create({
     loginCookieStore: new LoginCredentialStore(context),
     onLoginExpired: async () => {
@@ -53,6 +54,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       void vscode.window.showWarningMessage(
         'V2EX 登录凭据保存失败，将自动重试。已完成的操作无需重复提交。'
       )
+    },
+    onCloudflareChallenge: () => {
+      // 并发请求及持续失败时避免重复弹出提示
+      if (Date.now() - lastCloudflareWarningAt < 60_000) return
+      lastCloudflareWarningAt = Date.now()
+      void vscode.window.showWarningMessage('V2EX 触发 Cloudflare 验证，请更换代理节点后重试')
     },
     onHttpFailure: summary => logger.warn('HTTP 请求失败', summary)
   })

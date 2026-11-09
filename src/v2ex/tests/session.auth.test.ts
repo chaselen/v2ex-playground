@@ -1,4 +1,5 @@
 import {
+  AxiosError,
   AxiosHeaders,
   type AxiosInstance,
   type AxiosResponse,
@@ -43,6 +44,54 @@ function createLoginRedirectResponse(internals: SessionInternals): AxiosResponse
 }
 
 describe('V2exSession authentication responses', () => {
+  test.each(['resolved', 'rejected'] as const)(
+    'detects a Cloudflare challenge in a %s response without expiring login',
+    async outcome => {
+      const onCloudflareChallenge = vi.fn()
+      const onLoginExpired = vi.fn()
+      const session = new V2exSession('A2=valid', {
+        onCloudflareChallenge,
+        onLoginExpired
+      })
+      const internals = session as unknown as SessionInternals
+      const onResponse = vi.fn()
+      session.onResponse(onResponse)
+      internals.http.defaults.adapter = async config => {
+        const response = {
+          config,
+          data: '<html>challenge</html>',
+          headers: { 'cf-mitigated': 'challenge' },
+          status: 403,
+          statusText: 'Forbidden'
+        }
+        if (outcome === 'rejected') {
+          throw new AxiosError('Forbidden', 'ERR_BAD_REQUEST', config, undefined, response)
+        }
+        return response
+      }
+
+      await expect(session.get('/notifications')).rejects.toThrow(
+        'V2EX 触发 Cloudflare 验证，请更换代理节点后重试'
+      )
+      expect(onCloudflareChallenge).toHaveBeenCalledOnce()
+      expect(onLoginExpired).not.toHaveBeenCalled()
+      expect(onResponse).not.toHaveBeenCalled()
+      expect(session.getLoginCookie()).toBe('A2=valid')
+    }
+  )
+
+  test('does not treat an ordinary forbidden response as a Cloudflare challenge', async () => {
+    const onCloudflareChallenge = vi.fn()
+    const session = new V2exSession('', { onCloudflareChallenge })
+    const internals = session as unknown as SessionInternals
+    internals.http.defaults.adapter = async config => {
+      const response = { config, data: '', headers: {}, status: 403, statusText: 'Forbidden' }
+      throw new AxiosError('Forbidden', 'ERR_BAD_REQUEST', config, undefined, response)
+    }
+    await expect(session.get('/')).rejects.toThrow('Forbidden')
+    expect(onCloudflareChallenge).not.toHaveBeenCalled()
+  })
+
   test.each(['/signin', '/2fa', '/restricted'])(
     'does not attach cookies or process authentication on an HTTP request redirecting to %s',
     async path => {
