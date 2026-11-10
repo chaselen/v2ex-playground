@@ -11,20 +11,17 @@ import {
   Empty,
   RadioGroup,
   RadioGroupItem,
+  Slider,
   Spinner,
   Toast
 } from '@/components/ui'
 import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
 import { getShareImageSourceCandidates } from '@/core/shareImageSources'
-import {
-  buildReplyTree,
-  getReplyChildrenClassName,
-  type ReplyViewMode,
-  type TopicReplyNode
-} from './replyTree'
+import { getReplyChildrenClassName, type ReplyViewMode, type TopicReplyNode } from './replyTree'
 import styles from './TopicShareDialog.module.scss'
 import { getReplyDisplayContent } from './replyContent'
+import { selectShareReplies } from './shareReplies'
 import { loadShareImageBatches } from './shareImageBatches'
 import v2exIcon from '../../../../resources/favicon.png'
 import type { TopicDetail, TopicReply } from '@extension/v2ex/types'
@@ -84,6 +81,17 @@ export default function TopicShareDialog({
   const [showReplies, setShowReplies] = useState(false)
   const [shareReplyViewMode, setShareReplyViewMode] = useState<ReplyViewMode>(replyViewMode)
   const [firstPageReplies, setFirstPageReplies] = useState<TopicReply[]>()
+  const [replyLimit, setReplyLimit] = useState(0)
+  const maxReplyFloor = Math.max(0, ...(firstPageReplies || []).map(reply => Number(reply.floor)))
+  const shareReplies = useMemo(
+    () => selectShareReplies(firstPageReplies || [], shareReplyViewMode, replyLimit),
+    [firstPageReplies, shareReplyViewMode, replyLimit]
+  )
+  const selectedReplies = useMemo(() => {
+    const flatten = (nodes: TopicReplyNode[]): TopicReplyNode[] =>
+      nodes.flatMap(node => [node, ...flatten(node.children)])
+    return flatten(shareReplies)
+  }, [shareReplies])
   const [loadingReplies, setLoadingReplies] = useState(false)
   const [embeddedImages, setEmbeddedImages] = useState<Record<string, string>>({})
   const [failedImageSources, setFailedImageSources] = useState<Set<string>>(() => new Set<string>())
@@ -102,19 +110,11 @@ export default function TopicShareDialog({
   const hasTopicContent = Boolean(topic.content)
   const shareImageSources = useMemo(
     () => getShareImageSources(),
-    [firstPageReplies, showAppends, showReplies, topic]
+    [selectedReplies, showAppends, showReplies, topic]
   )
   const failedImageCount = shareImageSources.filter(imageSrc =>
     failedImageSources.has(imageSrc)
   ).length
-  const shareReplies = useMemo(() => {
-    if (!firstPageReplies) {
-      return []
-    }
-    return shareReplyViewMode === 'nested'
-      ? buildReplyTree(firstPageReplies)
-      : firstPageReplies.map<TopicReplyNode>(reply => ({ ...reply, children: [] }))
-  }, [firstPageReplies, shareReplyViewMode])
   const publishedDate = useMemo(
     () => (topic.publishedAt || topic.displayTime).split(' ')[0],
     [topic.displayTime, topic.publishedAt]
@@ -161,7 +161,7 @@ export default function TopicShareDialog({
     if (open && !loadingImages) {
       void embedShareImages().catch(() => undefined)
     }
-  }, [firstPageReplies, loadingImages, open, showAppends, showReplies, topic])
+  }, [selectedReplies, loadingImages, open, showAppends, showReplies, topic])
 
   useEffect(() => {
     if (open) {
@@ -258,7 +258,7 @@ export default function TopicShareDialog({
             ? topic.appends.flatMap(append => getHtmlImageSources(append.content))
             : []),
           ...(showReplies && firstPageReplies
-            ? firstPageReplies.flatMap(reply => [
+            ? selectedReplies.flatMap(reply => [
                 reply.userAvatar,
                 ...getHtmlImageSources(reply.content)
               ])
@@ -400,6 +400,7 @@ export default function TopicShareDialog({
     try {
       const firstPageTopic = await loadFirstReplyPage()
       setFirstPageReplies(firstPageTopic.replies)
+      setReplyLimit(Math.max(0, ...firstPageTopic.replies.map(reply => Number(reply.floor))))
     } catch (err) {
       setShowReplies(false)
       Toast.error((err as Error).message || '第一页回复加载失败')
@@ -672,19 +673,31 @@ export default function TopicShareDialog({
                 显示回复（第一页）
               </label>
               {showReplies && (
-                <div className={styles.replyViewModeField}>
-                  <span>回复列表模式</span>
-                  <RadioGroup
-                    aria-label="分享图回复列表模式"
-                    className={styles.replyViewModeControl}
-                    size="small"
-                    variant="segmented"
-                    value={shareReplyViewMode}
-                    onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}
-                  >
-                    <RadioGroupItem value="flat" label="普通列表" />
-                    <RadioGroupItem value="nested" label="楼中楼" />
-                  </RadioGroup>
+                <div className={styles.replySettings}>
+                  <div className={styles.replyViewModeField}>
+                    <span>回复列表模式</span>
+                    <RadioGroup
+                      aria-label="分享图回复列表模式"
+                      className={styles.replyViewModeControl}
+                      size="small"
+                      variant="segmented"
+                      value={shareReplyViewMode}
+                      onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}
+                    >
+                      <RadioGroupItem value="flat" label="普通列表" />
+                      <RadioGroupItem value="nested" label="楼中楼" />
+                    </RadioGroup>
+                  </div>
+                  {maxReplyFloor > 0 && (
+                    <Slider
+                      label="展示至楼层"
+                      min={1}
+                      max={Math.max(2, maxReplyFloor)}
+                      value={replyLimit}
+                      disabled={maxReplyFloor === 1 || generating}
+                      onValueChange={setReplyLimit}
+                    />
+                  )}
                 </div>
               )}
             </div>

@@ -34,6 +34,7 @@ import {
   RadioGroupItem,
   Select,
   ScrollArea,
+  Slider,
   Spinner,
   Skeleton,
   Tag,
@@ -212,6 +213,8 @@ export default function ThemePreviewApp() {
             </span>
           </div>
           <Progress value={64} />
+          <Slider label="展示至楼层" min={1} max={100} defaultValue={50} />
+          <Slider label="禁用滑块" min={1} max={100} value={50} disabled />
           <Alert title="VS Code 主题提示" description="背景、边框与文字直接来自项目语义变量" />
           <Empty
             className="theme-preview-empty"

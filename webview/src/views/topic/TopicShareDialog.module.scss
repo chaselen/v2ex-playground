@@ -407,12 +407,18 @@
   gap: 10px;
 }
 
+.replySettings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 26px;
+}
+
 .replyViewModeField {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-left: 26px;
 
   > span {
     color: var(--v2ex-muted-fg);
