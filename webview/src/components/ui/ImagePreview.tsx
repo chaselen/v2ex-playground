@@ -116,10 +116,10 @@ export function ImagePreview({
 
   /** 处理键盘快捷键 */
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'ArrowLeft') {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
       event.preventDefault()
       changeImage(-1)
-    } else if (event.key === 'ArrowRight') {
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
       event.preventDefault()
       changeImage(1)
     } else if (event.key === '+' || event.key === '=') {
