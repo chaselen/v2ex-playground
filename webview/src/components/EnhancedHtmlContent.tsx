@@ -42,7 +42,7 @@ export default function EnhancedHtmlContent({
     const root = rootRef.current
     if (root) {
       // React 重写 innerHTML 后需恢复运行时插入的按钮和事件监听
-      enhanceHtmlContent(root, showImages, openImagePreview, onTopicPreview)
+      return enhanceHtmlContent(root, showImages, openImagePreview, onTopicPreview)
     }
   })
 

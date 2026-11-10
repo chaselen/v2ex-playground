@@ -10,6 +10,7 @@ import {
 } from './imageEmoticons'
 import { decodeCloudflareEmails } from './cloudflareEmail'
 import { getEmbeddedVideoInfo } from './embeddedVideo'
+import { showImageLoadingPlaceholder } from './imageLoadingPlaceholder'
 import type { OpenImagePreview } from '@/components/ImagePreviewProvider'
 
 /** 内容增强功能使用的 VS Code 通信客户端 */
@@ -604,6 +605,7 @@ export function enhanceHtmlContent(
   openImagePreview: OpenImagePreview,
   openTopicPreview?: OpenTopicPreview
 ) {
+  const disposePlaceholders: (() => void)[] = []
   const topicImages = root.querySelectorAll<HTMLImageElement>('img')
   const topicLinks = root.querySelectorAll<HTMLAnchorElement>('a')
 
@@ -611,6 +613,9 @@ export function enhanceHtmlContent(
     applyImageDisplaySrc(img, showImages)
     if (showImages) {
       detectCompactImageEmoticon(img)
+      if (!isShareImagePlaceholder(img)) {
+        disposePlaceholders.push(showImageLoadingPlaceholder(img))
+      }
     }
     bindImagePreview(img, openImagePreview)
     syncImageVisibility(img, showImages, openImagePreview)
@@ -628,4 +633,5 @@ export function enhanceHtmlContent(
   topicLinks.forEach(bindNavigationLink)
   enhanceEmbeddedVideos(root)
   void enhanceCodeBlocks(root)
+  return () => disposePlaceholders.forEach(dispose => dispose())
 }
