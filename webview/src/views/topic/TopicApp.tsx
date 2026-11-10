@@ -8,6 +8,7 @@ import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import TopicPreviewModal from './TopicPreviewModal'
 import TopicShareDialog from './TopicShareDialog'
+import { loadCancellableShareImages } from './shareImageBatches'
 import TopicContentDialog, { topicContentLabels } from './TopicContentDialog'
 import TopicManagementPopover from './TopicManagementPopover'
 import type { ReplyViewMode } from './replyTree'
@@ -253,7 +254,9 @@ export default function TopicApp() {
               ? Promise.resolve(topic)
               : vscode.getTopicPreview(topic.id, 1)
           }
-          loadImages={(imageSources, format) => vscode.loadTopicShareImages(imageSources, format)}
+          loadImages={(imageSources, format) =>
+            loadCancellableShareImages(vscode, imageSources, format)
+          }
           onCopyLink={() => vscode.copyTopicLink(topic.id)}
           onOpenChange={setShowShareDialog}
           onSave={base64 => vscode.saveTopicShareImage(topic.id, base64)}

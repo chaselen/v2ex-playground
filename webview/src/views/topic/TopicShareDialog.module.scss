@@ -389,11 +389,11 @@
 }
 
 .imageStatus {
+  align-items: center;
   color: var(--v2ex-muted-fg);
 
   :global(.v2ex-spinner) {
     flex: none;
-    margin-top: 2px;
   }
 }
 

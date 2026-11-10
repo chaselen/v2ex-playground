@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   cacheRemoteImageFile: vi.fn(),
@@ -36,7 +36,7 @@ vi.mock('@/global', () => ({
   default: {}
 }))
 
-import { loadTopicShareImages } from './topicShareImage'
+import { loadTopicShareImages, TopicShareImageLoader } from './topicShareImage'
 
 describe('loadTopicShareImages', () => {
   beforeEach(() => {
@@ -208,5 +208,114 @@ describe('loadTopicShareImages', () => {
     mocks.cacheRemoteImageFile.mockResolvedValue({ uri: {}, cached: true })
     await loadTopicShareImages([imageSrc], webview as never)
     expect(mocks.cacheRemoteImageFile).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('TopicShareImageLoader', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.resetAllMocks()
+    mocks.cleanupExpiredCacheFiles.mockResolvedValue(undefined)
+  })
+  afterEach(() => {
+    vi.clearAllTimers()
+    vi.useRealTimers()
+  })
+
+  test('caps one panel at 12 workers across overlapping RPCs and drains cancellation before the next batch', async () => {
+    let active = 0
+    let peak = 0
+    const requests: Array<{ signal: AbortSignal; finish: () => void }> = []
+    mocks.cacheRemoteImageFile.mockImplementation(
+      ({ signal }: { signal: AbortSignal }) =>
+        new Promise((resolve, reject) => {
+          active += 1
+          peak = Math.max(peak, active)
+          requests.push({
+            signal,
+            finish: () => {
+              active -= 1
+              resolve({ uri: {}, cached: false })
+            }
+          })
+          signal.addEventListener(
+            'abort',
+            () => {
+              setTimeout(() => {
+                active -= 1
+                reject(new Error('cancelled'))
+              }, 100)
+            },
+            { once: true }
+          )
+        })
+    )
+    const webview = { asWebviewUri: () => ({ toString: () => 'resource-uri' }) }
+    const loader = new TopicShareImageLoader(webview as never)
+    const sources = Array.from({ length: 13 }, (_, index) => `https://example.com/${index}.png`)
+    const first = loader.load('first', sources)
+    const rejection = expect(first).rejects.toBeDefined()
+    const second = loader.load('second', ['https://example.com/next.png'])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(requests).toHaveLength(12)
+    const cancelling = loader.cancel('first')
+    expect(requests.every(request => request.signal.aborted)).toBe(true)
+    await vi.advanceTimersByTimeAsync(99)
+    expect(requests).toHaveLength(12)
+    await vi.advanceTimersByTimeAsync(1)
+    await rejection
+    await cancelling
+    expect(requests).toHaveLength(13)
+    requests[12].finish()
+    expect(await second).toEqual({ 'https://example.com/next.png': 'resource-uri' })
+    expect(peak).toBe(12)
+    expect(active).toBe(0)
+    expect(mocks.loggerWarn).not.toHaveBeenCalled()
+  })
+
+  test('does not cancel another panel downloading the same URL', async () => {
+    const requests: Array<{ signal: AbortSignal; finish: () => void }> = []
+    mocks.cacheRemoteImageFile.mockImplementation(
+      ({ signal }: { signal: AbortSignal }) =>
+        new Promise((resolve, reject) => {
+          requests.push({ signal, finish: () => resolve({ uri: {}, cached: false }) })
+          signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
+        })
+    )
+    const webview = { asWebviewUri: () => ({ toString: () => 'resource-uri' }) }
+    const a = new TopicShareImageLoader(webview as never)
+    const b = new TopicShareImageLoader(webview as never)
+    const sources = ['https://example.com/shared.png']
+    const first = a.load('a', sources)
+    const rejection = expect(first).rejects.toBeDefined()
+    const second = b.load('b', sources)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(requests).toHaveLength(2)
+    await a.cancel('a')
+    await rejection
+    expect(requests[1].signal.aborted).toBe(false)
+    requests[1].finish()
+    expect(await second).toEqual({ [sources[0]]: 'resource-uri' })
+  })
+
+  test('aborts active work and prevents queued or future downloads after panel disposal', async () => {
+    mocks.cacheRemoteImageFile.mockImplementation(
+      ({ signal }: { signal: AbortSignal }) =>
+        new Promise((_, reject) => {
+          signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
+        })
+    )
+    const loader = new TopicShareImageLoader({} as never)
+    const first = loader.load('active', ['https://example.com/active.png'])
+    const second = loader.load('queued', ['https://example.com/queued.png'])
+    const rejected = Promise.all([
+      expect(first).rejects.toBeDefined(),
+      expect(second).rejects.toBeDefined()
+    ])
+    await vi.advanceTimersByTimeAsync(0)
+    loader.dispose()
+    await rejected
+    expect(mocks.cacheRemoteImageFile).toHaveBeenCalledOnce()
+    await expect(loader.load('late', ['https://example.com/late.png'])).rejects.toThrow('已失效')
   })
 })

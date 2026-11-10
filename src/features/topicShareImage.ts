@@ -33,6 +33,49 @@ const pendingShareImageLoads = new Map<string, Promise<Uri>>()
 /** 分享图缓存清理任务 */
 let shareImageCacheCleanup: Promise<void> | undefined
 
+/** 每个面板独立排队并拥有取消信号，避免多个 RPC 叠加下载窗口 */
+export class TopicShareImageLoader {
+  private tail: Promise<unknown> = Promise.resolve()
+  private readonly loads = new Map<
+    string,
+    { controller: AbortController; task: Promise<unknown> }
+  >()
+  private disposed = false
+
+  constructor(private readonly webview: vscode.Webview) {}
+
+  /** 前一批完全退出后才开始下一批，继续复用 12 路下载池 */
+  load(loadId: string, sources: string[], format?: 'resourceUri' | 'dataUrl' | null) {
+    if (this.disposed || this.loads.has(loadId))
+      return Promise.reject(new Error('分享图片请求已失效'))
+    const controller = new AbortController()
+    const task = this.tail
+      .then(() => {
+        controller.signal.throwIfAborted()
+        return loadTopicShareImages(sources, this.webview, format, controller.signal)
+      })
+      .finally(() => {
+        this.loads.delete(loadId)
+      })
+    this.loads.set(loadId, { controller, task })
+    this.tail = task.catch(() => undefined)
+    return task
+  }
+
+  /** 取消后等待全部工作者退出，不让下一批与旧请求重叠 */
+  async cancel(loadId: string) {
+    const load = this.loads.get(loadId)
+    load?.controller.abort()
+    await load?.task.catch(() => undefined)
+  }
+
+  /** 面板关闭后停止正在运行和等待中的批次 */
+  dispose() {
+    this.disposed = true
+    for (const load of this.loads.values()) load.controller.abort()
+  }
+}
+
 /** 获取分享图图片缓存目录 */
 export function getTopicShareImageCacheDir() {
   return getExtensionFileCacheDir(TOPIC_SHARE_IMAGE_CACHE_DIR)
@@ -42,11 +85,16 @@ export function getTopicShareImageCacheDir() {
 export async function loadTopicShareImages(
   imageSources: string[],
   webview: vscode.Webview,
-  format: 'resourceUri' | 'dataUrl' | null = 'resourceUri'
+  format: 'resourceUri' | 'dataUrl' | null = 'resourceUri',
+  signal?: AbortSignal
 ) {
   await cleanupTopicShareImageCache()
   const sources = Array.from(new Set(imageSources.map(source => source.trim()).filter(Boolean)))
-  const entries = await loadTopicShareImageEntries(sources, webview, format)
+  signal?.throwIfAborted()
+  // 可取消批次不共享其他面板的下载，避免一个批次取消另一个面板的请求
+  const pendingLoads = signal ? new Map<string, Promise<Uri>>() : pendingShareImageLoads
+  const entries = await loadTopicShareImageEntries(sources, webview, format, pendingLoads, signal)
+  signal?.throwIfAborted()
   return Object.fromEntries(entries.filter(entry => entry !== undefined))
 }
 
@@ -59,7 +107,9 @@ export async function loadTopicShareImages(
 async function loadTopicShareImageEntries(
   imageSources: string[],
   webview: vscode.Webview,
-  format: 'resourceUri' | 'dataUrl' | null
+  format: 'resourceUri' | 'dataUrl' | null,
+  pendingLoads: Map<string, Promise<Uri>>,
+  signal?: AbortSignal
 ) {
   /** 按输入顺序保存每张图片的加载结果 */
   const entries: Array<readonly [string, string] | undefined> = new Array(imageSources.length)
@@ -68,13 +118,15 @@ async function loadTopicShareImageEntries(
 
   /** 持续领取下一个图片任务，直到队列耗尽 */
   async function runWorker() {
-    while (nextIndex < imageSources.length) {
+    while (nextIndex < imageSources.length && !signal?.aborted) {
       const currentIndex = nextIndex
       nextIndex += 1
       entries[currentIndex] = await loadTopicShareImageEntry(
         imageSources[currentIndex],
         webview,
-        format
+        format,
+        pendingLoads,
+        signal
       )
     }
   }
@@ -94,7 +146,9 @@ async function loadTopicShareImageEntries(
 async function loadTopicShareImageEntry(
   imageSrc: string,
   webview: vscode.Webview,
-  format: 'resourceUri' | 'dataUrl' | null
+  format: 'resourceUri' | 'dataUrl' | null,
+  pendingLoads: Map<string, Promise<Uri>>,
+  signal?: AbortSignal
 ) {
   try {
     const normalizedSrc = normalizeRemoteImageSrc(
@@ -103,7 +157,7 @@ async function loadTopicShareImageEntry(
     if (!normalizedSrc) {
       return undefined
     }
-    const imageUri = await loadTopicShareImage(normalizedSrc)
+    const imageUri = await loadTopicShareImage(normalizedSrc, pendingLoads, signal)
     // 默认仅返回短资源 URI，data URL 只用于 Webview 无法读取资源时的回退
     const displaySrc =
       format === 'dataUrl'
@@ -111,14 +165,18 @@ async function loadTopicShareImageEntry(
         : webview.asWebviewUri(imageUri).toString()
     return [imageSrc, displaySrc] as const
   } catch (err) {
-    logger.warn('分享图远程图片加载失败', err, { imageSrc })
+    if (!signal?.aborted) logger.warn('分享图远程图片加载失败', err, { imageSrc })
     return undefined
   }
 }
 
 /** 加载单张分享图远程图片文件 */
-function loadTopicShareImage(imageSrc: string) {
-  const pendingLoad = pendingShareImageLoads.get(imageSrc)
+function loadTopicShareImage(
+  imageSrc: string,
+  pendingLoads: Map<string, Promise<Uri>>,
+  signal?: AbortSignal
+) {
+  const pendingLoad = pendingLoads.get(imageSrc)
   if (pendingLoad) {
     return pendingLoad
   }
@@ -127,14 +185,15 @@ function loadTopicShareImage(imageSrc: string) {
     imageSrc,
     cacheDirName: TOPIC_SHARE_IMAGE_CACHE_DIR,
     maxBytes: TOPIC_SHARE_IMAGE_MAX_BYTES,
-    validateUrl: validateTopicShareImageUrl
+    validateUrl: validateTopicShareImageUrl,
+    ...(signal ? { signal } : {})
   })
     .then(({ uri }) => uri)
     .finally(() => {
       // Map 只合并并发请求，长期复用由磁盘缓存负责
-      pendingShareImageLoads.delete(imageSrc)
+      pendingLoads.delete(imageSrc)
     })
-  pendingShareImageLoads.set(imageSrc, request)
+  pendingLoads.set(imageSrc, request)
   return request
 }
 

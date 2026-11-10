@@ -26,7 +26,7 @@ import { checkImgurConnectivity } from '@/features/connectivityCheck'
 import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import {
   getTopicShareImageCacheDir,
-  loadTopicShareImages,
+  TopicShareImageLoader,
   saveTopicShareImage
 } from '@/features/topicShareImage'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
@@ -113,6 +113,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
 
   /** 回复翻页请求序号 */
   private replyPageRequestId = 0
+  private readonly shareImageLoader: TopicShareImageLoader
 
   /**
    * @param id 话题 id
@@ -136,12 +137,16 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
       useDefaultIcon: true,
       additionalLocalResourceRoots: [getTopicShareImageCacheDir()]
     })
+    this.shareImageLoader = new TopicShareImageLoader(this.panel.webview)
     this.rpc = new WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>(
       this.panel.webview,
       composeWebviewRpcControllers(this, commonRpc)
     )
     commonRpc.bindBrowseSettings(this.panel, this.rpc)
-    this.panel.onDidDispose(() => this.rpc.dispose())
+    this.panel.onDidDispose(() => {
+      this.shareImageLoader.dispose()
+      this.rpc.dispose()
+    })
   }
 
   /**
@@ -284,8 +289,17 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   }
 
   /** 加载分享图使用的本地资源 URI 或 data URL */
-  rpc_loadTopicShareImages(imageSources: string[], format?: 'resourceUri' | 'dataUrl' | null) {
-    return loadTopicShareImages(imageSources, this.panel.webview, format)
+  rpc_loadTopicShareImages(
+    loadId: string,
+    imageSources: string[],
+    format?: 'resourceUri' | 'dataUrl' | null
+  ) {
+    return this.shareImageLoader.load(loadId, imageSources, format)
+  }
+
+  /** 取消已超时的图片批次并等待后台请求退出 */
+  rpc_cancelTopicShareImages(loadId: string) {
+    return this.shareImageLoader.cancel(loadId)
   }
 
   /** 获取可移动到的节点列表 */

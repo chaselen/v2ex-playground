@@ -103,9 +103,12 @@ export interface TopicPanelRpcCommands
   saveTopicShareImage(topicId: string | number, base64: string): void
   /** 加载分享图使用的本地资源 URI 或 data URL */
   loadTopicShareImages(
+    loadId: string,
     imageSources: string[],
     format?: 'resourceUri' | 'dataUrl'
   ): Record<string, string>
+  /** 取消指定分享图片批次，并等待后台请求结束 */
+  cancelTopicShareImages(loadId: string): void
   /** 收藏话题并返回最新详情 */
   collectTopic(topicId: string | number, replyPage?: number): TopicDetail
   /** 取消收藏话题并返回最新详情 */

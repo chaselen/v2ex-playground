@@ -25,14 +25,12 @@ import {
 } from './replyTree'
 import styles from './TopicShareDialog.module.scss'
 import { getReplyDisplayContent } from './replyContent'
+import { loadShareImageBatches } from './shareImageBatches'
 import v2exIcon from '../../../../resources/favicon.png'
 import type { TopicDetail, TopicReply } from '@extension/v2ex/types'
 
 /** 远程图片无法嵌入时使用的透明占位图 */
 const TRANSPARENT_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
-
-/** 单次 RPC 加载的分享图片数量 */
-const SHARE_IMAGE_BATCH_SIZE = 50
 
 /** 单批内联的分享图片数量 */
 const SHARE_IMAGE_INLINE_BATCH_SIZE = 10
@@ -97,7 +95,8 @@ export default function TopicShareDialog({
   const generating = saving || copying
   const embeddedImagesRef = useRef<Record<string, string>>({})
   const failedImageSourcesRef = useRef(new Set<string>())
-  const pendingImageLoadRef = useRef<Promise<void> | undefined>(undefined)
+  /** 仅合并当前预览加载，下载排队与并发上限由扩展侧负责 */
+  const imageLoadTaskRef = useRef<Promise<void> | undefined>(undefined)
   const mountedRef = useRef(true)
   const topicLink = `https://www.v2ex.com/t/${topic.id}`
   const hasTopicContent = Boolean(topic.content)
@@ -159,10 +158,10 @@ export default function TopicShareDialog({
   }, [topicLink])
 
   useEffect(() => {
-    if (open) {
+    if (open && !loadingImages) {
       void embedShareImages().catch(() => undefined)
     }
-  }, [firstPageReplies, open, showAppends, showReplies, topic])
+  }, [firstPageReplies, loadingImages, open, showAppends, showReplies, topic])
 
   useEffect(() => {
     if (open) {
@@ -211,10 +210,14 @@ export default function TopicShareDialog({
    * 将当前分享内容中的远程图片转换为可嵌入图片
    * @param options 图片预加载选项
    */
-  async function embedShareImages(options: EmbedShareImagesOptions = {}) {
-    const pendingLoad = pendingImageLoadRef.current
-    if (pendingLoad) {
-      await pendingLoad
+  async function embedShareImages(
+    options: EmbedShareImagesOptions = {}
+  ): Promise<Record<string, string>> {
+    const currentTask = imageLoadTaskRef.current
+    if (currentTask) {
+      await currentTask
+      // 普通调用只加入当前加载；生成图片时才显式重试刚确认失败的图片
+      return options.retryFailed ? embedShareImages(options) : { ...embeddedImagesRef.current }
     }
 
     const imageSources = shareImageSources.filter(
@@ -227,7 +230,7 @@ export default function TopicShareDialog({
     }
 
     const loadTask = loadMissingShareImages(imageSources)
-    pendingImageLoadRef.current = loadTask
+    imageLoadTaskRef.current = loadTask
     if (mountedRef.current) {
       setLoadingImages(true)
     }
@@ -235,9 +238,7 @@ export default function TopicShareDialog({
     try {
       await loadTask
     } finally {
-      if (pendingImageLoadRef.current === loadTask) {
-        pendingImageLoadRef.current = undefined
-      }
+      imageLoadTaskRef.current = undefined
       if (mountedRef.current) {
         setLoadingImages(false)
       }
@@ -274,15 +275,10 @@ export default function TopicShareDialog({
    * @param imageSources 待加载的图片地址
    */
   async function loadMissingShareImages(imageSources: string[]) {
-    for (let index = 0; index < imageSources.length; index += SHARE_IMAGE_BATCH_SIZE) {
-      const batch = imageSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE)
-      let loadedImages: Record<string, string> = {}
-      try {
-        loadedImages = await loadImages(batch)
-      } catch {
-        // 单批 RPC 失败时仍保留其他图片，并在截图阶段使用透明占位图
-      }
-
+    for await (const { sources: batch, images: loadedImages } of loadShareImageBatches(
+      imageSources,
+      loadImages
+    )) {
       const successfulSources = batch.filter(imageSrc => Boolean(loadedImages[imageSrc]))
       const failedSources = batch.filter(imageSrc => !loadedImages[imageSrc])
       const nextEmbeddedImages = { ...embeddedImagesRef.current, ...loadedImages }
@@ -349,15 +345,10 @@ export default function TopicShareDialog({
       .map(([originalSrc]) => originalSrc)
       .filter(originalSrc => !inlineImages[originalSrc] && !failedSources.has(originalSrc))
     // 部分宿主不允许 fetch Webview 资源 URI，此时由扩展侧读取同一缓存文件
-    for (let index = 0; index < fallbackSources.length; index += SHARE_IMAGE_BATCH_SIZE) {
-      try {
-        Object.assign(
-          inlineImages,
-          await loadImages(fallbackSources.slice(index, index + SHARE_IMAGE_BATCH_SIZE), 'dataUrl')
-        )
-      } catch {
-        // 单批回退失败时保留透明占位图，避免中断整张分享图
-      }
+    for await (const { images } of loadShareImageBatches(fallbackSources, sources =>
+      loadImages(sources, 'dataUrl')
+    )) {
+      Object.assign(inlineImages, images)
     }
 
     // 保存当前属性，截图完成后不能让临时 data URL 污染 React 管理的预览 DOM

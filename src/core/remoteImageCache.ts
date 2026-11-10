@@ -1,7 +1,9 @@
 import crypto from 'node:crypto'
+import axios from 'axios'
 import { fileTypeFromBuffer } from 'file-type'
 import vscode, { Uri } from 'vscode'
 import http from '@/core/http'
+import { createNativeHttpTransport } from '@/core/httpTransport'
 import G from '@/global'
 
 /** 远程图片缓存参数 */
@@ -97,38 +99,56 @@ export async function cacheRemoteImageFile(
  */
 async function requestRemoteImage(options: CacheRemoteImageFileOptions) {
   let requestUrl = options.imageSrc
+  const timeoutMs = http.defaults.timeout ?? 15000
+  const deadline = Date.now() + timeoutMs
+  const timeout = new AbortController()
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout.signal]) : timeout.signal
+  const timer = setTimeout(() => timeout.abort(), timeoutMs)
+  try {
+    for (let redirectCount = 0; ; redirectCount += 1) {
+      signal.throwIfAborted()
+      await options.validateUrl?.(requestUrl)
+      signal.throwIfAborted()
+      const remainingMs = Math.max(1, deadline - Date.now())
+      const response = await http.get(requestUrl, {
+        responseType: 'arraybuffer',
+        signal,
+        timeout: remainingMs,
+        ...(options.maxBytes === undefined
+          ? {}
+          : {
+              maxContentLength: options.maxBytes,
+              maxBodyLength: options.maxBytes
+            }),
+        ...(options.validateUrl
+          ? {
+              maxRedirects: 0,
+              transport: createNativeHttpTransport(remainingMs),
+              validateStatus: (status: number) => status >= 200 && status < 400
+            }
+          : {})
+      })
 
-  for (let redirectCount = 0; ; redirectCount += 1) {
-    await options.validateUrl?.(requestUrl)
-    const response = await http.get(requestUrl, {
-      responseType: 'arraybuffer',
-      signal: options.signal,
-      ...(options.maxBytes === undefined
-        ? {}
-        : {
-            maxContentLength: options.maxBytes,
-            maxBodyLength: options.maxBytes
-          }),
-      ...(options.validateUrl
-        ? {
-            maxRedirects: 0,
-            validateStatus: (status: number) => status >= 200 && status < 400
-          }
-        : {})
-    })
+      if (!options.validateUrl || response.status < 300 || response.status >= 400) {
+        return response
+      }
 
-    if (!options.validateUrl || response.status < 300 || response.status >= 400) {
-      return response
+      const location = response.headers.location
+      if (typeof location !== 'string' || !location) {
+        throw new Error('远程图片重定向地址无效')
+      }
+      if (redirectCount >= MAX_VALIDATED_IMAGE_REDIRECTS) {
+        throw new Error('远程图片重定向次数过多')
+      }
+      requestUrl = new URL(location, requestUrl).toString()
     }
-
-    const location = response.headers.location
-    if (typeof location !== 'string' || !location) {
-      throw new Error('远程图片重定向地址无效')
+  } catch (error) {
+    if (timeout.signal.aborted && !options.signal?.aborted) {
+      throw new axios.AxiosError(`图片请求总超时 ${timeoutMs}ms`, axios.AxiosError.ECONNABORTED)
     }
-    if (redirectCount >= MAX_VALIDATED_IMAGE_REDIRECTS) {
-      throw new Error('远程图片重定向次数过多')
-    }
-    requestUrl = new URL(location, requestUrl).toString()
+    throw error
+  } finally {
+    clearTimeout(timer)
   }
 }
 
