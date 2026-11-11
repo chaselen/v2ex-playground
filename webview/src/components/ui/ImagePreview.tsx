@@ -17,6 +17,8 @@ import {
   type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
+  type ReactElement,
+  type ComponentPropsWithRef,
   type WheelEvent
 } from 'react'
 import { Button } from './Button'
@@ -50,6 +52,8 @@ export interface ImagePreviewProps {
   toolbarStart?: ReactNode
   /** 工具栏末尾的扩展内容 */
   toolbarExtra?: ReactNode
+  /** 扩展图片渲染，用于接入上层的图片菜单；须保留元素属性和 ref */
+  renderImage?: (image: ReactElement<ComponentPropsWithRef<'img'>>) => ReactNode
   /** 当前图片索引变化 */
   onCurrentIndexChange: (index: number) => void
   /** 打开状态变化 */
@@ -65,6 +69,7 @@ export function ImagePreview({
   srcList,
   toolbarStart,
   toolbarExtra,
+  renderImage,
   onCurrentIndexChange,
   onOpenChange
 }: ImagePreviewProps) {
@@ -116,6 +121,7 @@ export function ImagePreview({
 
   /** 处理键盘快捷键 */
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.defaultPrevented || !event.currentTarget.contains(event.target as Node)) return
     if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
       event.preventDefault()
       changeImage(-1)
@@ -136,12 +142,14 @@ export function ImagePreview({
 
   /** 使用滚轮缩放图片 */
   function handleWheel(event: WheelEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.target as Node)) return
     event.preventDefault()
     zoom(event.deltaY < 0 ? 0.25 : -0.25)
   }
 
   /** 图片超出预览区域时开始拖拽 */
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.target as Node)) return
     const imageRect = imageRef.current?.getBoundingClientRect()
     const stageRect = event.currentTarget.getBoundingClientRect()
     const canDrag =
@@ -192,6 +200,20 @@ export function ImagePreview({
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
   }
+
+  const image = currentSrc ? (
+    <img
+      key={currentSrc}
+      ref={imageRef}
+      className="v2ex-image-preview__image"
+      src={currentSrc}
+      alt={`预览图片 ${currentIndex + 1}`}
+      draggable={false}
+      style={{
+        transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`
+      }}
+    />
+  ) : null
 
   return (
     <DialogPrimitive.Root
@@ -254,19 +276,7 @@ export function ImagePreview({
             onPointerUp={handlePointerEnd}
             onPointerCancel={handlePointerEnd}
           >
-            {currentSrc && (
-              <img
-                key={currentSrc}
-                ref={imageRef}
-                className="v2ex-image-preview__image"
-                src={currentSrc}
-                alt={`预览图片 ${currentIndex + 1}`}
-                draggable={false}
-                style={{
-                  transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`
-                }}
-              />
-            )}
+            {image && (renderImage ? renderImage(image) : image)}
           </div>
 
           <div className="v2ex-image-preview__toolbar" aria-label="图片预览工具">

@@ -1,3 +1,5 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
+import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Eye, Heart, HeartOff, Inbox, RefreshCw, UserCheck, UserRound, UserX } from 'lucide-react'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -6,7 +8,7 @@ import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import PageSkeleton from '@/components/PageSkeleton'
 import UserBadge from '@/components/UserBadge'
 import TopicListItem from '@/components/TopicListItem'
-import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
 import { useLatestRequest } from '@/hooks/useLatestRequest'
 import {
   ScrollArea,
@@ -126,6 +128,9 @@ export default function MemberApp() {
   const profileCacheRef = useRef(new Map<string, MemberProfile>())
   const { startRequest } = useLatestRequest()
   const profile = state.profile
+  const pageUrl = profile
+    ? resolveWebviewUrl(`/member/${encodeURIComponent(profile.member.username)}`)
+    : undefined
   const memberActionBusy = Boolean(
     clearing || memberAction || listedMemberAction || unignoringTopicId
   )
@@ -440,245 +445,255 @@ export default function MemberApp() {
   )
 
   return (
-    <ScrollArea fillViewport viewportRef={scrollRef} className="member-scroll" role="main">
-      {state.status === 'loading' && <PageSkeleton variant="member" rows={4} />}
+    <PageContextMenu items={getLinkMenuItems(pageUrl)}>
+      <ScrollArea fillViewport viewportRef={scrollRef} className="member-scroll" role="main">
+        {state.status === 'loading' && <PageSkeleton variant="member" rows={4} />}
 
-      {state.status === 'error' && (
-        <div className="member-state">
-          <Alert
-            variant="danger"
-            title="加载失败"
-            description={<div dangerouslySetInnerHTML={{ __html: normalizeHtml(state.message) }} />}
-          />
-          {state.showRefresh && (
-            <div className="member-state-actions">
-              <Button size="small" icon={<RefreshCw aria-hidden="true" />} onClick={refreshMember}>
-                刷新页面
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {state.status === 'member' && profile && (
-        <article className="member-container">
-          <header className="member-profile">
-            <Avatar
-              size="large"
-              shape="square"
-              src={profile.member.avatar}
-              alt={profile.member.username}
-              fallback={<UserRound aria-hidden="true" />}
-            ></Avatar>
-            <div className="member-profile-main">
-              <h1>{profile.member.username}</h1>
-              {!!profile.member.tagline && (
-                <p className="member-tagline">{profile.member.tagline}</p>
-              )}
-              {!!profile.member.bio && <p className="member-bio">{profile.member.bio}</p>}
-              <div className="member-meta">
-                {!!profile.member.memberId && <Tag>第 {profile.member.memberId} 号会员</Tag>}
-                {!!profile.member.joinedAt && (
-                  <span title={profile.member.joinedAt}>加入于 {profile.member.joinedAt}</span>
-                )}
+        {state.status === 'error' && (
+          <div className="member-state">
+            <Alert
+              variant="danger"
+              title="加载失败"
+              description={
+                <div dangerouslySetInnerHTML={{ __html: normalizeHtml(state.message) }} />
+              }
+            />
+            {state.showRefresh && (
+              <div className="member-state-actions">
+                <Button
+                  size="small"
+                  icon={<RefreshCw aria-hidden="true" />}
+                  onClick={refreshMember}
+                >
+                  刷新页面
+                </Button>
               </div>
-              {!!profile.member.activityRank && (
-                <div className="member-rank">活跃度排名 {profile.member.activityRank}</div>
-              )}
-              {profile.member.isPro && (
-                <div className="member-pro">
-                  <UserBadge pro />
-                  <span>PRO 会员</span>
+            )}
+          </div>
+        )}
+
+        {state.status === 'member' && profile && (
+          <article className="member-container">
+            <header className="member-profile">
+              <Avatar
+                size="large"
+                shape="square"
+                src={profile.member.avatar}
+                alt={profile.member.username}
+                fallback={<UserRound aria-hidden="true" />}
+              ></Avatar>
+              <div className="member-profile-main">
+                <h1>{profile.member.username}</h1>
+                {!!profile.member.tagline && (
+                  <p className="member-tagline">{profile.member.tagline}</p>
+                )}
+                {!!profile.member.bio && <p className="member-bio">{profile.member.bio}</p>}
+                <div className="member-meta">
+                  {!!profile.member.memberId && <Tag>第 {profile.member.memberId} 号会员</Tag>}
+                  {!!profile.member.joinedAt && (
+                    <span title={profile.member.joinedAt}>加入于 {profile.member.joinedAt}</span>
+                  )}
                 </div>
-              )}
-              {state.loggedIn &&
-                !state.isSelf &&
-                (typeof profile.member.isFollowing === 'boolean' ||
-                  typeof profile.member.isBlocked === 'boolean') && (
-                  <div className="member-profile-actions">
-                    {typeof profile.member.isFollowing === 'boolean' && (
-                      <ConfirmPopover
-                        title={
-                          profile.member.isFollowing
-                            ? `确认要取消对 ${profile.member.username} 的关注？`
-                            : `确认要开始关注 ${profile.member.username}？`
-                        }
-                        description={
-                          profile.member.isFollowing
-                            ? '取消后将不再在特别关注列表中保留该用户'
-                            : '加入后可在特别关注列表中快速找到该用户'
-                        }
-                        disabled={Boolean(memberAction && memberAction !== 'following')}
-                        onConfirm={() => mutateMemberAction('following')}
-                      >
-                        <Button
-                          size="small"
-                          variant={profile.member.isFollowing ? 'secondary' : 'primary'}
-                          loading={memberAction === 'following'}
-                          aria-label={profile.member.isFollowing ? '取消特别关注' : '加入特别关注'}
-                        >
-                          {profile.member.isFollowing ? '取消特别关注' : '加入特别关注'}
-                        </Button>
-                      </ConfirmPopover>
-                    )}
-                    {typeof profile.member.isBlocked === 'boolean' && (
-                      <ConfirmPopover
-                        title={profile.member.isBlocked ? '取消屏蔽该用户？' : '确认屏蔽该用户？'}
-                        description={
-                          profile.member.isBlocked
-                            ? '取消后将恢复显示该用户的相关内容'
-                            : '屏蔽后将不再显示该用户的相关内容'
-                        }
-                        danger={!profile.member.isBlocked}
-                        disabled={Boolean(memberAction && memberAction !== 'blocking')}
-                        onConfirm={() => mutateMemberAction('blocking')}
-                      >
-                        <Button
-                          size="small"
-                          variant={profile.member.isBlocked ? 'secondary' : 'danger'}
-                          loading={memberAction === 'blocking'}
-                          aria-label={profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
-                        >
-                          {profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
-                        </Button>
-                      </ConfirmPopover>
-                    )}
+                {!!profile.member.activityRank && (
+                  <div className="member-rank">活跃度排名 {profile.member.activityRank}</div>
+                )}
+                {profile.member.isPro && (
+                  <div className="member-pro">
+                    <UserBadge pro />
+                    <span>PRO 会员</span>
                   </div>
                 )}
-            </div>
-            <Button
-              size="small"
-              variant="ghost"
-              icon={<RefreshCw aria-hidden="true" />}
-              aria-label="刷新用户页"
-              onClick={refreshMember}
-            />
-          </header>
-
-          {memberActionError && (
-            <Alert
-              className="member-action-error"
-              variant="danger"
-              title="操作失败"
-              description={memberActionError}
-            />
-          )}
-
-          {state.isSelf && profile.followingMembers && profile.blockedMembers && (
-            <section className="member-relations" aria-label="关注与屏蔽">
-              <header className="member-relations-header">
-                <RadioGroup
-                  aria-label="用户关系列表"
-                  className="member-relations-tabs"
-                  value={relationTab}
-                  variant="segmented"
-                  onValueChange={value => setRelationTab(value as MemberRelationTab)}
-                >
-                  <RadioGroupItem
-                    value="following"
-                    label={
-                      <span className="member-relations-tab-label">
-                        <Heart aria-hidden="true" />
-                        <span>我关注的人({profile.followingMembers.length})</span>
-                      </span>
-                    }
-                  />
-                  <RadioGroupItem
-                    value="blocked"
-                    label={
-                      <span className="member-relations-tab-label">
-                        <UserX aria-hidden="true" />
-                        <span>我屏蔽的人({profile.blockedMembers.length})</span>
-                      </span>
-                    }
-                  />
-                </RadioGroup>
-                {relationTab === 'blocked' && renderClearButton('blocked')}
-              </header>
-              {relationTab === 'following'
-                ? renderRelationMembers({
-                    tab: 'following',
-                    members: profile.followingMembers,
-                    emptyText: '在其他用户的个人页点击“加入特别关注”后，会显示在这里',
-                    listedMemberAction,
-                    busy: memberActionBusy,
-                    openMember,
-                    onRemove: memberId => mutateListedMember('following', memberId)
-                  })
-                : renderRelationMembers({
-                    tab: 'blocked',
-                    members: profile.blockedMembers,
-                    emptyText: '暂无屏蔽用户。在其他用户的个人页点击“屏蔽用户”后，会显示在这里',
-                    listedMemberAction,
-                    busy: memberActionBusy,
-                    openMember,
-                    onRemove: memberId => mutateListedMember('blocked', memberId)
-                  })}
-            </section>
-          )}
-
-          <section className="member-content">
-            <Tabs
-              value={activeTab}
-              className="member-tabs"
-              onValueChange={value =>
-                changeTab(value as MemberTab).catch(err => console.error(err))
-              }
-            >
-              <TabsList>
-                {visibleTabs.map(tab => (
-                  <TabsTrigger value={tab.key} key={tab.key}>
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {visibleTabs.map(tab => (
-                <TabsContent value={tab.key} key={tab.key}>
-                  {(tab.key === 'ignored' || tab.key === 'ignoredNodes') && state.isSelf && (
-                    <div className="member-content-actions">{renderClearButton(tab.key)}</div>
-                  )}
-                  {tab.key === activeTab && activeTab === 'ignoredNodes' ? (
-                    <div className="member-content-state">
-                      <Empty
-                        title={
-                          profile.ignoredNodeCount === undefined
-                            ? '无法读取已忽略节点数量'
-                            : profile.ignoredNodeCount === 0
-                              ? '暂无忽略的节点'
-                              : '无法获取已忽略节点列表'
-                        }
-                        description={
-                          profile.ignoredNodeCount === undefined
-                            ? '请刷新页面后重试。'
-                            : profile.ignoredNodeCount > 0
-                              ? '由于 V2EX 本身的限制，仅能获取已忽略节点的数量，无法获取对应列表。可在节点页取消忽略，或在此一键清除。'
-                              : '在节点页点击“忽略节点”后，可在这里查看数量并一键清除。'
-                        }
-                        icon={<Inbox aria-hidden="true" />}
-                      />
+                {state.loggedIn &&
+                  !state.isSelf &&
+                  (typeof profile.member.isFollowing === 'boolean' ||
+                    typeof profile.member.isBlocked === 'boolean') && (
+                    <div className="member-profile-actions">
+                      {typeof profile.member.isFollowing === 'boolean' && (
+                        <ConfirmPopover
+                          title={
+                            profile.member.isFollowing
+                              ? `确认要取消对 ${profile.member.username} 的关注？`
+                              : `确认要开始关注 ${profile.member.username}？`
+                          }
+                          description={
+                            profile.member.isFollowing
+                              ? '取消后将不再在特别关注列表中保留该用户'
+                              : '加入后可在特别关注列表中快速找到该用户'
+                          }
+                          disabled={Boolean(memberAction && memberAction !== 'following')}
+                          onConfirm={() => mutateMemberAction('following')}
+                        >
+                          <Button
+                            size="small"
+                            variant={profile.member.isFollowing ? 'secondary' : 'primary'}
+                            loading={memberAction === 'following'}
+                            aria-label={
+                              profile.member.isFollowing ? '取消特别关注' : '加入特别关注'
+                            }
+                          >
+                            {profile.member.isFollowing ? '取消特别关注' : '加入特别关注'}
+                          </Button>
+                        </ConfirmPopover>
+                      )}
+                      {typeof profile.member.isBlocked === 'boolean' && (
+                        <ConfirmPopover
+                          title={profile.member.isBlocked ? '取消屏蔽该用户？' : '确认屏蔽该用户？'}
+                          description={
+                            profile.member.isBlocked
+                              ? '取消后将恢复显示该用户的相关内容'
+                              : '屏蔽后将不再显示该用户的相关内容'
+                          }
+                          danger={!profile.member.isBlocked}
+                          disabled={Boolean(memberAction && memberAction !== 'blocking')}
+                          onConfirm={() => mutateMemberAction('blocking')}
+                        >
+                          <Button
+                            size="small"
+                            variant={profile.member.isBlocked ? 'secondary' : 'danger'}
+                            loading={memberAction === 'blocking'}
+                            aria-label={profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
+                          >
+                            {profile.member.isBlocked ? '取消屏蔽' : '屏蔽用户'}
+                          </Button>
+                        </ConfirmPopover>
+                      )}
                     </div>
-                  ) : tab.key === activeTab && activeTab !== 'ignoredNodes' ? (
-                    renderContent(
-                      profile,
-                      activeTab,
-                      loadingContent,
-                      loadPage,
-                      openTopic,
-                      openMember,
-                      {
-                        busy: memberActionBusy,
-                        unignoringTopicId,
-                        onUnignore: unignoreListedTopic
+                  )}
+              </div>
+              <Button
+                size="small"
+                variant="ghost"
+                icon={<RefreshCw aria-hidden="true" />}
+                aria-label="刷新用户页"
+                onClick={refreshMember}
+              />
+            </header>
+
+            {memberActionError && (
+              <Alert
+                className="member-action-error"
+                variant="danger"
+                title="操作失败"
+                description={memberActionError}
+              />
+            )}
+
+            {state.isSelf && profile.followingMembers && profile.blockedMembers && (
+              <section className="member-relations" aria-label="关注与屏蔽">
+                <header className="member-relations-header">
+                  <RadioGroup
+                    aria-label="用户关系列表"
+                    className="member-relations-tabs"
+                    value={relationTab}
+                    variant="segmented"
+                    onValueChange={value => setRelationTab(value as MemberRelationTab)}
+                  >
+                    <RadioGroupItem
+                      value="following"
+                      label={
+                        <span className="member-relations-tab-label">
+                          <Heart aria-hidden="true" />
+                          <span>我关注的人({profile.followingMembers.length})</span>
+                        </span>
                       }
-                    )
-                  ) : null}
-                </TabsContent>
-              ))}
-            </Tabs>
-          </section>
-        </article>
-      )}
-    </ScrollArea>
+                    />
+                    <RadioGroupItem
+                      value="blocked"
+                      label={
+                        <span className="member-relations-tab-label">
+                          <UserX aria-hidden="true" />
+                          <span>我屏蔽的人({profile.blockedMembers.length})</span>
+                        </span>
+                      }
+                    />
+                  </RadioGroup>
+                  {relationTab === 'blocked' && renderClearButton('blocked')}
+                </header>
+                {relationTab === 'following'
+                  ? renderRelationMembers({
+                      tab: 'following',
+                      members: profile.followingMembers,
+                      emptyText: '在其他用户的个人页点击“加入特别关注”后，会显示在这里',
+                      listedMemberAction,
+                      busy: memberActionBusy,
+                      openMember,
+                      onRemove: memberId => mutateListedMember('following', memberId)
+                    })
+                  : renderRelationMembers({
+                      tab: 'blocked',
+                      members: profile.blockedMembers,
+                      emptyText: '暂无屏蔽用户。在其他用户的个人页点击“屏蔽用户”后，会显示在这里',
+                      listedMemberAction,
+                      busy: memberActionBusy,
+                      openMember,
+                      onRemove: memberId => mutateListedMember('blocked', memberId)
+                    })}
+              </section>
+            )}
+
+            <section className="member-content">
+              <Tabs
+                value={activeTab}
+                className="member-tabs"
+                onValueChange={value =>
+                  changeTab(value as MemberTab).catch(err => console.error(err))
+                }
+              >
+                <TabsList>
+                  {visibleTabs.map(tab => (
+                    <TabsTrigger value={tab.key} key={tab.key}>
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {visibleTabs.map(tab => (
+                  <TabsContent value={tab.key} key={tab.key}>
+                    {(tab.key === 'ignored' || tab.key === 'ignoredNodes') && state.isSelf && (
+                      <div className="member-content-actions">{renderClearButton(tab.key)}</div>
+                    )}
+                    {tab.key === activeTab && activeTab === 'ignoredNodes' ? (
+                      <div className="member-content-state">
+                        <Empty
+                          title={
+                            profile.ignoredNodeCount === undefined
+                              ? '无法读取已忽略节点数量'
+                              : profile.ignoredNodeCount === 0
+                                ? '暂无忽略的节点'
+                                : '无法获取已忽略节点列表'
+                          }
+                          description={
+                            profile.ignoredNodeCount === undefined
+                              ? '请刷新页面后重试。'
+                              : profile.ignoredNodeCount > 0
+                                ? '由于 V2EX 本身的限制，仅能获取已忽略节点的数量，无法获取对应列表。可在节点页取消忽略，或在此一键清除。'
+                                : '在节点页点击“忽略节点”后，可在这里查看数量并一键清除。'
+                          }
+                          icon={<Inbox aria-hidden="true" />}
+                        />
+                      </div>
+                    ) : tab.key === activeTab && activeTab !== 'ignoredNodes' ? (
+                      renderContent(
+                        profile,
+                        activeTab,
+                        loadingContent,
+                        loadPage,
+                        openTopic,
+                        openMember,
+                        {
+                          busy: memberActionBusy,
+                          unignoringTopicId,
+                          onUnignore: unignoreListedTopic
+                        }
+                      )
+                    ) : null}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </section>
+          </article>
+        )}
+      </ScrollArea>
+    </PageContextMenu>
   )
 }
 

@@ -1,3 +1,4 @@
+import PageContextMenu from '@/components/PageContextMenu'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Toast } from '@/components/ui'
@@ -248,74 +249,76 @@ export default function MainApp() {
   }
 
   return (
-    <main className="main-container" onContextMenu={event => event.preventDefault()}>
-      <Tabs
-        value={activeTab}
-        className="main-tabs"
-        onValueChange={value => {
-          setActiveTab(value as MainPanelTabKey)
-        }}
-      >
-        <TabsList
-          overflowNavigation
-          extra={
-            <Button
-              className="main-tab-refresh"
-              variant="ghost"
-              size="small"
-              icon={<RefreshCw aria-hidden="true" />}
-              loading={activeTabRefreshing}
-              disabled={!canRefreshActiveTab}
-              title={`刷新${activeTabLabel}`}
-              aria-label={`刷新${activeTabLabel}`}
-              onClick={refreshActiveTab}
-            />
-          }
+    <PageContextMenu suppressEmptyMenu>
+      <main className="main-container">
+        <Tabs
+          value={activeTab}
+          className="main-tabs"
+          onValueChange={value => {
+            setActiveTab(value as MainPanelTabKey)
+          }}
         >
-          <TabsTrigger value="explore">{tabLabels.explore}</TabsTrigger>
-          <TabsTrigger value="custom">{tabLabels.custom}</TabsTrigger>
-          <TabsTrigger value="collection">{tabLabels.collection}</TabsTrigger>
-          <TabsTrigger value="my">{tabLabels.my}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="explore" keepMounted>
-          <NodeTreeTab tab="explore" nodes={nodeTreeTabs.tabs.explore} {...nodeTreeTabProps} />
-        </TabsContent>
-        <TabsContent value="custom" keepMounted>
-          <NodeTreeTab
-            tab="custom"
-            nodes={nodeTreeTabs.tabs.custom}
-            loading={initializing}
-            onAddNode={nodeTreeTabs.addNode}
-            {...nodeTreeTabProps}
-          />
-        </TabsContent>
-        <TabsContent value="collection" keepMounted>
-          <NodeTreeTab
-            tab="collection"
-            nodes={nodeTreeTabs.tabs.collection}
-            error={nodeTreeTabs.tabErrors.collection}
-            loading={collectionTabLoading}
-            addNodeLoading={nodeTreeTabs.collectingNode}
-            onAddNode={nodeTreeTabs.collectNode}
-            onCancelCollectNode={nodeTreeTabs.cancelCollectNode}
-            onRetryTab={() => refreshTab('collection', contentRetryOptions)}
-            {...nodeTreeTabProps}
-          />
-        </TabsContent>
-        <TabsContent value="my" keepMounted>
-          <MyTab
-            ref={myTabRef}
-            loading={myOverviewLoading}
-            loggedIn={loggedIn}
-            overview={accountOverview}
-            overviewError={accountOverviewError}
-            onRetryOverview={() => refreshTab('my', contentRetryOptions)}
-            onOpenNodeCollection={() => {
-              setActiveTab('collection')
-            }}
-          />
-        </TabsContent>
-      </Tabs>
-    </main>
+          <TabsList
+            overflowNavigation
+            extra={
+              <Button
+                className="main-tab-refresh"
+                variant="ghost"
+                size="small"
+                icon={<RefreshCw aria-hidden="true" />}
+                loading={activeTabRefreshing}
+                disabled={!canRefreshActiveTab}
+                title={`刷新${activeTabLabel}`}
+                aria-label={`刷新${activeTabLabel}`}
+                onClick={refreshActiveTab}
+              />
+            }
+          >
+            <TabsTrigger value="explore">{tabLabels.explore}</TabsTrigger>
+            <TabsTrigger value="custom">{tabLabels.custom}</TabsTrigger>
+            <TabsTrigger value="collection">{tabLabels.collection}</TabsTrigger>
+            <TabsTrigger value="my">{tabLabels.my}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="explore" keepMounted>
+            <NodeTreeTab tab="explore" nodes={nodeTreeTabs.tabs.explore} {...nodeTreeTabProps} />
+          </TabsContent>
+          <TabsContent value="custom" keepMounted>
+            <NodeTreeTab
+              tab="custom"
+              nodes={nodeTreeTabs.tabs.custom}
+              loading={initializing}
+              onAddNode={nodeTreeTabs.addNode}
+              {...nodeTreeTabProps}
+            />
+          </TabsContent>
+          <TabsContent value="collection" keepMounted>
+            <NodeTreeTab
+              tab="collection"
+              nodes={nodeTreeTabs.tabs.collection}
+              error={nodeTreeTabs.tabErrors.collection}
+              loading={collectionTabLoading}
+              addNodeLoading={nodeTreeTabs.collectingNode}
+              onAddNode={nodeTreeTabs.collectNode}
+              onCancelCollectNode={nodeTreeTabs.cancelCollectNode}
+              onRetryTab={() => refreshTab('collection', contentRetryOptions)}
+              {...nodeTreeTabProps}
+            />
+          </TabsContent>
+          <TabsContent value="my" keepMounted>
+            <MyTab
+              ref={myTabRef}
+              loading={myOverviewLoading}
+              loggedIn={loggedIn}
+              overview={accountOverview}
+              overviewError={accountOverviewError}
+              onRetryOverview={() => refreshTab('my', contentRetryOptions)}
+              onOpenNodeCollection={() => {
+                setActiveTab('collection')
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+      </main>
+    </PageContextMenu>
   )
 }

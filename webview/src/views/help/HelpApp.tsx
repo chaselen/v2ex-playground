@@ -1,9 +1,11 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
+import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { BookOpen, ChevronRight, ExternalLink } from 'lucide-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import PageSkeleton from '@/components/PageSkeleton'
 import { ScrollArea, Alert, Button } from '@/components/ui'
-import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
 import type { HelpRpcCommands, HelpViewState, HelpWebviewEvents } from '@extension/shared/webview'
 
 const vscode = createVsCodeClient<HelpRpcCommands, HelpWebviewEvents>()
@@ -14,6 +16,9 @@ export default function HelpApp() {
   const contentRootRef = useRef<HTMLDivElement>(null)
   const contentScrollRef = useRef<HTMLDivElement>(null)
   const loading = state.status === 'loading'
+  const sourceUrl = new URL(resolveWebviewUrl(`/help/${state.slug}`))
+  if (state.anchor) sourceUrl.hash = state.anchor
+  const pageUrl = sourceUrl.toString()
   useEffect(
     () =>
       subscribeWebviewState(
@@ -87,80 +92,82 @@ export default function HelpApp() {
   }
 
   return (
-    <main className="help-container" aria-busy={loading}>
-      <header className="help-toolbar">
-        <div className="help-brand">
-          <span className="help-brand-icon">
-            <BookOpen aria-hidden="true" />
-          </span>
-          <div>
-            <strong>站点帮助</strong>
-            <span className="help-subtitle">了解 V2EX 的功能与社区规则</span>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          icon={<ExternalLink aria-hidden="true" />}
-          onClick={() => void vscode.openSource()}
-        >
-          查看原文
-        </Button>
-      </header>
-      {!state.data && (
-        <ScrollArea className="help-initial-scroll">
-          {loading ? (
-            <PageSkeleton variant="help" />
-          ) : (
-            <HelpError message={state.message} onRetry={() => void loadPage(state.slug)} />
-          )}
-        </ScrollArea>
-      )}
-      {state.data && (
-        <div className="help-layout">
-          <ScrollArea
-            className="help-nav-scroll"
-            viewportProps={{ role: 'region', 'aria-label': '帮助目录' }}
-          >
-            <nav className="help-nav" aria-label="帮助主题">
-              {state.data.navigation.map(item => (
-                <Button
-                  key={item.slug}
-                  variant={item.slug === state.slug ? 'subtle' : 'ghost'}
-                  aria-current={item.slug === state.slug ? 'page' : undefined}
-                  onClick={() => void loadPage(item.slug)}
-                >
-                  <span>{item.title}</span>
-                  <ChevronRight className="help-nav-chevron" aria-hidden="true" />
-                </Button>
-              ))}
-            </nav>
-          </ScrollArea>
-          <ScrollArea
-            className="help-content-scroll"
-            viewportRef={contentScrollRef}
-            viewportProps={{
-              role: 'region',
-              'aria-label': '帮助正文'
-            }}
-          >
-            <div ref={contentRootRef}>
-              {loading ? (
-                <PageSkeleton variant="help-content" />
-              ) : state.status === 'error' ? (
-                <HelpError message={state.message} onRetry={() => void loadPage(state.slug)} />
-              ) : (
-                <EnhancedHtmlContent
-                  onClickCapture={handleAnchorClick}
-                  key={state.data.slug}
-                  className="help-content topic-content"
-                  html={state.data.html}
-                />
-              )}
+    <PageContextMenu items={getLinkMenuItems(pageUrl)}>
+      <main className="help-container" aria-busy={loading}>
+        <header className="help-toolbar">
+          <div className="help-brand">
+            <span className="help-brand-icon">
+              <BookOpen aria-hidden="true" />
+            </span>
+            <div>
+              <strong>站点帮助</strong>
+              <span className="help-subtitle">了解 V2EX 的功能与社区规则</span>
             </div>
+          </div>
+          <Button
+            variant="ghost"
+            icon={<ExternalLink aria-hidden="true" />}
+            onClick={() => void vscode.openSource()}
+          >
+            查看原文
+          </Button>
+        </header>
+        {!state.data && (
+          <ScrollArea className="help-initial-scroll">
+            {loading ? (
+              <PageSkeleton variant="help" />
+            ) : (
+              <HelpError message={state.message} onRetry={() => void loadPage(state.slug)} />
+            )}
           </ScrollArea>
-        </div>
-      )}
-    </main>
+        )}
+        {state.data && (
+          <div className="help-layout">
+            <ScrollArea
+              className="help-nav-scroll"
+              viewportProps={{ role: 'region', 'aria-label': '帮助目录' }}
+            >
+              <nav className="help-nav" aria-label="帮助主题">
+                {state.data.navigation.map(item => (
+                  <Button
+                    key={item.slug}
+                    variant={item.slug === state.slug ? 'subtle' : 'ghost'}
+                    aria-current={item.slug === state.slug ? 'page' : undefined}
+                    onClick={() => void loadPage(item.slug)}
+                  >
+                    <span>{item.title}</span>
+                    <ChevronRight className="help-nav-chevron" aria-hidden="true" />
+                  </Button>
+                ))}
+              </nav>
+            </ScrollArea>
+            <ScrollArea
+              className="help-content-scroll"
+              viewportRef={contentScrollRef}
+              viewportProps={{
+                role: 'region',
+                'aria-label': '帮助正文'
+              }}
+            >
+              <div ref={contentRootRef}>
+                {loading ? (
+                  <PageSkeleton variant="help-content" />
+                ) : state.status === 'error' ? (
+                  <HelpError message={state.message} onRetry={() => void loadPage(state.slug)} />
+                ) : (
+                  <EnhancedHtmlContent
+                    onClickCapture={handleAnchorClick}
+                    key={state.data.slug}
+                    className="help-content topic-content"
+                    html={state.data.html}
+                  />
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+      </main>
+    </PageContextMenu>
   )
 }
 

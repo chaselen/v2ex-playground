@@ -1,9 +1,10 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import PageSkeleton from '@/components/PageSkeleton'
-import TopicShareContextMenu from '@/components/TopicShareContextMenu'
+import PageContextMenu from '@/components/PageContextMenu'
 import { ScrollArea, Alert, Button, Dialog, Toast } from '@/components/ui'
-import { createVsCodeClient } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import useTopicDetailController from './useTopicDetailController'
 import styles from './TopicPreviewModal.module.scss'
@@ -59,6 +60,7 @@ export default function TopicPreviewModal({
   const canOperateRef = useRef(canOperate)
   activeTopicIdRef.current = topicId
   const topic = state.status === 'topic' ? state.topic : undefined
+  const topicUrl = topicId ? resolveWebviewUrl(`/t/${topicId}`) : undefined
   const topicRef = useRef(topic)
   topicRef.current = topic
 
@@ -168,27 +170,6 @@ export default function TopicPreviewModal({
     onClose()
   }
 
-  /** 复制预览话题链接 */
-  function copyPreviewLink() {
-    if (topicId) {
-      void vscode.copyTopicLink(topicId)
-    }
-  }
-
-  /** 复制预览话题标题和链接 */
-  function copyPreviewTitleLink() {
-    if (topicId && topic) {
-      void vscode.copyTopicTitleLink(topicId, topic.title)
-    }
-  }
-
-  /** 在浏览器中打开预览话题 */
-  function viewPreviewInBrowser() {
-    if (topicId) {
-      void vscode.viewTopicInBrowser(topicId)
-    }
-  }
-
   return (
     <Dialog
       className={styles.modal}
@@ -209,11 +190,9 @@ export default function TopicPreviewModal({
         }
       }}
     >
-      <TopicShareContextMenu
+      <PageContextMenu
+        items={getLinkMenuItems(topicUrl, topic?.title)}
         disabled={!topicId || !topic || refreshing}
-        onCopyLink={copyPreviewLink}
-        onCopyTitleLink={copyPreviewTitleLink}
-        onViewInBrowser={viewPreviewInBrowser}
       >
         <div className={styles.body} ref={setFloatingActionsContainer}>
           <ScrollArea fillViewport viewportRef={scrollContainerRef} className={styles.scroll}>
@@ -241,7 +220,7 @@ export default function TopicPreviewModal({
             )}
           </ScrollArea>
         </div>
-      </TopicShareContextMenu>
+      </PageContextMenu>
     </Dialog>
   )
 }

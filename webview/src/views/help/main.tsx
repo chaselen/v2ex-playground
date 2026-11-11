@@ -1,3 +1,4 @@
+import { ToastViewport } from '@/components/ui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './HelpApp'
@@ -10,5 +11,6 @@ createRoot(document.getElementById('app')!).render(
     <ImagePreviewProvider>
       <App />
     </ImagePreviewProvider>
+    <ToastViewport />
   </StrictMode>
 )

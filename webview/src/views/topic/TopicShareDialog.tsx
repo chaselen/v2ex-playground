@@ -1,3 +1,5 @@
+import { resolveWebviewUrl } from '@/core/vscode'
+import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Check, Copy, Download, Heart, Inbox } from 'lucide-react'
 import QRCode from 'qrcode'
@@ -517,85 +519,92 @@ export default function TopicShareDialog({
   return (
     <Dialog className={styles.dialog} open={open} title="分享话题" onOpenChange={onOpenChange}>
       <div className={styles.layout}>
-        <ScrollArea className={styles.preview} aria-label="分享图预览" role="region">
-          <div className={styles.previewContent}>
-            <article className={styles.card} ref={cardRef}>
-              <header className={styles.cardHeader}>
-                <div className={styles.cardBrand}>
-                  <img src={v2exIcon} alt="" />
-                  <span>V2EX</span>
-                </div>
-                <h1>{topic.title}</h1>
-                <div className={styles.cardMeta}>
-                  <span className={styles.cardAuthor}>
-                    {topic.authorAvatar && (
-                      <img
-                        src={getShareImageDisplaySrc(
-                          topic.authorAvatar,
-                          embeddedImages,
-                          failedImageSources
-                        )}
-                        data-share-image-src={topic.authorAvatar.trim()}
-                        alt=""
-                      />
+        <PageContextMenu
+          getImageUrl={image => {
+            const source = image.dataset.shareImageSrc
+            if (source && isRemoteShareImageSource(source)) return resolveWebviewUrl(source)
+          }}
+        >
+          <ScrollArea className={styles.preview} aria-label="分享图预览" role="region">
+            <div className={styles.previewContent}>
+              <article className={styles.card} ref={cardRef}>
+                <header className={styles.cardHeader}>
+                  <div className={styles.cardBrand}>
+                    <img src={v2exIcon} alt="" />
+                    <span>V2EX</span>
+                  </div>
+                  <h1>{topic.title}</h1>
+                  <div className={styles.cardMeta}>
+                    <span className={styles.cardAuthor}>
+                      {topic.authorAvatar && (
+                        <img
+                          src={getShareImageDisplaySrc(
+                            topic.authorAvatar,
+                            embeddedImages,
+                            failedImageSources
+                          )}
+                          data-share-image-src={topic.authorAvatar.trim()}
+                          alt=""
+                        />
+                      )}
+                      <strong>{topic.authorName}</strong>
+                    </span>
+                    <TimeWithSource time={publishedDate} via={topic.via} />
+                  </div>
+                </header>
+
+                {hasTopicContent ? (
+                  <EnhancedHtmlContent
+                    className={`topic-content ${styles.cardContent}`}
+                    html={embedHtmlImages(topic.content, embeddedImages, failedImageSources)}
+                  />
+                ) : (
+                  <section className={`topic-empty-content ${styles.cardEmptyContent}`}>
+                    <Empty title="正文无内容" icon={<Inbox aria-hidden="true" />} />
+                  </section>
+                )}
+
+                {showAppends && topic.appends.length > 0 && (
+                  <div className={styles.cardAppends}>
+                    {topic.appends.map((append, index) => (
+                      <section
+                        className={`topic-content append ${styles.cardAppend}`}
+                        key={`share-append-${index}`}
+                      >
+                        <h2 className="append-heading">
+                          <span>第 {index + 1} 条附言</span>
+                          {append.time && <span className="append-time">{append.time}</span>}
+                        </h2>
+                        <EnhancedHtmlContent
+                          html={embedHtmlImages(append.content, embeddedImages, failedImageSources)}
+                        />
+                      </section>
+                    ))}
+                  </div>
+                )}
+
+                {showReplies && firstPageReplies && (
+                  <section className={styles.cardReplies}>
+                    <h2>第一页回复</h2>
+                    {shareReplies.length ? (
+                      shareReplies.map(reply => renderShareReply(reply))
+                    ) : (
+                      <p className={styles.cardEmptyReplies}>第一页暂无回复</p>
                     )}
-                    <strong>{topic.authorName}</strong>
-                  </span>
-                  <TimeWithSource time={publishedDate} via={topic.via} />
-                </div>
-              </header>
+                  </section>
+                )}
 
-              {hasTopicContent ? (
-                <EnhancedHtmlContent
-                  className={`topic-content ${styles.cardContent}`}
-                  html={embedHtmlImages(topic.content, embeddedImages, failedImageSources)}
-                />
-              ) : (
-                <section className={`topic-empty-content ${styles.cardEmptyContent}`}>
-                  <Empty title="正文无内容" icon={<Inbox aria-hidden="true" />} />
-                </section>
-              )}
-
-              {showAppends && topic.appends.length > 0 && (
-                <div className={styles.cardAppends}>
-                  {topic.appends.map((append, index) => (
-                    <section
-                      className={`topic-content append ${styles.cardAppend}`}
-                      key={`share-append-${index}`}
-                    >
-                      <h2 className="append-heading">
-                        <span>第 {index + 1} 条附言</span>
-                        {append.time && <span className="append-time">{append.time}</span>}
-                      </h2>
-                      <EnhancedHtmlContent
-                        html={embedHtmlImages(append.content, embeddedImages, failedImageSources)}
-                      />
-                    </section>
-                  ))}
-                </div>
-              )}
-
-              {showReplies && firstPageReplies && (
-                <section className={styles.cardReplies}>
-                  <h2>第一页回复</h2>
-                  {shareReplies.length ? (
-                    shareReplies.map(reply => renderShareReply(reply))
-                  ) : (
-                    <p className={styles.cardEmptyReplies}>第一页暂无回复</p>
-                  )}
-                </section>
-              )}
-
-              <footer className={styles.cardFooter}>
-                <div>
-                  <strong>来自 V2EX Playground</strong>
-                  <span>{topicLink}</span>
-                </div>
-                {showQrCode && qrCode && <img src={qrCode} alt="话题链接二维码" />}
-              </footer>
-            </article>
-          </div>
-        </ScrollArea>
+                <footer className={styles.cardFooter}>
+                  <div>
+                    <strong>来自 V2EX Playground</strong>
+                    <span>{topicLink}</span>
+                  </div>
+                  {showQrCode && qrCode && <img src={qrCode} alt="话题链接二维码" />}
+                </footer>
+              </article>
+            </div>
+          </ScrollArea>
+        </PageContextMenu>
 
         <aside className={styles.controls}>
           <div className={styles.controlsHeader}>

@@ -23,7 +23,6 @@ import { updateRecentBrowseTopic } from '@/features/recentBrowse'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
 import { checkImgurConnectivity } from '@/features/connectivityCheck'
-import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import {
   getTopicShareImageCacheDir,
   TopicShareImageLoader,
@@ -266,21 +265,6 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   /** 刷新话题 */
   rpc_refresh() {
     return this.refreshTopic()
-  }
-
-  /** 复制话题链接 */
-  rpc_copyTopicLink(topicId: string | number) {
-    copyTopicLink(topicId)
-  }
-
-  /** 复制话题标题和链接 */
-  rpc_copyTopicTitleLink(topicId: string | number, title: string) {
-    copyTopicTitleLink(topicId, title)
-  }
-
-  /** 在浏览器中打开话题 */
-  rpc_viewTopicInBrowser(topicId: string | number) {
-    viewTopicInBrowser(topicId)
   }
 
   /** 保存话题分享图 */

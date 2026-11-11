@@ -1,3 +1,4 @@
+import PageContextMenu from './PageContextMenu'
 import { Download, Smile } from 'lucide-react'
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 import { Button, ImagePreview } from '@/components/ui'
@@ -133,6 +134,15 @@ export default function ImagePreviewProvider({
         currentIndex={preview?.currentIndex ?? 0}
         open={Boolean(preview)}
         srcList={preview?.srcList ?? []}
+        renderImage={image => (
+          <PageContextMenu
+            key={image.key}
+            items={[]}
+            positionerClassName="v2ex-floating-positioner--image-preview"
+          >
+            {image}
+          </PageContextMenu>
+        )}
         toolbarStart={
           showEmoticonFilter && canFilterEmoticons ? (
             <Button

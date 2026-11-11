@@ -1,3 +1,5 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
+import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useRef, useState } from 'react'
 import {
   Bookmark,
@@ -23,7 +25,7 @@ import {
   Toast,
   Tooltip
 } from '@/components/ui'
-import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
 import type { Topic } from '@extension/v2ex/types'
 import type {
   NodePanelRpcCommands,
@@ -43,6 +45,9 @@ export default function NodeApp() {
   const data = state.data
   const loading = state.status === 'loading'
   const node = data?.node
+  const pageUrl = node?.name
+    ? resolveWebviewUrl(`/go/${node.name}?p=${data?.page ?? 1}`)
+    : undefined
   const isCollected = !!node?.isCollected
   const canCollect = state.loggedIn
 
@@ -156,192 +161,198 @@ export default function NodeApp() {
   }
 
   return (
-    <ScrollArea fillViewport viewportRef={scrollRef} className="node-scroll" role="main">
-      <main className="node-container">
-        {loading && !data && <PageSkeleton variant="node-topics" rows={6} />}
+    <PageContextMenu items={getLinkMenuItems(pageUrl)}>
+      <ScrollArea fillViewport viewportRef={scrollRef} className="node-scroll" role="main">
+        <main className="node-container">
+          {loading && !data && <PageSkeleton variant="node-topics" rows={6} />}
 
-        {data && (
-          <>
-            <header className="node-header">
-              <div className="node-header-main">
-                <Avatar
-                  className="node-avatar"
-                  src={node?.avatar}
-                  alt={node?.title || ''}
-                  size="large"
-                  shape="square"
-                />
-                <div className="node-header-text">
-                  <div className="node-heading">
-                    <h1>{node?.title || '节点'}</h1>
-                    <div className="node-count">
-                      <span className="node-count-summary">
-                        共 <strong>{data.totalCount.toLocaleString()}</strong> 个主题
-                        {typeof node?.collectCount === 'number' && (
-                          <> · {node.collectCount.toLocaleString()} 人收藏</>
-                        )}
-                      </span>
-                      <div className="node-subscriptions" role="group" aria-label="订阅节点">
-                        <Tooltip content="复制 RSS 订阅地址">
-                          <Button
-                            size="small"
-                            compact
-                            aria-label="复制 RSS 订阅地址"
-                            icon={<Rss aria-hidden="true" />}
-                            variant="ghost"
-                            disabled={!node?.name}
-                            onClick={() => void copySubscription('xml')}
-                          />
-                        </Tooltip>
-                        <Tooltip content="复制 JSON Feed 订阅地址">
-                          <Button
-                            size="small"
-                            compact
-                            aria-label="复制 JSON Feed 订阅地址"
-                            icon={<FileJson aria-hidden="true" />}
-                            variant="ghost"
-                            disabled={!node?.name}
-                            onClick={() => void copySubscription('json')}
-                          />
-                        </Tooltip>
+          {data && (
+            <>
+              <header className="node-header">
+                <div className="node-header-main">
+                  <Avatar
+                    className="node-avatar"
+                    src={node?.avatar}
+                    alt={node?.title || ''}
+                    size="large"
+                    shape="square"
+                  />
+                  <div className="node-header-text">
+                    <div className="node-heading">
+                      <h1>{node?.title || '节点'}</h1>
+                      <div className="node-count">
+                        <span className="node-count-summary">
+                          共 <strong>{data.totalCount.toLocaleString()}</strong> 个主题
+                          {typeof node?.collectCount === 'number' && (
+                            <> · {node.collectCount.toLocaleString()} 人收藏</>
+                          )}
+                        </span>
+                        <div className="node-subscriptions" role="group" aria-label="订阅节点">
+                          <Tooltip content="复制 RSS 订阅地址">
+                            <Button
+                              size="small"
+                              compact
+                              aria-label="复制 RSS 订阅地址"
+                              icon={<Rss aria-hidden="true" />}
+                              variant="ghost"
+                              disabled={!node?.name}
+                              onClick={() => void copySubscription('xml')}
+                            />
+                          </Tooltip>
+                          <Tooltip content="复制 JSON Feed 订阅地址">
+                            <Button
+                              size="small"
+                              compact
+                              aria-label="复制 JSON Feed 订阅地址"
+                              icon={<FileJson aria-hidden="true" />}
+                              variant="ghost"
+                              disabled={!node?.name}
+                              onClick={() => void copySubscription('json')}
+                            />
+                          </Tooltip>
+                        </div>
                       </div>
                     </div>
+                    {!!node?.description && <p className="node-description">{node.description}</p>}
                   </div>
-                  {!!node?.description && <p className="node-description">{node.description}</p>}
                 </div>
-              </div>
-              <div className="node-header-actions">
-                {state.loggedIn && (
-                  <Button
-                    className="node-create-topic"
-                    size="small"
-                    aria-label={`在${node?.title || '当前节点'}创建新主题`}
-                    icon={<SquarePen aria-hidden="true" />}
-                    variant="primary"
-                    disabled={loading || ignoring}
-                    onClick={() => void vscode.createTopic()}
-                  >
-                    创建新主题
-                  </Button>
-                )}
-                {canCollect && (
-                  <Button
-                    size="small"
-                    aria-label={isCollected ? '取消收藏节点' : '收藏节点'}
-                    icon={
-                      isCollected ? (
-                        <Bookmark aria-hidden="true" fill="currentColor" />
-                      ) : (
-                        <BookmarkPlus aria-hidden="true" />
-                      )
-                    }
-                    variant="secondary"
-                    loading={collecting}
-                    disabled={loading || ignoring}
-                    onClick={() => void toggleCollect()}
-                  >
-                    {isCollected ? '取消收藏' : '加入收藏'}
-                  </Button>
-                )}
-                {state.loggedIn && typeof node?.isIgnored === 'boolean' && (
-                  <ConfirmPopover
-                    title={node.isIgnored ? '取消忽略这个节点？' : '忽略这个节点？'}
-                    description={
-                      node.isIgnored
-                        ? '该节点的内容将重新出现在首页及热议列表中'
-                        : '该节点的内容将不再出现在首页及热议列表中'
-                    }
-                    disabled={loading || collecting || ignoring}
-                    danger={!node.isIgnored}
-                    onConfirm={toggleIgnored}
-                  >
+                <div className="node-header-actions">
+                  {state.loggedIn && (
+                    <Button
+                      className="node-create-topic"
+                      size="small"
+                      aria-label={`在${node?.title || '当前节点'}创建新主题`}
+                      icon={<SquarePen aria-hidden="true" />}
+                      variant="primary"
+                      disabled={loading || ignoring}
+                      onClick={() => void vscode.createTopic()}
+                    >
+                      创建新主题
+                    </Button>
+                  )}
+                  {canCollect && (
                     <Button
                       size="small"
-                      variant={node.isIgnored ? 'secondary' : 'danger'}
-                      loading={ignoring}
+                      aria-label={isCollected ? '取消收藏节点' : '收藏节点'}
                       icon={
-                        node.isIgnored ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />
+                        isCollected ? (
+                          <Bookmark aria-hidden="true" fill="currentColor" />
+                        ) : (
+                          <BookmarkPlus aria-hidden="true" />
+                        )
                       }
+                      variant="secondary"
+                      loading={collecting}
+                      disabled={loading || ignoring}
+                      onClick={() => void toggleCollect()}
                     >
-                      {node.isIgnored ? '取消忽略节点' : '忽略节点'}
+                      {isCollected ? '取消收藏' : '加入收藏'}
                     </Button>
-                  </ConfirmPopover>
-                )}
-                <Button
-                  size="small"
-                  aria-label="刷新节点主题"
-                  icon={<RefreshCw aria-hidden="true" />}
-                  variant="ghost"
-                  loading={loading}
-                  disabled={collecting || ignoring}
-                  onClick={() => void refresh()}
-                >
-                  刷新
-                </Button>
-              </div>
-            </header>
+                  )}
+                  {state.loggedIn && typeof node?.isIgnored === 'boolean' && (
+                    <ConfirmPopover
+                      title={node.isIgnored ? '取消忽略这个节点？' : '忽略这个节点？'}
+                      description={
+                        node.isIgnored
+                          ? '该节点的内容将重新出现在首页及热议列表中'
+                          : '该节点的内容将不再出现在首页及热议列表中'
+                      }
+                      disabled={loading || collecting || ignoring}
+                      danger={!node.isIgnored}
+                      onConfirm={toggleIgnored}
+                    >
+                      <Button
+                        size="small"
+                        variant={node.isIgnored ? 'secondary' : 'danger'}
+                        loading={ignoring}
+                        icon={
+                          node.isIgnored ? (
+                            <Eye aria-hidden="true" />
+                          ) : (
+                            <EyeOff aria-hidden="true" />
+                          )
+                        }
+                      >
+                        {node.isIgnored ? '取消忽略节点' : '忽略节点'}
+                      </Button>
+                    </ConfirmPopover>
+                  )}
+                  <Button
+                    size="small"
+                    aria-label="刷新节点主题"
+                    icon={<RefreshCw aria-hidden="true" />}
+                    variant="ghost"
+                    loading={loading}
+                    disabled={collecting || ignoring}
+                    onClick={() => void refresh()}
+                  >
+                    刷新
+                  </Button>
+                </div>
+              </header>
 
-            {state.status === 'error' && (
-              <Alert
-                className="node-error"
-                variant="danger"
-                title="刷新失败"
-                description={state.message}
-              />
-            )}
-
-            {data.list.length ? (
-              <>
-                <section className="node-topic-list" aria-label={`${node?.title || '节点'} 主题`}>
-                  {data.list.map(topic => (
-                    <TopicListItem
-                      key={topic.id}
-                      topic={topic}
-                      appearance="card"
-                      showAuthor
-                      withAuthorAvatar
-                      showNode={false}
-                      onOpenTopic={openTopic}
-                      onOpenMember={openMember}
-                      onOpenNode={openNode}
-                    />
-                  ))}
-                </section>
-                <Pagination
-                  className="node-pagination"
-                  page={data.page}
-                  totalPages={data.totalPage}
-                  showQuickJumper
-                  hideOnSinglePage
-                  disabled={loading || collecting || ignoring}
-                  onPageChange={page => void loadPage(page)}
+              {state.status === 'error' && (
+                <Alert
+                  className="node-error"
+                  variant="danger"
+                  title="刷新失败"
+                  description={state.message}
                 />
-              </>
-            ) : (
-              <Empty
-                className="node-empty"
-                icon={<Inbox />}
-                title="暂无主题"
-                description="这个节点下暂时没有可展示的主题"
-              />
-            )}
-          </>
-        )}
+              )}
 
-        {!loading && state.status === 'error' && !data && (
-          <div className="node-state">
-            <Alert variant="danger" title="加载失败" description={state.message} />
-            <Button
-              className="node-retry"
-              icon={<RefreshCw aria-hidden="true" />}
-              size="small"
-              onClick={() => void refresh()}
-            >
-              重试
-            </Button>
-          </div>
-        )}
-      </main>
-    </ScrollArea>
+              {data.list.length ? (
+                <>
+                  <section className="node-topic-list" aria-label={`${node?.title || '节点'} 主题`}>
+                    {data.list.map(topic => (
+                      <TopicListItem
+                        key={topic.id}
+                        topic={topic}
+                        appearance="card"
+                        showAuthor
+                        withAuthorAvatar
+                        showNode={false}
+                        onOpenTopic={openTopic}
+                        onOpenMember={openMember}
+                        onOpenNode={openNode}
+                      />
+                    ))}
+                  </section>
+                  <Pagination
+                    className="node-pagination"
+                    page={data.page}
+                    totalPages={data.totalPage}
+                    showQuickJumper
+                    hideOnSinglePage
+                    disabled={loading || collecting || ignoring}
+                    onPageChange={page => void loadPage(page)}
+                  />
+                </>
+              ) : (
+                <Empty
+                  className="node-empty"
+                  icon={<Inbox />}
+                  title="暂无主题"
+                  description="这个节点下暂时没有可展示的主题"
+                />
+              )}
+            </>
+          )}
+
+          {!loading && state.status === 'error' && !data && (
+            <div className="node-state">
+              <Alert variant="danger" title="加载失败" description={state.message} />
+              <Button
+                className="node-retry"
+                icon={<RefreshCw aria-hidden="true" />}
+                size="small"
+                onClick={() => void refresh()}
+              >
+                重试
+              </Button>
+            </div>
+          )}
+        </main>
+      </ScrollArea>
+    </PageContextMenu>
   )
 }

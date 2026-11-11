@@ -93,12 +93,6 @@ export interface TopicPanelRpcCommands
   openTag(tag: string): void
   login(): void
   refresh(): void
-  /** 复制话题链接 */
-  copyTopicLink(topicId: string | number): void
-  /** 复制话题标题和链接 */
-  copyTopicTitleLink(topicId: string | number, title: string): void
-  /** 在浏览器中打开话题 */
-  viewTopicInBrowser(topicId: string | number): void
   /** 保存话题分享图 */
   saveTopicShareImage(topicId: string | number, base64: string): void
   /** 加载分享图使用的本地资源 URI 或 data URL */

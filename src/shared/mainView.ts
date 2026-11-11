@@ -211,9 +211,6 @@ export interface MainViewRpcCommands extends WebviewCommonRpcCommands {
   createTopic(): void
   search(): void
   login(): void
-  ctxCopyLink(topicId: number): void
-  ctxCopyTitleLink(topicId: number, title: string): void
-  ctxViewInBrowser(topicId: number): void
 }
 
 /**

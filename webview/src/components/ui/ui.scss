@@ -1222,6 +1222,10 @@
   z-index: 1110;
 }
 
+.v2ex-floating-positioner--image-preview {
+  z-index: 1310;
+}
+
 .v2ex-tooltip,
 .v2ex-popover,
 .v2ex-menu {
@@ -1745,7 +1749,7 @@
 
 .v2ex-toast-viewport {
   position: fixed;
-  z-index: 1200;
+  z-index: 1400;
   top: 12px;
   right: 12px;
   display: flex;
@@ -1764,6 +1768,10 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
   gap: 10px;
+}
+
+.v2ex-toast__progress {
+  grid-column: 2 / -1;
 }
 
 .v2ex-toast {

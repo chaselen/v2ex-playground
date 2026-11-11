@@ -1,3 +1,4 @@
+import PageContextMenu from '@/components/PageContextMenu'
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import { Image, Smile } from 'lucide-react'
 import { ScrollArea, Button, Popover, Spinner, Toast, Tooltip } from '@/components/ui'
@@ -563,33 +564,35 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    */
   function renderEmoticonPanel() {
     return (
-      <ScrollArea className={styles.emoticonPanel}>
-        <div className={styles.emoticonContent}>
-          {emoticonGroups.map(group => (
-            <section key={group.title} className={styles.emoticonSection}>
-              <h3>{group.title}</h3>
-              <div className={styles.emoticonGrid}>
-                {group.list.map(emoticon => (
-                  <button
-                    key={emoticon}
-                    type="button"
-                    className={styles.emoticonOption}
-                    title={emoticon}
-                    disabled={emoticonDisabled}
-                    onClick={() => insertEmoticon(emoticon)}
-                  >
-                    {isImageEmoticon(emoticon) ? (
-                      renderImageEmoticon(emoticon)
-                    ) : (
-                      <span>{emoticon}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </ScrollArea>
+      <PageContextMenu>
+        <ScrollArea className={styles.emoticonPanel}>
+          <div className={styles.emoticonContent}>
+            {emoticonGroups.map(group => (
+              <section key={group.title} className={styles.emoticonSection}>
+                <h3>{group.title}</h3>
+                <div className={styles.emoticonGrid}>
+                  {group.list.map(emoticon => (
+                    <button
+                      key={emoticon}
+                      type="button"
+                      className={styles.emoticonOption}
+                      title={emoticon}
+                      disabled={emoticonDisabled}
+                      onClick={() => insertEmoticon(emoticon)}
+                    >
+                      {isImageEmoticon(emoticon) ? (
+                        renderImageEmoticon(emoticon)
+                      ) : (
+                        <span>{emoticon}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </ScrollArea>
+      </PageContextMenu>
     )
   }
 
@@ -775,19 +778,21 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           </div>
         </div>
       ) : (
-        <div className={styles.previewPanel}>
-          {previewing ? (
-            <Spinner aria-label={previewAriaLabel} />
-          ) : previewHtml ? (
-            <EnhancedHtmlContent
-              className={mergeClassNames('topic-content', styles.previewContent)}
-              html={previewHtml}
-              showImages={showImages}
-            />
-          ) : (
-            <p className={styles.previewEmpty}>{previewEmptyText}</p>
-          )}
-        </div>
+        <PageContextMenu>
+          <div className={styles.previewPanel}>
+            {previewing ? (
+              <Spinner aria-label={previewAriaLabel} />
+            ) : previewHtml ? (
+              <EnhancedHtmlContent
+                className={mergeClassNames('topic-content', styles.previewContent)}
+                html={previewHtml}
+                showImages={showImages}
+              />
+            ) : (
+              <p className={styles.previewEmpty}>{previewEmptyText}</p>
+            )}
+          </div>
+        </PageContextMenu>
       )}
 
       {(submitContent || showEmoticons) && (

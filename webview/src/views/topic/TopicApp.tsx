@@ -1,10 +1,11 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
 import { useBrowseSettings } from '@/hooks/useBrowseSettings'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScrollArea, Alert, Button, Toast } from '@/components/ui'
 import { normalizeHtml } from '@/core/contentEnhancement'
 import PageSkeleton from '@/components/PageSkeleton'
-import TopicShareContextMenu from '@/components/TopicShareContextMenu'
-import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
+import PageContextMenu from '@/components/PageContextMenu'
+import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
 import TopicDetailView from './TopicDetailView'
 import TopicPreviewModal from './TopicPreviewModal'
 import TopicShareDialog from './TopicShareDialog'
@@ -42,6 +43,7 @@ export default function TopicApp() {
   const topicScrollRef = useRef<HTMLDivElement | null>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
+  const topicUrl = topic ? resolveWebviewUrl(`/t/${topic.id}`) : undefined
   const contentActions = topic?.contentActions ?? []
   const managementActions = topic?.managementActions ?? []
   const { showImagesInTopic: showImages, showAvatar } = useBrowseSettings()
@@ -218,15 +220,7 @@ export default function TopicApp() {
 
   return (
     <>
-      {/* 菜单触发器需绑定真实 DOM */}
-      <TopicShareContextMenu
-        disabled={!topic}
-        onCopyLink={() => topic && vscode.copyTopicLink(topic.id)}
-        onCopyTitleLink={() => topic && vscode.copyTopicTitleLink(topic.id, topic.title)}
-        onViewInBrowser={() => topic && vscode.viewTopicInBrowser(topic.id)}
-      >
-        <div>{content}</div>
-      </TopicShareContextMenu>
+      <PageContextMenu items={getLinkMenuItems(topicUrl, topic?.title)}>{content}</PageContextMenu>
       {contentAction && topic && state.canOperate && (
         <TopicContentDialog
           key={`${topic.id}:${contentAction}`}
@@ -257,7 +251,7 @@ export default function TopicApp() {
           loadImages={(imageSources, format) =>
             loadCancellableShareImages(vscode, imageSources, format)
           }
-          onCopyLink={() => vscode.copyTopicLink(topic.id)}
+          onCopyLink={() => vscode.copyText(resolveWebviewUrl(`/t/${topic.id}`))}
           onOpenChange={setShowShareDialog}
           onSave={base64 => vscode.saveTopicShareImage(topic.id, base64)}
         />

@@ -1,6 +1,9 @@
-import type vscode from 'vscode'
+import vscode from 'vscode'
+import { EOL } from 'node:os'
 import Config from '@/config'
+import { openExternal } from '@/features/openExternal'
 import { downloadImage } from '@/features/imageDownload'
+import { loadImageDataUrl } from '@/features/topicShareImage'
 import { getSyntaxTheme } from 'vscode-tint/vscode'
 import type {
   BrowseSettingsWebviewEvents,
@@ -58,6 +61,21 @@ export class WebviewCommonRpc implements WebviewRpcController<WebviewCommonRpcCo
     this.navigation.openExternal(path, title)
   }
 
+  /** 直接在浏览器中打开链接，跳过插件页面路由 */
+  async rpc_openInBrowser(url: string) {
+    await openExternal(url)
+  }
+
+  /** 使用宿主剪贴板，避免 Webview 剪贴板权限限制 */
+  async rpc_copyText(text: string) {
+    await vscode.env.clipboard.writeText(text)
+  }
+
+  /** 复制标题和链接，沿用宿主平台的换行格式 */
+  async rpc_copyTitleLink(url: string, title: string) {
+    await vscode.env.clipboard.writeText(`${title}${EOL}${url}`)
+  }
+
   /** 打开话题面板 */
   rpc_openTopic(topicId: string | number, title?: string) {
     this.navigation.openTopic(topicId, title)
@@ -71,6 +89,11 @@ export class WebviewCommonRpc implements WebviewRpcController<WebviewCommonRpcCo
   /** 打开节点主题标签 */
   rpc_openNode(name: string, title?: string) {
     this.navigation.openNode(name, title)
+  }
+
+  /** 读取跨域图片数据 */
+  rpc_loadImageDataUrl(src: string) {
+    return loadImageDataUrl(src)
   }
 
   /** 下载远程图片 */

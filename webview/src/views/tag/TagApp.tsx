@@ -1,9 +1,11 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
+import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useRef, useState } from 'react'
 import { Inbox, RefreshCw } from 'lucide-react'
 import PageSkeleton from '@/components/PageSkeleton'
 import TopicListItem from '@/components/TopicListItem'
 import { ScrollArea, Alert, Button, Empty } from '@/components/ui'
-import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
 import type { Topic } from '@extension/v2ex/types'
 import type {
   TagPanelRpcCommands,
@@ -19,6 +21,7 @@ export default function TagApp() {
   const [state, setState] = useState<TagPanelViewState>({ status: 'loading' })
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const data = state.data
+  const pageUrl = data ? resolveWebviewUrl(`/tag/${encodeURIComponent(data.tag)}`) : undefined
   const loading = state.status === 'loading'
 
   useEffect(() => {
@@ -60,77 +63,79 @@ export default function TagApp() {
   }
 
   return (
-    <ScrollArea fillViewport viewportRef={scrollRef} className="tag-scroll" role="main">
-      <main className="tag-container">
-        {loading && <PageSkeleton variant="tag-topics" rows={6} />}
+    <PageContextMenu items={getLinkMenuItems(pageUrl)}>
+      <ScrollArea fillViewport viewportRef={scrollRef} className="tag-scroll" role="main">
+        <main className="tag-container">
+          {loading && <PageSkeleton variant="tag-topics" rows={6} />}
 
-        {!loading && data && (
-          <>
-            <header className="tag-header">
-              <div>
-                <span className="tag-eyebrow">帖子标签</span>
-                <h1>{data.tag}</h1>
-                <p>共 {data.totalCount} 个主题</p>
-              </div>
+          {!loading && data && (
+            <>
+              <header className="tag-header">
+                <div>
+                  <span className="tag-eyebrow">帖子标签</span>
+                  <h1>{data.tag}</h1>
+                  <p>共 {data.totalCount} 个主题</p>
+                </div>
+                <Button
+                  aria-label="刷新标签主题"
+                  icon={<RefreshCw aria-hidden="true" />}
+                  variant="ghost"
+                  onClick={() => void refresh()}
+                >
+                  刷新
+                </Button>
+              </header>
+
+              {state.status === 'error' && (
+                <Alert
+                  className="tag-error"
+                  variant="danger"
+                  title="刷新失败"
+                  description={state.message}
+                />
+              )}
+
+              {data.list.length ? (
+                <section className="tag-topic-list" aria-label={`${data.tag} 主题`}>
+                  {data.list.map(topic => (
+                    <TopicListItem
+                      key={topic.id}
+                      topic={topic}
+                      appearance="card"
+                      showAuthor
+                      withAuthorAvatar
+                      onOpenTopic={openTopic}
+                      onOpenMember={openMember}
+                      onOpenNode={openNode}
+                    />
+                  ))}
+                </section>
+              ) : (
+                <Empty
+                  className="tag-empty"
+                  icon={<Inbox />}
+                  title="暂无相关主题"
+                  description="这个标签下暂时没有可展示的主题"
+                />
+              )}
+            </>
+          )}
+
+          {!loading && state.status === 'error' && !data && (
+            <div className="tag-state">
+              <Alert variant="danger" title="加载失败" description={state.message} />
               <Button
-                aria-label="刷新标签主题"
+                className="tag-retry"
                 icon={<RefreshCw aria-hidden="true" />}
-                variant="ghost"
+                size="small"
                 onClick={() => void refresh()}
               >
-                刷新
+                重试
               </Button>
-            </header>
-
-            {state.status === 'error' && (
-              <Alert
-                className="tag-error"
-                variant="danger"
-                title="刷新失败"
-                description={state.message}
-              />
-            )}
-
-            {data.list.length ? (
-              <section className="tag-topic-list" aria-label={`${data.tag} 主题`}>
-                {data.list.map(topic => (
-                  <TopicListItem
-                    key={topic.id}
-                    topic={topic}
-                    appearance="card"
-                    showAuthor
-                    withAuthorAvatar
-                    onOpenTopic={openTopic}
-                    onOpenMember={openMember}
-                    onOpenNode={openNode}
-                  />
-                ))}
-              </section>
-            ) : (
-              <Empty
-                className="tag-empty"
-                icon={<Inbox />}
-                title="暂无相关主题"
-                description="这个标签下暂时没有可展示的主题"
-              />
-            )}
-          </>
-        )}
-
-        {!loading && state.status === 'error' && !data && (
-          <div className="tag-state">
-            <Alert variant="danger" title="加载失败" description={state.message} />
-            <Button
-              className="tag-retry"
-              icon={<RefreshCw aria-hidden="true" />}
-              size="small"
-              onClick={() => void refresh()}
-            >
-              重试
-            </Button>
-          </div>
-        )}
-      </main>
-    </ScrollArea>
+            </div>
+          )}
+        </main>
+      </ScrollArea>
+    </PageContextMenu>
   )
 }

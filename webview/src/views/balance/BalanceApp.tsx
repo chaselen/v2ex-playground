@@ -1,3 +1,5 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
+import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useRef, useState } from 'react'
 import { CircleHelp, Inbox, RefreshCw } from 'lucide-react'
 import { normalizeHtml } from '@/core/contentEnhancement'
@@ -25,6 +27,7 @@ export default function BalanceApp() {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const { startRequest } = useLatestRequest()
   const detail = state.detail
+  const pageUrl = resolveWebviewUrl(`/balance?p=${detail?.page ?? 1}`)
 
   /**
    * 刷新当前页
@@ -91,145 +94,147 @@ export default function BalanceApp() {
   }, [])
 
   return (
-    <ScrollArea fillViewport viewportRef={scrollRef} className="balance-scroll" role="main">
-      {state.status === 'loading' && <PageSkeleton variant="balance" rows={6} />}
+    <PageContextMenu items={getLinkMenuItems(pageUrl)}>
+      <ScrollArea fillViewport viewportRef={scrollRef} className="balance-scroll" role="main">
+        {state.status === 'loading' && <PageSkeleton variant="balance" rows={6} />}
 
-      {state.status === 'error' && (
-        <div className="balance-state">
-          <Alert variant="danger" title="加载失败" description={state.message || '未知错误'} />
-          <div className="balance-state-actions">
-            {state.showLogin && (
-              <Button size="small" variant="primary" onClick={() => vscode.login()}>
-                登录
-              </Button>
-            )}
-            {state.showRefresh && (
-              <Button size="small" icon={<RefreshCw aria-hidden="true" />} onClick={refresh}>
-                刷新页面
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {state.status === 'balance' && detail && (
-        <article className="balance-container">
-          <header className="balance-header">
-            <div>
-              <div className="balance-eyebrow">当前账户余额</div>
-              <h1 className="balance-wallet" aria-label="当前账户余额">
-                <CurrencyBalance
-                  gold={detail.gold}
-                  silver={detail.silver}
-                  bronze={detail.bronze}
-                  coinClassName="balance-coin"
-                />
-              </h1>
-            </div>
-            <div className="balance-actions">
-              <Button
-                size="small"
-                onClick={() => vscode.openExternal(resolveWebviewUrl('/balance/add'))}
-              >
-                充值
-              </Button>
-              <Button
-                size="small"
-                variant="ghost"
-                icon={<CircleHelp aria-hidden="true" />}
-                onClick={() => vscode.openExternal(resolveWebviewUrl('/help/currency'))}
-              >
-                余额说明
-              </Button>
-              <Button
-                size="small"
-                variant="ghost"
-                icon={<RefreshCw aria-hidden="true" />}
-                loading={loadingPage}
-                aria-label="刷新页面"
-                onClick={refresh}
-              />
-            </div>
-          </header>
-
-          <section className="balance-ledger">
-            {renderPagination('top')}
-            <div className="balance-table-region" aria-busy={loadingPage}>
-              {loadingPage && (
-                <div className="balance-table-loading">
-                  <Spinner aria-label="正在加载账户流水" />
-                  <span>正在加载</span>
-                </div>
+        {state.status === 'error' && (
+          <div className="balance-state">
+            <Alert variant="danger" title="加载失败" description={state.message || '未知错误'} />
+            <div className="balance-state-actions">
+              {state.showLogin && (
+                <Button size="small" variant="primary" onClick={() => vscode.login()}>
+                  登录
+                </Button>
               )}
-              <div className="balance-table-scroller">
-                <table className="balance-table">
-                  <caption className="balance-table-caption">账户流水</caption>
-                  <colgroup>
-                    <col className="balance-table-time-column" />
-                    <col className="balance-table-type-column" />
-                    <col className="balance-table-amount-column" />
-                    <col className="balance-table-balance-column" />
-                    <col />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th scope="col">时间</th>
-                      <th scope="col">类型</th>
-                      <th className="balance-table-number" scope="col">
-                        数额
-                      </th>
-                      <th className="balance-table-number" scope="col">
-                        余额
-                      </th>
-                      <th scope="col">描述</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detail.transactions.length ? (
-                      detail.transactions.map(transaction => (
-                        <tr key={transaction.key}>
-                          <td>
-                            <span className="balance-time">{transaction.time}</span>
-                          </td>
-                          <td>{transaction.type}</td>
-                          <td className="balance-table-number">
-                            <strong
-                              className={`balance-amount balance-amount--${transaction.direction}`}
-                            >
-                              {transaction.amount}
-                            </strong>
-                          </td>
-                          <td className="balance-table-number">{transaction.balance}</td>
-                          <td>
-                            <div
-                              className="topic-content balance-description"
-                              onClick={handleWebviewLinkClick}
-                              dangerouslySetInnerHTML={{
-                                __html: normalizeHtml(transaction.descriptionHtml)
-                              }}
+              {state.showRefresh && (
+                <Button size="small" icon={<RefreshCw aria-hidden="true" />} onClick={refresh}>
+                  刷新页面
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {state.status === 'balance' && detail && (
+          <article className="balance-container">
+            <header className="balance-header">
+              <div>
+                <div className="balance-eyebrow">当前账户余额</div>
+                <h1 className="balance-wallet" aria-label="当前账户余额">
+                  <CurrencyBalance
+                    gold={detail.gold}
+                    silver={detail.silver}
+                    bronze={detail.bronze}
+                    coinClassName="balance-coin"
+                  />
+                </h1>
+              </div>
+              <div className="balance-actions">
+                <Button
+                  size="small"
+                  onClick={() => vscode.openExternal(resolveWebviewUrl('/balance/add'))}
+                >
+                  充值
+                </Button>
+                <Button
+                  size="small"
+                  variant="ghost"
+                  icon={<CircleHelp aria-hidden="true" />}
+                  onClick={() => vscode.openExternal(resolveWebviewUrl('/help/currency'))}
+                >
+                  余额说明
+                </Button>
+                <Button
+                  size="small"
+                  variant="ghost"
+                  icon={<RefreshCw aria-hidden="true" />}
+                  loading={loadingPage}
+                  aria-label="刷新页面"
+                  onClick={refresh}
+                />
+              </div>
+            </header>
+
+            <section className="balance-ledger">
+              {renderPagination('top')}
+              <div className="balance-table-region" aria-busy={loadingPage}>
+                {loadingPage && (
+                  <div className="balance-table-loading">
+                    <Spinner aria-label="正在加载账户流水" />
+                    <span>正在加载</span>
+                  </div>
+                )}
+                <div className="balance-table-scroller">
+                  <table className="balance-table">
+                    <caption className="balance-table-caption">账户流水</caption>
+                    <colgroup>
+                      <col className="balance-table-time-column" />
+                      <col className="balance-table-type-column" />
+                      <col className="balance-table-amount-column" />
+                      <col className="balance-table-balance-column" />
+                      <col />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th scope="col">时间</th>
+                        <th scope="col">类型</th>
+                        <th className="balance-table-number" scope="col">
+                          数额
+                        </th>
+                        <th className="balance-table-number" scope="col">
+                          余额
+                        </th>
+                        <th scope="col">描述</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detail.transactions.length ? (
+                        detail.transactions.map(transaction => (
+                          <tr key={transaction.key}>
+                            <td>
+                              <span className="balance-time">{transaction.time}</span>
+                            </td>
+                            <td>{transaction.type}</td>
+                            <td className="balance-table-number">
+                              <strong
+                                className={`balance-amount balance-amount--${transaction.direction}`}
+                              >
+                                {transaction.amount}
+                              </strong>
+                            </td>
+                            <td className="balance-table-number">{transaction.balance}</td>
+                            <td>
+                              <div
+                                className="topic-content balance-description"
+                                onClick={handleWebviewLinkClick}
+                                dangerouslySetInnerHTML={{
+                                  __html: normalizeHtml(transaction.descriptionHtml)
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td className="balance-table-empty" colSpan={5}>
+                            <Empty
+                              className="balance-table-empty-state"
+                              icon={<Inbox aria-hidden="true" />}
+                              title="暂无账户流水"
                             />
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td className="balance-table-empty" colSpan={5}>
-                          <Empty
-                            className="balance-table-empty-state"
-                            icon={<Inbox aria-hidden="true" />}
-                            title="暂无账户流水"
-                          />
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-            {renderPagination('bottom')}
-          </section>
-        </article>
-      )}
-    </ScrollArea>
+              {renderPagination('bottom')}
+            </section>
+          </article>
+        )}
+      </ScrollArea>
+    </PageContextMenu>
   )
 }

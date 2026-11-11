@@ -1,9 +1,10 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
 import { useBrowseSettings } from '@/hooks/useBrowseSettings'
 import type { MouseEvent } from 'react'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
-import TopicShareContextMenu from '@/components/TopicShareContextMenu'
+import PageContextMenu from '@/components/PageContextMenu'
 import { Avatar, Badge } from '@/components/ui'
-import { createVsCodeClient } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import styles from './TopicRow.module.scss'
 
 /** 主面板 VS Code 通信客户端 */
@@ -57,6 +58,8 @@ export default function TopicRow(props: TopicRowProps) {
     vscode.openTopic(topicId, title)
   }
 
+  const topicUrl = resolveWebviewUrl(`/t/${topicId}`)
+
   const content = (
     <>
       {showAvatar && !!authorName && (
@@ -94,13 +97,8 @@ export default function TopicRow(props: TopicRowProps) {
     )
 
   return (
-    <TopicShareContextMenu
-      compact
-      onCopyLink={() => vscode.ctxCopyLink(topicId)}
-      onCopyTitleLink={() => vscode.ctxCopyTitleLink(topicId, title)}
-      onViewInBrowser={() => vscode.ctxViewInBrowser(topicId)}
-    >
+    <PageContextMenu items={getLinkMenuItems(topicUrl, title)} size="compact">
       {row}
-    </TopicShareContextMenu>
+    </PageContextMenu>
   )
 }

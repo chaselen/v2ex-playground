@@ -26,6 +26,8 @@ export interface ContextMenuProps {
   size?: 'compact' | 'comfortable'
   /** 是否禁用右键菜单 */
   disabled?: boolean
+  /** 定位层附加类名，用于匹配宿主浮层层级 */
+  positionerClassName?: string
   /** 菜单附加类名 */
   className?: string
 }
@@ -34,6 +36,7 @@ export interface ContextMenuProps {
 export function ContextMenu({
   children,
   className,
+  positionerClassName,
   disabled = false,
   items,
   size = 'comfortable'
@@ -65,7 +68,10 @@ export function ContextMenu({
     <ContextMenuPrimitive.Root disabled={disabled} open={open && !disabled} onOpenChange={setOpen}>
       <ContextMenuPrimitive.Trigger render={children} />
       <ContextMenuPrimitive.Portal>
-        <ContextMenuPrimitive.Positioner className="v2ex-floating-positioner" collisionPadding={8}>
+        <ContextMenuPrimitive.Positioner
+          className={mergeClassNames('v2ex-floating-positioner', positionerClassName)}
+          collisionPadding={8}
+        >
           <ContextMenuPrimitive.Popup
             className={mergeClassNames(
               'v2ex-menu',

@@ -15,7 +15,6 @@ import {
   openNode,
   openTopic
 } from '@/features/panelNavigation'
-import { copyTopicLink, copyTopicTitleLink, viewTopicInBrowser } from '@/features/topicSharing'
 import { getReadTopicIds, isTopicRead, onTopicRead } from '@/features/recentBrowse'
 import { onCollectionNodesChanged } from '@/features/nodeCollection'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
@@ -248,21 +247,6 @@ export default class MainViewProvider
   /** 执行登录 */
   async rpc_login() {
     await vscode.commands.executeCommand('v2ex.login')
-  }
-
-  /** 复制话题链接 */
-  rpc_ctxCopyLink(topicId: number) {
-    copyTopicLink(topicId)
-  }
-
-  /** 复制话题标题和链接 */
-  rpc_ctxCopyTitleLink(topicId: number, title: string) {
-    copyTopicTitleLink(topicId, title)
-  }
-
-  /** 在浏览器中打开话题 */
-  rpc_ctxViewInBrowser(topicId: number) {
-    viewTopicInBrowser(topicId)
   }
 
   /**

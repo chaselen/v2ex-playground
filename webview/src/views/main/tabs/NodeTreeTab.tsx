@@ -1,13 +1,20 @@
+import { getLinkMenuItems } from '@/components/linkMenuItems'
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
-import { ChevronRight, Inbox, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronRight, Inbox, PanelsTopLeft, RefreshCw, Trash2 } from 'lucide-react'
 import AddNodeButton from '../components/AddNodeButton'
+import PageContextMenu from '@/components/PageContextMenu'
 import PageSkeleton from '@/components/PageSkeleton'
-import { ScrollArea, Button, ConfirmPopover, Empty } from '@/components/ui'
+import { ScrollArea, Button, ConfirmPopover, Empty, type ContextMenuItem } from '@/components/ui'
+import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
+import type { MainViewRpcCommands } from '@extension/shared/webview'
 import LoginPrompt from '../components/LoginPrompt'
 import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
 import type { MainTabKey, NodeItem, TreeItem } from '../types'
 import styles from './NodeTreeTab.module.scss'
+
+/** 主面板 VS Code 通信客户端 */
+const vscode = createVsCodeClient<MainViewRpcCommands>()
 
 interface NodeTreeTabProps {
   /** 标签 key */
@@ -372,6 +379,23 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     )
   }
 
+  /** 首页分类和实际节点使用各自的站点地址 */
+  function getNodeMenuItems(data: TreeItem): ContextMenuItem[] {
+    const name = data.itemKey!
+    const url = resolveWebviewUrl(tab === 'explore' ? `/?tab=${name}` : `/go/${name}`)
+    const items: ContextMenuItem[] = []
+    if (tab !== 'explore') {
+      items.push({
+        key: 'view-node',
+        label: '查看节点',
+        icon: <PanelsTopLeft />,
+        onSelect: () => vscode.openNode(name, data.label)
+      })
+    }
+    items.push(...getLinkMenuItems(url))
+    return items
+  }
+
   function renderTree() {
     return (
       <div className={styles['node-tree']} role="tree" aria-label={treeLabels[tab]}>
@@ -384,18 +408,20 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
                 aria-expanded={expanded}
                 className={`${styles['tree-item']} ${styles['tree-item--node']}${expanded ? ` ${styles['tree-item--node-expanded']}` : ''}`}
               >
-                <button
-                  type="button"
-                  className={styles['node-toggle']}
-                  onClick={() => toggleNode(data)}
-                >
-                  <ChevronRight
-                    className={expanded ? styles['node-chevron--expanded'] : undefined}
-                    aria-hidden="true"
-                  />
-                  {renderNodeAvatar(tab, data.avatar)}
-                  <span className={styles['node-label']}>{data.label}</span>
-                </button>
+                <PageContextMenu items={getNodeMenuItems(data)} size="compact">
+                  <button
+                    type="button"
+                    className={styles['node-toggle']}
+                    onClick={() => toggleNode(data)}
+                  >
+                    <ChevronRight
+                      className={expanded ? styles['node-chevron--expanded'] : undefined}
+                      aria-hidden="true"
+                    />
+                    {renderNodeAvatar(tab, data.avatar)}
+                    <span className={styles['node-label']}>{data.label}</span>
+                  </button>
+                </PageContextMenu>
                 {renderNodeActions(data)}
               </div>
               {expanded && (
