@@ -1,5 +1,6 @@
 import { homedir } from 'node:os'
 import { isIP } from 'node:net'
+import type { AxiosProgressEvent } from 'axios'
 import { fileTypeFromBuffer } from 'file-type'
 import vscode, { Uri } from 'vscode'
 import G from '@/global'
@@ -79,6 +80,36 @@ export class TopicShareImageLoader {
 /** 获取分享图图片缓存目录 */
 export function getTopicShareImageCacheDir() {
   return getExtensionFileCacheDir(TOPIC_SHARE_IMAGE_CACHE_DIR)
+}
+
+/** 读取供剪贴板使用的图片，与分享图共用远程图片缓存 */
+export async function loadImageDataUrl(src: string): Promise<string> {
+  const imageSrc = normalizeRemoteImageSrc(src)
+  if (!imageSrc) throw new Error('图片地址无效')
+
+  await cleanupTopicShareImageCache()
+  const uri = await loadTopicShareImage(imageSrc, pendingShareImageLoads)
+  return readImageDataUrl(uri)
+}
+
+/** 读取供保存使用的图片文件，复用分享图和剪贴板的磁盘缓存 */
+export async function loadImageFileForDownload(
+  imageSrc: string,
+  options: {
+    signal: AbortSignal
+    onDownloadProgress: (event: AxiosProgressEvent) => void
+  }
+): Promise<Uri> {
+  await cleanupTopicShareImageCache()
+  options.signal.throwIfAborted()
+  const { uri } = await cacheRemoteImageFile({
+    imageSrc,
+    cacheDirName: TOPIC_SHARE_IMAGE_CACHE_DIR,
+    validateUrl: validateTopicShareImageUrl,
+    ...options
+  })
+  options.signal.throwIfAborted()
+  return uri
 }
 
 /** 批量加载分享图使用的远程图片 */

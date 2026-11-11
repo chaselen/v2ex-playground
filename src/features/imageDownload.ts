@@ -1,22 +1,14 @@
 import { homedir } from 'node:os'
-import { fileTypeFromBuffer } from 'file-type'
+import { extname } from 'node:path'
 import vscode, { Uri } from 'vscode'
-import http from '@/core/http'
 import { logger } from '@/core/logger'
 import { normalizeRemoteImageSrc } from '@/core/remoteImageCache'
 import G from '@/global'
+import { loadImageFileForDownload } from '@/features/topicShareImage'
 import { showSavedFileNotification } from '@/features/savedFileNotification'
 
 /** 上次图片保存目录状态 key */
 const LAST_IMAGE_DOWNLOAD_DIRECTORY_KEY = 'v2ex.imageDownload.lastDirectory'
-
-/** 已下载图片 */
-interface DownloadedImage {
-  /** 图片内容 */
-  data: Uint8Array
-  /** 图片扩展名 */
-  extension: string
-}
 
 /**
  * 下载远程图片并保存到用户选择的位置
@@ -30,13 +22,15 @@ export async function downloadImage(imageSrc: string) {
   }
 
   try {
-    const image = await fetchImage(normalizedSrc)
-    const filename = createImageFilename(normalizedSrc, image.extension)
+    const image = await prepareImage(normalizedSrc)
+    if (!image) return
+    const extension = extname(image.path).slice(1)
+    const filename = createImageFilename(normalizedSrc, extension)
     const defaultUri = getDefaultSaveUri(filename)
     const destination = await vscode.window.showSaveDialog({
       ...(defaultUri ? { defaultUri } : {}),
       filters: {
-        图片: [image.extension]
+        图片: [extension]
       },
       saveLabel: '保存图片'
     })
@@ -44,7 +38,7 @@ export async function downloadImage(imageSrc: string) {
       return
     }
 
-    await vscode.workspace.fs.writeFile(destination, image.data)
+    await vscode.workspace.fs.copy(image, destination, { overwrite: true })
     try {
       await rememberSaveDirectory(destination)
     } catch (err) {
@@ -52,10 +46,6 @@ export async function downloadImage(imageSrc: string) {
     }
     await showSavedFileNotification(destination, '图片已保存')
   } catch (err) {
-    if (isCanceledError(err)) {
-      return
-    }
-
     logger.error('图片下载失败', err, { target: normalizedSrc })
     const message = err instanceof Error ? err.message : String(err)
     vscode.window.showErrorMessage(`图片下载失败：${message}`)
@@ -85,36 +75,35 @@ function rememberSaveDirectory(destination: Uri) {
   return G.context.globalState.update(LAST_IMAGE_DOWNLOAD_DIRECTORY_KEY, directory.toString())
 }
 
-/**
- * 请求并校验远程图片
- * @param imageSrc 图片地址
- */
-async function fetchImage(imageSrc: string): Promise<DownloadedImage> {
+/** 在网络传输阶段报告实际字节进度，缓存命中时直接返回文件 */
+async function prepareImage(imageSrc: string): Promise<Uri | undefined> {
   return vscode.window.withProgress(
     {
-      title: '正在下载图片',
+      title: '正在准备保存图片',
       location: vscode.ProgressLocation.Notification,
       cancellable: true
     },
-    async (_, token) => {
-      const abortController = new AbortController()
-      const cancellation = token.onCancellationRequested(() => abortController.abort())
-
+    async (progress, token) => {
+      const controller = new AbortController()
+      const cancellation = token.onCancellationRequested(() => controller.abort())
+      if (token.isCancellationRequested) controller.abort()
+      let reportedPercent = 0
       try {
-        const response = await http.get(imageSrc, {
-          responseType: 'arraybuffer',
-          signal: abortController.signal
+        return await loadImageFileForDownload(imageSrc, {
+          signal: controller.signal,
+          onDownloadProgress: ({ loaded, total }) => {
+            if (!total || total <= 0) {
+              progress.report({ message: `已接收 ${loaded.toLocaleString()} 字节` })
+              return
+            }
+            const percent = Math.min(100, Math.floor((loaded / total) * 100))
+            progress.report({ message: `${percent}%`, increment: percent - reportedPercent })
+            reportedPercent = percent
+          }
         })
-        const imageBuffer = Buffer.from(response.data)
-        const fileType = await fileTypeFromBuffer(imageBuffer)
-        if (!fileType?.mime.startsWith('image/')) {
-          throw new Error('远程内容不是有效图片')
-        }
-
-        return {
-          data: imageBuffer,
-          extension: fileType.ext
-        }
+      } catch (error) {
+        if (controller.signal.aborted) return undefined
+        throw error
       } finally {
         cancellation.dispose()
       }
@@ -138,11 +127,4 @@ function createImageFilename(imageSrc: string, extension: string) {
   const safeName = sourceName.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim()
   const baseName = safeName.replace(/\.[^.]+$/, '') || 'image'
   return `${baseName.slice(0, 120)}.${extension}`
-}
-
-/** 判断是否是用户取消下载产生的错误 */
-function isCanceledError(error: unknown) {
-  return (
-    typeof error === 'object' && error !== null && 'code' in error && error.code === 'ERR_CANCELED'
-  )
 }

@@ -1,8 +1,9 @@
 import crypto from 'node:crypto'
-import axios from 'axios'
+import axios, { type AxiosProgressEvent } from 'axios'
 import { fileTypeFromBuffer } from 'file-type'
 import vscode, { Uri } from 'vscode'
 import http from '@/core/http'
+import { logger } from '@/core/logger'
 import { createNativeHttpTransport } from '@/core/httpTransport'
 import G from '@/global'
 
@@ -16,6 +17,8 @@ interface CacheRemoteImageFileOptions {
   signal?: AbortSignal
   /** 缓存进度回调 */
   onProgress?: (message: string) => void
+  /** 最终响应的网络接收进度 */
+  onDownloadProgress?: (event: AxiosProgressEvent) => void
   /** 响应体最大字节数 */
   maxBytes?: number
   /** 请求前及重定向前的地址校验 */
@@ -72,11 +75,18 @@ export async function cacheRemoteImageFile(
 
   const cachedImageUri = await findCachedImageFile(cacheDirUri, cacheKey)
   if (cachedImageUri) {
+    if (
+      options.maxBytes !== undefined &&
+      (await vscode.workspace.fs.stat(cachedImageUri)).size > options.maxBytes
+    ) {
+      throw new Error('缓存图片超过大小限制')
+    }
     return { uri: cachedImageUri, cached: true }
   }
 
   options.onProgress?.('请求图片')
   const res = await requestRemoteImage(options)
+  options.signal?.throwIfAborted()
   const imageBuffer = Buffer.from(res.data)
 
   options.onProgress?.('识别图片类型')
@@ -89,7 +99,21 @@ export async function cacheRemoteImageFile(
   }
 
   const imageUri = Uri.joinPath(cacheDirUri, `${cacheKey}.${fileType.ext}`)
-  await vscode.workspace.fs.writeFile(imageUri, imageBuffer)
+  // 临时文件名不匹配缓存查找规则，避免并发读取到尚未写完的图片
+  const pendingUri = Uri.joinPath(cacheDirUri, `.pending-${crypto.randomUUID()}`)
+  options.signal?.throwIfAborted()
+  try {
+    await vscode.workspace.fs.writeFile(pendingUri, imageBuffer)
+    options.signal?.throwIfAborted()
+    await vscode.workspace.fs.rename(pendingUri, imageUri, { overwrite: true })
+  } catch (error) {
+    try {
+      await vscode.workspace.fs.delete(pendingUri)
+    } catch (cleanupError) {
+      if (!isFileNotFoundError(cleanupError)) logger.warn('清理图片缓存临时文件失败', cleanupError)
+    }
+    throw error
+  }
   return { uri: imageUri, cached: false }
 }
 
@@ -110,10 +134,19 @@ async function requestRemoteImage(options: CacheRemoteImageFileOptions) {
       await options.validateUrl?.(requestUrl)
       signal.throwIfAborted()
       const remainingMs = Math.max(1, deadline - Date.now())
+      let reportDownload = !options.validateUrl
+      const onDownloadProgress = options.onDownloadProgress
       const response = await http.get(requestUrl, {
         responseType: 'arraybuffer',
         signal,
         timeout: remainingMs,
+        ...(onDownloadProgress
+          ? {
+              onDownloadProgress: (event: AxiosProgressEvent) => {
+                if (reportDownload && !signal.aborted) onDownloadProgress(event)
+              }
+            }
+          : {}),
         ...(options.maxBytes === undefined
           ? {}
           : {
@@ -123,7 +156,9 @@ async function requestRemoteImage(options: CacheRemoteImageFileOptions) {
         ...(options.validateUrl
           ? {
               maxRedirects: 0,
-              transport: createNativeHttpTransport(remainingMs),
+              transport: createNativeHttpTransport(remainingMs, ({ statusCode = 0 }) => {
+                reportDownload = statusCode >= 200 && statusCode < 300
+              }),
               validateStatus: (status: number) => status >= 200 && status < 400
             }
           : {})
@@ -231,11 +266,7 @@ function createImageCacheKey(imageSrc: string) {
  * @param err 错误对象
  */
 function isFileNotFoundError(err: unknown) {
-  if (err instanceof vscode.FileSystemError && err.code === 'FileNotFound') {
-    return true
-  }
-
-  // 踩坑：Cursor 的文件系统可能直接透传 Node.js ENOENT
+  // VS Code 使用 FileNotFound，Cursor 也可能直接透传 Node.js ENOENT
   return (
     typeof err === 'object' &&
     err !== null &&

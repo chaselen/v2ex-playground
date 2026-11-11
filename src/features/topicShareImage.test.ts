@@ -36,7 +36,7 @@ vi.mock('@/global', () => ({
   default: {}
 }))
 
-import { loadTopicShareImages, TopicShareImageLoader } from './topicShareImage'
+import { loadImageDataUrl, loadTopicShareImages, TopicShareImageLoader } from './topicShareImage'
 
 describe('loadTopicShareImages', () => {
   beforeEach(() => {
@@ -132,6 +132,17 @@ describe('loadTopicShareImages', () => {
     expect(result).toEqual({
       'https://cdn.v2ex.com/avatar/fallback.png': 'data:image/png;base64,AQID'
     })
+  })
+
+  test('reads clipboard data from the same cache as the share image', async () => {
+    const src = 'https://cdn.v2ex.com/avatar/test.png'
+    await expect(loadImageDataUrl(src)).resolves.toBe('data:image/png;base64,AQID')
+    await loadTopicShareImages([src], {} as never, 'dataUrl')
+
+    expect(mocks.cacheRemoteImageFile.mock.calls[0][0]).toEqual(
+      mocks.cacheRemoteImageFile.mock.calls[1][0]
+    )
+    expect(mocks.readFile.mock.calls[0][0]).toBe(mocks.readFile.mock.calls[1][0])
   })
 
   test('keeps successful resources when another image fails', async () => {
