@@ -38,6 +38,60 @@ function createNodePageHtml(options: {
 }
 
 describe('NodeService', () => {
+  test('解析侧栏父节点及包含折叠部分的相关节点，忽略正文中的同名结构', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: `
+      <div id="Rightbar"><div class="box">
+        <div class="inner"><strong class="gray">父节点</strong>
+          <node-sidebar nodeName="cn" nodeTitle="中国" nodeAvatar="//cdn.v2ex.com/cn.png"></node-sidebar>
+        </div>
+        <div class="cell-top"><span><div class="fr">2</div>相关节点</span></div>
+        <div class="nodes-sidebar-container">
+          <node-sidebar nodeName="beijing" nodeTitle="北京"></node-sidebar>
+          <div id="nodes-more-related" style="display:none">
+            <node-sidebar nodeName="shanghai" nodeTitle="上海"></node-sidebar>
+          </div>
+          <node-sidebar nodeName="../invalid" nodeTitle="无效节点"></node-sidebar>
+        </div>
+        <div class="cell-top"><span>子节点</span></div>
+        <div class="nodes-sidebar-container">
+          <node-sidebar nodeName="guangzhou" nodeTitle="广州" nodeAvatar="//cdn.v2ex.com/gz.png"></node-sidebar>
+          <div id="nodes-more-children" style="display:none">
+            <node-sidebar nodeName="shenzhen" nodeTitle="深圳"></node-sidebar>
+          </div>
+        </div>
+      </div></div>
+      <div id="Main"><div class="intro"><node-sidebar nodeName="fake"></node-sidebar></div></div>
+    `
+    })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    const result = await service.getTopics('guangzhou')
+    expect(result.parentNode).toEqual({
+      name: 'cn',
+      title: '中国',
+      avatar: 'https://cdn.v2ex.com/cn.png'
+    })
+    expect(result.childNodes).toEqual([
+      { name: 'guangzhou', title: '广州', avatar: 'https://cdn.v2ex.com/gz.png' },
+      { name: 'shenzhen', title: '深圳' }
+    ])
+    expect(result.relatedNodes).toEqual([
+      { name: 'beijing', title: '北京' },
+      { name: 'shanghai', title: '上海' }
+    ])
+  })
+
+  test('没有节点关系时返回空列表', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: createNodePageHtml({ title: '测试', collected: false, collectCount: 0 })
+    })
+    const service = new NodeService({ get } as unknown as V2exSession, 'https://www.v2ex.com')
+    const result = await service.getTopics('test')
+    expect(result.parentNode).toBeUndefined()
+    expect(result.relatedNodes).toEqual([])
+    expect(result.childNodes).toEqual([])
+  })
+
   test('保留 API 和节点页返回的站点默认头像', async () => {
     const avatar = '/static/img/node_default_large.png'
     const get = vi

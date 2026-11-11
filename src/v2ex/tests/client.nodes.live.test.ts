@@ -7,6 +7,39 @@ import { expectNode } from './client.liveTestAssertions'
 const authTest = process.env.V2EX_COOKIE ? test : test.skip
 
 describe('V2exClient nodes', () => {
+  test('keeps China child nodes separate from related nodes, including collapsed children', async () => {
+    const client = new V2exClient()
+    try {
+      const result = await client.nodes.getTopics('cn')
+      expect(result.childNodes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'beijing', title: '北京' }),
+          expect.objectContaining({ name: 'guangzhou', title: '广州' })
+        ])
+      )
+      expect(result.relatedNodes?.some(node => node.name === 'guangzhou')).toBe(false)
+      expect(result.relatedNodes?.length).toBeGreaterThan(0)
+    } finally {
+      client.dispose()
+    }
+  })
+
+  test('reads parent and related nodes from the Guangzhou sidebar', async () => {
+    const client = new V2exClient()
+    try {
+      const result = await client.nodes.getTopics('guangzhou')
+      expect(result.parentNode).toMatchObject({ name: 'cn', title: '中国' })
+      expect(result.relatedNodes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'beijing', title: '北京' }),
+          expect.objectContaining({ name: 'hongkong', title: '香港' })
+        ])
+      )
+    } finally {
+      client.dispose()
+    }
+  })
+
   test('gets the same node by name and id', async () => {
     const client = new V2exClient()
     const byName = await client.nodes.getInfo({ name: 'promotions' })

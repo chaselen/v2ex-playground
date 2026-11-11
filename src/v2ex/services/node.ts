@@ -18,7 +18,33 @@ export class NodeService {
     const { data: html } = await this.session.get<string>(`/go/${nodeName}?p=${page}`)
     const $ = cheerio.load(html)
     const node = this.parsePageInfo($, nodeName)
+    const sidebarNodes = $('#Rightbar node-sidebar')
+    const relatedNodes: Node[] = []
+    const childNodes: Node[] = []
+    let parentNode: Node | undefined
+    sidebarNodes.each((_, element) => {
+      const item = $(element)
+      const name = item.attr('nodename')?.trim()
+      if (!name || !/^[a-zA-Z0-9_-]+$/.test(name)) return
+      const sidebarNode: Node = {
+        name,
+        title: item.attr('nodetitle')?.trim() || name,
+        avatar: this.normalizeAvatar(item.attr('nodeavatar'))
+      }
+      const container = item.closest('.nodes-sidebar-container')
+      const sectionTitle = container.prev('.cell-top').find('span').text().trim()
+      if (sectionTitle === '子节点') {
+        childNodes.push(sidebarNode)
+      } else if (sectionTitle.endsWith('相关节点')) {
+        relatedNodes.push(sidebarNode)
+      } else if (item.parent('.inner').children('strong').first().text().trim() === '父节点') {
+        parentNode = sidebarNode
+      }
+    })
     return {
+      parentNode,
+      relatedNodes,
+      childNodes,
       node,
       totalPage: parsePagerTotalPage($, $('#Main')),
       totalCount:

@@ -211,6 +211,9 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
     try {
       const result = await G.V2ex.nodes.getTopics(this.nodeName, nextPage)
       const data: NodePanelTopicList = {
+        parentNode: result.parentNode,
+        relatedNodes: result.relatedNodes,
+        childNodes: result.childNodes,
         node: result.node,
         page: nextPage,
         totalPage: Math.max(result.totalPage || 1, 1),

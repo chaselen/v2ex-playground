@@ -289,6 +289,12 @@ export interface NodeInfo extends Node {
  * 节点主题列表
  */
 export interface NodeTopicList {
+  /** 原站侧栏提供的父节点 */
+  parentNode?: Node
+  /** 原站顺序的相关节点，包含折叠部分 */
+  relatedNodes?: Node[]
+  /** 原站顺序的子节点，包含折叠部分 */
+  childNodes?: Node[]
   /** 节点 */
   node: Node
   /** 总页数 */

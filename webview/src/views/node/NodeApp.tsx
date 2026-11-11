@@ -1,9 +1,11 @@
 import { getLinkMenuItems } from '@/components/linkMenuItems'
 import PageContextMenu from '@/components/PageContextMenu'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   Bookmark,
   BookmarkPlus,
+  ChevronDown,
+  ChevronUp,
   Eye,
   EyeOff,
   FileJson,
@@ -13,6 +15,7 @@ import {
   SquarePen
 } from 'lucide-react'
 import PageSkeleton from '@/components/PageSkeleton'
+import NodeButton from '@/components/NodeButton'
 import TopicListItem from '@/components/TopicListItem'
 import {
   ScrollArea,
@@ -26,7 +29,7 @@ import {
   Tooltip
 } from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
-import type { Topic } from '@extension/v2ex/types'
+import type { Node, Topic } from '@extension/v2ex/types'
 import type {
   NodePanelRpcCommands,
   NodePanelViewState,
@@ -50,6 +53,8 @@ export default function NodeApp() {
     : undefined
   const isCollected = !!node?.isCollected
   const canCollect = state.loggedIn
+  const relatedNodes = data?.relatedNodes ?? []
+  const childNodes = data?.childNodes ?? []
 
   useEffect(() => {
     return subscribeWebviewState(
@@ -291,6 +296,48 @@ export default function NodeApp() {
                 </div>
               </header>
 
+              {(data.parentNode || childNodes.length > 0 || relatedNodes.length > 0) && (
+                <nav className="node-relations" aria-label="节点导航">
+                  {data.parentNode && (
+                    <div className="node-relation-row">
+                      <span className="node-relation-label">父节点</span>
+                      <NodeButton
+                        icon={
+                          data.parentNode.avatar && (
+                            <img
+                              className="node-relation-avatar"
+                              src={data.parentNode.avatar}
+                              alt=""
+                              width={16}
+                              height={16}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          )
+                        }
+                        onClick={() => openNode(data.parentNode!)}
+                      >
+                        {data.parentNode.title}
+                      </NodeButton>
+                    </div>
+                  )}
+                  <NodeRelationList
+                    key={`${node?.name}-children`}
+                    label="子节点"
+                    id="node-child-links"
+                    nodes={childNodes}
+                    onOpen={openNode}
+                  />
+                  <NodeRelationList
+                    key={`${node?.name}-related`}
+                    label="相关节点"
+                    id="node-related-links"
+                    nodes={relatedNodes}
+                    onOpen={openNode}
+                  />
+                </nav>
+              )}
+
               {state.status === 'error' && (
                 <Alert
                   className="node-error"
@@ -354,5 +401,124 @@ export default function NodeApp() {
         </main>
       </ScrollArea>
     </PageContextMenu>
+  )
+}
+
+/** 节点关系列表独立控制展开，能单行容纳时直接展示全部节点 */
+function NodeRelationList({
+  label,
+  id,
+  nodes,
+  onOpen
+}: {
+  label: string
+  id: string
+  nodes: Node[]
+  onOpen: (node: Node) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(nodes.length)
+  const linksRef = useRef<HTMLDivElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
+  const toggleMeasureRef = useRef<HTMLButtonElement>(null)
+
+  useLayoutEffect(() => {
+    const links = linksRef.current
+    const measure = measureRef.current
+    const toggle = toggleMeasureRef.current
+    if (!links || !measure || !toggle) return
+    const update = () => {
+      const available = links.clientWidth
+      const gap = Number.parseFloat(getComputedStyle(links).columnGap) || 0
+      const widths = Array.from(measure.children, element => element.getBoundingClientRect().width)
+      const fullWidth =
+        widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * gap
+      if (fullWidth <= available) {
+        setVisibleCount(nodes.length)
+        return
+      }
+      // 以最大剩余数量预留按钮宽度，数字等宽保证实际文案不会超出预留空间
+      let used = toggle.getBoundingClientRect().width
+      let count = 0
+      for (const width of widths) {
+        if (used + gap + width > available) break
+        used += gap + width
+        count++
+      }
+      setVisibleCount(count)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(links)
+    observer.observe(measure)
+    observer.observe(toggle)
+    return () => observer.disconnect()
+  }, [nodes])
+
+  if (!nodes.length) return null
+  return (
+    <div className="node-relation-row">
+      <span className="node-relation-label">{label}</span>
+      <div className="node-relation-links" id={id} ref={linksRef}>
+        {/* 测量完整列表的自然宽度；不挂载图片，避免加载折叠部分的图标 */}
+        <div className="node-relation-measure-clip" aria-hidden="true" inert>
+          <div className="node-relation-measure" ref={measureRef}>
+            {nodes.map(related => (
+              <NodeButton
+                key={related.name}
+                tabIndex={-1}
+                icon={related.avatar && <span className="node-relation-avatar" />}
+              >
+                {related.title}
+              </NodeButton>
+            ))}
+          </div>
+          <Button
+            ref={toggleMeasureRef}
+            className="node-relation-toggle"
+            size="small"
+            variant="ghost"
+            tabIndex={-1}
+            icon={<ChevronDown aria-hidden="true" />}
+          >
+            {`展开其余 ${nodes.length} 个`}
+          </Button>
+        </div>
+        {(expanded ? nodes : nodes.slice(0, visibleCount)).map(related => (
+          <NodeButton
+            key={related.name}
+            icon={
+              related.avatar && (
+                <img
+                  className="node-relation-avatar"
+                  src={related.avatar}
+                  alt=""
+                  width={16}
+                  height={16}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )
+            }
+            onClick={() => onOpen(related)}
+          >
+            {related.title}
+          </NodeButton>
+        ))}
+        {visibleCount < nodes.length && (
+          <Button
+            className="node-relation-toggle"
+            size="small"
+            variant="ghost"
+            icon={expanded ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+            aria-expanded={expanded}
+            aria-controls={id}
+            onClick={() => setExpanded(value => !value)}
+          >
+            {expanded ? '收起' : `展开其余 ${nodes.length - visibleCount} 个`}
+          </Button>
+        )}
+      </div>
+    </div>
   )
 }

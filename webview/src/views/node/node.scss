@@ -1,4 +1,6 @@
+@use 'sass:map';
 @use '@/styles/page-layout';
+@use '@/components/ui/control-size';
 .node-scroll {
   width: 100%;
   height: 100%;
@@ -147,4 +149,76 @@
     gap: 12px;
     padding: 14px;
   }
+}
+
+.node-relations {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px;
+  margin-top: 14px;
+  border: 1px solid var(--v2ex-border);
+  border-radius: var(--v2ex-radius-lg);
+  background: var(--v2ex-widget-bg);
+}
+
+.node-relation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.node-relation-label {
+  display: flex;
+  flex: 0 0 4em;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: map.get(control-size.$heights, small);
+  text-align: right;
+  color: var(--v2ex-muted-fg);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.node-relation-links {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.node-relation-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.node-relation-measure-clip {
+  position: absolute;
+  display: flex;
+  width: 100%;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.node-relation-measure {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  width: max-content;
+}
+
+.node-relation-toggle {
+  font-variant-numeric: tabular-nums;
+}
+
+.node-relation-measure-clip .v2ex-button {
+  flex: none;
+  width: max-content;
 }
