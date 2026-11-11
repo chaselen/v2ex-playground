@@ -12,6 +12,8 @@ import MainPagination from '../components/MainPagination'
 import TopicRow from '../components/TopicRow'
 import type { MainTabKey, NodeItem, TreeItem } from '../types'
 import styles from './NodeTreeTab.module.scss'
+import { getV2exNodeAvatarUrl } from '@extension/shared/nodeAvatars'
+import { exploreNodeLinks } from './exploreNodeLinks'
 
 /** 主面板 VS Code 通信客户端 */
 const vscode = createVsCodeClient<MainViewRpcCommands>()
@@ -384,7 +386,16 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     const name = data.itemKey!
     const url = resolveWebviewUrl(tab === 'explore' ? `/?tab=${name}` : `/go/${name}`)
     const items: ContextMenuItem[] = []
-    if (tab !== 'explore') {
+    if (tab === 'explore') {
+      for (const node of exploreNodeLinks[name] ?? []) {
+        items.push({
+          key: `node-${node.name}`,
+          label: node.title,
+          icon: <NodeAvatarImage src={getV2exNodeAvatarUrl(node.name)} />,
+          onSelect: () => vscode.openNode(node.name, node.title)
+        })
+      }
+    } else {
       items.push({
         key: 'view-node',
         label: '查看节点',
@@ -392,7 +403,11 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
         onSelect: () => vscode.openNode(name, data.label)
       })
     }
-    items.push(...getLinkMenuItems(url))
+    const linkItems = getLinkMenuItems(url)
+    if (tab === 'explore' && items.length && linkItems[0]) {
+      linkItems[0].separatorBefore = true
+    }
+    items.push(...linkItems)
     return items
   }
 

@@ -1,7 +1,7 @@
 import NodeSelectButton from '@/components/NodeSelectButton'
 import { useEffect, useState } from 'react'
 import { MapPin } from 'lucide-react'
-import { getV2exNodeAvatarUrl } from '@extension/features/nodeAvatars'
+import { getV2exNodeAvatarUrl } from '@extension/shared/nodeAvatars'
 import {
   Alert,
   Avatar,

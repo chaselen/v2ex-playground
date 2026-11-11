@@ -10,7 +10,7 @@ import {
   saveCreateTopicDraft
 } from '@/features/createTopicDraft'
 import { logger } from '@/core/logger'
-import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
+import { getV2exNodeAvatarUrl } from '@/shared/nodeAvatars'
 import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import type {

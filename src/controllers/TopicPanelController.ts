@@ -7,7 +7,7 @@ import {
   isGenericV2exIcon
 } from '@/v2ex'
 import vscode from 'vscode'
-import { getV2exNodeAvatarUrl } from '@/features/nodeAvatars'
+import { getV2exNodeAvatarUrl } from '@/shared/nodeAvatars'
 import type {
   TopicContentAction,
   TopicContentInput,
