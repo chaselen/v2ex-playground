@@ -17,7 +17,7 @@ import { showSavedFileNotification } from '@/features/savedFileNotification'
 const LAST_TOPIC_SHARE_DIRECTORY_KEY = 'v2ex.topicShareImage.lastDirectory'
 
 /** 分享图图片缓存目录名 */
-const TOPIC_SHARE_IMAGE_CACHE_DIR = 'topic-share-images'
+export const TOPIC_SHARE_IMAGE_CACHE_DIR = 'topic-share-images'
 
 /** 分享图图片缓存保留时间 */
 const TOPIC_SHARE_IMAGE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000

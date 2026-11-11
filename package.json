@@ -64,6 +64,11 @@
         "icon": "$(edit)"
       },
       {
+        "command": "v2ex.clearCache",
+        "title": "清空缓存",
+        "category": "V2EX"
+      },
+      {
         "command": "v2ex.showLogs",
         "title": "查看日志",
         "category": "V2EX"
@@ -90,6 +95,10 @@
     },
     "menus": {
       "commandPalette": [
+        {
+          "command": "v2ex.clearCache",
+          "when": "false"
+        },
         {
           "command": "v2ex.openPage",
           "when": "false"
@@ -153,6 +162,11 @@
           "command": "v2ex.myProfile",
           "when": "view == v2ex-main && v2ex.hasLoginSession",
           "group": "more@1"
+        },
+        {
+          "command": "v2ex.clearCache",
+          "when": "view == v2ex-main",
+          "group": "more@97"
         },
         {
           "command": "v2ex.settings",

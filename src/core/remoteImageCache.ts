@@ -265,7 +265,7 @@ function createImageCacheKey(imageSrc: string) {
  * 判断是否为文件不存在错误
  * @param err 错误对象
  */
-function isFileNotFoundError(err: unknown) {
+export function isFileNotFoundError(err: unknown) {
   // VS Code 使用 FileNotFound，Cursor 也可能直接透传 Node.js ENOENT
   return (
     typeof err === 'object' &&

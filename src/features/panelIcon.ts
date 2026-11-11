@@ -9,7 +9,7 @@ import { logger } from '@/core/logger'
 import G from '@/global'
 
 /** 面板图标缓存目录名 */
-const PANEL_ICON_CACHE_DIR = 'panel-icons'
+export const PANEL_ICON_CACHE_DIR = 'panel-icons'
 
 /** 面板图标缓存保留天数 */
 const PANEL_ICON_CACHE_TTL_DAYS = 30

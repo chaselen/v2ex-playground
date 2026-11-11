@@ -6,6 +6,7 @@ import G from '@/global'
 import { V2exClient } from '@/v2ex'
 import setting from '@/commands/setting'
 import openPage from '@/commands/openPage'
+import clearCache from '@/commands/clearCache'
 import autoDailySignIn, { startDailySignInScheduler } from '@/features/dailySignIn'
 import {
   openRecentBrowse,
@@ -151,6 +152,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand('v2ex.recentBrowse', () => openRecentBrowse())
   )
+  context.subscriptions.push(vscode.commands.registerCommand('v2ex.clearCache', clearCache))
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.settings', () => setting()))
   context.subscriptions.push(vscode.commands.registerCommand('v2ex.showLogs', () => logger.show()))
 }
