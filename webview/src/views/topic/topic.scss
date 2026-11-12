@@ -466,6 +466,11 @@ $reply-right-inset: 10px;
   }
 }
 
+// 每层末项由父容器提供底部间距，避免深层回复链结束时逐层累加留白
+.reply-children > .reply-item:last-child {
+  padding-bottom: 0;
+}
+
 .reply-meta {
   display: flex;
   align-items: center;

@@ -252,6 +252,11 @@
   }
 }
 
+// 每层末项由父容器提供底部间距，避免深层回复链结束时逐层累加留白
+.cardReplyChildren > .cardReply:last-child {
+  padding-bottom: 0;
+}
+
 .cardReplyAuthor {
   display: flex;
   align-items: center;
