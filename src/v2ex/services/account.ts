@@ -338,11 +338,14 @@ export class AccountService {
     if (!loginIdentity) return failed
 
     try {
+      // 首页 Tab 会下发签到所需的运行时 Cookie，由同一会话的 CookieJar 接收
+      await this.session.get('/?tab=hot')
+      // 记录领取前最新奖励，用任务日确认领取后是否产生了新流水
+      const previousReward = await this.findDailySignInReward()
       const { data: html } = await this.session.get<string>('/mission/daily')
       const { signedIn, once } = parseDailySignInPage(cheerio.load(html))
 
-      // 记录领取前最新奖励，用任务日确认领取后是否产生了新流水
-      const previousReward = await this.findDailySignInReward()
+      if (getLoginIdentity(this.session) !== loginIdentity) return failed
 
       // 签到页尚未刷新到新一天时，页面仍会显示已领取，最新奖励可能属于前一个任务日
       if (signedIn) {
@@ -357,10 +360,12 @@ export class AccountService {
       if (!once) return failed
 
       // 领取奖励后通过余额记录确认签到结果
-      if (getLoginIdentity(this.session) !== loginIdentity) return failed
-      await this.session.get(`/mission/daily/redeem?once=${once}`)
+      await this.session.get(`/mission/daily/redeem?once=${once}`, {
+        headers: { Referer: `${this.session.baseUrl}/mission/daily` }
+      })
       if (getLoginIdentity(this.session) !== loginIdentity) return failed
       const latestReward = await this.findDailySignInReward()
+      if (getLoginIdentity(this.session) !== loginIdentity) return failed
       // 比较任务日而非流水墙钟日：同一自然日可先后领到上一任务日与新任务日
       const isNewReward = !!latestReward && latestReward.date !== previousReward?.date
 

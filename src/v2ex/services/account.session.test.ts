@@ -45,9 +45,101 @@ test('refreshes account and online count through an explicit tab despite a custo
 })
 
 describe('AccountService authentication session', () => {
+  test.each(['preparation', 'confirmation'])(
+    'rejects another account reward during %s',
+    async phase => {
+      let loginCookie = 'A2=old'
+      const get = vi.fn().mockResolvedValue({
+        data:
+          phase === 'preparation'
+            ? '<li class="fa fa-ok-sign"></li>'
+            : `<input value="领取 10 铜币" onclick="location.href = '/mission/daily/redeem?once=123'">`
+      })
+      const session = {
+        baseUrl: 'https://www.v2ex.com',
+        get,
+        getLoginCookie: () => loginCookie,
+        onResponse: vi.fn()
+      } as unknown as V2exSession
+      const service = new AccountService(session, { getSummaryById: vi.fn() })
+      let reads = 0
+      vi.spyOn(
+        service as unknown as {
+          findDailySignInReward(): Promise<{ date: string; reward: number } | undefined>
+        },
+        'findDailySignInReward'
+      ).mockImplementation(async () => {
+        reads += 1
+        if (phase === 'preparation' || reads === 2) {
+          loginCookie = 'A2=new'
+          return { date: '2026-11-16', reward: 10 }
+        }
+        return undefined
+      })
+
+      await expect(service.dailySignIn()).resolves.toEqual({ result: 'failed', reward: 0 })
+    }
+  )
+
+  test('warms up the hot tab and carries its cookies into daily redeem', async () => {
+    const session = new V2exSession('A2=valid; A2O=old')
+    const http = (session as unknown as { http: AxiosInstance }).http
+    const requests: string[] = []
+    http.defaults.adapter = async config => {
+      requests.push(config.url!)
+      if (config.url !== '/?tab=hot') {
+        const cookie = String(config.headers.get('Cookie'))
+        for (const value of [
+          'PB3_SESSION=session',
+          'V2EX_LANG=zhcn',
+          'V2EX_TAB=hot',
+          'A2O=renewed'
+        ]) {
+          expect(cookie).toContain(value)
+        }
+      }
+      if (config.url?.startsWith('/mission/daily/redeem')) {
+        expect(config.headers.get('Referer')).toBe('https://www.v2ex.com/mission/daily')
+      }
+      return {
+        config,
+        status: 200,
+        statusText: 'OK',
+        headers:
+          config.url === '/?tab=hot'
+            ? {
+                'set-cookie': [
+                  'PB3_SESSION=session; Path=/; HttpOnly',
+                  'V2EX_LANG=zhcn; Path=/',
+                  'V2EX_TAB=hot; Path=/; HttpOnly',
+                  'A2O=renewed; Path=/'
+                ]
+              }
+            : {},
+        data:
+          config.url === '/mission/daily'
+            ? `<input value="领取 10 铜币" onclick="location.href = '/mission/daily/redeem?once=123'">`
+            : ''
+      }
+    }
+    const service = new AccountService(session, { getSummaryById: vi.fn() })
+    vi.spyOn(
+      service as unknown as {
+        findDailySignInReward(): Promise<{ date: string; reward: number } | undefined>
+      },
+      'findDailySignInReward'
+    )
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ date: '2026-11-16', reward: 10 })
+
+    await expect(service.dailySignIn()).resolves.toMatchObject({ result: 'success' })
+    expect(requests).toEqual(['/?tab=hot', '/mission/daily', '/mission/daily/redeem?once=123'])
+  })
+
   test('returns failed without sending requests when no login cookie exists', async () => {
     const get = vi.fn()
     const session = {
+      baseUrl: 'https://www.v2ex.com',
       get,
       getLoginCookie: () => '',
       onResponse: vi.fn()
@@ -68,6 +160,7 @@ describe('AccountService authentication session', () => {
     })
     const getLoginCookie = vi.fn().mockReturnValueOnce('A2=old').mockReturnValue('A2=new')
     const session = {
+      baseUrl: 'https://www.v2ex.com',
       get,
       getLoginCookie,
       onResponse: vi.fn()
@@ -99,6 +192,7 @@ describe('AccountService authentication session', () => {
     })
     let loginCookie = 'A2=old'
     const session = {
+      baseUrl: 'https://www.v2ex.com',
       get,
       getLoginCookie: () => loginCookie,
       onResponse: vi.fn()
@@ -114,7 +208,11 @@ describe('AccountService authentication session', () => {
       .mockResolvedValue(undefined)
 
     const resultPromise = service.dailySignIn()
-    await vi.waitFor(() => expect(get).toHaveBeenCalledWith('/mission/daily/redeem?once=123'))
+    await vi.waitFor(() =>
+      expect(get).toHaveBeenCalledWith('/mission/daily/redeem?once=123', {
+        headers: { Referer: 'https://www.v2ex.com/mission/daily' }
+      })
+    )
     loginCookie = 'A2=new'
     redeemRequest.resolve({ data: '' } as AxiosResponse)
 
@@ -135,6 +233,7 @@ describe('AccountService authentication session', () => {
       .mockReturnValueOnce('A2=current')
       .mockReturnValue('A2=current; A2O=verified')
     const session = {
+      baseUrl: 'https://www.v2ex.com',
       get,
       getLoginCookie,
       onResponse: vi.fn()
@@ -154,6 +253,8 @@ describe('AccountService authentication session', () => {
       reward: 10,
       rewardDate: '2026-07-14'
     })
-    expect(get).toHaveBeenCalledWith('/mission/daily/redeem?once=123')
+    expect(get).toHaveBeenCalledWith('/mission/daily/redeem?once=123', {
+      headers: { Referer: 'https://www.v2ex.com/mission/daily' }
+    })
   })
 })

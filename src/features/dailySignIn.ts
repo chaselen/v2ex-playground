@@ -124,6 +124,7 @@ export default async function autoDailySignIn(
 
   // 签到页已显示已领取（含任务尚未刷新时的上一任务日）时直接返回，不启动 loading 任务，避免 UI 闪烁与无效 redeem
   const status = await getDailySignInStatus()
+  if (G.V2ex.getAuthenticatedUsername() !== username) return { signedIn: false }
   // 状态查询等待期间可能已有同账号任务启动，优先 join
   if (dailySignInTask?.username === username) {
     return dailySignInTask.promise

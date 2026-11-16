@@ -73,6 +73,18 @@ function setBeijingTime(date: string, hour: number, minute = 0): void {
 }
 
 describe('dailySignIn feature', () => {
+  test('does not start a claim when the account changes during the status query', async () => {
+    setBeijingTime('2026-07-21', 9)
+    mocks.getDailySignInStatus.mockImplementationOnce(async () => {
+      mocks.getAuthenticatedUsername.mockReturnValue('other-user')
+      return { signedIn: false }
+    })
+
+    await expect(autoDailySignIn()).resolves.toEqual({ signedIn: false })
+    expect(mocks.dailySignIn).not.toHaveBeenCalled()
+    expect(mocks.globalStateUpdate).not.toHaveBeenCalled()
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
