@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio/slim'
+import { getResponseUrl } from '../clientUtils'
 import { findOutsideRichText, parsePagerTotalPage } from '../parsers/common'
 import { parseTopicListCells } from '../parsers/topic'
 import type { V2exSession } from '../session'
@@ -123,10 +124,24 @@ export class NodeService {
     )
     const result = cheerio.load(response.data)
     const problem = result('.problem').first().text().trim()
-    // 以服务端成功提示确认操作结果，避免将普通节点页面误判为操作成功
     const message = result('.message').first().text().trim()
     const success = ignored ? '节点已经被忽略' : '节点已经被取消忽略'
-    if (problem || !message.includes(success)) {
+    // 成功提示是账号级一次性消息，可能被并发页面请求消费；此时核对目标页的反向操作入口
+    const confirmedByState = () => {
+      const url = new URL(getResponseUrl(response, this.baseUrl))
+      if (url.origin !== new URL(this.baseUrl).origin || url.pathname !== path) return false
+      const hasAction = (action: string) =>
+        findNodeElements(result, 'a[href]')
+          .toArray()
+          .some(
+            element =>
+              result(element).attr('href')?.split('?')[0] === `/settings/${action}/node/${nodeId}`
+          )
+      return (
+        hasAction(ignored ? 'unignore' : 'ignore') && !hasAction(ignored ? 'ignore' : 'unignore')
+      )
+    }
+    if (problem || (!message.includes(success) && !confirmedByState())) {
       throw new Error(problem || message || (ignored ? '忽略节点失败' : '取消忽略节点失败'))
     }
     return { ...this.parsePageInfo(result, nodeName), isIgnored: ignored }

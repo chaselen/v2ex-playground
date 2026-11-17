@@ -1,3 +1,4 @@
+import * as cheerio from 'cheerio/slim'
 import { describe, expect, test, vi } from 'vitest'
 import { V2exClient } from '../client'
 import { V2exSession } from '../session'
@@ -60,44 +61,67 @@ describe('V2exClient nodes', () => {
     }
   })
 
-  authTest('updates ignored state in both directions and restores it', async () => {
-    const client = new V2exClient(process.env.V2EX_COOKIE)
-    const original = (await client.nodes.getTopics('promotions')).node.isIgnored
-    expect(typeof original).toBe('boolean')
-    const get = vi.spyOn(V2exSession.prototype, 'get')
-    try {
-      if (original) await client.nodes.cancelIgnore('promotions')
-      const ignored = await client.nodes.ignore('promotions')
-      expect(ignored.isIgnored).toBe(true)
-      expect((await client.nodes.getTopics('promotions')).node.isIgnored).toBe(true)
-      const restored = await client.nodes.cancelIgnore('promotions')
-      expect(restored.isIgnored).toBe(false)
-      expect((await client.nodes.getTopics('promotions')).node.isIgnored).toBe(false)
-      const responses = await Promise.all(
-        get.mock.results.filter(result => result.type === 'return').map(result => result.value)
-      )
-      const mutations = responses.filter(response =>
-        /^\/settings\/(?:un)?ignore\/node\//.test(response.config.url ?? '')
-      )
-      expect(mutations.length).toBeGreaterThanOrEqual(2)
-      for (const response of mutations) {
-        expect(new URL(getResponseUrl(response)).pathname).toBe('/go/promotions')
+  authTest.each([false, true])(
+    'updates ignored state and restores it (interleaved read: %s)',
+    async interleaved => {
+      const client = new V2exClient(process.env.V2EX_COOKIE)
+      const original = (await client.nodes.getTopics('promotions')).node.isIgnored
+      expect(typeof original).toBe('boolean')
+      const originalGet = V2exSession.prototype.get
+      const get = vi.spyOn(V2exSession.prototype, 'get')
+      if (interleaved) {
+        // 在写入与重定向之间安排另一个同账号会话读取，确定性复现一次性提示被取走的竞争
+        get.mockImplementation(async function (this: V2exSession, url, config) {
+          if (!/^\/settings\/(?:un)?ignore\/node\//.test(url)) {
+            return originalGet.call(this, url, config)
+          }
+          const redirect = await originalGet.call(this, url, {
+            ...config,
+            maxRedirects: 0,
+            validateStatus: status => status === 302
+          })
+          const reader = new V2exSession(this.getCookie())
+          await originalGet.call(reader, '/?tab=all')
+          const response = await originalGet.call(this, redirect.headers.location)
+          const $ = cheerio.load(String(response.data))
+          expect($('.message').text()).not.toContain('节点已经被')
+          return response
+        })
       }
-    } finally {
       try {
-        // 重复取消忽略不会返回成功提示，仅在状态确实变化时恢复
-        const current = (await client.nodes.getTopics('promotions')).node.isIgnored
-        if (current !== original) {
-          if (original) await client.nodes.ignore('promotions')
-          else await client.nodes.cancelIgnore('promotions')
+        if (original) await client.nodes.cancelIgnore('promotions')
+        const ignored = await client.nodes.ignore('promotions')
+        expect(ignored.isIgnored).toBe(true)
+        expect((await client.nodes.getTopics('promotions')).node.isIgnored).toBe(true)
+        const restored = await client.nodes.cancelIgnore('promotions')
+        expect(restored.isIgnored).toBe(false)
+        expect((await client.nodes.getTopics('promotions')).node.isIgnored).toBe(false)
+        const responses = await Promise.all(
+          get.mock.results.filter(result => result.type === 'return').map(result => result.value)
+        )
+        const mutations = responses.filter((_, index) =>
+          /^\/settings\/(?:un)?ignore\/node\//.test(get.mock.calls[index][0])
+        )
+        expect(mutations.length).toBeGreaterThanOrEqual(2)
+        for (const response of mutations) {
+          expect(new URL(getResponseUrl(response)).pathname).toBe('/go/promotions')
         }
-        expect((await client.nodes.getTopics('promotions')).node.isIgnored).toBe(original)
       } finally {
-        get.mockRestore()
-        client.dispose()
+        try {
+          // 重复取消忽略不会返回成功提示，仅在状态确实变化时恢复
+          const current = (await client.nodes.getTopics('promotions')).node.isIgnored
+          if (current !== original) {
+            if (original) await client.nodes.ignore('promotions')
+            else await client.nodes.cancelIgnore('promotions')
+          }
+          expect((await client.nodes.getTopics('promotions')).node.isIgnored).toBe(original)
+        } finally {
+          get.mockRestore()
+          client.dispose()
+        }
       }
     }
-  })
+  )
 
   test('gets all nodes from official JSON API', async () => {
     const client = new V2exClient()

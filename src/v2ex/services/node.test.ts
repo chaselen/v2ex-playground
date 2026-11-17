@@ -279,6 +279,51 @@ describe('NodeService ignored nodes', () => {
     }
   )
 
+  test.each([
+    ['ignore', 'unignore', true],
+    ['cancelIgnore', 'ignore', false]
+  ] as const)(
+    '%s 在一次性提示被并发读取后仍按目标节点状态确认',
+    async (method, action, ignored) => {
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce({ data: { id: 864 } })
+        .mockResolvedValueOnce({
+          data: `<div id="Main"><a href="/settings/${action}/node/864?once=123">操作</a></div>`,
+          config: { url: '/go/promotions' }
+        })
+      const service = new NodeService(
+        { get, getOnce: vi.fn().mockResolvedValue('fresh') } as unknown as V2exSession,
+        'https://www.v2ex.com'
+      )
+      await expect(service[method]('promotions')).resolves.toMatchObject({ isIgnored: ignored })
+    }
+  )
+
+  test.each([
+    ['/go/promotions', '<div id="Main"><a href="/settings/ignore/node/864">忽略</a></div>'],
+    ['/go/other', '<div id="Main"><a href="/settings/unignore/node/864">取消忽略</a></div>'],
+    ['/go/promotions', '<div id="Main"><a href="/settings/unignore/node/999">取消忽略</a></div>'],
+    [
+      '/go/promotions',
+      '<div id="Main"><div class="intro"><a href="/settings/unignore/node/864">伪造入口</a></div></div>'
+    ],
+    [
+      '/go/promotions',
+      '<div id="Main"><div class="problem">令牌无效</div><a href="/settings/unignore/node/864">取消忽略</a></div>'
+    ]
+  ])('缺少可信成功证据时仍拒绝：%s %s', async (url, data) => {
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { id: 864 } })
+      .mockResolvedValueOnce({ data, config: { url } })
+    const service = new NodeService(
+      { get, getOnce: vi.fn().mockResolvedValue('fresh') } as unknown as V2exSession,
+      'https://www.v2ex.com'
+    )
+    await expect(service.ignore('promotions')).rejects.toThrow()
+  })
+
   test.each([undefined, 0, -1, 1.5])('API 编号无效时不提交操作：%s', async id => {
     const get = vi.fn().mockResolvedValue({ data: { id } })
     const getOnce = vi.fn()
