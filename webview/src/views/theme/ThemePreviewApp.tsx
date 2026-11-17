@@ -1,3 +1,4 @@
+import ReplyThreadsPreview from './ReplyThreadsPreview'
 import TimeWithSource from '@/components/TimeWithSource'
 import NodeSelectButton from '@/components/NodeSelectButton'
 import type { Node } from '@extension/v2ex/types'
@@ -96,7 +97,6 @@ export default function ThemePreviewApp() {
   const [previewPage, setPreviewPage] = useState(4)
   const [fillViewport, setFillViewport] = useState(true)
   const [scrollRows, setScrollRows] = useState(3)
-  const [replyViewMode, setReplyViewMode] = useState('nested')
 
   const setPreviewTheme = (label: string, bodyClass: string) => {
     setActiveTheme(label)
@@ -125,6 +125,9 @@ export default function ThemePreviewApp() {
       </header>
 
       <section className="theme-preview-grid">
+        <PreviewSection title="官网七种回复模式">
+          <ReplyThreadsPreview />
+        </PreviewSection>
         <PreviewSection title="滚动区域">
           <Button onClick={() => setScrollRows(rows => (rows === 3 ? 30 : 3))}>切换滚动内容</Button>
           <ScrollArea
@@ -263,15 +266,6 @@ export default function ThemePreviewApp() {
             onPageChange={setPreviewPage}
           />
           <Pagination compact page={previewPage} totalPages={12} onPageChange={setPreviewPage} />
-          <RadioGroup
-            aria-label="回复列表展示模式"
-            variant="segmented"
-            value={replyViewMode}
-            onValueChange={setReplyViewMode}
-          >
-            <RadioGroupItem value="flat" label="普通列表" />
-            <RadioGroupItem value="nested" label="楼中楼" />
-          </RadioGroup>
         </PreviewSection>
 
         <PreviewSection title="控件禁用态对照">

@@ -14,11 +14,14 @@ describe('mergeTopicMutationResult', () => {
     const currentTopic = createTopic(1, 2, ['page-2'])
     const nextTopic = createTopic(1, 1, ['page-1'])
     nextTopic.isCollected = true
+    currentTopic.replyThreadStyle = 'd'
+    nextTopic.replyThreadStyle = 'off'
 
     expect(mergeTopicMutationResult(currentTopic, nextTopic, 1)).toMatchObject({
       isCollected: true,
       replyCurrentPage: 2,
-      replies: ['page-2']
+      replies: ['page-2'],
+      replyThreadStyle: 'd'
     })
   })
 

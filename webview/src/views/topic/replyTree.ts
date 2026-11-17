@@ -1,143 +1,150 @@
-import type { TopicReply } from '@extension/v2ex/types'
+import type { TopicReply, ReplyThreadStyle } from '@extension/v2ex/types'
 
-/** 回复列表展示模式 */
-export type ReplyViewMode = 'flat' | 'nested'
-
-/**
- * 楼中楼最大视觉缩进层数
- *
- * 根回复 depth 为 0；其子容器在 depth 为 0/1/2 时继续增加缩进，depth ≥ 3 时不再右移。
- * 深层回复仍完整展开，只限制水平占用。规则说明参见 docs/nested-replies.md。
- */
-export const MAX_REPLY_VISUAL_INDENT_DEPTH = 3
-
-/**
- * 当前回复的子容器是否继续增加视觉缩进
- * @param depth 当前回复深度，根为 0
- */
-export function shouldIndentReplyChildren(depth: number): boolean {
-  return depth < MAX_REPLY_VISUAL_INDENT_DEPTH
-}
-
-/**
- * 楼中楼子回复容器的类名
- * @param depth 当前回复深度，根为 0
- * @param baseClass 基础嵌套容器类名
- * @param cappedClass 达到缩进上限时追加的类名
- */
-export function getReplyChildrenClassName(
-  depth: number,
-  baseClass: string,
-  cappedClass: string
-): string {
-  return shouldIndentReplyChildren(depth) ? baseClass : `${baseClass} ${cappedClass}`
-}
-
-/** 带子回复的帖子回复节点 */
+/** 带有官方子回复的节点，不从正文 @ 或楼层号推断关系 */
 export interface TopicReplyNode extends TopicReply {
-  // TODO: 为父子关系增加置信度与匹配来源，路线参见 docs/nested-replies.md
   children: TopicReplyNode[]
 }
 
-interface ReplyReference {
-  userName: string
-  floor?: string
+/** 根据明确父回复编号构树；跨页目标、未来楼层和异常自引用保持顶层 */
+export function buildReplyTree(replies: TopicReply[]): TopicReplyNode[] {
+  const nodes = [...replies]
+    .sort((a, b) => Number(a.floor) - Number(b.floor))
+    .map<TopicReplyNode>(reply => ({ ...reply, children: [] }))
+  const byId = new Map(nodes.map(node => [node.replyId, node]))
+  const roots: TopicReplyNode[] = []
+  for (const node of nodes) {
+    const parent = byId.get(node.parent?.replyId || '')
+    if (parent && Number(parent.floor) < Number(node.floor)) parent.children.push(node)
+    else roots.push(node)
+  }
+  return roots
+}
+
+/** 官网设置的中文名称 */
+export const replyThreadStyleLabels: Record<ReplyThreadStyle, string> = {
+  off: '经典平铺',
+  a: '引用条',
+  b: '角标 + 悬浮预览',
+  c: '楼中楼',
+  d: '树形缩进',
+  f: '对话连线',
+  h: '引用楼层'
+}
+
+/** 将树展开，保留官方讨论顺序 */
+export function flattenReplyTree(nodes: TopicReplyNode[]): TopicReplyNode[] {
+  return nodes.flatMap(node => [node, ...flattenReplyTree(node.children)])
+}
+
+/** 楼中楼组内按楼层排序；树形模式仍按父子关系展开 */
+export function flattenReplyGroup(nodes: TopicReplyNode[]): TopicReplyNode[] {
+  return flattenReplyTree(nodes).sort((a, b) => Number(a.floor) - Number(b.floor))
+}
+
+/** 官网对话连线中的连续轨道片段，轨道被占用时以虚线暂停和续接 */
+export interface ReplyLineSegment {
+  conversation: number
+  color: number
+  lane: number
+  rows: number[]
+  cutAbove: boolean
+  cutBelow: boolean
 }
 
 /**
- * 将回复 HTML 转换为用于识别引用的纯文本
- * @param content 回复 HTML
+ * 按完整讨论分配轨道；拥挤时暂停下次出现最晚的讨论，而不是丢弃关联
+ * @param maxLanes 内部调用传入正整数；官网默认五条轨道
  */
-function getReplyText(content: string): string {
-  const template = document.createElement('template')
-  template.innerHTML = content
-  return template.content.textContent || ''
-}
-
-/**
- * 按书写顺序提取回复中的用户与紧随其后的楼层引用
- * @param content 回复 HTML
- */
-function getReplyReferences(
-  content: string,
-  extractText: (content: string) => string
-): ReplyReference[] {
-  const text = extractText(content)
-  const references = Array.from(
-    text.matchAll(/@([a-zA-Z0-9_-]+)(?:\s*#(\d+))?/g),
-    ([, userName, floor]) => ({ userName, floor })
+export function getReplyLineLayout(replies: TopicReply[], maxLanes = 5) {
+  const index = new Map(replies.map((reply, i) => [reply.replyId, i]))
+  const parents = replies.map((reply, i) => {
+    const parent = index.get(reply.parent?.replyId || '')
+    return parent !== undefined && parent < i ? parent : -1
+  })
+  const roots: number[] = []
+  const rowsOf = new Map<number, number[]>()
+  parents.forEach((parent, i) => {
+    roots[i] = parent < 0 ? i : roots[parent]
+    const rows = rowsOf.get(roots[i]) || []
+    rows.push(i)
+    rowsOf.set(roots[i], rows)
+  })
+  interface Conversation {
+    id: number
+    rows: number[]
+    next: number
+    color?: number
+    segment?: ReplyLineSegment
+  }
+  const conversations: Conversation[] = [...rowsOf.values()]
+    .filter(rows => rows.length > 1)
+    .map((rows, id) => ({ id, rows, next: 0 }))
+  const conversationOf = new Map<number, Conversation>()
+  conversations.forEach(conversation =>
+    conversation.rows.forEach(row => conversationOf.set(row, conversation))
   )
-  const referencedFloors = [...text.matchAll(/#(\d+)/g)].map(([, floor]) => floor)
-  const uniqueFloors = [...new Set(referencedFloors)]
-
-  // 只有一个楼层号时，允许它与任一被提及用户进行精确作者匹配
-  const sharedFloor = uniqueFloors.length === 1 ? uniqueFloors[0] : undefined
-  if (sharedFloor) {
-    for (const reference of references) {
-      if (!reference.floor) {
-        reference.floor = sharedFloor
+  const holder: (Conversation | undefined)[] = []
+  const live = new Set<Conversation>()
+  const lastUsed = [0, 0, 0, 0, 0, 0]
+  let clock = 0
+  const segments: ReplyLineSegment[] = []
+  for (let row = 0; row < replies.length; row++) {
+    const conversation = conversationOf.get(row)
+    if (!conversation) continue
+    if (conversation.color === undefined) {
+      const drawn = new Set(holder.filter(Boolean).map(value => value!.color))
+      const taken = new Set([...live].map(value => value.color))
+      conversation.color = [0, 1, 2, 3, 4, 5].sort(
+        (a, b) =>
+          Number(drawn.has(a)) - Number(drawn.has(b)) ||
+          Number(taken.has(a)) - Number(taken.has(b)) ||
+          lastUsed[a] - lastUsed[b]
+      )[0]
+      lastUsed[conversation.color] = ++clock
+      live.add(conversation)
+    }
+    if (!conversation.segment) {
+      let lane = 0
+      while (lane < maxLanes && holder[lane]) lane++
+      if (lane === maxLanes) {
+        lane = 0
+        for (let candidate = 1; candidate < maxLanes; candidate++) {
+          if (
+            holder[candidate]!.rows[holder[candidate]!.next] >
+            holder[lane]!.rows[holder[lane]!.next]
+          )
+            lane = candidate
+        }
+        holder[lane]!.segment!.cutBelow = true
+        holder[lane]!.segment = undefined
       }
+      holder[lane] = conversation
+      conversation.segment = {
+        conversation: conversation.id,
+        lane,
+        color: conversation.color,
+        rows: [],
+        cutAbove: conversation.next > 0,
+        cutBelow: false
+      }
+      segments.push(conversation.segment)
+    }
+    conversation.segment.rows.push(row)
+    conversation.next++
+    if (conversation.next === conversation.rows.length) {
+      holder[conversation.segment.lane] = undefined
+      conversation.segment = undefined
+      live.delete(conversation)
     }
   }
-
-  return references
-}
-
-/**
- * 将当前页回复构建为楼中楼树
- *
- * 优先使用“用户名 + 楼层”精确定位；单用户引用无法精确定位时，再回退到该用户
- * 在当前页最近的一条历史回复。多人引用没有精确关系时保持顶层，避免猜测父节点。
- * 只允许关联当前位置之前的回复，避免循环和跨页误挂载。
- *
- * 规则说明参见 docs/nested-replies.md
- *
- * @param replies 当前回复页的平铺回复
- * @param extractText 回复 HTML 纯文本提取器
- */
-export function buildReplyTree(
-  replies: TopicReply[],
-  extractText: (content: string) => string = getReplyText
-): TopicReplyNode[] {
-  const nodes = replies.map<TopicReplyNode>(reply => ({ ...reply, children: [] }))
-  const roots: TopicReplyNode[] = []
-  const indexByUserAndFloor = new Map<string, number>()
-  const lastIndexByUser = new Map<string, number>()
-
-  nodes.forEach((node, index) => {
-    indexByUserAndFloor.set(`${node.userName}:${node.floor}`, index)
-  })
-
-  nodes.forEach((node, index) => {
-    const references = getReplyReferences(node.content, extractText)
-    let parentIndex: number | undefined
-
-    // 第一轮检查所有精确引用，避免较晚出现的模糊引用抢先命中
-    for (const reference of [...references].reverse()) {
-      if (!reference.floor) {
-        continue
-      }
-
-      const exactIndex = indexByUserAndFloor.get(`${reference.userName}:${reference.floor}`)
-      if (exactIndex !== undefined && exactIndex < index) {
-        parentIndex = exactIndex
-        break
-      }
-    }
-
-    // 只有单用户引用允许模糊匹配，多人引用没有精确关系时保持顶层
-    if (parentIndex === undefined && references.length === 1) {
-      parentIndex = lastIndexByUser.get(references[0].userName)
-    }
-
-    if (parentIndex === undefined) {
-      roots.push(node)
-    } else {
-      nodes[parentIndex].children.push(node)
-    }
-
-    lastIndexByUser.set(node.userName, index)
-  })
-
-  return roots
+  const stations = segments.flatMap(segment =>
+    segment.rows.map((row, i) => ({
+      row,
+      lane: segment.lane,
+      color: segment.color,
+      conversation: segment.conversation,
+      previous: i > 0 ? segment.rows[i - 1] : -1
+    }))
+  )
+  return { segments, stations, parents }
 }

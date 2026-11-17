@@ -1,0 +1,455 @@
+.reply-thread-list {
+  position: relative;
+  min-width: 0;
+
+  .reply-item {
+    scroll-margin-block: 24px;
+    padding-right: 10px;
+    &:focus {
+      outline: none;
+    }
+    &.reply-item--located {
+      animation: reply-location-fade 2s ease-out both;
+      @media (prefers-reduced-motion: reduce) {
+        animation: none;
+        background-color: var(--v2ex-link-soft-bg);
+      }
+    }
+  }
+}
+
+.reply-thread-list.reply-thread-list--static .thread-tree-line {
+  pointer-events: none;
+  cursor: default;
+}
+
+@keyframes reply-location-fade {
+  0%,
+  20% {
+    background-color: var(--v2ex-link-soft-bg);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.thread-mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+}
+.thread-mode-label .thread-mode-settings {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--v2ex-muted-fg);
+  border-radius: var(--v2ex-radius-sm);
+  &:hover {
+    color: var(--v2ex-content-fg);
+    background: var(--v2ex-hover-bg);
+  }
+  svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+.thread-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border: 0;
+  border-radius: var(--v2ex-radius-sm);
+  color: var(--v2ex-link-fg);
+  background: var(--v2ex-link-soft-bg);
+  font-size: 11px;
+  text-decoration: none;
+}
+.reply-thread-list a.thread-chip:hover {
+  text-decoration: none;
+}
+.reply-thread-list a.thread-strip {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--v2ex-border);
+  border-radius: 0 var(--v2ex-radius-sm) var(--v2ex-radius-sm) 0;
+  background: color-mix(in srgb, var(--v2ex-muted-fg) 5%, transparent);
+  color: var(--v2ex-muted-fg);
+  text-decoration: none;
+  font-size: 12px;
+  strong {
+    flex: none;
+    color: inherit;
+  }
+  .thread-strip-floor {
+    font-weight: normal;
+    color: color-mix(in srgb, var(--v2ex-muted-fg) 70%, var(--v2ex-webview-bg));
+  }
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  &:hover {
+    color: var(--v2ex-muted-fg);
+    border-left-color: var(--v2ex-link-fg);
+    background: var(--v2ex-link-soft-bg-faint);
+    text-decoration: none;
+  }
+}
+.thread-answered {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+}
+.thread-preview-popup {
+  max-width: min(480px, calc(100vw - 32px));
+}
+.thread-preview {
+  max-height: min(400px, 65vh);
+  overflow: auto;
+  min-width: 160px;
+}
+.thread-preview > .topic-content {
+  margin-top: 8px;
+}
+.thread-reference-time {
+  margin-left: 8px;
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+}
+.reply-thread-list--c > .thread-group-root {
+  border-bottom: 1px solid var(--v2ex-border);
+  > .reply-item {
+    border-bottom: 0;
+  }
+}
+.thread-group {
+  --v2ex-reply-surface: var(--v2ex-widget-bg);
+  margin: 0 0 12px 24px;
+  padding: 0 10px;
+  background: var(--v2ex-reply-surface);
+  border: 1px solid var(--v2ex-border);
+  border-radius: var(--v2ex-radius-sm);
+  > .reply-item {
+    padding-block: 10px;
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+.thread-branch {
+  position: relative;
+}
+.reply-thread-list--d {
+  container-type: inline-size;
+  --tree-pad: 0px;
+  --tree-root: 24px;
+  --tree-avatar: 24px;
+  --tree-gap: 10px;
+  --tree-reach-root: 22px;
+  --tree-reach: 22px;
+  --tree-curve: 10px;
+  --tree-anchor-shift: 0px;
+
+  .thread-branch {
+    --tree-one: min(var(--thread-depth), 1);
+    --tree-size: calc(var(--tree-root) - var(--tree-one) * (var(--tree-root) - var(--tree-avatar)));
+    --tree-top: 5px;
+    --tree-offset: calc(
+      var(--tree-pad) + var(--tree-one) *
+        (
+          var(--tree-root) / 2 + var(--tree-reach-root) - var(--tree-avatar) / 2 - var(--tree-reach)
+        ) +
+        var(--thread-depth) * (var(--tree-avatar) / 2 + var(--tree-reach))
+    );
+    --tree-parent-one: min(var(--thread-parent-depth), 1);
+    --tree-parent-size: calc(
+      var(--tree-root) - var(--tree-parent-one) * (var(--tree-root) - var(--tree-avatar))
+    );
+    --tree-parent-x: calc(
+      var(--tree-pad) + var(--tree-parent-one) *
+        (
+          var(--tree-root) / 2 + var(--tree-reach-root) - var(--tree-avatar) / 2 - var(--tree-reach)
+        ) +
+        var(--thread-parent-depth) * (var(--tree-avatar) / 2 + var(--tree-reach)) +
+        var(--tree-parent-size) / 2 - var(--tree-anchor-shift)
+    );
+  }
+  > .thread-branch {
+    --tree-top: 11px;
+    padding-bottom: 7px;
+    + .thread-branch {
+      border-top: 1px solid var(--v2ex-border);
+    }
+  }
+  .thread-branch > .reply-item {
+    position: relative;
+    margin-left: var(--tree-offset);
+    padding-top: var(--tree-top);
+    padding-bottom: 7px;
+    border-bottom: 0;
+  }
+  .reply-layout {
+    gap: var(--tree-gap);
+  }
+  .reply-layout .v2ex-avatar {
+    width: var(--tree-size);
+    height: var(--tree-size);
+  }
+  .reply-meta {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .thread-children {
+    position: relative;
+    margin: 0;
+    border: 0;
+    padding: 0;
+  }
+
+  // 按官方头像几何定位：入线停在头像前，出线从头像下方开始，不跨过头像硬接
+  .thread-branch--joined::before,
+  .thread-branch--joined:not(:last-child)::after,
+  .thread-branch--expandable[data-open] > .reply-item::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    border-color: var(--v2ex-border);
+    border-style: solid;
+    border-width: 0 0 0 1px;
+  }
+  .thread-branch--joined::before {
+    top: 0;
+    left: var(--tree-parent-x);
+    width: calc(
+      var(--tree-reach) + (1 - var(--tree-parent-one)) *
+        (var(--tree-reach-root) - var(--tree-reach)) - 3px + var(--tree-anchor-shift) -
+        var(--tree-incoming-trim, 0px)
+    );
+    height: var(--tree-junction-y, calc(var(--tree-top) + var(--tree-size) / 2 + 0.5px));
+    border-bottom-width: 1px;
+    border-bottom-left-radius: var(--tree-curve);
+  }
+  .thread-branch--joined:not(:last-child)::after {
+    top: 0;
+    bottom: 0;
+    left: var(--tree-parent-x);
+  }
+  .thread-branch--expandable[data-open] > .reply-item::after {
+    top: var(--tree-line-top, calc(var(--tree-top) + var(--tree-size) + 3px));
+    bottom: 0;
+    left: calc(var(--tree-size) / 2 - var(--tree-anchor-shift));
+  }
+  .thread-fold {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    color: var(--v2ex-muted-fg);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    line-height: 20px;
+    > svg {
+      width: 12px;
+      height: 12px;
+    }
+    &:hover {
+      color: var(--v2ex-link-fg);
+    }
+  }
+  .thread-tree-line {
+    position: absolute;
+    z-index: 1;
+    top: var(--tree-line-top, calc(var(--tree-top) + var(--tree-size) + 3px));
+    bottom: 0;
+    left: calc(var(--tree-offset) + var(--tree-size) / 2 - var(--tree-anchor-shift) - 7px);
+    width: 15px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .thread-tree-collapse-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 15px;
+    height: 15px;
+    padding: 2px;
+    border: 1px solid var(--v2ex-border);
+    border-radius: 50%;
+    color: var(--v2ex-muted-fg);
+    background: var(--v2ex-webview-bg);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .thread-tree-line:is(:hover, :focus-visible) > .thread-tree-collapse-icon {
+    opacity: 1;
+  }
+  .thread-branch:has(> .thread-tree-line:is(:hover, :focus-visible)) {
+    > .reply-item::after,
+    > .thread-children > .thread-branch::before,
+    > .thread-children > .thread-branch::after {
+      border-color: var(--v2ex-link-fg);
+    }
+  }
+
+  &.reply-thread-list--no-avatar {
+    // 为用户名左侧的折叠按钮留出空间，避免按钮紧贴文字或被容器裁切
+    --tree-pad: 12px;
+    --tree-root: 16px;
+    --tree-avatar: 16px;
+    --tree-reach-root: 22px;
+    --tree-anchor-shift: 20px;
+    .thread-tree-line {
+      top: calc(var(--tree-junction-y, calc(var(--tree-top) + var(--tree-size) / 2 + 0.5px)) - 8px);
+    }
+    .thread-branch {
+      --tree-incoming-trim: 0px;
+    }
+    // 按钮出现时让入线停在圆心，由按钮背景遮住，避免右侧露出短线
+    .thread-branch:has(> .thread-tree-line:is(:hover, :focus-visible)) {
+      --tree-incoming-trim: 10px;
+    }
+  }
+}
+@container (max-width: 480px) {
+  .reply-thread-list--d .thread-branch {
+    --tree-root: 20px;
+    --tree-avatar: 20px;
+    --tree-reach-root: 14px;
+    --tree-reach: 14px;
+  }
+  .reply-thread-list--d.reply-thread-list--no-avatar .thread-branch {
+    --tree-root: 16px;
+    --tree-avatar: 16px;
+    --tree-reach-root: 18px;
+  }
+}
+.thread-quote {
+  padding: 8px 10px;
+  margin: 0 0 10px;
+  border: 1px solid var(--v2ex-border);
+  border-radius: var(--v2ex-radius-sm);
+  background: var(--v2ex-widget-bg);
+  color: var(--v2ex-content-fg);
+  .thread-quote {
+    margin-block: 6px;
+  }
+  .topic-content {
+    font-size: 12px;
+  }
+}
+.thread-quote-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.thread-quote-toggle {
+  border: 1px solid var(--v2ex-control-border);
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+  padding-block: 4px;
+}
+.reply-thread-list--f {
+  padding-left: var(--thread-gutter);
+  .reply-item {
+    position: relative;
+  }
+}
+.thread-line-pin {
+  position: absolute;
+  inset: 0 auto 0 calc(-1 * var(--thread-gutter));
+  width: var(--thread-gutter);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.thread-line-jump {
+  font-size: 11px;
+}
+.thread-lines {
+  position: absolute;
+  inset: 0 auto 0 0;
+  overflow: visible;
+  pointer-events: none;
+  path,
+  line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+  }
+  circle {
+    fill: currentColor;
+  }
+  .thread-line-cut {
+    stroke-dasharray: 2 3;
+  }
+  &.thread-lines--focused .thread-line-piece:not(.is-lit) {
+    opacity: 0.2;
+  }
+  .is-here circle {
+    stroke-width: 3px;
+    r: 4.5;
+  }
+  .is-parent circle {
+    fill: var(--v2ex-webview-bg);
+    stroke: currentColor;
+    stroke-width: 2px;
+  }
+}
+@for $i from 0 through 5 {
+  .thread-line-#{$i} {
+    color: var(--v2ex-thread-color-#{$i});
+  }
+}
+@media (max-width: 480px) {
+  .thread-group {
+    margin-left: 12px;
+    padding-inline: 6px;
+  }
+  .thread-strip {
+    flex-wrap: wrap;
+    gap: 2px;
+    > span {
+      width: 100%;
+    }
+  }
+}
+
+.thread-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  color: var(--v2ex-muted-fg);
+}
+
+.thread-reply-to {
+  color: var(--v2ex-muted-fg);
+  font-size: 11px;
+}
+
+.thread-quote.thread-quote--deep {
+  padding-inline: 0;
+  border-inline: 0;
+}

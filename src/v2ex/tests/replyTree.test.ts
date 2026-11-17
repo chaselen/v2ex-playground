@@ -1,166 +1,107 @@
-import { describe, expect, it } from 'vitest'
-import { load } from 'cheerio/slim'
+import { expect, it } from 'vitest'
 import {
   buildReplyTree,
-  getReplyChildrenClassName,
-  shouldIndentReplyChildren,
-  type TopicReplyNode
+  flattenReplyTree,
+  flattenReplyGroup,
+  getReplyLineLayout
 } from '../../../webview/src/views/topic/replyTree'
 import type { TopicReply } from '../types'
 
-/** 创建算法测试所需的最小完整回复数据 */
-function reply(floor: number, userName: string, content = ''): TopicReply {
+function reply(floor: number, parent?: number): TopicReply {
   return {
     replyId: String(floor),
+    floor: String(floor),
+    userName: `user${floor}`,
     userAvatar: '',
-    userName,
     isMod: false,
     isOp: false,
     isPro: false,
     time: '',
     repliedAt: '',
-    floor: String(floor),
-    content,
     thanks: 0,
-    thanked: false
+    thanked: false,
+    content: '@user1 #1',
+    ...(parent
+      ? {
+          parent: {
+            replyId: String(parent),
+            userName: `user${parent}`,
+            floor: String(parent),
+            url: `#r_${parent}`,
+            content: ''
+          }
+        }
+      : {})
   }
 }
 
-/** 使用与 Webview 等价的 HTML 纯文本作为算法输入 */
-function extractText(content: string): string {
-  return load(content).text()
-}
-
-type FloorTree = Array<[string, FloorTree]>
-
-/** 将回复树简化为便于断言的楼层结构 */
-function floors(nodes: TopicReplyNode[]): FloorTree {
-  return nodes.map(node => [node.floor, floors(node.children)])
-}
-
-describe('buildReplyTree', () => {
-  it('使用用户名和楼层精确匹配父回复', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'alice'), reply(2, 'bob'), reply(3, 'carol', '@alice #1 同意')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([
-      ['1', [['3', []]]],
-      ['2', []]
-    ])
-  })
-
-  it('所有精确引用的优先级高于最近用户兜底', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'alice'), reply(2, 'bob'), reply(3, 'carol', '@alice #1 @bob #999 精确引用应优先')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([
-      ['1', [['3', []]]],
-      ['2', []]
-    ])
-  })
-
-  it('单个楼层号可以和多个被提及用户中的实际作者精确匹配', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'alice'), reply(2, 'bob'), reply(3, 'carol', '@alice @bob #1 回复第一位用户')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([
-      ['1', [['3', []]]],
-      ['2', []]
-    ])
-  })
-
-  it('没有楼层时匹配该用户最近的一条历史回复', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'alice'), reply(2, 'alice'), reply(3, 'bob', '@alice 收到')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([
-      ['1', []],
-      ['2', [['3', []]]]
-    ])
-  })
-
-  it('楼层作者不一致时回退到被提及用户的最近回复', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'alice'), reply(2, 'bob'), reply(3, 'carol', '@alice #2 继续讨论')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([
-      ['1', [['3', []]]],
-      ['2', []]
-    ])
-  })
-
-  it('多个模糊引用没有精确关系时保持顶层', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'alice'), reply(2, 'bob'), reply(3, 'carol', '@alice @bob 回复后者')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([
-      ['1', []],
-      ['2', []],
-      ['3', []]
-    ])
-  })
-
-  it('递归形成多层回复树', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'alice'), reply(2, 'bob', '@alice #1 提问'), reply(3, 'carol', '@bob #2 回答')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([['1', [['2', [['3', []]]]]]])
-  })
-
-  it('不会将回复挂到未来楼层', () => {
-    const tree = buildReplyTree(
-      [reply(1, 'bob', '@alice #2 提前引用'), reply(2, 'alice')],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([
-      ['1', []],
-      ['2', []]
-    ])
-  })
-
-  it('从回复 HTML 中提取用户名与楼层引用', () => {
-    const tree = buildReplyTree(
-      [
-        reply(1, 'alice'),
-        reply(2, 'bob', '@<a href="/member/alice">alice</a> <strong>#1</strong> 收到')
-      ],
-      extractText
-    )
-
-    expect(floors(tree)).toEqual([['1', [['2', []]]]])
-  })
+it('只按官方父回复编号构树，不再从 @用户名与楼层推断', () => {
+  const tree = buildReplyTree([reply(1), reply(2), reply(3, 1), reply(4, 3)])
+  expect(tree.map(node => node.floor)).toEqual(['1', '2'])
+  expect(tree[0].children[0].children[0].floor).toBe('4')
+  expect(flattenReplyTree(tree)).toHaveLength(4)
 })
 
-describe('shouldIndentReplyChildren', () => {
-  it('根到第 3 层缩进内继续右移，更深不再增加缩进', () => {
-    expect(shouldIndentReplyChildren(0)).toBe(true)
-    expect(shouldIndentReplyChildren(1)).toBe(true)
-    expect(shouldIndentReplyChildren(2)).toBe(true)
-    expect(shouldIndentReplyChildren(3)).toBe(false)
-    expect(shouldIndentReplyChildren(8)).toBe(false)
-  })
+it('乱序输入恢复楼层顺序，跨页、未来目标、自引用均保持顶层且无环', () => {
+  const input = [reply(105, 20), reply(103, 104), reply(101, 101), reply(104, 103), reply(102)]
+  const tree = buildReplyTree(input)
+  expect(tree.map(node => node.floor)).toEqual(['101', '102', '103', '105'])
+  expect(tree[2].children[0].floor).toBe('104')
+  expect(new Set(flattenReplyTree(tree).map(node => node.replyId)).size).toBe(5)
+})
 
-  it('为达到上限的子容器追加封顶类名', () => {
-    expect(getReplyChildrenClassName(2, 'reply-children', 'reply-children--max-indent')).toBe(
-      'reply-children'
-    )
-    expect(getReplyChildrenClassName(3, 'reply-children', 'reply-children--max-indent')).toBe(
-      'reply-children reply-children--max-indent'
-    )
-  })
+it('连续对话复用连线颜色，交叉对话分配独立轨道，跨页不连线', () => {
+  const input = [reply(1), reply(2), reply(3, 1), reply(4, 2), reply(5, 3), reply(6, 99)]
+  const { stations, segments } = getReplyLineLayout(input)
+  expect(stations.map(station => station.row).sort()).toEqual([0, 1, 2, 3, 4])
+  expect(segments).toHaveLength(2)
+  expect(segments[0].rows).toEqual([0, 2, 4])
+  expect(segments[0].lane).not.toBe(segments[1].lane)
+})
+it('楼中楼组内按楼层排序，树形保留分支的深度优先顺序', () => {
+  const nodes = buildReplyTree([reply(1), reply(2, 1), reply(3, 1), reply(4, 2)])
+  expect(flattenReplyTree(nodes[0].children).map(r => r.floor)).toEqual(['2', '4', '3'])
+  expect(flattenReplyGroup(nodes[0].children).map(r => r.floor)).toEqual(['2', '3', '4'])
+})
+it('同一讨论的分支只占一条轨道，并保留非连续父回复的跳转信息', () => {
+  const layout = getReplyLineLayout([reply(1), reply(2, 1), reply(3, 1), reply(4, 2)])
+  expect(layout.segments).toHaveLength(1)
+  expect(layout.segments[0].rows).toEqual([0, 1, 2, 3])
+  expect(layout.stations.find(s => s.row === 3)?.previous).toBe(2)
+  expect(layout.parents[3]).toBe(1)
+})
+it('轨道拥挤时暂停下次回复最远的讨论并以同色续接，不丢弃任何站点', () => {
+  const input = [reply(1), reply(2), reply(3), reply(4, 3), reply(5, 2), reply(6, 1)]
+  const layout = getReplyLineLayout(input, 2)
+  expect(layout.stations.map(s => s.row).sort()).toEqual([0, 1, 2, 3, 4, 5])
+  const paused = layout.segments.find(s => s.rows.includes(0))!
+  const resumed = layout.segments.find(s => s.rows.includes(5))!
+  expect(paused.cutBelow).toBe(true)
+  expect(resumed.cutAbove).toBe(true)
+  expect(paused.conversation).toBe(resumed.conversation)
+  expect(paused.color).toBe(resumed.color)
+  expect(layout.segments.every(s => s.lane < 2)).toBe(true)
+})
+it('没有本页讨论时不分配轨道，异常关联不会形成环', () => {
+  expect(getReplyLineLayout([reply(1, 2), reply(2, 2), reply(3, 99)]).stations).toEqual([])
+  expect(getReplyLineLayout([]).segments).toEqual([])
+})
+it('跨页父回复的本页子树仍可连线，但根回复保留跨页引用入口', () => {
+  const layout = getReplyLineLayout([reply(101, 99), reply(102, 101)])
+  expect(layout.stations.map(s => s.row)).toEqual([0, 1])
+  expect(layout.parents).toEqual([-1, 0])
+})
+
+it('官网默认五轨在六段交错讨论中仍保留所有站点', () => {
+  const input = [
+    ...Array.from({ length: 6 }, (_, index) => reply(index + 1)),
+    ...Array.from({ length: 6 }, (_, index) => reply(index + 7, index + 1))
+  ]
+  const layout = getReplyLineLayout(input)
+  expect(layout.stations.map(station => station.row).sort((a, b) => a - b)).toEqual(
+    Array.from({ length: 12 }, (_, index) => index)
+  )
+  expect(Math.max(...layout.segments.map(segment => segment.lane))).toBe(4)
+  expect(layout.segments.some(segment => segment.cutBelow)).toBe(true)
+  expect(layout.segments.some(segment => segment.cutAbove)).toBe(true)
 })

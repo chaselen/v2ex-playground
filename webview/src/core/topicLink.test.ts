@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getV2exTopicId } from './topicLink'
+import { getV2exTopicId, getTopicReplyTarget } from './topicLink'
 
 describe('getV2exTopicId', () => {
   const baseUrl = 'https://www.v2ex.com/t/100'
@@ -20,5 +20,20 @@ describe('getV2exTopicId', () => {
     'https://www.v2ex.com/t/not-a-number'
   ])('忽略非站内话题链接 %s', href => {
     expect(getV2exTopicId(href, baseUrl)).toBeUndefined()
+  })
+})
+
+describe('getTopicReplyTarget', () => {
+  it('recognizes local and cross-page reply anchors without accepting other topics or hosts', () => {
+    expect(getTopicReplyTarget('#r_20', 100)).toEqual({ replyId: '20', page: 1 })
+    expect(getTopicReplyTarget('/t/100?p=2#r_30', 100)).toEqual({ replyId: '30', page: 2 })
+    for (const link of [
+      '/t/101#r_20',
+      'https://example.com/t/100#r_20',
+      '/t/100?p=-1#r_20',
+      '#reply20'
+    ]) {
+      expect(getTopicReplyTarget(link, 100)).toBeUndefined()
+    }
   })
 })

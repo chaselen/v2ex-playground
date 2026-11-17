@@ -1,6 +1,14 @@
 import PageContextMenu from '@/components/PageContextMenu'
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
-import { Image, Smile } from 'lucide-react'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react'
+import { Image, Smile, X, Reply } from 'lucide-react'
 import { ScrollArea, Button, Popover, Spinner, Toast, Tooltip } from '@/components/ui'
 import { proxyImgurImageSrc } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
@@ -12,6 +20,20 @@ import MentionTextarea from './MentionTextarea'
 import type { MentionUser } from './mentions'
 import { emoticonGroups, replaceImageEmoticonTokens } from './emoticons'
 import styles from './ReplyComposer.module.scss'
+import type { TopicReply } from '@extension/v2ex/types'
+import {
+  countReplyRecipients,
+  isSameReplyDraft,
+  selectReplyDraft,
+  type ReplyDraft
+} from './replyDraft'
+import {
+  readReplyDraft,
+  saveReplyDraft,
+  clearSubmittedReplyDraft,
+  subscribeReplyDraftCleared,
+  type StoredReplyDraft
+} from './replyDraftStorage'
 import type { TopicPanelRpcCommands } from '@extension/shared/webview'
 
 /** 回复输入组件 VS Code 通信客户端 */
@@ -104,6 +126,8 @@ function registerReplyComposerDropTarget(target: ReplyComposerDropTarget) {
 export interface ReplyComposerHandle {
   /** 设置回复内容并聚焦 */
   setContent(content: string): void
+  /** 选定官方回复目标；已有正文时保留目标，只追加提及 */
+  replyTo(reply: TopicReply): void
 }
 
 /** 正文编辑组件属性 */
@@ -116,6 +140,8 @@ interface ReplyComposerProps {
   showImages: boolean
   /** 重置编辑状态的标识 */
   resetKey?: string | number
+  /** 独立回复框的草稿持久化标识 */
+  draftKey?: string
   /** 受控正文；省略时由组件管理回复正文 */
   value?: string
   /** 受控正文变化回调 */
@@ -155,7 +181,7 @@ interface ReplyComposerProps {
   /** 是否禁用编辑器交互 */
   disabled?: boolean
   /** 提交已处理图片表情的回复内容 */
-  onSubmit?: (content: string) => Promise<void>
+  onSubmit?: (content: string, parentReplyId?: string) => Promise<void>
 }
 
 /**
@@ -196,6 +222,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     mentionUsers,
     showAvatar = false,
     resetKey,
+    draftKey,
     value: controlledValue,
     onChange,
     maxLength = 10000,
@@ -219,7 +246,23 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   },
   ref
 ) {
-  const [internalValue, setInternalValue] = useState('')
+  const [internalValue, setInternalValue] = useState(() => readReplyDraft(draftKey)?.content || '')
+  const [parentReply, setParentReply] = useState<ReplyDraft['parent']>(
+    () => readReplyDraft(draftKey)?.parent
+  )
+  const [multipleRecipients, setMultipleRecipients] = useState(() =>
+    Boolean(readReplyDraft(draftKey)?.multipleRecipients)
+  )
+  const parentSummary = useMemo(() => {
+    if (!parentReply?.content) return ''
+    const doc = new DOMParser().parseFromString(parentReply.content, 'text/html')
+    doc.querySelectorAll('script, style, template').forEach(element => element.remove())
+    doc.querySelectorAll('br').forEach(element => element.replaceWith(' '))
+    doc.querySelectorAll('p, div, li, pre, blockquote').forEach(element => element.append(' '))
+    doc.querySelectorAll('img').forEach(element => element.replaceWith(element.alt || '[图片]'))
+    return (doc.body.textContent || '').replace(/\s+/g, ' ').trim()
+  }, [parentReply?.content])
+  const [hydratedDraftKey, setHydratedDraftKey] = useState(draftKey)
   const [mode, setMode] = useState<ReplyComposerMode>('edit')
   const [previewing, setPreviewing] = useState(false)
   const [posting, setPosting] = useState(false)
@@ -236,6 +279,17 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   const [emoticonPanelVisible, setEmoticonPanelVisible] = useState(false)
   /** 当前正文 */
   const value = controlledValue ?? internalValue
+  const currentDraftRef = useRef<ReplyDraft>({
+    content: value,
+    parent: parentReply,
+    multipleRecipients
+  })
+  const savedDraftRef = useRef<StoredReplyDraft | undefined>(undefined)
+  currentDraftRef.current = { content: value, parent: parentReply, multipleRecipients }
+  const recipientCount = multipleRecipients ? countReplyRecipients(value) : 0
+  useEffect(() => {
+    if (multipleRecipients && recipientCount < 2) setMultipleRecipients(false)
+  }, [multipleRecipients, recipientCount])
   const replyShortcutLabel = isApplePlatform() ? '⌘+Enter' : 'Ctrl+Enter'
   /** 是否禁用表情选择 */
   const emoticonDisabled = disabled || posting || uploadingImage
@@ -243,6 +297,18 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   postingRef.current = posting
 
   useImperativeHandle(ref, () => ({
+    replyTo(reply: TopicReply) {
+      if (disabled || postingRef.current) return
+      const next = selectReplyDraft(
+        { content: value, parent: parentReply, multipleRecipients },
+        reply
+      )
+      updateContent(next.content)
+      setParentReply(next.parent)
+      setMultipleRecipients(Boolean(next.multipleRecipients))
+      setMode('edit')
+      requestAnimationFrame(() => getTextarea()?.focus())
+    },
     setContent(content: string) {
       generationRef.current++
       updateContent(content)
@@ -255,9 +321,38 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   }))
 
   useEffect(() => {
+    if (draftKey && hydratedDraftKey === draftKey) return
     generationRef.current++
     reset()
-  }, [resetKey])
+    const draft = readReplyDraft(draftKey)
+    if (draft) {
+      setInternalValue(draft.content)
+      setParentReply(draft.parent)
+      setMultipleRecipients(Boolean(draft.multipleRecipients))
+    }
+    setHydratedDraftKey(draftKey)
+  }, [resetKey, draftKey])
+
+  useEffect(() => {
+    // 草稿键切换完成后才写回，避免旧正文覆盖新话题的草稿；初始化值也可安全通过 StrictMode 重放
+    if (!draftKey || hydratedDraftKey !== draftKey) return
+    savedDraftRef.current = saveReplyDraft(draftKey, {
+      content: value,
+      parent: parentReply,
+      multipleRecipients
+    })
+  }, [draftKey, hydratedDraftKey, value, parentReply, multipleRecipients])
+
+  useEffect(() => {
+    if (!draftKey) return
+    return subscribeReplyDraftCleared(draftKey, submitted => {
+      if (
+        savedDraftRef.current?.revision === submitted.revision &&
+        isSameReplyDraft(currentDraftRef.current, submitted)
+      )
+        reset()
+    })
+  }, [draftKey])
 
   useEffect(() => {
     onUploadingChange?.(uploadingImage)
@@ -268,6 +363,8 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     if (controlledValue === undefined) {
       setInternalValue('')
     }
+    setParentReply(undefined)
+    setMultipleRecipients(false)
     setMode('edit')
     setPreviewing(false)
     setPosting(false)
@@ -348,9 +445,13 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     }
 
     const generation = generationRef.current
+    const submittedDraft = draftKey
+      ? saveReplyDraft(draftKey, { content: value, parent: parentReply, multipleRecipients })
+      : undefined
     setPosting(true)
     try {
-      await submitContent(normalizedContent)
+      await submitContent(normalizedContent, parentReply?.replyId)
+      if (draftKey && submittedDraft) clearSubmittedReplyDraft(draftKey, submittedDraft)
       if (generation === generationRef.current) {
         reset()
       }
@@ -717,6 +818,36 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
       onDragLeave={() => setDraggingImage(false)}
       onKeyDown={handleKeyDown}
     >
+      {(parentReply || recipientCount > 1) && (
+        <div className={styles.replyTarget}>
+          <Reply aria-hidden="true" />
+          <span className={styles.replyTargetLabel}>
+            回复{' '}
+            {parentReply ? (
+              <>
+                <strong>{parentReply.userName}</strong> #{parentReply.floor}
+              </>
+            ) : (
+              `${recipientCount} 人`
+            )}
+          </span>
+          {parentSummary && (
+            <span className={styles.replyTargetSummary} title={parentSummary}>
+              {parentSummary}
+            </span>
+          )}
+          <Button
+            aria-label="取消回复目标，改为回复主题"
+            size="small"
+            variant="ghost"
+            icon={<X aria-hidden="true" />}
+            onClick={() => {
+              setParentReply(undefined)
+              setMultipleRecipients(false)
+            }}
+          />
+        </div>
+      )}
       <div className={mergeClassNames(styles.toolbar, toolbarClassName)}>
         <div className={styles.tabs} role="tablist" aria-label="正文编辑模式">
           <button

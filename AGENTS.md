@@ -113,7 +113,7 @@ VS Code 扩展入口为 `src/extension.ts`，Webview 使用 React + Vite 多页�
 
 - [登录与 Cookie 会话](docs/auth-session.md) — 登录状态分层、SecretStorage、候选会话、两步验证和并发隔离规则
 - [每日签到逻辑](docs/daily-sign-in.md) — 每日签到的数据来源、状态判定、缓存、调度和边界处理
-- [帖子回复楼中楼算法](docs/nested-replies.md) — 平铺回复转换为楼中楼结构的推断规则、设计取舍和已知边界
+- [官方回复关联与显示模式](docs/nested-replies.md) — 七种官网布局、明确父回复、分页与分享图边界
 - [话题测试样本](docs/test-topics.md) — 按空状态、富文本、代码块、附言、分页和回复树分类的公开测试帖子
 - [内容预览 HTML 契约](docs/reply-preview-html.md) — 原生与 Markdown 预览接口的真实 HTML 输出、过滤规则和渲染约束
 - [话题分享图](docs/topic-share-image.md) — 长图渲染、本地图片缓存、Webview 资源授权和回退规则

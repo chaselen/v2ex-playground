@@ -19,7 +19,8 @@ import type {
   TopicContentInput,
   TopicManagementAction,
   TopicManagementState,
-  TopicManagementInput
+  TopicManagementInput,
+  TopicReplyPostResult
 } from '../types'
 import {
   type CreateTopicInput,
@@ -65,6 +66,11 @@ interface TopicShowApiInfo {
     title: string
   }
 }
+
+/** 官网 AJAX 回复发表响应；成功后可能不提供新回复编号 */
+type ReplySubmissionResponse =
+  | { success: true; url: string; reply_id?: number }
+  | { success: false; message?: string }
 
 /** V2EX 话题领域服务 */
 export class TopicService {
@@ -323,9 +329,48 @@ export class TopicService {
   }
 
   /** 提交回复 */
-  async postReply(topicId: number, content: string): Promise<void> {
+  async postReply(
+    topicId: number,
+    content: string,
+    { parentReplyId, replyPage = 1 }: { parentReplyId?: string; replyPage?: number } = {}
+  ): Promise<TopicReplyPostResult> {
+    if (parentReplyId !== undefined && !/^[1-9]\d*$/.test(parentReplyId))
+      throw new Error('无效的父回复编号')
     const once = await this.session.getOnce()
-    await this.session.post(`/t/${topicId}`, new URLSearchParams({ content, once }))
+    const body = new URLSearchParams({
+      content,
+      once,
+      return_to_page: String(normalizePage(replyPage))
+    })
+    if (parentReplyId) body.set('parent_id', parentReplyId)
+    const { data } = await this.session.post<ReplySubmissionResponse>(`/t/${topicId}`, body, {
+      validateStatus: status => status >= 200 && status < 500,
+      headers: {
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        Referer: `${this.baseUrl}/t/${topicId}?p=${normalizePage(replyPage)}`
+      }
+    })
+    if (!data || data.success !== true) throw new Error(data?.message || '回复发表失败，请稍后重试')
+    // 成功后不再把刷新失败当成提交失败，避免用户重发已被接受的正文
+    let postedPage = normalizePage(replyPage)
+    try {
+      const url = new URL(data.url, this.baseUrl)
+      const page = Number(url.searchParams.get('p') || 1)
+      if (
+        url.origin === new URL(this.baseUrl).origin &&
+        url.pathname === `/t/${topicId}` &&
+        Number.isSafeInteger(page) &&
+        page > 0
+      )
+        postedPage = page
+    } catch {
+      // 缺失位置时仍保留已确认的发表成功状态
+    }
+    return {
+      replyPage: postedPage,
+      replyId: data.reply_id === undefined ? undefined : String(data.reply_id)
+    }
   }
 
   /**

@@ -35,6 +35,7 @@ import {
   TopicPanelWebviewEvents,
   TopicActionTarget,
   PostTopicReplyInput,
+  PostTopicReplyResponse,
   ThankTopicReplyInput,
   TopicMemberRelationTarget,
   MemberQuickInfo,
@@ -101,6 +102,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
     replyCount: 0,
     replyCurrentPage: 1,
     replyTotalPage: 1,
+    replyThreadStyle: 'off',
     replies: []
   }
 
@@ -615,14 +617,35 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
    * 提交话题回复
    * @param message 回复请求
    */
-  private handlePostTopicReply(message: PostTopicReplyInput) {
+  private async handlePostTopicReply(
+    message: PostTopicReplyInput
+  ): Promise<PostTopicReplyResponse> {
     if (!message.content) {
       throw new Error('请输入回复内容')
     }
 
-    return this.runTopicMutation(message, topicId =>
-      G.V2ex.topics.postReply(topicId, message.content)
-    )
+    const topicId = normalizeTopicId(message.topicId)
+    const originalPage = this.detail.replyCurrentPage
+    const originalNavigation = this.replyPageRequestId
+    const posted = await G.V2ex.topics.postReply(topicId, message.content, {
+      parentReplyId: message.parentReplyId,
+      replyPage: normalizeReplyPage(message.replyPage)
+    })
+    try {
+      const topic = await G.V2ex.topics.getDetail(topicId, posted.replyPage)
+      if (
+        !message.fromPreview &&
+        topicId === this.topicId &&
+        this.replyPageRequestId === originalNavigation &&
+        this.detail.replyCurrentPage === originalPage
+      ) {
+        this.detail = topic
+        this.render(topic)
+      }
+      return { posted, topic }
+    } catch (error) {
+      return { posted, refreshError: (error as Error).message || '新回复加载失败，请刷新查看' }
+    }
   }
 
   /**

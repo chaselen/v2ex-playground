@@ -24,3 +24,16 @@ export function getV2exTopicId(href: string, baseUrl: string): string | undefine
 export function isV2exHostname(hostname: string): boolean {
   return hostname === 'v2ex.com' || hostname.endsWith('.v2ex.com')
 }
+
+/** 解析当前话题内的明确回复锚点，供局部列表定位与跨页加载 */
+export function getTopicReplyTarget(
+  href: string,
+  topicId: number
+): { replyId: string; page: number } | undefined {
+  const base = `https://www.v2ex.com/t/${topicId}`
+  if (getV2exTopicId(href, base) !== String(topicId)) return undefined
+  const url = new URL(href, base)
+  const replyId = url.hash.match(/^#r_([1-9]\d*)$/)?.[1]
+  const page = Number(url.searchParams.get('p') || 1)
+  return replyId && Number.isSafeInteger(page) && page > 0 ? { replyId, page } : undefined
+}

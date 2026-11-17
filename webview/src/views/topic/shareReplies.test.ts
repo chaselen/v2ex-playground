@@ -14,6 +14,17 @@ function reply(floor: number, content = ''): TopicReply {
     time: '',
     repliedAt: '',
     content,
+    ...(floor === 9 || floor === 13 || floor === 14
+      ? {
+          parent: {
+            replyId: String(floor === 9 ? 3 : floor === 13 ? 9 : 6),
+            userName: '',
+            floor: '',
+            url: '',
+            content: ''
+          }
+        }
+      : {}),
     thanks: 0,
     thanked: false
   }
@@ -27,14 +38,12 @@ const replies = [
 ]
 
 it('楼中楼保留所选顶层回复的全部后代，排除超出范围的顶层回复及其后代', () => {
-  const selected = selectShareReplies(replies, 'nested', 5, text => text)
-  expect(selected.map(reply => reply.floor)).toEqual(['1', '2', '3', '4', '5'])
-  expect(selected[2].children[0].floor).toBe('9')
-  expect(selected[2].children[0].children[0].floor).toBe('13')
+  const selected = selectShareReplies(replies, 'c', 5)
+  expect(selected.map(reply => reply.floor)).toEqual(['1', '2', '3', '4', '5', '9', '13'])
 })
 
 it('普通列表仅保留指定楼层范围', () => {
-  expect(selectShareReplies(replies, 'flat', 5).map(reply => reply.floor)).toEqual([
+  expect(selectShareReplies(replies, 'off', 5).map(reply => reply.floor)).toEqual([
     '1',
     '2',
     '3',
@@ -44,6 +53,6 @@ it('普通列表仅保留指定楼层范围', () => {
 })
 
 it('支持空回复及第一页最大楼层', () => {
-  expect(selectShareReplies([], 'nested', 5, text => text)).toEqual([])
-  expect(selectShareReplies(replies, 'flat', 14)).toHaveLength(replies.length)
+  expect(selectShareReplies([], 'd', 5)).toEqual([])
+  expect(selectShareReplies(replies, 'off', 14)).toHaveLength(replies.length)
 })

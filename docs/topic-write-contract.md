@@ -46,6 +46,12 @@
 
 编辑标题和附言正文不能为空，编辑正文允许为空。成功必须重定向到当前 `/t/{id}`，停留在表单页时解析服务端错误。同一面板串行提交；写入成功但刷新失败时提示刷新核对，并阻止当前表单重复提交。
 
+## 发表回复
+
+使用 `POST /t/{id}`，表单包含 `content`、提交前通过 `/poll_once` 获取的 `once`、当前页 `return_to_page`，以及选定楼层时的 `parent_id`。请求携带 `Accept: application/json`、`X-Requested-With: XMLHttpRequest` 和当前话题的 `Referer`。2026-11-17 在沙盒话题 1249137 验证成功响应为 `{ success: true, reply_id: <number>, url: "/t/1249137?p=1" }`。
+
+业务成功仅以 `success: true` 判定；失败优先显示 `message`。成功后按返回位置加载并定位新回复。若发表已经成功而后续读取失败，单独提示刷新查看，不能把它作为发表失败保留可重发的草稿。真实写入回归默认关闭，仅在显式启用且确认目标属于沙盒节点时执行。
+
 ## 正文预览
 
 主题与附言均使用 `POST /preview/{syntax}`，携带 `text=<正文>` 和 `topic_content=1`。回复预览不携带主题标记，固定使用原生格式。预览与提交使用的语法枚举需分别映射，HTML 输出约束见 [内容预览 HTML 契约](reply-preview-html.md)。

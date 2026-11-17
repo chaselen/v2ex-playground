@@ -1,32 +1,23 @@
 import { resolveWebviewUrl } from '@/core/vscode'
 import PageContextMenu from '@/components/PageContextMenu'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Check, Copy, Download, Heart, Inbox } from 'lucide-react'
 import QRCode from 'qrcode'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import UserBadge from '@/components/UserBadge'
 import TimeWithSource from '@/components/TimeWithSource'
-import {
-  ScrollArea,
-  Button,
-  Dialog,
-  Empty,
-  RadioGroup,
-  RadioGroupItem,
-  Slider,
-  Spinner,
-  Toast
-} from '@/components/ui'
+import { Avatar, ScrollArea, Button, Dialog, Empty, Slider, Spinner, Toast } from '@/components/ui'
 import { enhanceCodeBlocks, normalizeHtml } from '@/core/contentEnhancement'
 import { calculateShareImagePixelRatio, isOriginalRemoteShareImage } from '@/core/shareImageCapture'
 import { getShareImageSourceCandidates } from '@/core/shareImageSources'
-import { getReplyChildrenClassName, type ReplyViewMode, type TopicReplyNode } from './replyTree'
+import ReplyList, { type ReplyDecorations } from './ReplyList'
 import styles from './TopicShareDialog.module.scss'
-import { getReplyDisplayContent } from './replyContent'
+import ReplyFrame from './ReplyFrame'
+import { getCurrentShareReplyPage, shareReplyPageReducer } from './shareReplyPage'
 import { selectShareReplies } from './shareReplies'
 import { loadShareImageBatches } from './shareImageBatches'
 import v2exIcon from '../../../../resources/favicon.png'
-import type { TopicDetail, TopicReply } from '@extension/v2ex/types'
+import type { TopicDetail, TopicReply, TopicReplyReference } from '@extension/v2ex/types'
 
 /** 远程图片无法嵌入时使用的透明占位图 */
 const TRANSPARENT_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
@@ -49,8 +40,6 @@ interface TopicShareDialogProps {
   open: boolean
   /** 话题详情 */
   topic: TopicDetail
-  /** 主题页当前回复展示模式 */
-  replyViewMode: ReplyViewMode
   /** 加载第一页回复 */
   loadFirstReplyPage: () => Promise<TopicDetail>
   /** 加载分享图使用的本地资源 URI 或 data URL */
@@ -74,27 +63,31 @@ export default function TopicShareDialog({
   onOpenChange,
   onSave,
   open,
-  replyViewMode,
   topic
 }: TopicShareDialogProps) {
   const cardRef = useRef<HTMLElement>(null)
   const [showQrCode, setShowQrCode] = useState(true)
   const [showAppends, setShowAppends] = useState(true)
   const [showReplies, setShowReplies] = useState(false)
-  const [shareReplyViewMode, setShareReplyViewMode] = useState<ReplyViewMode>(replyViewMode)
-  const [firstPageReplies, setFirstPageReplies] = useState<TopicReply[]>()
+  const replyLoadGeneration = useRef(0)
+  const [replyPageState, dispatchReplyPage] = useReducer(shareReplyPageReducer, { status: 'idle' })
+  const firstReplyPage = open ? getCurrentShareReplyPage(replyPageState, topic) : undefined
+  const firstPageReplies = firstReplyPage?.replies
+  const replyThreadStyle = firstReplyPage?.replyThreadStyle ?? topic.replyThreadStyle
+  const loadFirstReplyPageRef = useRef(loadFirstReplyPage)
+  loadFirstReplyPageRef.current = loadFirstReplyPage
+  const previousMaxFloor = useRef(0)
   const [replyLimit, setReplyLimit] = useState(0)
   const maxReplyFloor = Math.max(0, ...(firstPageReplies || []).map(reply => Number(reply.floor)))
   const shareReplies = useMemo(
-    () => selectShareReplies(firstPageReplies || [], shareReplyViewMode, replyLimit),
-    [firstPageReplies, shareReplyViewMode, replyLimit]
+    () => selectShareReplies(firstPageReplies || [], replyThreadStyle, replyLimit),
+    [firstPageReplies, replyThreadStyle, replyLimit]
   )
-  const selectedReplies = useMemo(() => {
-    const flatten = (nodes: TopicReplyNode[]): TopicReplyNode[] =>
-      nodes.flatMap(node => [node, ...flatten(node.children)])
-    return flatten(shareReplies)
-  }, [shareReplies])
-  const [loadingReplies, setLoadingReplies] = useState(false)
+  const replyError =
+    replyPageState.status === 'error' && replyPageState.source === topic
+      ? replyPageState.message
+      : undefined
+  const loadingReplies = open && showReplies && !firstReplyPage && !replyError
   const [embeddedImages, setEmbeddedImages] = useState<Record<string, string>>({})
   const [failedImageSources, setFailedImageSources] = useState<Set<string>>(() => new Set<string>())
   const [loadingImages, setLoadingImages] = useState(false)
@@ -112,7 +105,7 @@ export default function TopicShareDialog({
   const hasTopicContent = Boolean(topic.content)
   const shareImageSources = useMemo(
     () => getShareImageSources(),
-    [selectedReplies, showAppends, showReplies, topic]
+    [shareReplies, showAppends, showReplies, topic]
   )
   const failedImageCount = shareImageSources.filter(imageSrc =>
     failedImageSources.has(imageSrc)
@@ -163,13 +156,49 @@ export default function TopicShareDialog({
     if (open && !loadingImages) {
       void embedShareImages().catch(() => undefined)
     }
-  }, [selectedReplies, loadingImages, open, showAppends, showReplies, topic])
+  }, [shareReplies, loadingImages, open, showAppends, showReplies, topic])
 
   useEffect(() => {
-    if (open) {
-      setShareReplyViewMode(replyViewMode)
+    setShowReplies(false)
+    setReplyLimit(0)
+    previousMaxFloor.current = 0
+  }, [topic.id])
+
+  useEffect(() => {
+    if (!open || !showReplies) {
+      dispatchReplyPage({ type: 'reset' })
+      return
     }
-  }, [open, replyViewMode])
+    const requestId = ++replyLoadGeneration.current
+    dispatchReplyPage({ type: 'load', requestId, source: topic })
+    void loadFirstReplyPageRef.current().then(
+      page => dispatchReplyPage({ type: 'loaded', requestId, page }),
+      (error: Error) =>
+        dispatchReplyPage({
+          type: 'failed',
+          requestId,
+          message: error.message || '第一页回复加载失败'
+        })
+    )
+  }, [open, showReplies, topic])
+
+  useEffect(() => {
+    if (firstReplyPage) {
+      const max = Math.max(0, ...firstReplyPage.replies.map(reply => Number(reply.floor)))
+      const previous = previousMaxFloor.current
+      setReplyLimit(current =>
+        current === previous || current === 0 ? max : Math.min(current, max)
+      )
+      previousMaxFloor.current = max
+    }
+  }, [firstReplyPage])
+
+  useEffect(() => {
+    if (replyError) {
+      setShowReplies(false)
+      Toast.error(replyError)
+    }
+  }, [replyError])
 
   /** 生成当前分享卡片 PNG */
   async function createImage() {
@@ -260,9 +289,10 @@ export default function TopicShareDialog({
             ? topic.appends.flatMap(append => getHtmlImageSources(append.content))
             : []),
           ...(showReplies && firstPageReplies
-            ? selectedReplies.flatMap(reply => [
+            ? shareReplies.flatMap(reply => [
                 reply.userAvatar,
-                ...getHtmlImageSources(reply.content)
+                ...getHtmlImageSources(reply.content),
+                ...getReferenceImageSources(reply.parent)
               ])
             : [])
         ]
@@ -391,26 +421,6 @@ export default function TopicShareDialog({
     }
   }
 
-  /** 切换第一页回复展示 */
-  async function toggleReplies(checked: boolean) {
-    setShowReplies(checked)
-    if (!checked || firstPageReplies) {
-      return
-    }
-
-    setLoadingReplies(true)
-    try {
-      const firstPageTopic = await loadFirstReplyPage()
-      setFirstPageReplies(firstPageTopic.replies)
-      setReplyLimit(Math.max(0, ...firstPageTopic.replies.map(reply => Number(reply.floor))))
-    } catch (err) {
-      setShowReplies(false)
-      Toast.error((err as Error).message || '第一页回复加载失败')
-    } finally {
-      setLoadingReplies(false)
-    }
-  }
-
   /** 保存分享图 */
   async function saveImage() {
     setSaving(true)
@@ -454,65 +464,53 @@ export default function TopicShareDialog({
     }
   }
 
-  /**
-   * 渲染单条分享回复及其子回复
-   * @param reply 回复节点
-   * @param depth 当前深度，根为 0；用于限制楼中楼视觉缩进
-   * @param parent 直接父回复，用于隐藏匹配的开头引用
-   */
-  function renderShareReply(reply: TopicReplyNode, depth = 0, parent?: TopicReplyNode) {
-    const displayContent = getReplyDisplayContent(
-      reply.content,
-      shareReplyViewMode === 'nested' ? parent : undefined
-    )
-    // 页面未提供数量时仍需体现当前用户已发送的感谢
+  /** 分享图复用回复布局与模式正文，图片转换仍由导出流程负责 */
+  function renderShareReply(reply: TopicReply, decorations: ReplyDecorations) {
     const thankCount = Math.max(reply.thanks, reply.thanked ? 1 : 0)
     return (
-      <article className={styles.cardReply} key={reply.replyId}>
-        <header className="reply-meta">
-          <span className={styles.cardReplyAuthor}>
-            {reply.userAvatar && (
-              <img
-                src={getShareImageDisplaySrc(reply.userAvatar, embeddedImages, failedImageSources)}
-                data-share-image-src={reply.userAvatar.trim()}
-                alt=""
-              />
-            )}
-            <strong>{reply.userName}</strong>
+      <ReplyFrame
+        className={styles.cardReply}
+        avatar={
+          reply.userAvatar ? (
+            <img
+              className={`v2ex-avatar v2ex-avatar--small ${styles.cardReplyAvatar}`}
+              src={getShareImageDisplaySrc(reply.userAvatar, embeddedImages, failedImageSources)}
+              data-share-image-src={reply.userAvatar.trim()}
+              alt=""
+            />
+          ) : (
+            <Avatar size="small" shape="square" />
+          )
+        }
+        author={<strong className={styles.cardReplyAuthor}>{reply.userName}</strong>}
+        metadata={
+          <>
             <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
+            {decorations.beforeTime}
             <TimeWithSource
               className="time"
               time={reply.time}
               title={reply.repliedAt || reply.time}
               via={reply.via}
             />
+            {decorations.meta}
             {thankCount > 0 && (
               <span className={`thanks ${styles.cardReplyThanks}`} title={`${thankCount} 人感谢`}>
                 <Heart aria-hidden="true" />
                 {thankCount}
               </span>
             )}
-          </span>
-          <div className="reply-actions">
-            <span className="floor">{reply.floor}</span>
-          </div>
-        </header>
+          </>
+        }
+        actions={<span className="floor">{reply.floor}</span>}
+      >
+        {decorations.before}
         <EnhancedHtmlContent
           className={`topic-content reply-content ${styles.cardContent}`}
-          html={embedHtmlImages(displayContent, embeddedImages, failedImageSources)}
+          html={embedHtmlImages(decorations.content, embeddedImages, failedImageSources)}
         />
-        {shareReplyViewMode === 'nested' && reply.children.length > 0 && (
-          <div
-            className={getReplyChildrenClassName(
-              depth,
-              styles.cardReplyChildren,
-              styles.cardReplyChildrenMaxIndent
-            )}
-          >
-            {reply.children.map(child => renderShareReply(child, depth + 1, reply))}
-          </div>
-        )}
-      </article>
+        {decorations.after}
+      </ReplyFrame>
     )
   }
 
@@ -587,7 +585,16 @@ export default function TopicShareDialog({
                   <section className={styles.cardReplies}>
                     <h2>第一页回复</h2>
                     {shareReplies.length ? (
-                      shareReplies.map(reply => renderShareReply(reply))
+                      <ReplyList
+                        replies={shareReplies}
+                        style={replyThreadStyle}
+                        topicId={topic.id}
+                        static
+                        renderReply={renderShareReply}
+                        transformHtml={html =>
+                          embedHtmlImages(html, embeddedImages, failedImageSources)
+                        }
+                      />
                     ) : (
                       <p className={styles.cardEmptyReplies}>第一页暂无回复</p>
                     )}
@@ -670,7 +677,7 @@ export default function TopicShareDialog({
                   type="checkbox"
                   checked={showReplies}
                   disabled={loadingReplies}
-                  onChange={event => void toggleReplies(event.target.checked)}
+                  onChange={event => setShowReplies(event.target.checked)}
                 />
                 <span className={styles.checkboxMark}>
                   {loadingReplies ? (
@@ -683,20 +690,6 @@ export default function TopicShareDialog({
               </label>
               {showReplies && (
                 <div className={styles.replySettings}>
-                  <div className={styles.replyViewModeField}>
-                    <span>回复列表模式</span>
-                    <RadioGroup
-                      aria-label="分享图回复列表模式"
-                      className={styles.replyViewModeControl}
-                      size="small"
-                      variant="segmented"
-                      value={shareReplyViewMode}
-                      onValueChange={value => setShareReplyViewMode(value as ReplyViewMode)}
-                    >
-                      <RadioGroupItem value="flat" label="普通列表" />
-                      <RadioGroupItem value="nested" label="楼中楼" />
-                    </RadioGroup>
-                  </div>
                   {maxReplyFloor > 0 && (
                     <Slider
                       label="展示至楼层"
@@ -918,4 +911,16 @@ function getShareImageDisplaySrc(
       ? TRANSPARENT_IMAGE
       : normalizedSrc)
   )
+}
+
+/** 引用楼层及跨页预览的图片也经过分享图缓存 */
+function getReferenceImageSources(reference?: TopicReplyReference): string[] {
+  const sources: string[] = []
+  const seen = new Set<string>()
+  while (reference && !seen.has(reference.replyId)) {
+    seen.add(reference.replyId)
+    sources.push(...getHtmlImageSources(reference.content))
+    reference = reference.parent
+  }
+  return sources
 }

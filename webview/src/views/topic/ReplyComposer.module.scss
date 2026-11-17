@@ -311,3 +311,36 @@
     background: var(--v2ex-hover-bg);
   }
 }
+
+.replyTarget {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--v2ex-border);
+  border-left: 3px solid var(--v2ex-link-fg);
+  background: var(--v2ex-widget-bg);
+  color: var(--v2ex-muted-fg);
+
+  > svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+  > button {
+    flex: none;
+    margin-left: auto;
+  }
+}
+
+.replyTargetLabel {
+  flex: none;
+}
+
+.replyTargetSummary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

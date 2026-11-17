@@ -1,16 +1,16 @@
-import type { TopicReply } from '@extension/v2ex/types'
-import { buildReplyTree, type ReplyViewMode, type TopicReplyNode } from './replyTree'
+import type { TopicReply, ReplyThreadStyle } from '@extension/v2ex/types'
+import { buildReplyTree, flattenReplyTree } from './replyTree'
 
-/** 按顶层楼层上限选择分享回复，嵌套回复始终随父回复完整保留 */
+/** 分组模式按根楼层选择并完整保留后代，其余模式按原始楼层范围选择 */
 export function selectShareReplies(
   replies: TopicReply[],
-  mode: ReplyViewMode,
-  floorLimit: number,
-  extractText?: (content: string) => string
-): TopicReplyNode[] {
-  const nodes =
-    mode === 'nested'
-      ? buildReplyTree(replies, extractText)
-      : replies.map<TopicReplyNode>(reply => ({ ...reply, children: [] }))
-  return nodes.filter(reply => Number(reply.floor) <= floorLimit)
+  mode: ReplyThreadStyle,
+  floorLimit: number
+): TopicReply[] {
+  if (mode === 'c' || mode === 'd') {
+    return flattenReplyTree(
+      buildReplyTree(replies).filter(reply => Number(reply.floor) <= floorLimit)
+    ).sort((a, b) => Number(a.floor) - Number(b.floor))
+  }
+  return replies.filter(reply => Number(reply.floor) <= floorLimit)
 }

@@ -14,7 +14,8 @@ import type {
   TopicContentInput,
   TopicManagementAction,
   TopicManagementState,
-  TopicSyntax
+  TopicSyntax,
+  TopicReplyPostResult
 } from '../v2ex/types'
 export type { MemberInfo } from '../v2ex/types'
 
@@ -28,8 +29,19 @@ export interface TopicActionTarget {
 
 /** 提交话题回复请求 */
 export interface PostTopicReplyInput extends TopicActionTarget {
+  /** 预览中的发表结果不改变主面板正在浏览的位置 */
+  fromPreview?: boolean
   /** 回复正文 */
   content: string
+  /** 点击回复按钮选定的官方父回复编号 */
+  parentReplyId?: string
+}
+
+/** 发表已成功；随后刷新失败时仍返回结果，避免保留草稿造成重复提交 */
+export interface PostTopicReplyResponse {
+  posted: TopicReplyPostResult
+  topic?: TopicDetail
+  refreshError?: string
 }
 
 /** 感谢话题回复请求 */
@@ -114,7 +126,7 @@ export interface TopicPanelRpcCommands
   /** 感谢话题创建者并返回最新详情 */
   thankTopic(topicId: string | number, replyPage?: number): TopicDetail
   /** 提交回复并返回最新详情 */
-  postTopicReply(payload: PostTopicReplyInput): TopicDetail
+  postTopicReply(payload: PostTopicReplyInput): PostTopicReplyResponse
   /** 上传回复图片 */
   uploadImage(payload: ImageUploadInput): string
   /** 检测 Imgur 连通性 */

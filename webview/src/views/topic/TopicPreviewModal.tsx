@@ -106,6 +106,7 @@ export default function TopicPreviewModal({
   }, [])
 
   const topicController = useTopicDetailController({
+    fromPreview: true,
     topic,
     showImages,
     showAvatar,

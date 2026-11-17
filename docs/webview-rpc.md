@@ -1,5 +1,7 @@
 # Webview RPC 通信
 
+发表回复串行获取令牌、提交和刷新，各请求有独立的 HTTP 超时；该命令的 RPC 等待预算需覆盖累计耗时并保留桥接余量，避免服务端已发表后前端提前超时、丢弃迟到的成功响应。其他命令沿用各自的超时策略。
+
 ## 契约与分发边界
 
 页面契约集中在 `src/shared/*View.ts`，公共协议与类型推导在 `src/shared/webviewRpc.ts`。扩展侧由 `src/core/WebviewRpcBridge.ts` 分发，Webview 通过 `webview/src/core/vscode.ts` 的类型化客户端调用，不直接发送业务消息。

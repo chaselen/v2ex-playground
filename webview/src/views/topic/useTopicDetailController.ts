@@ -1,4 +1,5 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { Toast } from '@/components/ui'
 import { useLatestRequest } from '@/hooks/useLatestRequest'
 import { createVsCodeClient } from '@/core/vscode'
 import { mergeTopicMutationResult } from './topicDetailState'
@@ -15,6 +16,8 @@ const vscode = createVsCodeClient<TopicPanelRpcCommands>()
 
 /** 话题详情数据适配器 */
 export interface TopicDetailDataAdapter {
+  /** 预览操作不驱动主面板翻页 */
+  fromPreview?: boolean
   /** 当前话题详情 */
   topic?: TopicDetail
   /** 是否显示图片 */
@@ -33,6 +36,8 @@ export interface TopicDetailDataAdapter {
 
 /** 话题详情交互控制器 */
 export interface TopicDetailController {
+  /** 成功发表后待定位的新回复 */
+  postedReplyId?: string
   /** 当前话题详情 */
   topic: TopicDetail
   /** 是否显示图片 */
@@ -56,7 +61,7 @@ export interface TopicDetailController {
   /** 感谢主题创建者 */
   thankTopic(): Promise<void>
   /** 提交回复 */
-  postReply(content: string): Promise<void>
+  postReply(content: string, parentReplyId?: string): Promise<void>
   /** 感谢回复者 */
   thankReply(replyId: string): Promise<void>
   /** 加载回复页 */
@@ -82,10 +87,19 @@ export interface TopicDetailController {
 export default function useTopicDetailController(
   adapter: TopicDetailDataAdapter
 ): TopicDetailController | undefined {
-  const { topic, showImages, showAvatar, canOperate, onTopicChange, refresh, loadReplyPage } =
-    adapter
+  const {
+    topic,
+    showImages,
+    showAvatar,
+    canOperate,
+    onTopicChange,
+    refresh,
+    loadReplyPage,
+    fromPreview
+  } = adapter
   const topicRef = useRef(topic)
   const { startRequest } = useLatestRequest()
+  const [postedReply, setPostedReply] = useState<{ topicId: number; replyId?: string }>()
   topicRef.current = topic
 
   return useMemo(() => {
@@ -129,6 +143,7 @@ export default function useTopicDetailController(
 
     return {
       topic,
+      postedReplyId: postedReply?.topicId === topic.id ? postedReply.replyId : undefined,
       showImages,
       showAvatar,
       canOperate,
@@ -141,13 +156,23 @@ export default function useTopicDetailController(
       cancelIgnore: () =>
         applyMutationResult(vscode.cancelIgnoreTopic(target.topicId, target.replyPage)),
       thankTopic: () => applyMutationResult(vscode.thankTopic(target.topicId, target.replyPage)),
-      postReply: content =>
-        applyMutationResult(
-          vscode.postTopicReply({
-            ...target,
-            content
-          })
-        ),
+      postReply: async (content, parentReplyId) => {
+        const request = startRequest()
+        const result = await vscode.postTopicReply({
+          fromPreview,
+          ...target,
+          content,
+          parentReplyId
+        })
+        if (result.refreshError)
+          Toast.warning(
+            `回复已发表，但加载失败：${result.refreshError}。请刷新查看，不要重复提交。`
+          )
+        if (request.isLatest() && topicRef.current?.id === topic.id && result.topic) {
+          applyTopic(result.topic)
+          setPostedReply({ topicId: topic.id, replyId: result.posted.replyId })
+        }
+      },
       thankReply: replyId =>
         applyMutationResult(
           vscode.thankTopicReply({
@@ -171,6 +196,8 @@ export default function useTopicDetailController(
     onTopicChange,
     refresh,
     loadReplyPage,
-    startRequest
+    startRequest,
+    postedReply,
+    fromPreview
   ])
 }

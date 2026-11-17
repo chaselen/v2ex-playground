@@ -22,6 +22,7 @@ export function mergeTopicMutationResult(
   return {
     ...nextTopic,
     replyCurrentPage: currentTopic.replyCurrentPage,
+    replyThreadStyle: currentTopic.replyThreadStyle,
     replies: currentTopic.replies
   }
 }

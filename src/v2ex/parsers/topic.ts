@@ -12,6 +12,8 @@ import type {
   TopicDetail,
   TopicInfo,
   TopicReply,
+  TopicReplyReference,
+  ReplyThreadStyle,
   TopicContentAction,
   TopicContentState,
   TopicManagementAction,
@@ -157,6 +159,7 @@ export function parseTopicMeta(
     replyCount: 0,
     replyCurrentPage: 1,
     replyTotalPage: 1,
+    replyThreadStyle: parseReplyThreadStyle($),
     replies: []
   }
   const node = header.find('a[href^="/go/"]').first()
@@ -236,43 +239,200 @@ export function parseTopicMeta(
   return topic
 }
 
-/**
- * 获取回复列表
- * @param $ cheerio 实例
- */
+/** 从话题响应读取实际生效的官网设置，无标记或未知值按经典平铺处理 */
+export function parseReplyThreadStyle($: cheerio.CheerioAPI): ReplyThreadStyle {
+  const classes = getTopicReplyBox($).find('.reply-threads').first().attr('class') || ''
+  return (
+    (classes.match(/(?:^|\s)reply-threads-(off|a|b|c|d|f|h)(?=\s|$)/)?.[1] as ReplyThreadStyle) ||
+    'off'
+  )
+}
+
+/** 解析真实回复单元格并恢复楼层顺序，只读取官方关联 */
 export function parseReplies($: cheerio.CheerioAPI): TopicReply[] {
   const replies: TopicReply[] = []
-  const topicBox = getTopicReplyBox($)
-  topicBox
+  const cells = getTopicReplyBox($)
     .find('.cell[id^="r_"]')
-    .filter((_, element) => !$(element).parents('.reply_content, [id^="r_"]').length)
-    .each((_, element) => {
-      if (!/^r_\d+$/.test($(element).attr('id') || '')) return
-      // 正文可包含时间、链接和徽章同名结构，只从正文以外读取回复元信息
-      const metadata = $(element).clone()
-      metadata.find('.reply_content').remove()
-      const replyTime = getV2exTimeSpan(metadata)
-      const badges = metadata.find('.badges').first()
-      const timeText = replyTime.text().trim()
-      const viaMatch = timeText.match(/\s+via\s+(.+)$/)
-
-      replies.push({
-        replyId: $(element).attr('id')?.split('r_')[1] || '0',
-        userAvatar: metadata.find('img.avatar').first().attr('src') || '',
-        userName: metadata.find('a.dark').first().text() || '',
-        isMod: badges.find('.badge.mod').length > 0,
-        isOp: badges.find('.badge.op').length > 0,
-        isPro: badges.find('.badge.pro').length > 0,
-        time: viaMatch ? timeText.slice(0, viaMatch.index).trim() : timeText,
-        via: viaMatch?.[1].trim(),
-        repliedAt: formatTopicTime(replyTime.attr('title')),
-        floor: metadata.find('span.no').first().text(),
-        content: $(element).find('.reply_content').html() || '',
-        thanks: parseInt(metadata.find('span.small.fade').first().text().trim() || '0'),
-        thanked: metadata.find('.thank_area.thanked').length > 0
-      })
+    .filter(
+      (_, element) =>
+        /^r_\d+$/.test($(element).attr('id') || '') &&
+        !$(element).parents('.reply_content, .reply-quote, template').length
+    )
+  const style = parseReplyThreadStyle($)
+  const parentIds = new Map<string, string>()
+  const depthStack: string[] = []
+  cells.each((_, element) => {
+    const cell = $(element)
+    const replyId = cell.attr('id')!.slice(2)
+    // 楼中楼里的真实子单元格参与解析，但不能污染父回复的作者、徽章与正文
+    const own = cell.clone()
+    own
+      .find('.cell[id^="r_"], .reply-group, template')
+      .filter((_, child) => !$(child).parents('.reply_content, .reply-quote').length)
+      .remove()
+    own.find('.reply_content > .reply-at').each((_, span) => {
+      $(span).replaceWith($(span).contents())
     })
-  return replies
+    const content =
+      own
+        .find('.reply_content')
+        .filter((_, child) => !$(child).parents('.reply-quote').length)
+        .first()
+        .html() || ''
+    const metadata = own.clone()
+    metadata.find('.reply_content, .reply-quote, .reply-strip, .reply-answered').remove()
+    const replyTime = getV2exTimeSpan(metadata)
+    const badges = metadata.find('.badges').first()
+    const timeText = replyTime.text().trim()
+    const viaMatch = timeText.match(/\s+via\s+(.+)$/)
+    const reply: TopicReply = {
+      replyId,
+      userAvatar: metadata.find('img.avatar').first().attr('src') || '',
+      userName: metadata.find('a.dark').first().text() || '',
+      isMod: badges.find('.badge.mod').length > 0,
+      isOp: badges.find('.badge.op').length > 0,
+      isPro: badges.find('.badge.pro').length > 0,
+      time: viaMatch ? timeText.slice(0, viaMatch.index).trim() : timeText,
+      via: viaMatch?.[1].trim(),
+      repliedAt: formatTopicTime(replyTime.attr('title')),
+      floor: metadata.find('span.no').first().text(),
+      content,
+      thanks: parseInt(metadata.find('span.small.fade').first().text().trim() || '0'),
+      thanked: metadata.find('.thank_area.thanked').length > 0
+    }
+    const parentReference = style === 'off' ? undefined : parseReplyReference($, own, metadata)
+    if (style === 'b') {
+      const answeredBy: TopicReplyReference[] = []
+      own
+        .find('.reply-answered a.reply-chip')
+        .filter((_, chip) => !$(chip).parents('.reply_content, .reply-quote, template').length)
+        .each((_, chip) => {
+          const target = $(chip)
+          const url = target.attr('href') || ''
+          const replyId = url.match(/#r_(\d+)$/)?.[1]
+          const floor = target.text().match(/#(\d+)/)?.[1]
+          if (!replyId || !floor) return
+          answeredBy.push({
+            replyId,
+            floor,
+            userName: target
+              .text()
+              .replace(/^\s*#\d+\s*/, '')
+              .trim(),
+            url,
+            content: $(`#reply-preview-${replyId}`).find('.reply_content').first().html() || ''
+          })
+        })
+      if (answeredBy.length) reply.answeredBy = answeredBy
+    }
+    const targetId = parentReference?.replyId
+    if (parentReference) {
+      reply.parent = parentReference
+      parentIds.set(replyId, parentReference.replyId)
+    }
+    if (style === 'c' && !targetId) {
+      const ancestorId = cell.parents('.cell[id^="r_"]').first().attr('id')?.slice(2)
+      if (ancestorId) parentIds.set(replyId, ancestorId)
+    }
+    if (style === 'd') {
+      const depth = Number(cell.attr('data-depth') || 0)
+      if (Number.isInteger(depth) && depth >= 0 && depth <= depthStack.length) {
+        if (depth > 0 && !targetId) parentIds.set(replyId, depthStack[depth - 1])
+        depthStack.length = depth
+        depthStack.push(replyId)
+      }
+    }
+    if (style === 'f' && cell.attr('data-parent-id'))
+      parentIds.set(replyId, cell.attr('data-parent-id')!)
+    replies.push(reply)
+  })
+  const byId = new Map(replies.map(reply => [reply.replyId, reply]))
+  for (const reply of replies) {
+    const parent = byId.get(parentIds.get(reply.replyId) || '')
+    if (parent && parent.replyId !== reply.replyId) {
+      reply.parent = {
+        replyId: parent.replyId,
+        userName: parent.userName,
+        floor: parent.floor,
+        url: `#r_${parent.replyId}`,
+        content: parent.content,
+        time: parent.time
+      }
+    }
+  }
+  return [...new Map(replies.map(reply => [reply.replyId, reply])).values()].sort(
+    (a, b) => Number(a.floor) - Number(b.floor)
+  )
+}
+
+/** 不同官方布局使用不同的关联入口；不从用户正文读取关系 */
+function parseReplyReference(
+  $: cheerio.CheerioAPI,
+  own: CheerioSelection,
+  metadata: CheerioSelection
+): TopicReplyReference | undefined {
+  const quote = own
+    .find('.reply-quote')
+    .filter((_, element) => !$(element).parents('.reply_content, .reply-quote').length)
+    .first()
+  if (quote.length) return parseQuoteParent($, quote)
+  const strip = own
+    .find('a.reply-strip')
+    .filter((_, element) => !$(element).parents('.reply_content, .reply-quote').length)
+    .first()
+  const chip = metadata.find('a.reply-chip').first()
+  const to = metadata.find('.reply-to a').first()
+  const target = strip.length ? strip : to.length ? to : chip
+  const url = target.attr('href') || ''
+  const replyId = url.match(/#r_(\d+)$/)?.[1]
+  if (!replyId) return undefined
+  let userName = to.text()
+  let floor = ''
+  let content = ''
+  if (strip.length) {
+    const who = strip.find('.reply-strip-who').clone()
+    floor = who.find('.reply-quote-no').text().replace('#', '')
+    who.children().remove()
+    userName = who
+      .text()
+      .replace(/^↩\s*/, '')
+      .trim()
+    content = escapeReplyText(strip.find('.reply-strip-text').text())
+  } else if (chip.length && !to.length) {
+    userName = chip
+      .text()
+      .replace(/^↩\s*#\d+\s*/, '')
+      .trim()
+    floor = chip.text().match(/#(\d+)/)?.[1] || ''
+    const preview = $(`#reply-preview-${replyId}`)
+    content = preview.find('.reply_content').first().html() || ''
+  }
+  return { replyId, url, userName, floor, content }
+}
+
+function escapeReplyText(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/** 仅读取服务端提供的有限 DOM 引用链，不额外截断上文 */
+function parseQuoteParent(
+  $: cheerio.CheerioAPI,
+  quote: CheerioSelection
+): TopicReplyReference | undefined {
+  if (!quote.length) return undefined
+  const link = quote.children('.reply-quote-head').find('a').first()
+  const url = link.attr('href') || ''
+  const replyId = url.match(/#r_(\d+)$/)?.[1]
+  if (!replyId) return undefined
+  return {
+    replyId,
+    url,
+    userName: link.text(),
+    floor: quote.children('.reply-quote-head').find('.reply-quote-no').text().replace('#', ''),
+    content: quote.children('.reply-quote-text').first().html() || '',
+    time: quote.children('.reply-quote-head').find('.reply-quote-time').text() || undefined,
+    parent: parseQuoteParent($, quote.children('.reply-quote-up').children('.reply-quote').first())
+  }
 }
 
 /** 缺失或无效的源站时间保持为空，避免 dayjs(undefined) 生成当前时间 */

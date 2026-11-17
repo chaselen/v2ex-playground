@@ -176,7 +176,9 @@ export interface TopicDetail {
   replyCurrentPage: number
   /** 回复总页数 */
   replyTotalPage: number
-  /** 回复 */
+  /** 当前官网设置对应的回复展示方式 */
+  replyThreadStyle: ReplyThreadStyle
+  /** 回复，始终按原始楼层排序 */
   replies: TopicReply[]
 }
 
@@ -190,10 +192,37 @@ export interface TopicAppend {
   content: string
 }
 
+/** 官网楼中楼显示方式，值与 reply_thread_style 表单契约一致 */
+export type ReplyThreadStyle = 'off' | 'a' | 'b' | 'c' | 'd' | 'f' | 'h'
+
+/** 回复发表成功后，官网指定的新回复位置 */
+export interface TopicReplyPostResult {
+  replyId?: string
+  replyPage: number
+}
+
+/** 服务端明确提供的回复引用；跨页时只保留服务端允许展示的预览 */
+export interface TopicReplyReference {
+  replyId: string
+  userName: string
+  floor: string
+  /** 站内目标链接，包含目标页码与回复锚点 */
+  url: string
+  /** 引用正文 HTML，摘要模式下可能只有纯文本摘要 */
+  content: string
+  time?: string
+  /** 引用楼层模式中服务端提供的更早上文 */
+  parent?: TopicReplyReference
+}
+
 /**
  * 话题回复
  */
 export interface TopicReply {
+  /** 官方回复目标，缺失时不从正文推断 */
+  parent?: TopicReplyReference
+  /** 官网提供的反向引用入口，可能包含当前页之外的回复 */
+  answeredBy?: TopicReplyReference[]
   /** 回复id */
   replyId: string
   /** 用户头像 */

@@ -12,7 +12,6 @@ import TopicShareDialog from './TopicShareDialog'
 import { loadCancellableShareImages } from './shareImageBatches'
 import TopicContentDialog, { topicContentLabels } from './TopicContentDialog'
 import TopicManagementPopover from './TopicManagementPopover'
-import type { ReplyViewMode } from './replyTree'
 import useTopicDetailController from './useTopicDetailController'
 import type { TopicDetail, TopicContentAction } from '@extension/v2ex/types'
 import type {
@@ -39,7 +38,6 @@ export default function TopicApp() {
   const [previewTopicId, setPreviewTopicId] = useState<string>()
   const [contentAction, setContentAction] = useState<TopicContentAction>()
   const [showShareDialog, setShowShareDialog] = useState(false)
-  const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>('nested')
   const topicScrollRef = useRef<HTMLDivElement | null>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
@@ -208,9 +206,7 @@ export default function TopicApp() {
               </>
             )
           }
-          initialReplyViewMode={replyViewMode}
           scrollContainerRef={topicScrollRef}
-          onReplyViewModeChange={setReplyViewMode}
           onTopicPreview={openTopicPreview}
           onShare={() => setShowShareDialog(true)}
         />
@@ -241,7 +237,6 @@ export default function TopicApp() {
         <TopicShareDialog
           key={topic.id}
           open={showShareDialog}
-          replyViewMode={replyViewMode}
           topic={topic}
           loadFirstReplyPage={() =>
             topic.replyCurrentPage === 1

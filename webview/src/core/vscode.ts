@@ -26,6 +26,9 @@ const eventHandlers = new Map<string, Set<(payload: object) => void>>()
 /** 默认 RPC 超时时间 */
 const defaultRequestTimeout = 30000
 
+/** 发表回复串行获取令牌、提交和刷新，各自最多 15 秒，另留桥接余量 */
+const postTopicReplyRequestTimeout = 60000
+
 /** 图片上传 RPC 超时时间 */
 const uploadImageRequestTimeout = 60000
 
@@ -158,6 +161,7 @@ function request(command: string, args: unknown[]): Promise<unknown> {
  * @param command 命令名
  */
 function getRequestTimeout(command: string) {
+  if (command === 'postTopicReply') return postTopicReplyRequestTimeout
   return command === 'uploadImage' ? uploadImageRequestTimeout : defaultRequestTimeout
 }
 

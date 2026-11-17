@@ -38,6 +38,14 @@ body {
     var(--vscode-descriptionForeground, var(--v2ex-webview-fg))
   );
 
+  /* 回复对话轨道：与编辑器图表色保持一致，高对比主题仍有几何连线辅助区分 */
+  --v2ex-thread-color-0: var(--vscode-charts-blue, var(--v2ex-link-fg));
+  --v2ex-thread-color-1: var(--vscode-charts-green, var(--v2ex-success-fg));
+  --v2ex-thread-color-2: var(--vscode-charts-orange, var(--v2ex-warning-fg));
+  --v2ex-thread-color-3: var(--vscode-charts-purple, var(--v2ex-link-fg));
+  --v2ex-thread-color-4: var(--vscode-charts-red, var(--v2ex-danger-fg));
+  --v2ex-thread-color-5: var(--vscode-charts-yellow, var(--v2ex-warning-fg));
+
   /* 排版：跟随宿主 UI 字体 */
   --v2ex-font-family: var(--vscode-font-family, system-ui, sans-serif);
   --v2ex-font-size: var(--vscode-font-size, 13px);

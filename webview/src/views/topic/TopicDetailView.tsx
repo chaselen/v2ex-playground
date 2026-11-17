@@ -1,5 +1,5 @@
 import TopicInfoDialog from './TopicInfoDialog'
-import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ArrowDown,
@@ -13,24 +13,25 @@ import {
   Info,
   RefreshCw,
   Reply,
+  Settings,
   Share2,
   Tag,
   UserRound
 } from 'lucide-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
+import { handleWebviewLinkClick } from '@/core/linkNavigation'
+import { resolveWebviewUrl } from '@/core/vscode'
 import NodeButton from '@/components/NodeButton'
 import UserBadge from '@/components/UserBadge'
 import TimeWithSource from '@/components/TimeWithSource'
 import CollapsibleReplyContent from './CollapsibleReplyContent'
-import { getReplyDisplayContent } from './replyContent'
+import ReplyFrame from './ReplyFrame'
 import {
   Avatar,
   Button,
   ConfirmPopover,
   Empty,
   Pagination,
-  RadioGroup,
-  RadioGroupItem,
   Spinner,
   Tooltip,
   Toast
@@ -41,13 +42,8 @@ import MemberQuickInfoHoverLayer from './MemberQuickInfoHoverLayer'
 import MemberQuickInfoPopover from './MemberQuickInfoPopover'
 import ReplyLoginPrompt from './ReplyLoginPrompt'
 import { FloatingActions, floatingActionStyles } from './FloatingActions'
-import {
-  buildReplyTree,
-  getReplyChildrenClassName,
-  shouldIndentReplyChildren,
-  type ReplyViewMode,
-  type TopicReplyNode
-} from './replyTree'
+import ReplyList, { type ReplyDecorations } from './ReplyList'
+import { replyThreadStyleLabels } from './replyTree'
 import type { OpenTopicPreview } from '@/core/contentEnhancement'
 import type { TopicReply } from '@extension/v2ex/types'
 import type { TopicDetailController } from './useTopicDetailController'
@@ -68,14 +64,8 @@ export interface TopicDetailViewProps {
   showFloatingActions?: boolean
   /** 是否显示正文后的主题工具栏 */
   showTopicToolbar?: boolean
-  /** 是否显示回复展示模式切换 */
-  showReplyViewSwitch?: boolean
   /** 是否显示感谢回复和快捷回复操作 */
   showReplyActions?: boolean
-  /** 初始回复展示模式 */
-  initialReplyViewMode?: ReplyViewMode
-  /** 回复展示模式变化 */
-  onReplyViewModeChange?: (mode: ReplyViewMode) => void
   /** 打开站内话题预览 */
   onTopicPreview: OpenTopicPreview
   /** 主面板作者操作入口 */
@@ -95,10 +85,7 @@ export default function TopicDetailView({
   showReplyComposer = true,
   showFloatingActions = true,
   showTopicToolbar = true,
-  showReplyViewSwitch = true,
   showReplyActions = true,
-  initialReplyViewMode = 'nested',
-  onReplyViewModeChange,
   onTopicPreview,
   onShare,
   authorActions
@@ -112,15 +99,9 @@ export default function TopicDetailView({
   const [updatingIgnore, setUpdatingIgnore] = useState(false)
   const [thankingTopic, setThankingTopic] = useState(false)
   const [pendingThankReplyIds, setPendingThankReplyIds] = useState<string[]>([])
-  const [replyViewMode, setReplyViewMode] = useState<ReplyViewMode>(initialReplyViewMode)
   const replyComposerRef = useRef<ReplyComposerHandle>(null)
   /** 话题详情根节点，供内容区用户链接悬停浮层委托事件 */
   const [topicRoot, setTopicRoot] = useState<HTMLElement | null>(null)
-  const replyTree = useMemo(() => buildReplyTree(topic.replies), [topic.replies])
-  const replies =
-    replyViewMode === 'nested'
-      ? replyTree
-      : topic.replies.map(reply => ({ ...reply, children: [] }))
   const floatingActions = showFloatingActions ? (
     <FloatingActions contained={Boolean(floatingActionsContainer)}>
       {renderTopicActionButtons('floating')}
@@ -190,8 +171,8 @@ export default function TopicDetailView({
   }
 
   /** 提交话题回复 */
-  async function postReply(content: string) {
-    await controller.postReply(content)
+  async function postReply(content: string, parentReplyId?: string) {
+    await controller.postReply(content, parentReplyId)
   }
 
   /** 加载回复页 */
@@ -244,13 +225,7 @@ export default function TopicDetailView({
 
   /** 快捷回复楼层 */
   function floorReply(reply: TopicReply) {
-    replyComposerRef.current?.setContent(`@${reply.userName} #${reply.floor} `)
-  }
-
-  /** 切换回复列表展示模式 */
-  function changeReplyViewMode(mode: ReplyViewMode) {
-    setReplyViewMode(mode)
-    onReplyViewModeChange?.(mode)
+    replyComposerRef.current?.replyTo(reply)
   }
 
   /** 渲染用户链接和快速信息 */
@@ -315,64 +290,52 @@ export default function TopicDetailView({
     )
   }
 
-  /**
-   * 渲染单条回复及其子回复
-   * @param reply 回复节点
-   * @param depth 当前深度，根为 0；用于限制楼中楼视觉缩进
-   * @param parent 直接父回复，用于隐藏匹配的开头引用
-   */
-  function renderReply(reply: TopicReplyNode, depth = 0, parent?: TopicReplyNode) {
-    const displayContent = getReplyDisplayContent(
-      reply.content,
-      replyViewMode === 'nested' ? parent : undefined
-    )
-    // 封顶后将子容器放到布局外，避免头像列继续累加水平缩进
-    const indentChildren = shouldIndentReplyChildren(depth)
-    const children = replyViewMode === 'nested' && reply.children.length > 0 && (
-      <div
-        className={getReplyChildrenClassName(depth, 'reply-children', 'reply-children--max-indent')}
-      >
-        {reply.children.map(child => renderReply(child, depth + 1, reply))}
-      </div>
-    )
+  /** 渲染回复正文，布局与官方关联交由 ReplyList 统一管理 */
+  function renderReply(reply: TopicReply, decorations: ReplyDecorations) {
+    const displayContent = decorations.content
     return (
-      <div className="reply-item" key={reply.replyId}>
-        <div className="reply-layout">
-          {showAvatar && renderMemberAvatar(reply.userName, reply.userAvatar, 'small')}
-          <div className="reply-body">
-            <div className="reply-meta">
-              {renderMemberLink(reply.userName)}
-              <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
-              <TimeWithSource
-                className="time"
-                time={reply.time}
-                title={reply.repliedAt || reply.time}
-                via={reply.via}
-              />
-              {reply.thanks > 0 && (
-                <span className="thanks" title={`${reply.thanks} 人感谢`}>
-                  <Heart aria-hidden="true" />
-                  {reply.thanks}
-                </span>
-              )}
-              <div className="reply-actions">
-                {renderReplyActions(reply)}
-                <span className="floor">{reply.floor}</span>
-              </div>
-            </div>
-            <CollapsibleReplyContent contentKey={displayContent} showImages={showImages}>
-              <EnhancedHtmlContent
-                className="topic-content reply-content"
-                html={displayContent}
-                showImages={showImages}
-                onTopicPreview={onTopicPreview}
-              />
-            </CollapsibleReplyContent>
-            {indentChildren && children}
-          </div>
-        </div>
-        {!indentChildren && children}
-      </div>
+      <ReplyFrame
+        avatar={
+          showAvatar ? renderMemberAvatar(reply.userName, reply.userAvatar, 'small') : undefined
+        }
+        author={renderMemberLink(reply.userName)}
+        metadata={
+          <>
+            <UserBadge mod={reply.isMod} op={reply.isOp} pro={reply.isPro} />
+            {decorations.beforeTime}
+            <TimeWithSource
+              className="time"
+              time={reply.time}
+              title={reply.repliedAt || reply.time}
+              via={reply.via}
+            />
+            {decorations.meta}
+            {reply.thanks > 0 && (
+              <span className="thanks" title={`${reply.thanks} 人感谢`}>
+                <Heart aria-hidden="true" />
+                {reply.thanks}
+              </span>
+            )}
+          </>
+        }
+        actions={
+          <>
+            {renderReplyActions(reply)}
+            <span className="floor">{reply.floor}</span>
+          </>
+        }
+      >
+        {decorations.before}
+        <CollapsibleReplyContent contentKey={displayContent} showImages={showImages}>
+          <EnhancedHtmlContent
+            className="topic-content reply-content"
+            html={displayContent}
+            showImages={showImages}
+            onTopicPreview={onTopicPreview}
+          />
+        </CollapsibleReplyContent>
+        {decorations.after}
+      </ReplyFrame>
     )
   }
 
@@ -726,19 +689,19 @@ export default function TopicDetailView({
                 {loadingReplyPage && (
                   <Spinner className="reply-loading-spinner" aria-label="加载回复" />
                 )}
-                {showReplyViewSwitch && (
-                  <RadioGroup
-                    aria-label="回复列表展示模式"
-                    className="reply-view-switch"
-                    size="small"
-                    variant="segmented"
-                    value={replyViewMode}
-                    onValueChange={value => changeReplyViewMode(value as ReplyViewMode)}
-                  >
-                    <RadioGroupItem value="flat" label="普通列表" />
-                    <RadioGroupItem value="nested" label="楼中楼" />
-                  </RadioGroup>
-                )}
+                <span className="thread-mode-label">
+                  当前模式：{replyThreadStyleLabels[topic.replyThreadStyle]}
+                  <Tooltip content="前往官网设置回复显示方式" side="bottom">
+                    <a
+                      className="thread-mode-settings"
+                      href={resolveWebviewUrl('https://www.v2ex.com/settings#reply_thread_style')}
+                      aria-label="前往官网设置回复显示方式"
+                      onClick={event => handleWebviewLinkClick(event)}
+                    >
+                      <Settings aria-hidden="true" />
+                    </a>
+                  </Tooltip>
+                </span>
               </div>
             </div>
           )}
@@ -769,7 +732,18 @@ export default function TopicDetailView({
             />
           )}
 
-          {replies.map(reply => renderReply(reply))}
+          <ReplyList
+            key={topic.id}
+            topicId={topic.id}
+            replies={topic.replies}
+            style={topic.replyThreadStyle}
+            showAvatar={showAvatar}
+            showImages={showImages}
+            onTopicPreview={onTopicPreview}
+            onLoadPage={controller.loadReplyPage}
+            locateReplyId={controller.postedReplyId}
+            renderReply={renderReply}
+          />
 
           {topic.replyTotalPage > 1 && (
             <Pagination
@@ -795,6 +769,7 @@ export default function TopicDetailView({
               ref={replyComposerRef}
               showImages={showImages}
               resetKey={topic.id}
+              draftKey={`${className}:${topic.id}`}
               onSubmit={postReply}
             />
           ) : (
