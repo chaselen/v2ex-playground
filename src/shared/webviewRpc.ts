@@ -11,6 +11,8 @@ export interface WebviewRequestMessage {
   requestId: string
   /** 请求参数 */
   args: unknown[]
+  /** 可复用面板收到请求时校验内容仍为发起请求的页面 */
+  panelActivationId?: number
 }
 
 /**

@@ -9,7 +9,6 @@ import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 const vscode = createVsCodeClient<BrowseSettingsRpcCommands, BrowseSettingsWebviewEvents>()
 // 读取设置前暂不加载远程图片和头像
 const initialSettings: BrowseSettings = {
-  openInNewTab: true,
   autoSignIn: true,
   showImagesInTopic: false,
   showAvatar: false

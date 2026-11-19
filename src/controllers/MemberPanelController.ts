@@ -1,11 +1,14 @@
 import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
-import { getMemberLink, LoginRequiredError } from '@/v2ex'
-import vscode from 'vscode'
+import { LoginRequiredError } from '@/v2ex'
 import G from '@/global'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { setRemotePanelIcon } from '@/features/panelIcon'
-import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
+import {
+  formatPanelTitle,
+  type CreateWebviewContentPanel,
+  type WebviewContentPanel
+} from '@/controllers/webviewPanel'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 
 import type {
@@ -33,14 +36,11 @@ const IGNORED_TOPICS_PAGE_SIZE = 20
  * 用户面板控制器
  */
 export class MemberPanelController implements WebviewPageRpcController<MemberPanelRpcCommands> {
-  /** 用户面板缓存 key */
-  readonly key: string
-
   /** 用户名 */
   private readonly username: string
 
   /** 用户面板 */
-  private readonly panel: vscode.WebviewPanel
+  private readonly panel: WebviewContentPanel
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<MemberPanelRpcCommands, MemberPanelWebviewEvents>
@@ -62,12 +62,15 @@ export class MemberPanelController implements WebviewPageRpcController<MemberPan
    * @param username 用户名
    * @param deps 外部面板导航依赖
    */
-  constructor(username: string, deps: WebviewNavigationDeps) {
+  constructor(
+    username: string,
+    deps: WebviewNavigationDeps,
+    createPanel: CreateWebviewContentPanel
+  ) {
     const commonRpc = new WebviewCommonRpc(deps)
     this.username = username
-    this.key = getMemberLink(this.username)
-    this.panel = createV2exWebviewPanel({
-      viewType: this.key,
+    this.panel = createPanel({
+      viewType: 'v2ex.member',
       title: this.username,
       htmlEntry: 'member.html',
       enableFindWidget: true,
@@ -80,29 +83,6 @@ export class MemberPanelController implements WebviewPageRpcController<MemberPan
     this.panel.onDidDispose(() => {
       this.rpc.dispose()
     })
-  }
-
-  /**
-   * 激活当前面板
-   */
-  reveal() {
-    this.panel.reveal()
-  }
-
-  /**
-   * 销毁当前面板
-   */
-  dispose() {
-    this.rpc.dispose()
-    this.panel.dispose()
-  }
-
-  /**
-   * 监听面板销毁
-   * @param listener 销毁回调
-   */
-  onDidDispose(listener: () => void) {
-    this.panel.onDidDispose(listener)
   }
 
   /**

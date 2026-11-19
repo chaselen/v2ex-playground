@@ -18,16 +18,10 @@ export default class Config {
   /** 获取发往 Webview 的完整浏览设置快照 */
   static getBrowseSettings(): BrowseSettings {
     return {
-      openInNewTab: this.openInNewTab(),
       autoSignIn: this.autoSignIn(),
       showImagesInTopic: this.showImagesInTopic(),
       showAvatar: this.showAvatar()
     }
-  }
-
-  /** 是否在新标签页打开 */
-  static openInNewTab(): boolean {
-    return vscode.workspace.getConfiguration().get<boolean>('v2ex.browse.openInNewTab', true)
   }
 
   /** 是否自动签到 */

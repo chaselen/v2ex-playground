@@ -54,7 +54,10 @@ export function setDefaultPanelIcon(panel: vscode.WebviewPanel) {
  * @param panel Webview 面板
  * @param imageSrc 远程图片地址
  */
-export async function setRemotePanelIcon(panel: vscode.WebviewPanel, imageSrc?: string) {
+export async function setRemotePanelIcon(
+  panel: Pick<vscode.WebviewPanel, 'iconPath'>,
+  imageSrc?: string
+) {
   const normalizedImageSrc = normalizeRemoteImageSrc(imageSrc)
   if (!normalizedImageSrc) {
     return

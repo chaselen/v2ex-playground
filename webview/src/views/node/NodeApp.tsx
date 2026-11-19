@@ -1,4 +1,5 @@
 import { getLinkMenuItems } from '@/components/linkMenuItems'
+import { usePanelScrollPosition } from '@/components/PanelAddressBar'
 import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
@@ -29,6 +30,7 @@ import {
   Tooltip
 } from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
+import { getPanelPageUrl } from '@extension/shared/panelHistory'
 import type { Node, Topic } from '@extension/v2ex/types'
 import type {
   NodePanelRpcCommands,
@@ -48,9 +50,10 @@ export default function NodeApp() {
   const data = state.data
   const loading = state.status === 'loading'
   const node = data?.node
-  const pageUrl = node?.name
-    ? resolveWebviewUrl(`/go/${node.name}?p=${data?.page ?? 1}`)
+  const pageUrl = data?.node.name
+    ? getPanelPageUrl(resolveWebviewUrl(`/go/${data.node.name}`), data.page)
     : undefined
+  const { onScroll } = usePanelScrollPosition(scrollRef, state.status === 'result', { pageUrl })
   const isCollected = !!node?.isCollected
   const canCollect = state.loggedIn
   const relatedNodes = data?.relatedNodes ?? []
@@ -167,7 +170,13 @@ export default function NodeApp() {
 
   return (
     <PageContextMenu items={getLinkMenuItems(pageUrl)}>
-      <ScrollArea fillViewport viewportRef={scrollRef} className="node-scroll" role="main">
+      <ScrollArea
+        fillViewport
+        viewportRef={scrollRef}
+        viewportProps={{ onScroll }}
+        className="node-scroll"
+        role="main"
+      >
         <main className="node-container">
           {loading && !data && <PageSkeleton variant="node-topics" rows={6} />}
 

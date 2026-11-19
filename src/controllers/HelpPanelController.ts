@@ -1,6 +1,11 @@
 import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
 import G from '@/global'
-import { createV2exWebviewPanel, formatPanelTitle } from './webviewPanel'
+import {
+  formatPanelTitle,
+  type CreateWebviewContentPanel,
+  type WebviewContentPanel
+} from './webviewPanel'
+import type { HelpPage } from '@/v2ex'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from './WebviewCommonRpc'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { openExternal } from '@/features/openExternal'
@@ -11,20 +16,32 @@ import type {
   WebviewPageRpcController
 } from '@/shared/webview'
 
-/** 可复用的帮助面板，保留最新状态并隔离并发导航结果 */
+interface HelpPanelNavigationDeps extends WebviewNavigationDeps {
+  openHelp: (slug: string, anchor?: string) => void
+}
+
+/** 帮助页状态按主题加载，隔离并发刷新与章节定位 */
 export class HelpPanelController implements WebviewPageRpcController<HelpRpcCommands> {
-  private readonly panel = createV2exWebviewPanel({
-    viewType: 'v2ex.help',
-    title: '站点帮助',
-    htmlEntry: 'help.html',
-    enableFindWidget: true,
-    useDefaultIcon: true
-  })
+  private readonly panel: WebviewContentPanel
   private readonly rpc: WebviewRpcBridge<HelpRpcCommands, HelpWebviewEvents>
   private state: HelpViewState = { status: 'loading', slug: 'home' }
   private revision = 0
 
-  constructor(deps: WebviewNavigationDeps) {
+  constructor(
+    private readonly deps: HelpPanelNavigationDeps,
+    createPanel: CreateWebviewContentPanel,
+    previousPage?: HelpPage
+  ) {
+    this.panel = createPanel({
+      viewType: 'v2ex.help',
+      title: '站点帮助',
+      htmlEntry: 'help.html',
+      enableFindWidget: true,
+      useDefaultIcon: true
+    })
+    if (previousPage) {
+      this.state = { status: 'result', slug: previousPage.slug, data: previousPage }
+    }
     const commonRpc = new WebviewCommonRpc(deps)
     this.rpc = new WebviewRpcBridge<HelpRpcCommands, HelpWebviewEvents>(
       this.panel.webview,
@@ -36,21 +53,13 @@ export class HelpPanelController implements WebviewPageRpcController<HelpRpcComm
     })
   }
 
-  /** 激活已有帮助面板 */
-  reveal() {
-    this.panel.reveal()
-  }
-  /** 监听面板销毁 */
-  onDidDispose(listener: () => void) {
-    this.panel.onDidDispose(listener)
-  }
   /** 读取最新页面状态 */
   rpc_ready() {
     return this.state
   }
   /** 切换帮助主题 */
-  rpc_load(slug: string) {
-    return this.load(slug)
+  rpc_load(slug: string, anchor?: string) {
+    this.deps.openHelp(slug, anchor)
   }
   /** 刷新当前主题 */
   rpc_refresh() {
@@ -59,15 +68,15 @@ export class HelpPanelController implements WebviewPageRpcController<HelpRpcComm
   /** 在浏览器中查看原文 */
   rpc_openSource() {
     const url = new URL(`/help/${this.state.slug}`, G.V2ex.baseUrl)
-    if (this.state.anchor) url.hash = this.state.anchor
+    if (this.state.anchor) url.hash = encodeURIComponent(this.state.anchor)
     void openExternal(url.toString())
   }
 
   /** 请求主题并同步状态，旧请求不得覆盖后续导航 */
   async load(slug = 'home', refresh = false, anchor?: string) {
-    if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('帮助主题无效')
-    if (!refresh && this.state.status === 'result' && this.state.slug === slug) {
+    if (!refresh && this.state.status === 'result' && this.state.data?.slug === slug) {
       // 已加载的文档仍需推送导航，支持再次点击同一章节重新定位
+      this.panel.title = formatPanelTitle(this.state.data.title)
       this.post({ ...this.state, anchor })
       return
     }

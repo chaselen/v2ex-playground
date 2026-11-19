@@ -110,7 +110,7 @@ test('opens help articles only once through the existing help navigation', () =>
 
 test('routes topic URLs by pathname and preserves the link title', () => {
   openWebviewUrl('https://www.v2ex.com/t/123/?p=2#reply9', '话题标题')
-  expect(mocks.openTopic).toHaveBeenCalledExactlyOnceWith('123', '话题标题')
+  expect(mocks.openTopic).toHaveBeenCalledExactlyOnceWith('123', '话题标题', 2)
   expect(mocks.openExternal).not.toHaveBeenCalled()
 })
 
@@ -146,3 +146,13 @@ test('decodes help fragments and rejects malformed fragment encoding', () => {
   expect(mocks.openHelp).toHaveBeenCalledOnce()
   expect(mocks.openExternal).toHaveBeenCalledExactlyOnceWith('https://www.v2ex.com/help/api#%FF')
 })
+
+test.each(['0', '1', '-3', '1e2', '2.5', '9007199254740992'])(
+  'invalid or first-page parameters use the canonical default: %s',
+  value => {
+    openWebviewUrl(`https://www.v2ex.com/t/123?p=${value}`)
+    openWebviewUrl(`https://www.v2ex.com/go/vscode?p=${value}`)
+    expect(mocks.openTopic).toHaveBeenCalledExactlyOnceWith('123', undefined)
+    expect(mocks.openNode).toHaveBeenCalledExactlyOnceWith('vscode', 'vscode')
+  }
+)

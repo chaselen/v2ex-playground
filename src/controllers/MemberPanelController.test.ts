@@ -1,5 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 import { MemberPanelController } from './MemberPanelController'
+import { createV2exWebviewPanel } from './webviewPanel'
 
 const mocks = vi.hoisted(() => ({
   getInfo: vi.fn(),
@@ -67,7 +68,8 @@ beforeEach(() => {
 function createController() {
   return new MemberPanelController(
     'tester',
-    {} as ConstructorParameters<typeof MemberPanelController>[1]
+    {} as ConstructorParameters<typeof MemberPanelController>[1],
+    createV2exWebviewPanel
   )
 }
 

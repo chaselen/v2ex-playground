@@ -18,7 +18,7 @@ vi.stubGlobal('acquireVsCodeApi', () => ({
   setState: vi.fn()
 }))
 
-import { createVsCodeClient } from './vscode'
+import { createVsCodeClient, setPanelActivationId } from './vscode'
 
 interface TestRpcCommands {
   postTopicReply(): { replyId: string }
@@ -93,5 +93,26 @@ describe('createVsCodeClient', () => {
     )
     await vi.advanceTimersByTimeAsync(30000)
     expect(await outcome).toBe('请求 loadImages 超时')
+  })
+
+  test('only delivers scoped content events to the active history entry', () => {
+    const client = createVsCodeClient<TestRpcCommands, { contentChanged: { text: string } }>()
+    const listener = vi.fn()
+    const dispose = client.on('contentChanged', listener)
+    const emit = (panelActivationId: number, text: string) =>
+      mocks.messageListener?.({ data: { command: 'contentChanged', panelActivationId, text } })
+
+    setPanelActivationId(1)
+    emit(2, 'next chapter before history changes')
+    setPanelActivationId(2)
+    emit(1, 'old chapter after history changes')
+    emit(2, 'active chapter')
+
+    expect(listener).toHaveBeenCalledExactlyOnceWith({
+      command: 'contentChanged',
+      panelActivationId: 2,
+      text: 'active chapter'
+    })
+    dispose()
   })
 })

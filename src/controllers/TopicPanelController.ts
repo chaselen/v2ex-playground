@@ -1,11 +1,5 @@
 import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
-import {
-  getTopicLink,
-  AccountRestrictedError,
-  LoginRequiredError,
-  TopicDetail,
-  isGenericV2exIcon
-} from '@/v2ex'
+import { AccountRestrictedError, LoginRequiredError, TopicDetail, isGenericV2exIcon } from '@/v2ex'
 import vscode from 'vscode'
 import { getV2exNodeAvatarUrl } from '@/shared/nodeAvatars'
 import type {
@@ -21,7 +15,11 @@ import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
 import { logger } from '@/core/logger'
 import { updateRecentBrowseTopic } from '@/features/recentBrowse'
 import { setRemotePanelIcon } from '@/features/panelIcon'
-import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
+import {
+  formatPanelTitle,
+  type CreateWebviewContentPanel,
+  type WebviewContentPanel
+} from '@/controllers/webviewPanel'
 import { checkImgurConnectivity } from '@/features/connectivityCheck'
 import {
   getTopicShareImageCacheDir,
@@ -61,14 +59,11 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   /** 防止同一面板的内容更新与展示管理并发提交 */
   private submittingAuthorOperation = false
 
-  /** 话题面板缓存 key */
-  readonly key: string
-
   /** 话题 id */
   private readonly topicId: number
 
   /** 话题面板 */
-  private readonly panel: vscode.WebviewPanel
+  private readonly panel: WebviewContentPanel
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<TopicPanelRpcCommands, TopicPanelWebviewEvents>
@@ -112,8 +107,9 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   /** 用户快速信息请求缓存 */
   private readonly memberQuickInfoCache = new Map<string, Promise<MemberQuickInfo>>()
 
-  /** 回复翻页请求序号 */
-  private replyPageRequestId = 0
+  /** 全页加载、刷新和回复翻页共用同一个请求顺序 */
+  private topicPageRequestId = 0
+  private pendingReplyPage?: { page: number; addEntry: boolean }
   private readonly shareImageLoader: TopicShareImageLoader
 
   /**
@@ -124,14 +120,15 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   constructor(
     id: string | number,
     title: string | undefined,
-    private readonly navigation: TopicPanelDeps
+    private readonly navigation: TopicPanelDeps,
+    createPanel: CreateWebviewContentPanel,
+    private readonly onPageChanged?: (page: number, addEntry: boolean) => void
   ) {
     const commonRpc = new WebviewCommonRpc(navigation)
     const topicId = normalizeTopicId(id)
-    this.key = getTopicLink(topicId)
     this.topicId = topicId
-    this.panel = createV2exWebviewPanel({
-      viewType: this.key,
+    this.panel = createPanel({
+      viewType: 'v2ex.topic',
       title: title || `/t/${topicId}`,
       htmlEntry: 'topic.html',
       enableFindWidget: true,
@@ -151,37 +148,14 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   }
 
   /**
-   * 激活当前面板
-   */
-  reveal() {
-    this.panel.reveal()
-  }
-
-  /**
-   * 销毁当前面板
-   */
-  dispose() {
-    this.rpc.dispose()
-    this.panel.dispose()
-  }
-
-  /**
-   * 监听面板销毁
-   * @param listener 销毁回调
-   */
-  onDidDispose(listener: () => void) {
-    this.panel.onDidDispose(listener)
-  }
-
-  /**
    * 加载当前话题
    */
-  async load() {
+  async load(page = 1) {
+    this.detail.replyCurrentPage = page
     try {
-      await this.reloadTopic(true)
+      await this.loadTopicPage('full')
     } catch (err) {
       logger.error('话题详情加载失败', err, { topicId: this.topicId })
-      this.renderError(err as Error)
     }
   }
 
@@ -190,7 +164,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
    */
   refreshForAuthChange() {
     this.memberQuickInfoCache.clear()
-    this.refreshTopic().catch(err => {
+    this.loadTopicPage('full').catch(err => {
       logger.error('话题登录态刷新失败', err, { topicId: this.topicId })
     })
   }
@@ -199,7 +173,8 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
    * 渲染话题详情
    * @param topicDetail 话题详情
    */
-  render(topicDetail: TopicDetail) {
+  render(topicDetail: TopicDetail, addEntry = false) {
+    this.onPageChanged?.(topicDetail.replyCurrentPage, addEntry)
     this.postViewState({
       status: 'topic',
       topic: topicDetail,
@@ -265,8 +240,8 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   }
 
   /** 刷新话题 */
-  rpc_refresh() {
-    return this.refreshTopic()
+  async rpc_refresh() {
+    await this.loadTopicPage('full')
   }
 
   /** 保存话题分享图 */
@@ -328,7 +303,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
     try {
       await operation()
       try {
-        await this.reloadTopic(false)
+        await this.loadTopicPage('background')
       } catch {
         throw new Error('操作已提交，但刷新失败。请刷新主题核对结果，勿重复提交')
       }
@@ -555,38 +530,38 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
     return detail
   }
 
-  /**
-   * 刷新话题并向页面同步
-   * @param showLoading 是否显示整页加载状态
-   */
-  private async reloadTopic(showLoading: boolean) {
-    if (showLoading) {
-      this.postViewState({
-        status: 'loading'
-      })
-    }
+  /** 刷新跟随正在请求的回复页，只有最新请求可以写回主面板 */
+  private async loadTopicPage(
+    mode: 'full' | 'background' | 'pagination',
+    replyPage = this.pendingReplyPage?.page ?? this.detail.replyCurrentPage
+  ) {
+    const requestId = ++this.topicPageRequestId
+    const addEntry = mode === 'pagination' || this.pendingReplyPage?.addEntry === true
+    this.pendingReplyPage = { page: replyPage, addEntry }
+    if (mode === 'full') this.postViewState({ status: 'loading' })
 
-    const detail = await G.V2ex.topics.getDetail(this.topicId, this.detail.replyCurrentPage)
-    this.detail = detail
-    updateRecentBrowseTopic(detail).catch(err =>
-      logger.error('最近浏览详情保存失败', err, { topicId: detail.id })
-    )
-    this.panel.title = formatPanelTitle(detail.title)
-    setRemotePanelIcon(this.panel, resolveTopicPanelIcon(detail)).catch(err =>
-      logger.error('话题面板图标更新失败', err)
-    )
-    this.render(detail)
-  }
-
-  /**
-   * 手动刷新话题
-   */
-  private async refreshTopic() {
     try {
-      await this.reloadTopic(true)
+      const detail = await G.V2ex.topics.getDetail(this.topicId, replyPage)
+      if (requestId !== this.topicPageRequestId) return
+      this.detail = detail
+
+      if (mode !== 'pagination') {
+        updateRecentBrowseTopic(detail).catch(err =>
+          logger.error('最近浏览详情保存失败', err, { topicId: detail.id })
+        )
+        this.panel.title = formatPanelTitle(detail.title)
+        setRemotePanelIcon(this.panel, resolveTopicPanelIcon(detail)).catch(err =>
+          logger.error('话题面板图标更新失败', err)
+        )
+      }
+      this.render(detail, addEntry)
+      return detail
     } catch (err) {
-      this.renderError(err as Error)
+      if (requestId !== this.topicPageRequestId) return
+      if (this.viewState.status === 'loading') this.renderError(err as Error)
       throw err
+    } finally {
+      if (requestId === this.topicPageRequestId) this.pendingReplyPage = undefined
     }
   }
 
@@ -626,24 +601,28 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
 
     const topicId = normalizeTopicId(message.topicId)
     const originalPage = this.detail.replyCurrentPage
-    const originalNavigation = this.replyPageRequestId
+    const originalNavigation = this.topicPageRequestId
+    const updatesPanel = !message.fromPreview && topicId === this.topicId
+    const canUpdatePanel = () =>
+      this.topicPageRequestId === originalNavigation &&
+      this.pendingReplyPage === undefined &&
+      this.detail.replyCurrentPage === originalPage
     const posted = await G.V2ex.topics.postReply(topicId, message.content, {
       parentReplyId: message.parentReplyId,
       replyPage: normalizeReplyPage(message.replyPage)
     })
+    if (updatesPanel && !canUpdatePanel()) return { posted }
+
     try {
       const topic = await G.V2ex.topics.getDetail(topicId, posted.replyPage)
-      if (
-        !message.fromPreview &&
-        topicId === this.topicId &&
-        this.replyPageRequestId === originalNavigation &&
-        this.detail.replyCurrentPage === originalPage
-      ) {
+      if (updatesPanel) {
+        if (!canUpdatePanel()) return { posted }
         this.detail = topic
-        this.render(topic)
+        this.render(topic, true)
       }
       return { posted, topic }
     } catch (error) {
+      if (updatesPanel && !canUpdatePanel()) return { posted }
       return { posted, refreshError: (error as Error).message || '新回复加载失败，请刷新查看' }
     }
   }
@@ -670,15 +649,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
       throw new Error('回复页码无效')
     }
 
-    const requestId = ++this.replyPageRequestId
-    const detail = await G.V2ex.topics.getDetail(this.topicId, replyPage)
-    if (requestId !== this.replyPageRequestId) {
-      return detail
-    }
-
-    this.detail = detail
-    this.render(detail)
-    return detail
+    return this.loadTopicPage('pagination', replyPage)
   }
 }
 

@@ -1,11 +1,15 @@
 import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
-import { getNodeLink, LoginRequiredError } from '@/v2ex'
+import { LoginRequiredError } from '@/v2ex'
 import vscode from 'vscode'
 import G from '@/global'
 import { logger } from '@/core/logger'
 import { setRemotePanelIcon } from '@/features/panelIcon'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
-import { createV2exWebviewPanel, formatPanelTitle } from '@/controllers/webviewPanel'
+import {
+  formatPanelTitle,
+  type CreateWebviewContentPanel,
+  type WebviewContentPanel
+} from '@/controllers/webviewPanel'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 
 import { notifyCollectionNodesChanged } from '@/features/nodeCollection'
@@ -25,14 +29,11 @@ interface NodePanelNavigationDeps extends WebviewNavigationDeps {
 
 /** 节点主题面板控制器 */
 export class NodePanelController implements WebviewPageRpcController<NodePanelRpcCommands> {
-  /** 节点面板缓存 key */
-  readonly key: string
-
   /** 节点 name */
   private readonly nodeName: string
 
   /** 节点主题面板 */
-  private readonly panel: vscode.WebviewPanel
+  private readonly panel: WebviewContentPanel
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<NodePanelRpcCommands, NodePanelWebviewEvents>
@@ -45,6 +46,8 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
 
   /** 当前页码 */
   private page = 1
+  private pageRequestId = 0
+  private pendingPagination = false
 
   /**
    * @param nodeName 节点 name
@@ -54,13 +57,14 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
   constructor(
     nodeName: string,
     title: string,
-    private readonly navigation: NodePanelNavigationDeps
+    private readonly navigation: NodePanelNavigationDeps,
+    createPanel: CreateWebviewContentPanel,
+    private readonly onPageChanged?: (page: number, addEntry: boolean) => void
   ) {
     const commonRpc = new WebviewCommonRpc(navigation)
     this.nodeName = nodeName
-    this.key = getNodeLink(this.nodeName)
-    this.panel = createV2exWebviewPanel({
-      viewType: this.key,
+    this.panel = createPanel({
+      viewType: 'v2ex.node',
       title,
       htmlEntry: 'node.html',
       enableFindWidget: true,
@@ -74,28 +78,9 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
     this.panel.onDidDispose(() => this.rpc.dispose())
   }
 
-  /** 激活当前面板 */
-  reveal() {
-    this.panel.reveal()
-  }
-
-  /** 销毁当前面板 */
-  dispose() {
-    this.rpc.dispose()
-    this.panel.dispose()
-  }
-
-  /**
-   * 监听面板销毁
-   * @param listener 销毁回调
-   */
-  onDidDispose(listener: () => void) {
-    this.panel.onDidDispose(listener)
-  }
-
   /** 加载当前节点主题 */
-  load() {
-    return this.reload(1)
+  load(page = 1) {
+    return this.reload(page)
   }
 
   /**
@@ -123,7 +108,7 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
    * @param page 页码
    */
   rpc_loadPage(page: number) {
-    return this.reload(page)
+    return this.reload(page, true)
   }
 
   /** 打开创作新主题面板并预选当前节点 */
@@ -200,8 +185,10 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
    * 加载节点主题并同步页面状态
    * @param page 页码
    */
-  private async reload(page: number) {
+  private async reload(page: number, addEntry = this.pendingPagination) {
     const nextPage = Math.max(1, Math.floor(page) || 1)
+    const requestId = ++this.pageRequestId
+    this.pendingPagination = addEntry
     this.page = nextPage
     this.postViewState({
       status: 'loading',
@@ -210,6 +197,7 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
 
     try {
       const result = await G.V2ex.nodes.getTopics(this.nodeName, nextPage)
+      if (requestId !== this.pageRequestId) return
       const data: NodePanelTopicList = {
         parentNode: result.parentNode,
         relatedNodes: result.relatedNodes,
@@ -224,8 +212,10 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
       setRemotePanelIcon(this.panel, data.node.avatar).catch(err =>
         logger.error('节点面板图标更新失败', err, { nodeName: this.nodeName })
       )
+      this.onPageChanged?.(data.page, addEntry)
       this.postViewState({ status: 'result', data })
     } catch (err) {
+      if (requestId !== this.pageRequestId) return
       logger.error('节点主题加载失败', err, { nodeName: this.nodeName, page: nextPage })
       this.postViewState({
         status: 'error',
@@ -233,6 +223,8 @@ export class NodePanelController implements WebviewPageRpcController<NodePanelRp
         message: (err as Error).message || '节点主题加载失败'
       })
       throw err
+    } finally {
+      if (requestId === this.pageRequestId) this.pendingPagination = false
     }
   }
 

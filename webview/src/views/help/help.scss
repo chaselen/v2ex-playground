@@ -5,7 +5,7 @@
   @include page-layout.container(page-layout.$wide-width);
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: 100%;
   padding: 24px;
   overflow: hidden;
 }

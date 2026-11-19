@@ -27,7 +27,7 @@ export class WebviewRpcBridge<Commands = Record<string, never>, Events = Record<
    * @param controller RPC 控制器
    */
   constructor(
-    private readonly webview: vscode.Webview,
+    private readonly webview: Pick<vscode.Webview, 'onDidReceiveMessage' | 'postMessage'>,
     private readonly controller: WebviewRpcController<Commands>
   ) {
     this.listener = webview.onDidReceiveMessage((message: WebviewRequestMessage) => {

@@ -79,7 +79,6 @@
 
 | 配置项                          | 说明                           | 默认值 |
 | ------------------------------- | ------------------------------ | ------ |
-| `v2ex.browse.openInNewTab`      | 始终在新标签页中打开页面       | `true` |
 | `v2ex.browse.autoSignIn`        | 自动进行每日签到               | `true` |
 | `v2ex.browse.showImagesInTopic` | 查看帖子时显示内容中的图片     | `true` |
 | `v2ex.browse.showAvatar`        | 在帖子列表和评论中显示用户头像 | `true` |

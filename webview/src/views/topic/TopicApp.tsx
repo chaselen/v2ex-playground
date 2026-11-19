@@ -3,6 +3,7 @@ import { useBrowseSettings } from '@/hooks/useBrowseSettings'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScrollArea, Alert, Button, Toast } from '@/components/ui'
 import { normalizeHtml } from '@/core/contentEnhancement'
+import { usePanelScrollPosition } from '@/components/PanelAddressBar'
 import PageSkeleton from '@/components/PageSkeleton'
 import PageContextMenu from '@/components/PageContextMenu'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
@@ -13,6 +14,7 @@ import { loadCancellableShareImages } from './shareImageBatches'
 import TopicContentDialog, { topicContentLabels } from './TopicContentDialog'
 import TopicManagementPopover from './TopicManagementPopover'
 import useTopicDetailController from './useTopicDetailController'
+import { getPanelPageUrl } from '@extension/shared/panelHistory'
 import type { TopicDetail, TopicContentAction } from '@extension/v2ex/types'
 import type {
   TopicPanelRpcCommands,
@@ -41,7 +43,12 @@ export default function TopicApp() {
   const topicScrollRef = useRef<HTMLDivElement | null>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
-  const topicUrl = topic ? resolveWebviewUrl(`/t/${topic.id}`) : undefined
+  const topicUrl = topic
+    ? getPanelPageUrl(resolveWebviewUrl(`/t/${topic.id}`), topic.replyCurrentPage)
+    : undefined
+  const { onScroll } = usePanelScrollPosition(topicScrollRef, state.status === 'topic', {
+    pageUrl: topicUrl
+  })
   const contentActions = topic?.contentActions ?? []
   const managementActions = topic?.managementActions ?? []
   const { showImagesInTopic: showImages, showAvatar } = useBrowseSettings()
@@ -151,7 +158,12 @@ export default function TopicApp() {
   }, [topic])
 
   const content = (
-    <ScrollArea viewportRef={topicScrollRef} className="topic-shell" role="main">
+    <ScrollArea
+      viewportRef={topicScrollRef}
+      viewportProps={{ onScroll }}
+      className="topic-shell"
+      role="main"
+    >
       {state.status === 'loading' && <PageSkeleton variant="topic" showAvatar={showAvatar} />}
 
       {state.status === 'error' && (

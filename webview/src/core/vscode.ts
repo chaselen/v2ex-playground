@@ -19,6 +19,7 @@ interface PendingRequest {
 
 let api: WebviewApi<VsCodeState> | null = null
 let requestSeq = 0
+let panelActivationId: number | undefined
 let messageListenerReady = false
 const pendingRequests = new Map<string, PendingRequest>()
 const eventHandlers = new Map<string, Set<(payload: object) => void>>()
@@ -31,6 +32,11 @@ const postTopicReplyRequestTimeout = 60000
 
 /** 图片上传 RPC 超时时间 */
 const uploadImageRequestTimeout = 60000
+
+/** 为本 Webview 的内容 RPC 绑定当前历史条目激活 */
+export function setPanelActivationId(id: number): void {
+  panelActivationId = id
+}
 
 /**
  * 获取 VS Code Webview API 单例
@@ -152,7 +158,12 @@ function request(command: string, args: unknown[]): Promise<unknown> {
     }, getRequestTimeout(command))
 
     pendingRequests.set(requestId, { resolve, reject, timer })
-    getVsCodeApi().postMessage({ command, requestId, args })
+    getVsCodeApi().postMessage({
+      command,
+      requestId,
+      args,
+      ...(panelActivationId === undefined ? {} : { panelActivationId })
+    })
   })
 }
 
@@ -215,7 +226,10 @@ function handleMessage(message: unknown) {
     return
   }
 
-  if (isEventMessage(message)) {
+  if (
+    isEventMessage(message) &&
+    (!('panelActivationId' in message) || message.panelActivationId === panelActivationId)
+  ) {
     eventHandlers.get(message.command)?.forEach(handler => handler(message))
   }
 }

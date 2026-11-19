@@ -1,5 +1,6 @@
 import { ToastViewport } from '@/components/ui'
 import { StrictMode } from 'react'
+import PanelAddressBar from '@/components/PanelAddressBar'
 import { createRoot } from 'react-dom/client'
 import App from './HelpApp'
 import ImagePreviewProvider from '@/components/ImagePreviewProvider'
@@ -8,9 +9,11 @@ import './help.scss'
 
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
-    <ImagePreviewProvider>
-      <App />
-    </ImagePreviewProvider>
+    <PanelAddressBar>
+      <ImagePreviewProvider>
+        <App />
+      </ImagePreviewProvider>
+    </PanelAddressBar>
     <ToastViewport />
   </StrictMode>
 )

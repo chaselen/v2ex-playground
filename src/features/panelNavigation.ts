@@ -1,8 +1,9 @@
 import { createWebviewNavigator } from './webviewNavigation'
 import { openExternal } from './openExternal'
-import { getTopicLink, getMemberLink, getNodeLink, getTagLink } from '@/v2ex'
+import { getTopicLink, getMemberLink, getNodeLink, getTagLink, V2EX_BASE_URL } from '@/v2ex'
+import { getPanelPageUrl } from '@/shared/panelHistory'
+import { PanelHistory } from '@/controllers/PanelHistory'
 import { HelpPanelController } from '@/controllers/HelpPanelController'
-import Config from '@/config'
 import { MemberPanelController } from '@/controllers/MemberPanelController'
 import { TopicPanelController } from '@/controllers/TopicPanelController'
 import { BalancePanelController } from '@/controllers/BalancePanelController'
@@ -12,25 +13,11 @@ import { TagPanelController } from '@/controllers/TagPanelController'
 import { NodePanelController } from '@/controllers/NodePanelController'
 import { CreateTopicPanelController } from '@/controllers/CreateTopicPanelController'
 
-/**
- * 存放用户页面的控制器
- * key：用户主页链接
- * value：控制器
- */
-const memberPanels: Record<string, MemberPanelController> = {}
-
-/**
- * 存放话题页面的控制器
- * key：话题链接
- * value：控制器
- */
-const topicPanels: Record<string, TopicPanelController> = {}
-
-/** 标签页面控制器 */
-const tagPanels: Record<string, TagPanelController> = {}
-
-/** 节点页面控制器 */
-const nodePanels: Record<string, NodePanelController> = {}
+const topicHistory = new PanelHistory<TopicPanelController>()
+const memberHistory = new PanelHistory<MemberPanelController>()
+const nodeHistory = new PanelHistory<NodePanelController>()
+const tagHistory = new PanelHistory<TagPanelController>()
+const helpHistory = new PanelHistory<HelpPanelController>()
 
 /** 账户余额页面控制器 */
 let balancePanel: BalancePanelController | undefined
@@ -65,6 +52,7 @@ const panelDeps = {
   openTopic,
   openNode,
   openTag,
+  openHelp,
   openCreateTopic
 }
 
@@ -73,28 +61,11 @@ const panelDeps = {
  * @param username 用户名
  */
 export function openMember(username: string) {
-  const memberKey = getMemberLink(username)
-
-  // 如果控制器已经存在，则直接激活
-  let controller = memberPanels[memberKey]
-  if (controller) {
-    controller.reveal()
-    return
-  }
-
-  // 不在新标签页打开，则关闭之前的标签页重新创建
-  if (!Config.openInNewTab()) {
-    Object.values(memberPanels).forEach(memberPanel => {
-      memberPanel.dispose()
-    })
-  }
-
-  controller = new MemberPanelController(username, panelDeps)
-  memberPanels[memberKey] = controller
-  controller.onDidDispose(() => {
-    delete memberPanels[memberKey]
+  memberHistory.open(getMemberLink(encodeURIComponent(username)), createPanel => {
+    const controller = new MemberPanelController(username, panelDeps, createPanel)
+    void controller.load()
+    return controller
   })
-  controller.load()
 }
 
 /**
@@ -102,34 +73,26 @@ export function openMember(username: string) {
  * @param id 话题 id
  * @param title 话题展示标题
  */
-export function openTopic(id: string | number, title?: string) {
+export function openTopic(id: string | number, title?: string, page = 1) {
   const topicId = Number(id)
   if (Number.isNaN(topicId)) {
     throw new Error('打开话题面板缺少必要参数')
   }
 
-  const topicKey = getTopicLink(topicId)
-
-  // 如果控制器已经存在，则直接激活
-  let controller = topicPanels[topicKey]
-  if (controller) {
-    controller.reveal()
-    return
-  }
-
-  // 不在新标签页打开，则关闭之前的标签页重新创建
-  if (!Config.openInNewTab()) {
-    Object.values(topicPanels).forEach(topicPanel => {
-      topicPanel.dispose()
-    })
-  }
-
-  controller = new TopicPanelController(topicId, title, panelDeps)
-  topicPanels[topicKey] = controller
-  controller.onDidDispose(() => {
-    delete topicPanels[topicKey]
+  const url = getTopicLink(topicId)
+  topicHistory.open(getPanelPageUrl(url, page), (createPanel, restoredPage = page) => {
+    const controller = new TopicPanelController(
+      topicId,
+      title,
+      panelDeps,
+      createPanel,
+      (page, addEntry) => {
+        topicHistory.updatePage(controller, getPanelPageUrl(url, page), page, addEntry)
+      }
+    )
+    void controller.load(restoredPage)
+    return controller
   })
-  controller.load()
 }
 
 /**
@@ -142,25 +105,11 @@ export function openTag(tag: string) {
     throw new Error('打开标签面板缺少必要参数')
   }
 
-  const tagKey = getTagLink(tagName)
-  let controller = tagPanels[tagKey]
-  if (controller) {
-    controller.reveal()
-    return
-  }
-
-  if (!Config.openInNewTab()) {
-    Object.values(tagPanels).forEach(tagPanel => {
-      tagPanel.dispose()
-    })
-  }
-
-  controller = new TagPanelController(tagName, panelDeps)
-  tagPanels[tagKey] = controller
-  controller.onDidDispose(() => {
-    delete tagPanels[tagKey]
+  tagHistory.open(getTagLink(tagName), createPanel => {
+    const controller = new TagPanelController(tagName, panelDeps, createPanel)
+    void controller.load().catch(() => undefined)
+    return controller
   })
-  controller.load().catch(() => undefined)
 }
 
 /**
@@ -168,47 +117,36 @@ export function openTag(tag: string) {
  * @param name 节点 name
  * @param title 节点展示标题
  */
-export function openNode(name: string, title?: string) {
+export function openNode(name: string, title?: string, page = 1) {
   const nodeName = name?.trim()
   if (!nodeName) {
     throw new Error('打开节点面板缺少必要参数')
   }
 
   const panelTitle = title?.trim() || nodeName
-  const nodeKey = getNodeLink(nodeName)
-  let controller = nodePanels[nodeKey]
-  if (controller) {
-    controller.reveal()
-    return
-  }
-
-  if (!Config.openInNewTab()) {
-    Object.values(nodePanels).forEach(nodePanel => {
-      nodePanel.dispose()
-    })
-  }
-
-  controller = new NodePanelController(nodeName, panelTitle, panelDeps)
-  nodePanels[nodeKey] = controller
-  controller.onDidDispose(() => {
-    delete nodePanels[nodeKey]
+  const url = getNodeLink(nodeName)
+  nodeHistory.open(getPanelPageUrl(url, page), (createPanel, restoredPage = page) => {
+    const controller = new NodePanelController(
+      nodeName,
+      panelTitle,
+      panelDeps,
+      createPanel,
+      (page, addEntry) => {
+        nodeHistory.updatePage(controller, getPanelPageUrl(url, page), page, addEntry)
+      }
+    )
+    void controller.load(restoredPage).catch(() => undefined)
+    return controller
   })
-  controller.load().catch(() => undefined)
 }
 
 /**
  * 登录态变化后刷新已打开的话题、用户、节点和余额面板
  */
 export function refreshTopicPanelsForAuthChange() {
-  Object.values(topicPanels).forEach(topicPanel => {
-    topicPanel.refreshForAuthChange()
-  })
-  Object.values(nodePanels).forEach(nodePanel => {
-    nodePanel.refreshForAuthChange()
-  })
-  Object.values(memberPanels).forEach(memberPanel => {
-    memberPanel.refreshForAuthChange()
-  })
+  topicHistory.current?.refreshForAuthChange()
+  nodeHistory.current?.refreshForAuthChange()
+  memberHistory.current?.refreshForAuthChange()
   balancePanel?.refreshForAuthChange()
   void createTopicPanel?.refreshForAuthChange()
 }
@@ -275,16 +213,23 @@ export function openCreateTopic(nodeName?: string) {
   void createTopicPanel.load()
 }
 
-let helpPanel: HelpPanelController | undefined
-
-/** 打开原站帮助主题并复用已有面板 */
+/** 打开原站帮助主题或章节，并复用帮助标签页 */
 export function openHelp(slug = 'home', anchor?: string) {
-  if (!helpPanel) {
-    helpPanel = new HelpPanelController(panelDeps)
-    helpPanel.onDidDispose(() => {
-      helpPanel = undefined
-    })
-  }
-  helpPanel.reveal()
-  void helpPanel.load(slug, false, anchor)
+  if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('帮助主题无效')
+
+  const url = new URL(`/help/${slug}`, V2EX_BASE_URL)
+  if (anchor) url.hash = encodeURIComponent(anchor)
+
+  helpHistory.open(
+    url.href,
+    createPanel => {
+      const previousPage = helpHistory.current?.rpc_ready().data
+      const controller = new HelpPanelController(panelDeps, createPanel, previousPage)
+      void controller.load(slug, false, anchor)
+      return controller
+    },
+    controller => {
+      if (anchor) void controller.load(slug, false, anchor)
+    }
+  )
 }

@@ -184,11 +184,6 @@
       "type": "object",
       "title": "V2EX Playground",
       "properties": {
-        "v2ex.browse.openInNewTab": {
-          "type": "boolean",
-          "default": true,
-          "description": "始终在新标签页中打开页面"
-        },
         "v2ex.browse.autoSignIn": {
           "type": "boolean",
           "default": true,

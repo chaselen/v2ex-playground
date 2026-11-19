@@ -5,7 +5,6 @@ import { WebviewCommonRpc } from './WebviewCommonRpc'
 const mocks = vi.hoisted(() => ({
   listeners: new Set<() => void>(),
   settings: {
-    openInNewTab: true,
     autoSignIn: true,
     showImagesInTopic: true,
     showAvatar: true

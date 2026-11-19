@@ -1,10 +1,11 @@
 import { getLinkMenuItems } from '@/components/linkMenuItems'
+import { usePanelScrollPosition } from '@/components/PanelAddressBar'
 import PageContextMenu from '@/components/PageContextMenu'
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
 import { BookOpen, ChevronRight, ExternalLink } from 'lucide-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import PageSkeleton from '@/components/PageSkeleton'
-import { ScrollArea, Alert, Button } from '@/components/ui'
+import { ScrollArea, Alert, Button, Toast } from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/core/vscode'
 import type { HelpRpcCommands, HelpViewState, HelpWebviewEvents } from '@extension/shared/webview'
 
@@ -15,9 +16,14 @@ export default function HelpApp() {
   const [state, setState] = useState<HelpViewState>({ status: 'loading', slug: 'home' })
   const contentRootRef = useRef<HTMLDivElement>(null)
   const contentScrollRef = useRef<HTMLDivElement>(null)
+  const { onScroll, hasSavedPosition } = usePanelScrollPosition(
+    contentScrollRef,
+    state.status === 'result'
+  )
+  const positioned = useRef(false)
   const loading = state.status === 'loading'
   const sourceUrl = new URL(resolveWebviewUrl(`/help/${state.slug}`))
-  if (state.anchor) sourceUrl.hash = state.anchor
+  if (state.anchor) sourceUrl.hash = encodeURIComponent(state.anchor)
   const pageUrl = sourceUrl.toString()
   useEffect(
     () =>
@@ -30,38 +36,29 @@ export default function HelpApp() {
     []
   )
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (state.status !== 'result') return
+    const restoring = !positioned.current && hasSavedPosition
+    positioned.current = true
+    if (restoring) return
     contentScrollRef.current?.scrollTo({ top: 0, left: 0 })
     if (!state.anchor) return
     const target = contentRootRef.current?.querySelector(
       `.help-content [id="${CSS.escape(state.anchor)}"]`
     )
     if (target) scrollToAnchor(target)
-  }, [state])
+  }, [hasSavedPosition, state])
 
-  /** 立即切换目录与加载占位，RPC 失败时保留重试入口 */
+  /** 目录导航与失败重试共用扩展侧路由 */
   async function loadPage(slug: string) {
-    if (state.slug === slug && state.status !== 'error') return
-    setState(previous => ({
-      ...previous,
-      slug,
-      anchor: undefined,
-      status: 'loading',
-      message: undefined
-    }))
     try {
-      await vscode.load(slug)
+      if (state.slug === slug) {
+        if (state.status === 'error') await vscode.refresh()
+      } else {
+        await vscode.load(slug)
+      }
     } catch (error) {
-      setState(previous =>
-        previous.slug === slug
-          ? {
-              ...previous,
-              status: 'error',
-              message: error instanceof Error ? error.message : '帮助内容加载失败'
-            }
-          : previous
-      )
+      Toast.error(error instanceof Error ? error.message : '帮助内容加载失败')
     }
   }
 
@@ -84,11 +81,19 @@ export default function HelpApp() {
     const anchor = event.target instanceof Element ? event.target.closest('a') : null
     const href = anchor?.getAttribute('href') || ''
     if (!href.startsWith('#')) return
-    const target = event.currentTarget.querySelector(`[id="${CSS.escape(href.slice(1))}"]`)
+    let id: string
+    try {
+      id = decodeURIComponent(href.slice(1))
+    } catch {
+      return
+    }
+    const target = event.currentTarget.querySelector(`[id="${CSS.escape(id)}"]`)
     if (!target) return
     event.preventDefault()
     event.stopPropagation()
-    scrollToAnchor(target)
+    void vscode.load(state.slug, id).catch(error => {
+      Toast.error(error instanceof Error ? error.message : '帮助章节加载失败')
+    })
   }
 
   return (
@@ -146,7 +151,8 @@ export default function HelpApp() {
               viewportRef={contentScrollRef}
               viewportProps={{
                 role: 'region',
-                'aria-label': '帮助正文'
+                'aria-label': '帮助正文',
+                onScroll
               }}
             >
               <div ref={contentRootRef}>

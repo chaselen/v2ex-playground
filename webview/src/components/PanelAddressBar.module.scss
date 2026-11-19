@@ -1,0 +1,38 @@
+.panel {
+  display: grid;
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, auto) minmax(0, 1fr) repeat(2, auto);
+  align-items: center;
+  gap: 3px;
+  // 底部分隔线与下内边距合计 3px，和内置浏览器的下留白对齐
+  padding: 6px 6px 2px;
+  border-bottom: 1px solid var(--v2ex-border);
+  background: var(--v2ex-webview-bg);
+}
+
+.toolbar > .action {
+  width: 26px;
+  min-height: 26px;
+  padding-inline: 0;
+}
+
+.toolbar > .address {
+  min-height: 24px;
+  padding: 0 6px;
+  font-size: var(--v2ex-font-size);
+  line-height: normal;
+
+  > input {
+    align-self: stretch;
+  }
+}
+
+.content {
+  min-width: 0;
+  min-height: 0;
+}

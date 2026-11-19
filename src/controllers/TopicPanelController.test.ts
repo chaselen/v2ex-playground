@@ -1,5 +1,8 @@
 import { beforeEach, expect, test, vi } from 'vitest'
+import { updateRecentBrowseTopic } from '@/features/recentBrowse'
+import { setRemotePanelIcon } from '@/features/panelIcon'
 import { TopicPanelController } from './TopicPanelController'
+import { createV2exWebviewPanel } from './webviewPanel'
 
 const mocks = vi.hoisted(() => ({ postReply: vi.fn(), getDetail: vi.fn(), post: vi.fn() }))
 vi.mock('vscode', () => ({ default: {} }))
@@ -37,15 +40,19 @@ vi.mock('@/core/imageUpload', () => ({ uploadImage: vi.fn() }))
 
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.mocked(updateRecentBrowseTopic).mockResolvedValue(undefined)
+  vi.mocked(setRemotePanelIcon).mockResolvedValue(undefined)
   mocks.postReply.mockResolvedValue({ replyId: '123', replyPage: 2 })
   mocks.getDetail.mockResolvedValue({ id: 1, replyCurrentPage: 2, replies: [] })
 })
 
-function controller() {
+function controller(onPageChanged?: (page: number, addEntry: boolean) => void) {
   return new TopicPanelController(
     1,
     undefined,
-    {} as ConstructorParameters<typeof TopicPanelController>[2]
+    {} as ConstructorParameters<typeof TopicPanelController>[2],
+    createV2exWebviewPanel,
+    onPageChanged
   )
 }
 
@@ -117,7 +124,7 @@ test('a newer page navigation is not overwritten by an earlier publication', asy
   mocks.getDetail.mockResolvedValueOnce({ id: 1, replyCurrentPage: 3, replies: [] })
   await view.rpc_loadReplyPage(3)
   complete({ replyId: '123', replyPage: 2 })
-  await posting
+  await expect(posting).resolves.toEqual({ posted: { replyId: '123', replyPage: 2 } })
   expect(view.rpc_ready().topic?.replyCurrentPage).toBe(3)
 })
 
@@ -147,4 +154,88 @@ test('an in-flight navigation is not overwritten while its response is still pen
   finishNavigation({ id: 1, replyCurrentPage: 3, replies: [] })
   await navigating
   expect(view.rpc_ready().topic?.replyCurrentPage).toBe(3)
+})
+
+test('refresh follows the pending reply page and ignores an older load', async () => {
+  const detail = (replyCurrentPage: number) => ({
+    id: 1,
+    title: '话题',
+    node: { name: '' },
+    replyCurrentPage,
+    replies: []
+  })
+  const onPageChanged = vi.fn()
+  const view = controller(onPageChanged)
+  mocks.getDetail.mockResolvedValueOnce(detail(2))
+  await view.load(2)
+  expect(onPageChanged).toHaveBeenLastCalledWith(2, false)
+  onPageChanged.mockClear()
+
+  let finishPaging!: (value: ReturnType<typeof detail>) => void
+  mocks.getDetail
+    .mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finishPaging = resolve
+        })
+    )
+    .mockResolvedValueOnce(detail(3))
+  const paging = view.rpc_loadReplyPage(3)
+  await view.rpc_refresh()
+  expect(mocks.getDetail).toHaveBeenLastCalledWith(1, 3)
+  expect(view.rpc_ready().topic?.replyCurrentPage).toBe(3)
+
+  finishPaging(detail(2))
+  await expect(paging).resolves.toBeUndefined()
+  expect(view.rpc_ready().topic?.replyCurrentPage).toBe(3)
+  expect(onPageChanged).toHaveBeenCalledExactlyOnceWith(3, true)
+})
+
+test('a failed refresh does not replace a newer reply page', async () => {
+  const view = controller()
+  let failRefresh!: (error: Error) => void
+  mocks.getDetail
+    .mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          failRefresh = reject
+        })
+    )
+    .mockResolvedValueOnce({ id: 1, replyCurrentPage: 3, replies: [] })
+  const refreshing = view.rpc_refresh()
+  await view.rpc_loadReplyPage(3)
+  failRefresh(new Error('连接已断开'))
+
+  await expect(refreshing).resolves.toBeUndefined()
+  expect(view.rpc_ready().topic?.replyCurrentPage).toBe(3)
+})
+
+test('a delayed posted reply still confirms success after a toolbar refresh but cannot move the view', async () => {
+  const detail = (replyCurrentPage: number) => ({
+    id: 1,
+    title: '话题',
+    node: { name: '' },
+    replyCurrentPage,
+    replies: []
+  })
+  const view = controller()
+  mocks.getDetail.mockResolvedValueOnce(detail(1))
+  await view.rpc_loadReplyPage(1)
+
+  let finishPostedDetail!: (value: ReturnType<typeof detail>) => void
+  mocks.getDetail
+    .mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finishPostedDetail = resolve
+        })
+    )
+    .mockResolvedValueOnce(detail(1))
+  const posting = view.rpc_postTopicReply({ topicId: 1, replyPage: 1, content: '正文' })
+  await vi.waitFor(() => expect(mocks.getDetail).toHaveBeenCalledWith(1, 2))
+  await view.rpc_refresh()
+  finishPostedDetail(detail(2))
+
+  await expect(posting).resolves.toEqual({ posted: { replyId: '123', replyPage: 2 } })
+  expect(view.rpc_ready().topic?.replyCurrentPage).toBe(1)
 })

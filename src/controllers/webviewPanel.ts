@@ -18,7 +18,7 @@ type ResourcePanelIcon =
   | 'panelTwoFactor.svg'
 
 /** V2EX Webview 面板创建选项 */
-interface V2exWebviewPanelOptions {
+export interface V2exWebviewPanelOptions {
   /** 面板类型 */
   viewType: string
   /** 面板标题 */
@@ -36,6 +36,16 @@ interface V2exWebviewPanelOptions {
   /** 额外允许 Webview 加载的本地资源目录 */
   additionalLocalResourceRoots?: vscode.Uri[]
 }
+
+/** 内容控制器所使用的面板能力，可限定在一次历史条目激活期间 */
+export interface WebviewContentPanel extends Pick<
+  vscode.WebviewPanel,
+  'title' | 'iconPath' | 'onDidDispose'
+> {
+  readonly webview: Pick<vscode.Webview, 'asWebviewUri' | 'onDidReceiveMessage' | 'postMessage'>
+}
+
+export type CreateWebviewContentPanel = (options: V2exWebviewPanelOptions) => WebviewContentPanel
 
 /**
  * 按近似显示宽度截断面板标题，保留完整字素；省略号不计入宽度预算

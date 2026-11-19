@@ -2,9 +2,9 @@ import { getHelpSlug, isV2exUrl } from '@/v2ex'
 
 /** URL 解析得到的导航意图，不持有面板或执行回调 */
 export type WebviewNavigationTarget =
-  | { type: 'topic'; topicId: string; title?: string }
+  | { type: 'topic'; topicId: string; title?: string; page?: number }
   | { type: 'member'; username: string }
-  | { type: 'node'; name: string; title: string }
+  | { type: 'node'; name: string; title: string; page?: number }
   | { type: 'tag'; tag: string }
   | { type: 'help'; slug: string; anchor?: string }
   | { type: 'createTopic' }
@@ -32,7 +32,7 @@ export function resolveWebviewRoute(
     if (topicId) {
       const numericId = Number(topicId)
       if (!Number.isSafeInteger(numericId) || numericId <= 0) return
-      return { type: 'topic', topicId, title }
+      return { type: 'topic', topicId, title, page: getPage(url) }
     }
     const match = url.pathname.match(/^\/(member|go|tag)\/([^/]+)\/?$/)
     if (match) {
@@ -50,7 +50,7 @@ export function resolveWebviewRoute(
       }
       return match[1] === 'member'
         ? { type: 'member', username: value }
-        : { type: 'node', name: value, title: title || value }
+        : { type: 'node', name: value, title: title || value, page: getPage(url) }
     }
     const slug = getHelpSlug(url.pathname)
     if (slug) {
@@ -69,4 +69,11 @@ export function resolveWebviewRoute(
       return { type: 'balance' }
     }
   }
+}
+
+function getPage(url: URL): number | undefined {
+  const value = url.searchParams.get('p')
+  if (!value || !/^\d+$/.test(value)) return
+  const page = Number(value)
+  if (Number.isSafeInteger(page) && page > 1) return page
 }

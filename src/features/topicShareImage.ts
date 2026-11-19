@@ -43,7 +43,7 @@ export class TopicShareImageLoader {
   >()
   private disposed = false
 
-  constructor(private readonly webview: vscode.Webview) {}
+  constructor(private readonly webview: Pick<vscode.Webview, 'asWebviewUri'>) {}
 
   /** 前一批完全退出后才开始下一批，继续复用 12 路下载池 */
   load(loadId: string, sources: string[], format?: 'resourceUri' | 'dataUrl' | null) {
@@ -115,7 +115,7 @@ export async function loadImageFileForDownload(
 /** 批量加载分享图使用的远程图片 */
 export async function loadTopicShareImages(
   imageSources: string[],
-  webview: vscode.Webview,
+  webview: Pick<vscode.Webview, 'asWebviewUri'>,
   format: 'resourceUri' | 'dataUrl' | null = 'resourceUri',
   signal?: AbortSignal
 ) {
@@ -137,7 +137,7 @@ export async function loadTopicShareImages(
  */
 async function loadTopicShareImageEntries(
   imageSources: string[],
-  webview: vscode.Webview,
+  webview: Pick<vscode.Webview, 'asWebviewUri'>,
   format: 'resourceUri' | 'dataUrl' | null,
   pendingLoads: Map<string, Promise<Uri>>,
   signal?: AbortSignal
@@ -176,7 +176,7 @@ async function loadTopicShareImageEntries(
  */
 async function loadTopicShareImageEntry(
   imageSrc: string,
-  webview: vscode.Webview,
+  webview: Pick<vscode.Webview, 'asWebviewUri'>,
   format: 'resourceUri' | 'dataUrl' | null,
   pendingLoads: Map<string, Promise<Uri>>,
   signal?: AbortSignal

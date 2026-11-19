@@ -1,4 +1,5 @@
 import { getLinkMenuItems } from '@/components/linkMenuItems'
+import { usePanelScrollPosition } from '@/components/PanelAddressBar'
 import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Eye, Heart, HeartOff, Inbox, RefreshCw, UserCheck, UserRound, UserX } from 'lucide-react'
@@ -128,6 +129,17 @@ export default function MemberApp() {
   const profileCacheRef = useRef(new Map<string, MemberProfile>())
   const { startRequest } = useLatestRequest()
   const profile = state.profile
+  const contentKey =
+    activeTab === 'ignoredNodes' && state.isSelf
+      ? activeTab
+      : profile?.content.tab === activeTab
+        ? getProfileCacheKey(activeTab, profile.content.page)
+        : undefined
+  const { onScroll } = usePanelScrollPosition(
+    scrollRef,
+    state.status === 'member' && contentKey !== undefined,
+    { contentKey }
+  )
   const pageUrl = profile
     ? resolveWebviewUrl(`/member/${encodeURIComponent(profile.member.username)}`)
     : undefined
@@ -446,7 +458,13 @@ export default function MemberApp() {
 
   return (
     <PageContextMenu items={getLinkMenuItems(pageUrl)}>
-      <ScrollArea fillViewport viewportRef={scrollRef} className="member-scroll" role="main">
+      <ScrollArea
+        fillViewport
+        viewportRef={scrollRef}
+        viewportProps={{ onScroll }}
+        className="member-scroll"
+        role="main"
+      >
         {state.status === 'loading' && <PageSkeleton variant="member" rows={4} />}
 
         {state.status === 'error' && (

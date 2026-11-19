@@ -22,7 +22,7 @@ beforeEach(() => vi.resetAllMocks())
 
 test.each([
   [' 123 ', 'openTopic', ['123', undefined]],
-  ['https://www.v2ex.com/t/123?p=2#reply9', 'openTopic', ['123', undefined]],
+  ['https://www.v2ex.com/t/123?p=2#reply9', 'openTopic', ['123', undefined, 2]],
   ['[帖子](https://www.v2ex.com/t/123)', 'openTopic', ['123', undefined]],
   ['(https://www.v2ex.com/help/api)', 'openHelp', ['api', undefined]],
   ['[用户](https://www.v2ex.com/member/Livid)', 'openMember', ['Livid']],
@@ -33,6 +33,7 @@ test.each([
   ['https://www.v2ex.com/t/9007199254740991', 'openTopic', ['9007199254740991', undefined]],
   ['分享：https://edge.v2ex.com/member/Livid 查看', 'openMember', ['Livid']],
   ['/go/vscode', 'openNode', ['vscode', 'vscode']],
+  ['/go/vscode?p=3', 'openNode', ['vscode', 'vscode', 3]],
   ['/tag/VS%20Code', 'openTag', ['VS Code']],
   ['https://www.v2ex.com/tag/%E4%B8%AD%E6%96%87/', 'openTag', ['中文']],
   ['[标签](https://edge.v2ex.com/tag/TypeScript)', 'openTag', ['TypeScript']],

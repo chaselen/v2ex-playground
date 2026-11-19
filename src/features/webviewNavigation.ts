@@ -2,9 +2,9 @@ import { resolveWebviewRoute } from './webviewRoute'
 
 /** Webview 导航执行依赖，由面板管理层提供 */
 export interface WebviewNavigationActions {
-  openTopic(topicId: string, title?: string): void
+  openTopic(topicId: string, title?: string, page?: number): void
   openMember(username: string): void
-  openNode(name: string, title: string): void
+  openNode(name: string, title: string, page?: number): void
   openTag(tag: string): void
   openHelp(slug: string, anchor?: string): void
   openCreateTopic(): void
@@ -22,13 +22,15 @@ export function createWebviewNavigator(actions: WebviewNavigationActions) {
     }
     switch (target.type) {
       case 'topic':
-        actions.openTopic(target.topicId, target.title)
+        if (target.page === undefined) actions.openTopic(target.topicId, target.title)
+        else actions.openTopic(target.topicId, target.title, target.page)
         break
       case 'member':
         actions.openMember(target.username)
         break
       case 'node':
-        actions.openNode(target.name, target.title)
+        if (target.page === undefined) actions.openNode(target.name, target.title)
+        else actions.openNode(target.name, target.title, target.page)
         break
       case 'tag':
         actions.openTag(target.tag)

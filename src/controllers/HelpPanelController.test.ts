@@ -1,5 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 import { HelpPanelController } from './HelpPanelController'
+import { createV2exWebviewPanel } from './webviewPanel'
 import type { HelpPage } from '@/v2ex'
 
 const mocks = vi.hoisted(() => ({ getPage: vi.fn(), post: vi.fn(), openExternal: vi.fn() }))
@@ -32,7 +33,10 @@ beforeEach(() => {
 })
 
 function createController() {
-  return new HelpPanelController({} as ConstructorParameters<typeof HelpPanelController>[0])
+  return new HelpPanelController(
+    {} as ConstructorParameters<typeof HelpPanelController>[0],
+    createV2exWebviewPanel
+  )
 }
 
 test('navigates to an anchor in cached help without fetching the article again', async () => {

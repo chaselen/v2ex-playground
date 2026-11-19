@@ -1,10 +1,11 @@
 import { composeWebviewRpcControllers } from '@/core/composeWebviewRpcControllers'
-import { getTagLink } from '@/v2ex'
-import vscode from 'vscode'
 import G from '@/global'
 import { logger } from '@/core/logger'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
-import { createV2exWebviewPanel } from '@/controllers/webviewPanel'
+import {
+  type CreateWebviewContentPanel,
+  type WebviewContentPanel
+} from '@/controllers/webviewPanel'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import type {
   TagPanelRpcCommands,
@@ -15,14 +16,11 @@ import type {
 
 /** 标签主题面板控制器 */
 export class TagPanelController implements WebviewPageRpcController<TagPanelRpcCommands> {
-  /** 标签面板缓存 key */
-  readonly key: string
-
   /** 标签名称 */
   private readonly tag: string
 
   /** 标签主题面板 */
-  private readonly panel: vscode.WebviewPanel
+  private readonly panel: WebviewContentPanel
 
   /** Webview RPC 桥接器 */
   private readonly rpc: WebviewRpcBridge<TagPanelRpcCommands, TagPanelWebviewEvents>
@@ -34,12 +32,11 @@ export class TagPanelController implements WebviewPageRpcController<TagPanelRpcC
    * @param tag 标签名称
    * @param deps 外部面板导航依赖
    */
-  constructor(tag: string, deps: WebviewNavigationDeps) {
+  constructor(tag: string, deps: WebviewNavigationDeps, createPanel: CreateWebviewContentPanel) {
     const commonRpc = new WebviewCommonRpc(deps)
     this.tag = normalizeTag(tag)
-    this.key = getTagLink(this.tag)
-    this.panel = createV2exWebviewPanel({
-      viewType: this.key,
+    this.panel = createPanel({
+      viewType: 'v2ex.tag',
       title: this.tag,
       htmlEntry: 'tag.html',
       enableFindWidget: true,
@@ -51,25 +48,6 @@ export class TagPanelController implements WebviewPageRpcController<TagPanelRpcC
     )
     commonRpc.bindBrowseSettings(this.panel, this.rpc)
     this.panel.onDidDispose(() => this.rpc.dispose())
-  }
-
-  /** 激活当前面板 */
-  reveal() {
-    this.panel.reveal()
-  }
-
-  /** 销毁当前面板 */
-  dispose() {
-    this.rpc.dispose()
-    this.panel.dispose()
-  }
-
-  /**
-   * 监听面板销毁
-   * @param listener 销毁回调
-   */
-  onDidDispose(listener: () => void) {
-    this.panel.onDidDispose(listener)
   }
 
   /** 加载当前标签主题 */

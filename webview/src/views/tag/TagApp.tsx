@@ -1,4 +1,5 @@
 import { getLinkMenuItems } from '@/components/linkMenuItems'
+import { usePanelScrollPosition } from '@/components/PanelAddressBar'
 import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useRef, useState } from 'react'
 import { Inbox, RefreshCw } from 'lucide-react'
@@ -20,6 +21,7 @@ const vscode = createVsCodeClient<TagPanelRpcCommands, TagPanelWebviewEvents>()
 export default function TagApp() {
   const [state, setState] = useState<TagPanelViewState>({ status: 'loading' })
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const { onScroll } = usePanelScrollPosition(scrollRef, state.status === 'result')
   const data = state.data
   const pageUrl = data ? resolveWebviewUrl(`/tag/${encodeURIComponent(data.tag)}`) : undefined
   const loading = state.status === 'loading'
@@ -64,7 +66,13 @@ export default function TagApp() {
 
   return (
     <PageContextMenu items={getLinkMenuItems(pageUrl)}>
-      <ScrollArea fillViewport viewportRef={scrollRef} className="tag-scroll" role="main">
+      <ScrollArea
+        fillViewport
+        viewportRef={scrollRef}
+        viewportProps={{ onScroll }}
+        className="tag-scroll"
+        role="main"
+      >
         <main className="tag-container">
           {loading && <PageSkeleton variant="tag-topics" rows={6} />}
 

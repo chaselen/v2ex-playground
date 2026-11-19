@@ -138,7 +138,7 @@ export interface TopicPanelRpcCommands
   /** 感谢回复者并返回最新详情 */
   thankTopicReply(payload: ThankTopicReplyInput): TopicDetail
   /** 加载当前话题回复页并返回最新详情 */
-  loadReplyPage(replyPage: number): TopicDetail
+  loadReplyPage(replyPage: number): TopicDetail | undefined
   /** 加载用户快速信息 */
   loadMemberQuickInfo(username: string): MemberQuickInfo
   /**
