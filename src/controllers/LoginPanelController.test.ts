@@ -50,6 +50,7 @@ vi.mock('@/core/WebviewRpcBridge', () => ({
 
 import { LoginPanelController } from './LoginPanelController'
 import { LoginCooldownError } from '@/v2ex'
+import type { TwoFactorRequiredHandler } from '@/v2ex'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -82,7 +83,10 @@ describe('login panel async state', () => {
     const controller = new LoginPanelController()
     expect(controller.rpc_ready().loading).toBe(true)
     controller.rpc_loginWithCookie('A2=new')
-    expect(mocks.cookie).toHaveBeenCalledWith('A2=new', { signal: expect.any(AbortSignal) })
+    expect(mocks.cookie).toHaveBeenCalledWith('A2=new', {
+      signal: expect.any(AbortSignal),
+      onTwoFactorRequired: expect.any(Function)
+    })
     expect(controller.rpc_ready().submitting).toBe(true)
     release('data:image/png;base64,late')
     await vi.waitFor(() =>
@@ -115,6 +119,73 @@ describe('login panel async state', () => {
     mocks.onDispose?.()
   })
 })
+
+test('retries a rejected two-factor code in the login panel before completing login', async () => {
+  const submitCode = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('验证码不正确'))
+    .mockResolvedValueOnce(undefined)
+  mocks.cookie.mockImplementationOnce(async (_, options) =>
+    (await options.onTwoFactorRequired({ submitCode })) ? 'authenticated' : 'canceled'
+  )
+  const controller = new LoginPanelController()
+  controller.rpc_loginWithCookie('A2=new')
+  const { id } = controller.rpc_ready().twoFactor!
+
+  controller.rpc_verifyTwoFactor(id, '000000')
+  controller.rpc_verifyTwoFactor(id, '000001')
+  expect(submitCode).toHaveBeenCalledExactlyOnceWith('000000')
+  await vi.waitFor(() =>
+    expect(controller.rpc_ready().twoFactor).toMatchObject({
+      id,
+      submitting: false,
+      error: '验证码不正确'
+    })
+  )
+
+  controller.rpc_verifyTwoFactor(id, '123456')
+  await expect(controller.result).resolves.toBe('authenticated')
+  expect(submitCode).toHaveBeenLastCalledWith('123456')
+  expect(controller.rpc_ready().twoFactor).toBeUndefined()
+  expect(mocks.disposePanel).toHaveBeenCalledOnce()
+})
+
+test.each(['dialog', 'signal', 'panel'] as const)(
+  'cancels pending two-factor verification through the %s',
+  async cancellation => {
+    const abort = new AbortController()
+    let verification!: Promise<boolean>
+    mocks.cookie.mockImplementationOnce(
+      async (_, options: { onTwoFactorRequired: TwoFactorRequiredHandler }) => {
+        verification = Promise.resolve(
+          options.onTwoFactorRequired({ signal: abort.signal, submitCode: vi.fn() })
+        )
+        return (await verification) ? 'authenticated' : 'canceled'
+      }
+    )
+    const controller = new LoginPanelController()
+    controller.rpc_loginWithCookie('A2=new')
+    const { id } = controller.rpc_ready().twoFactor!
+
+    if (cancellation === 'dialog') controller.rpc_cancelTwoFactor(id)
+    else if (cancellation === 'signal') abort.abort()
+    else mocks.onDispose?.()
+
+    await expect(verification).resolves.toBe(false)
+    if (cancellation === 'panel') {
+      await expect(controller.result).resolves.toBe('canceled')
+      expect(mocks.reveal).not.toHaveBeenCalled()
+    } else {
+      await vi.waitFor(() =>
+        expect(controller.rpc_ready()).toMatchObject({
+          submitting: false,
+          cookieError: '登录已取消，请重试'
+        })
+      )
+      expect(controller.rpc_ready().twoFactor).toBeUndefined()
+    }
+  }
+)
 
 test.each([false, true])(
   'does not reveal a closed panel after challenge recovery (failure: %s)',

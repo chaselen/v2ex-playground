@@ -7,7 +7,8 @@ import type {
   PasswordLoginInput,
   LoginCookieSwitchResult,
   PasswordResetAttempt,
-  PasswordResetInput
+  PasswordResetInput,
+  TwoFactorVerification
 } from '@/v2ex'
 import type {
   LoginPanelRpcCommands,
@@ -36,6 +37,11 @@ export class LoginPanelController implements WebviewRpcController<LoginPanelRpcC
   private passwordReset?: PasswordResetAttempt
   private initialized = false
   private challengeRevision = 0
+  private twoFactorRevision = 0
+  private twoFactorRequest?: {
+    verification: TwoFactorVerification
+    finish: (verified: boolean) => void
+  }
   private disposed = false
   private readonly abort = new AbortController()
   private resolve!: (result: LoginPanelResult) => void
@@ -47,6 +53,7 @@ export class LoginPanelController implements WebviewRpcController<LoginPanelRpcC
     G.context.subscriptions.push(this)
     this.panel.onDidDispose(() => {
       this.disposed = true
+      this.twoFactorRequest?.finish(false)
       this.abort.abort()
       this.attempt?.dispose()
       this.passwordReset?.dispose()
@@ -123,7 +130,61 @@ export class LoginPanelController implements WebviewRpcController<LoginPanelRpcC
   rpc_loginWithCookie(cookie: string): void {
     if (this.state.submitting || this.disposed) return
     this.update({ ...this.state, loading: false, submitting: false })
-    this.startLogin(() => G.V2ex.switchLoginCookie(cookie, { signal: this.abort.signal }), false)
+    this.startLogin(
+      () =>
+        G.V2ex.switchLoginCookie(cookie, {
+          signal: this.abort.signal,
+          onTwoFactorRequired: this.requestTwoFactor
+        }),
+      false
+    )
+  }
+
+  rpc_verifyTwoFactor(id: number, code: string): void {
+    const request = this.twoFactorRequest
+    const state = this.state.twoFactor
+    if (!request || state?.id !== id || state.submitting) return
+    if (!/^\d{6}$/.test(code)) throw new Error('请输入 6 位验证码')
+
+    this.update({ ...this.state, twoFactor: { id, submitting: true } })
+    void (async () => {
+      try {
+        await request.verification.submitCode(code)
+        if (this.twoFactorRequest === request) request.finish(true)
+      } catch (error) {
+        if (this.twoFactorRequest !== request) return
+        this.update({
+          ...this.state,
+          twoFactor: { id, submitting: false, error: this.errorMessage(error) }
+        })
+      }
+    })()
+  }
+
+  rpc_cancelTwoFactor(id: number): void {
+    const state = this.state.twoFactor
+    if (state?.id === id && !state.submitting) this.twoFactorRequest?.finish(false)
+  }
+
+  private readonly requestTwoFactor = (verification: TwoFactorVerification): Promise<boolean> => {
+    const signal = verification.signal
+    if (this.disposed || signal?.aborted) return Promise.resolve(false)
+
+    return new Promise(resolve => {
+      const cancel = () => finish(false)
+      const finish = (verified: boolean) => {
+        signal?.removeEventListener('abort', cancel)
+        this.twoFactorRequest = undefined
+        this.update({ ...this.state, twoFactor: undefined })
+        resolve(verified)
+      }
+      this.twoFactorRequest = { verification, finish }
+      signal?.addEventListener('abort', cancel, { once: true })
+      this.update({
+        ...this.state,
+        twoFactor: { id: ++this.twoFactorRevision, submitting: false }
+      })
+    })
   }
 
   private startLogin(login: () => Promise<LoginCookieSwitchResult>, password: boolean): void {
@@ -175,7 +236,7 @@ export class LoginPanelController implements WebviewRpcController<LoginPanelRpcC
 
   private async loadChallenge(): Promise<string> {
     this.attempt?.dispose()
-    this.attempt = G.V2ex.createPasswordLogin()
+    this.attempt = G.V2ex.createPasswordLogin({ onTwoFactorRequired: this.requestTwoFactor })
     return this.attempt.loadChallenge()
   }
 

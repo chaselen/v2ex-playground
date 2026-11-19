@@ -399,24 +399,25 @@ describe('authentication lifecycle regressions', () => {
         return original(config)
       }
       let verification!: import('../types').TwoFactorVerification
-      const instance = new V2exClient('A2=old', {
-        onTwoFactorRequired: v => {
-          verification = v
-          return new Promise(resolve => {
-            v.signal!.addEventListener('abort', () => resolve(false), { once: true })
-          })
-        }
-      })
+      const onTwoFactorRequired: import('../types').TwoFactorRequiredHandler = v => {
+        verification = v
+        return new Promise(resolve => {
+          v.signal!.addEventListener('abort', () => resolve(false), { once: true })
+        })
+      }
+      const fallback = vi.fn(() => false)
+      const instance = new V2exClient('A2=old', { onTwoFactorRequired: fallback })
       clients.push(instance)
       await instance.ensureAuthenticated()
-      const attempt = instance.createPasswordLogin()
+      const attempt = instance.createPasswordLogin({ onTwoFactorRequired })
       const abort = new AbortController()
       if (mode === 'password') await attempt.loadChallenge()
       const submitting =
         mode === 'password'
           ? attempt.submit(input)
-          : instance.switchLoginCookie('A2=new', { signal: abort.signal })
+          : instance.switchLoginCookie('A2=new', { signal: abort.signal, onTwoFactorRequired })
       await vi.waitFor(() => expect(verification).toBeDefined())
+      expect(fallback).not.toHaveBeenCalled()
       if (mode === 'password') attempt.dispose()
       else abort.abort()
       expect(verification.signal?.aborted).toBe(true)

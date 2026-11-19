@@ -14,6 +14,7 @@ import {
 } from '@/components/ui'
 import CookieInput from './CookieInput'
 import PasswordResetDialog from './PasswordResetDialog'
+import TwoFactorDialog from './TwoFactorDialog'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import type {
   LoginPanelRpcCommands,
@@ -288,6 +289,14 @@ export default function LoginApp() {
             initialUsername={username}
             finalFocus={resetTrigger}
             onClose={() => setResetOpen(false)}
+          />
+        )}
+        {state.twoFactor && (
+          <TwoFactorDialog
+            key={state.twoFactor.id}
+            state={state.twoFactor}
+            onVerify={vscode.verifyTwoFactor}
+            onCancel={vscode.cancelTwoFactor}
           />
         )}
       </main>

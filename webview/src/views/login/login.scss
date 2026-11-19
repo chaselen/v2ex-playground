@@ -320,6 +320,15 @@
   }
 }
 
+.v2ex-dialog.login-two-factor-dialog {
+  width: min(400px, calc(100vw - 32px));
+}
+
+.login-two-factor-form {
+  display: grid;
+  gap: 12px;
+}
+
 .password-reset-form,
 .password-reset-field,
 .password-reset-result {

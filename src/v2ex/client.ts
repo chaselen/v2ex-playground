@@ -201,7 +201,7 @@ export class V2exClient {
    */
   async switchLoginCookie(
     cookie: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal; onTwoFactorRequired?: TwoFactorRequiredHandler } = {}
   ): Promise<LoginCookieSwitchResult> {
     const loginCookie = normalizeLoginCookie(cookie)
     if (!loginCookie) return 'invalid'
@@ -211,7 +211,8 @@ export class V2exClient {
     const candidate = new V2exClient(loginCookie, {
       onTwoFactorRequired: async verification => {
         if (options.signal?.aborted || this.authRevision !== revision) return false
-        const verified = (await this.options.onTwoFactorRequired?.(verification)) ?? false
+        const handler = options.onTwoFactorRequired ?? this.options.onTwoFactorRequired
+        const verified = (await handler?.(verification)) ?? false
         twoFactorCanceled = !verified
         return verified && !options.signal?.aborted && this.authRevision === revision
       },
@@ -258,7 +259,9 @@ export class V2exClient {
   }
 
   /** 创建独立的密码登录流程，挑战 Cookie 不进入正式业务会话 */
-  createPasswordLogin(): PasswordLoginAttempt {
+  createPasswordLogin(
+    options: { onTwoFactorRequired?: TwoFactorRequiredHandler } = {}
+  ): PasswordLoginAttempt {
     const revision = this.authRevision
     let active = true
     let busy = false
@@ -266,7 +269,8 @@ export class V2exClient {
     const candidate = new V2exClient('', {
       onTwoFactorRequired: async verification => {
         if (!active || this.authRevision !== revision) return false
-        const verified = (await this.options.onTwoFactorRequired?.(verification)) ?? false
+        const handler = options.onTwoFactorRequired ?? this.options.onTwoFactorRequired
+        const verified = (await handler?.(verification)) ?? false
         twoFactorCanceled = !verified
         return verified && active && this.authRevision === revision
       },
