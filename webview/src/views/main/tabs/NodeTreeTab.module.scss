@@ -43,7 +43,8 @@ $node-child-indent: 18px;
   color: var(--v2ex-webview-fg);
   outline: none;
 
-  &:hover {
+  &:hover,
+  &:has(> [data-popup-open]) {
     color: var(--v2ex-hover-fg);
     background: var(--v2ex-hover-bg);
   }

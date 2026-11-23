@@ -356,7 +356,7 @@
   text-align: left;
   cursor: pointer;
 
-  @include focus.keyboard-focus($also: '&:hover') {
+  @include focus.keyboard-focus($also: '&:hover, &[data-popup-open]') {
     background: var(--v2ex-hover-bg);
     color: var(--v2ex-hover-fg);
   }
