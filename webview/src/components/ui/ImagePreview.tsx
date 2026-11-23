@@ -1,6 +1,7 @@
 import {
   ChevronLeft,
   ChevronRight,
+  ImageOff,
   RotateCcw,
   RotateCw,
   Shrink,
@@ -58,6 +59,8 @@ export interface ImagePreviewProps {
   onCurrentIndexChange: (index: number) => void
   /** 打开状态变化 */
   onOpenChange: (open: boolean) => void
+  /** 可在浏览器打开的当前图片地址及其打开方式 */
+  externalImageLink?: { href: string; open: (href: string) => void }
 }
 
 const INITIAL_POSITION: ImagePosition = { x: 0, y: 0 }
@@ -71,18 +74,23 @@ export function ImagePreview({
   toolbarExtra,
   renderImage,
   onCurrentIndexChange,
-  onOpenChange
+  onOpenChange,
+  externalImageLink
 }: ImagePreviewProps) {
   const [scale, setScale] = useState(1)
   const [rotation, setRotation] = useState(0)
   const [position, setPosition] = useState<ImagePosition>(INITIAL_POSITION)
   const [isDragging, setIsDragging] = useState(false)
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
   const imageRef = useRef<HTMLImageElement>(null)
   const dragRef = useRef<ImageDragState | null>(null)
   const currentSrc = srcList[currentIndex]
   const imageCount = srcList.length
+  const loadFailed = loadStatus === 'failed'
+  const canTransform = Boolean(currentSrc) && loadStatus === 'loaded'
 
   useLayoutEffect(() => {
+    setLoadStatus('loading')
     setScale(1)
     setRotation(0)
     setPosition(INITIAL_POSITION)
@@ -116,7 +124,9 @@ export function ImagePreview({
 
   /** 调整缩放比例 */
   function zoom(offset: number) {
-    setScale(current => Math.min(4, Math.max(0.25, Number((current + offset).toFixed(2)))))
+    if (canTransform) {
+      setScale(current => Math.min(4, Math.max(0.25, Number((current + offset).toFixed(2)))))
+    }
   }
 
   /** 处理键盘快捷键 */
@@ -201,19 +211,22 @@ export function ImagePreview({
     }
   }
 
-  const image = currentSrc ? (
-    <img
-      key={currentSrc}
-      ref={imageRef}
-      className="v2ex-image-preview__image"
-      src={currentSrc}
-      alt={`预览图片 ${currentIndex + 1}`}
-      draggable={false}
-      style={{
-        transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`
-      }}
-    />
-  ) : null
+  const image =
+    currentSrc && !loadFailed ? (
+      <img
+        key={currentSrc}
+        ref={imageRef}
+        className="v2ex-image-preview__image"
+        src={currentSrc}
+        alt={`预览图片 ${currentIndex + 1}`}
+        draggable={false}
+        onLoad={() => setLoadStatus('loaded')}
+        onError={() => setLoadStatus('failed')}
+        style={{
+          transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`
+        }}
+      />
+    ) : null
 
   return (
     <DialogPrimitive.Root
@@ -276,6 +289,45 @@ export function ImagePreview({
             onPointerUp={handlePointerEnd}
             onPointerCancel={handlePointerEnd}
           >
+            <div className={loadFailed ? 'v2ex-image-preview__error' : undefined}>
+              <div className="v2ex-image-preview__error-status" role="status">
+                {loadFailed && (
+                  <>
+                    <ImageOff size={28} aria-hidden="true" />
+                    <span>图片加载失败</span>
+                  </>
+                )}
+              </div>
+              {loadFailed && (
+                <>
+                  {externalImageLink && (
+                    <a
+                      className="v2ex-image-preview__error-link"
+                      href={externalImageLink.href}
+                      onClick={event => {
+                        event.preventDefault()
+                        // VS Code 在 window 上处理链接点击，即使已阻止默认行为
+                        event.stopPropagation()
+                        externalImageLink.open(externalImageLink.href)
+                      }}
+                    >
+                      {externalImageLink.href}
+                    </a>
+                  )}
+                  <Button
+                    className="v2ex-image-preview__retry"
+                    size="small"
+                    variant="ghost"
+                    onClick={() => {
+                      resetTransform()
+                      setLoadStatus('loading')
+                    }}
+                  >
+                    重试
+                  </Button>
+                </>
+              )}
+            </div>
             {image && (renderImage ? renderImage(image) : image)}
           </div>
 
@@ -295,7 +347,7 @@ export function ImagePreview({
               size="small"
               variant="ghost"
               icon={<ZoomOut aria-hidden="true" />}
-              disabled={scale <= 0.25}
+              disabled={!canTransform || scale <= 0.25}
               aria-label="缩小"
               onClick={() => zoom(-0.25)}
             />
@@ -304,7 +356,7 @@ export function ImagePreview({
               size="small"
               variant="ghost"
               icon={<ZoomIn aria-hidden="true" />}
-              disabled={scale >= 4}
+              disabled={!canTransform || scale >= 4}
               aria-label="放大"
               onClick={() => zoom(0.25)}
             />
@@ -313,6 +365,7 @@ export function ImagePreview({
               size="small"
               variant="ghost"
               icon={<RotateCcw aria-hidden="true" />}
+              disabled={!canTransform}
               aria-label="向左旋转"
               onClick={() => setRotation(current => current - 90)}
             />
@@ -320,6 +373,7 @@ export function ImagePreview({
               size="small"
               variant="ghost"
               icon={<RotateCw aria-hidden="true" />}
+              disabled={!canTransform}
               aria-label="向右旋转"
               onClick={() => setRotation(current => current + 90)}
             />
@@ -327,6 +381,7 @@ export function ImagePreview({
               size="small"
               variant="ghost"
               icon={<Shrink aria-hidden="true" />}
+              disabled={!canTransform}
               aria-label="重置图片"
               onClick={resetTransform}
             />

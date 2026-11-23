@@ -2,7 +2,7 @@ import PageContextMenu from './PageContextMenu'
 import { Download, Smile } from 'lucide-react'
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 import { Button, ImagePreview } from '@/components/ui'
-import { createVsCodeClient } from '@/core/vscode'
+import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import type { WebviewCommonRpcCommands } from '@extension/shared/webview'
 
 /** 图片预览 VS Code 通信客户端 */
@@ -100,6 +100,11 @@ export default function ImagePreviewProvider({
   }, [])
 
   const currentSrc = preview?.srcList[preview.currentIndex]
+  const currentUrl =
+    currentSrc && URL.canParse(currentSrc, document.baseURI)
+      ? resolveWebviewUrl(currentSrc)
+      : undefined
+  const externalUrl = currentUrl && /^https?:\/\//i.test(currentUrl) ? currentUrl : undefined
   const emoticonSrcSet = new Set(preview?.emoticonSrcList)
   const canFilterEmoticons = Boolean(
     preview &&
@@ -168,6 +173,11 @@ export default function ImagePreviewProvider({
               onClick={() => void vscode.downloadImage(currentSrc)}
             />
           ) : undefined
+        }
+        externalImageLink={
+          externalUrl
+            ? { href: externalUrl, open: href => void vscode.openExternal(href) }
+            : undefined
         }
         onCurrentIndexChange={currentIndex => {
           setPreview(current => (current ? { ...current, currentIndex } : current))
