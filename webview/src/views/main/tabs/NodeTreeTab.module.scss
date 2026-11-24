@@ -44,7 +44,7 @@ $node-child-indent: 18px;
   outline: none;
 
   &:hover,
-  &:has(> [data-popup-open], > .node-actions > [data-popup-open]) {
+  &:has(> [data-popup-open]) {
     color: var(--v2ex-hover-fg);
     background: var(--v2ex-hover-bg);
   }
@@ -53,10 +53,6 @@ $node-child-indent: 18px;
     color: var(--v2ex-active-fg);
     background: var(--v2ex-active-bg);
   }
-}
-
-.tree-item--node:hover .node-actions {
-  opacity: 1;
 }
 
 .tree-item--node {
@@ -174,14 +170,20 @@ $node-child-indent: 18px;
   gap: 0;
   margin-left: auto;
   margin-right: 6px;
-  opacity: 0;
-  /* 不用过渡：loading 结束时若淡出，会先闪回 refresh 再隐藏 */
-
-  :global(.v2ex-button) {
+  > button {
     width: 24px;
     height: 24px;
     min-height: 24px;
     padding: 3px;
+    opacity: 0;
+    pointer-events: none;
+
+    @include focus.keyboard-focus(
+      $also: '.tree-item--node:hover &, &[data-popup-open], &[aria-busy="true"]'
+    ) {
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
   :global(.v2ex-button__icon),
@@ -190,20 +192,10 @@ $node-child-indent: 18px;
     width: 14px;
     height: 14px;
   }
-
-  &:focus-within,
-  &:has(> [data-popup-open]) {
-    opacity: 1;
-  }
 }
 
 .child-node-menu :global(.v2ex-menu__indicator) {
   display: none;
-}
-
-/* 必须写在 .node-actions 之后，否则同优先级会被 opacity: 0 覆盖 */
-.node-actions--loading {
-  opacity: 1;
 }
 
 .empty-panel {

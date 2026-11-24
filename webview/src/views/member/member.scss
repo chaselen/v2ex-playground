@@ -145,15 +145,9 @@
   color: var(--v2ex-webview-fg);
   background: var(--v2ex-webview-bg);
 
-  &:hover,
-  &:focus-within {
+  &:hover {
     border-color: var(--v2ex-link-soft-border);
     background: var(--v2ex-hover-bg);
-
-    .member-relations-action {
-      opacity: 1;
-      pointer-events: auto;
-    }
   }
 }
 
@@ -190,16 +184,6 @@
 
 .member-relations-action {
   flex: 0 0 auto;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s ease;
-}
-
-@media (hover: none) {
-  .member-relations-action {
-    opacity: 1;
-    pointer-events: auto;
-  }
 }
 
 .member-relations-empty {
@@ -244,14 +228,6 @@
   &:last-child {
     border-bottom: 0;
   }
-
-  &:hover,
-  &:focus-within {
-    .member-ignored-action {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  }
 }
 
 .member-ignored-main {
@@ -264,13 +240,23 @@
   flex: 0 0 auto;
   align-items: flex-start;
   padding: 10px 8px 0 0;
+}
+
+.member-relations-action > button,
+.member-ignored-action > button {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
-}
 
-@media (hover: none) {
-  .member-ignored-action {
+  @include focus.keyboard-focus(
+    $also:
+      '.member-relations-item:hover &, .member-ignored-item:hover &, &[data-popup-open], &[aria-busy="true"]'
+  ) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (hover: none) {
     opacity: 1;
     pointer-events: auto;
   }

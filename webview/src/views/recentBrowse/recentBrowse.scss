@@ -1,5 +1,6 @@
 @use '@/styles/page-layout';
 @use '../../styles/topic-list-item' as topic-list-item;
+@use '../../styles/focus';
 
 .recent-scroll {
   height: 100vh;
@@ -77,14 +78,6 @@
   &:last-child {
     border-bottom: 0;
   }
-
-  &:hover,
-  &:focus-within {
-    .recent-topic-delete-trigger {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  }
 }
 
 .recent-topic-body {
@@ -133,13 +126,21 @@
   position: absolute;
   right: 0;
   bottom: 6px;
+}
+
+.recent-topic-delete {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
-}
 
-@media (hover: none) {
-  .recent-topic-delete-trigger {
+  @include focus.keyboard-focus(
+    $also: '.recent-topic:hover &, &[data-popup-open], &[aria-busy="true"]'
+  ) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (hover: none) {
     opacity: 1;
     pointer-events: auto;
   }

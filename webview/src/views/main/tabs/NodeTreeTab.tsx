@@ -271,10 +271,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
 
   function renderNodeActions(data: TreeItem, childNodeItems: ContextMenuItem[]) {
     return (
-      <div
-        className={`${styles['node-actions']}${data.loading ? ` ${styles['node-actions--loading']}` : ''}`}
-        onClick={stopTreeClick}
-      >
+      <div className={styles['node-actions']} onClick={stopTreeClick}>
         {childNodeItems.length > 0 && (
           <DropdownMenu
             align="end"
