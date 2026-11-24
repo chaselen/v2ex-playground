@@ -44,7 +44,7 @@ $node-child-indent: 18px;
   outline: none;
 
   &:hover,
-  &:has(> [data-popup-open]) {
+  &:has(> [data-popup-open], > .node-actions > [data-popup-open]) {
     color: var(--v2ex-hover-fg);
     background: var(--v2ex-hover-bg);
   }
@@ -191,9 +191,14 @@ $node-child-indent: 18px;
     height: 14px;
   }
 
-  &:focus-within {
+  &:focus-within,
+  &:has(> [data-popup-open]) {
     opacity: 1;
   }
+}
+
+.child-node-menu :global(.v2ex-menu__indicator) {
+  display: none;
 }
 
 /* 必须写在 .node-actions 之后，否则同优先级会被 opacity: 0 覆盖 */

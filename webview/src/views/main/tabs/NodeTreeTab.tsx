@@ -1,10 +1,17 @@
 import { getLinkMenuItems } from '@/components/linkMenuItems'
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
-import { ChevronRight, Inbox, PanelsTopLeft, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronRight, Inbox, ListTree, PanelsTopLeft, RefreshCw, Trash2 } from 'lucide-react'
 import AddNodeButton from '../components/AddNodeButton'
 import PageContextMenu from '@/components/PageContextMenu'
 import PageSkeleton from '@/components/PageSkeleton'
-import { ScrollArea, Button, ConfirmPopover, Empty, type ContextMenuItem } from '@/components/ui'
+import {
+  ScrollArea,
+  Button,
+  ConfirmPopover,
+  DropdownMenu,
+  Empty,
+  type ContextMenuItem
+} from '@/components/ui'
 import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import type { MainViewRpcCommands } from '@extension/shared/webview'
 import LoginPrompt from '../components/LoginPrompt'
@@ -262,13 +269,37 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
     }
   }
 
-  function renderNodeActions(data: TreeItem) {
+  function renderNodeActions(data: TreeItem, childNodeItems: ContextMenuItem[]) {
     return (
       <div
         className={`${styles['node-actions']}${data.loading ? ` ${styles['node-actions--loading']}` : ''}`}
         onClick={stopTreeClick}
       >
-        {/* 刷新中只保留刷新按钮，避免删除/取消收藏一并露出 */}
+        {childNodeItems.length > 0 && (
+          <DropdownMenu
+            align="end"
+            className={styles['child-node-menu']}
+            closeOnWindowBlur
+            items={childNodeItems.map(item => ({
+              ...item,
+              label: (
+                <>
+                  {item.icon}
+                  {item.label}
+                </>
+              )
+            }))}
+          >
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<ListTree aria-hidden="true" />}
+              title="查看子节点"
+              aria-label={`查看${data.label}的子节点`}
+            />
+          </DropdownMenu>
+        )}
+        {/* 刷新中隐藏删除和取消收藏操作 */}
         {!data.loading && tab === 'custom' && (
           <ConfirmPopover
             title={`确定删除“${data.label}”节点？`}
@@ -382,20 +413,11 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
   }
 
   /** 首页分类和实际节点使用各自的站点地址 */
-  function getNodeMenuItems(data: TreeItem): ContextMenuItem[] {
+  function getNodeMenuItems(data: TreeItem, childNodeItems: ContextMenuItem[]): ContextMenuItem[] {
     const name = data.itemKey!
     const url = resolveWebviewUrl(tab === 'explore' ? `/?tab=${name}` : `/go/${name}`)
-    const items: ContextMenuItem[] = []
-    if (tab === 'explore') {
-      for (const node of exploreNodeLinks[name] ?? []) {
-        items.push({
-          key: `node-${node.name}`,
-          label: node.title,
-          icon: <NodeAvatarImage src={getV2exNodeAvatarUrl(node.name)} />,
-          onSelect: () => vscode.openNode(node.name, node.title)
-        })
-      }
-    } else {
+    const items = [...childNodeItems]
+    if (tab !== 'explore') {
       items.push({
         key: 'view-node',
         label: '查看节点',
@@ -416,6 +438,13 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
       <div className={styles['node-tree']} role="tree" aria-label={treeLabels[tab]}>
         {treeData.map(data => {
           const expanded = expandedKeys.includes(data.key)
+          const childNodes = tab === 'explore' ? exploreNodeLinks[data.itemKey!] : undefined
+          const childNodeItems = (childNodes ?? []).map(node => ({
+            key: `node-${node.name}`,
+            label: node.title,
+            icon: <NodeAvatarImage src={getV2exNodeAvatarUrl(node.name)} />,
+            onSelect: () => vscode.openNode(node.name, node.title)
+          }))
           return (
             <div className={styles['node-group']} key={data.key}>
               <div
@@ -423,7 +452,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
                 aria-expanded={expanded}
                 className={`${styles['tree-item']} ${styles['tree-item--node']}${expanded ? ` ${styles['tree-item--node-expanded']}` : ''}`}
               >
-                <PageContextMenu items={getNodeMenuItems(data)} size="compact">
+                <PageContextMenu items={getNodeMenuItems(data, childNodeItems)} size="compact">
                   <button
                     type="button"
                     className={styles['node-toggle']}
@@ -437,7 +466,7 @@ export default function NodeTreeTab(props: NodeTreeTabProps) {
                     <span className={styles['node-label']}>{data.label}</span>
                   </button>
                 </PageContextMenu>
-                {renderNodeActions(data)}
+                {renderNodeActions(data, childNodeItems)}
               </div>
               {expanded && (
                 <div role="group" className={styles['node-children']}>

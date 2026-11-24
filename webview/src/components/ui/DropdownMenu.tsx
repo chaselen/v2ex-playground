@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import { Menu as DropdownMenuPrimitive } from '@base-ui/react/menu'
-import type { ReactElement, ReactNode } from 'react'
+import { useEffect, useState, type ReactElement, type ReactNode } from 'react'
 import { mergeClassNames } from './utils'
 
 export interface DropdownMenuItem {
@@ -27,6 +27,8 @@ export interface DropdownMenuProps {
   align?: 'start' | 'center' | 'end'
   /** 菜单附加类名 */
   className?: string
+  /** Webview 窗口失焦或页面隐藏时关闭菜单，默认不开启 */
+  closeOnWindowBlur?: boolean
 }
 
 /** 基于 Base UI Dropdown Menu、使用 VS Code Menu 颜色的菜单 */
@@ -34,11 +36,31 @@ export function DropdownMenu({
   align = 'start',
   children,
   className,
+  closeOnWindowBlur = false,
   items,
   side = 'bottom'
 }: DropdownMenuProps) {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open || !closeOnWindowBlur) return
+
+    // 点击宿主编辑器时，Webview 只会收到窗口失焦事件
+    const closeMenu = () => setOpen(false)
+    const handleVisibilityChange = () => {
+      if (document.hidden) closeMenu()
+    }
+
+    window.addEventListener('blur', closeMenu)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      window.removeEventListener('blur', closeMenu)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [closeOnWindowBlur, open])
+
   return (
-    <DropdownMenuPrimitive.Root>
+    <DropdownMenuPrimitive.Root open={open} onOpenChange={setOpen}>
       <DropdownMenuPrimitive.Trigger
         render={children}
         nativeButton={typeof children.type !== 'string' || children.type === 'button'}
