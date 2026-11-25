@@ -144,7 +144,6 @@
   }
 }
 
-.create-topic-syntax-tools,
 .create-topic-node-tools {
   display: flex;
   min-width: 0;
@@ -167,14 +166,6 @@
     width: 16px;
     height: 16px;
   }
-}
-
-.create-topic-syntax {
-  flex-direction: row;
-}
-
-.create-topic-editor-toolbar {
-  min-height: 38px;
 }
 
 .create-topic-footer {
@@ -261,22 +252,6 @@
   .create-topic-composer {
     min-height: 320px;
     padding: 12px;
-  }
-
-  .create-topic-syntax {
-    flex: 1;
-    min-width: 0;
-
-    .v2ex-radio-group__label {
-      flex: 1;
-    }
-  }
-
-  .create-topic-editor-toolbar {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 8px;
-    padding-bottom: 10px;
   }
 
   .create-topic-node-field {

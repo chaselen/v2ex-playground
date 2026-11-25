@@ -229,30 +229,38 @@ describe('V2exClient authenticated topic requests', () => {
   const authTest = process.env.V2EX_COOKIE ? test : test.skip
 
   authTest('previews topic markdown with V2EX_COOKIE', async () => {
-    const html = await client.topics.previewContent('**主题预览**', 'markdown', 'topic')
+    const html = await client.topics.previewContent('**主题预览**', 'markdown')
 
     expect(html).toContain('<strong>主题预览</strong>')
   })
 
-  authTest('previews default reply syntax with V2EX_COOKIE', async () => {
+  authTest('uses published reply formatting with V2EX_COOKIE', async () => {
+    const image = 'https://i.imgur.com/ray6huh.jpeg'
     const html = await client.topics.previewContent(
-      ['第一行 <标签>', '', '@alice #12 https://www.v2ex.com/t/1', '**粗体**'].join('\n'),
-      'default',
+      [
+        '甲',
+        '**乙** @chaselen /go/sandbox /t/1249137',
+        '',
+        '```js',
+        '/go/sandbox',
+        '```',
+        '',
+        image
+      ].join('\n'),
       'reply'
     )
-
-    expect(html).toContain('第一行 &lt;标签&gt;<br /><br />')
-    expect(html).toContain('href="/member/alice"')
-    expect(html).toContain('href="https://www.v2ex.com/t/1"')
-    expect(html).toContain('**粗体**')
+    const $ = load(html)
+    expect($('p br')).toHaveLength(1)
+    expect($('strong').text()).toBe('乙')
+    for (const href of ['/member/chaselen', '/go/sandbox', '/t/1249137'])
+      expect($(`a[href="${href}"]`)).toHaveLength(1)
+    expect($('pre code').text().trim()).toBe('/go/sandbox')
+    expect($('pre a')).toHaveLength(0)
+    expect($('a > img').attr('src')).toBe(image)
   })
 
   authTest('previews a YouTube link as an embedded video with V2EX_COOKIE', async () => {
-    const html = await client.topics.previewContent(
-      'https://youtu.be/YhxnffqiegU',
-      'default',
-      'reply'
-    )
+    const html = await client.topics.previewContent('https://youtu.be/YhxnffqiegU', 'reply')
     const $ = load(html)
     const iframe = $('.embedded_video_wrapper > iframe.embedded_video')
 
@@ -281,7 +289,6 @@ describe('V2exClient authenticated topic requests', () => {
         '<img src="x" onerror="alert(1)">',
         '<a href="javascript:alert(2)" onclick="alert(3)">危险链接</a>'
       ].join('\n'),
-      'markdown',
       'reply'
     )
 

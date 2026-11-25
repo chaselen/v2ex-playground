@@ -315,7 +315,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
 
   /** 主题与附言均使用主题正文预览 */
   rpc_previewTopicContent(content: string, syntax: TopicSyntax) {
-    return G.V2ex.topics.previewContent(content, syntax, 'topic')
+    return G.V2ex.topics.previewContent(content, syntax)
   }
 
   /** 收藏话题 */
@@ -569,12 +569,12 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
    * 处理回复预览
    * @param content 回复内容
    */
-  private handlePreviewReply(content: string) {
+  private async handlePreviewReply(content: string) {
     if (!content.trim()) {
       throw new Error('请输入回复内容')
     }
 
-    return G.V2ex.topics.previewContent(content, 'default', 'reply')
+    return G.V2ex.topics.previewContent(content, 'reply')
   }
 
   /**

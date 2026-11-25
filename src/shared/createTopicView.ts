@@ -1,12 +1,8 @@
 import type { CreateTopicDraft } from './createTopicDraft'
 import type { ImageUploadInput } from './image'
-import type { CreateTopicInput, CreateTopicResult, Node, TopicSyntax } from '../v2ex/types'
-export type { Node, TopicSyntax } from '../v2ex/types'
-export {
-  DEFAULT_TOPIC_SYNTAX,
-  TOPIC_CONTENT_MAX_LENGTH,
-  TOPIC_TITLE_MAX_LENGTH
-} from '../v2ex/types'
+import type { CreateTopicInput, CreateTopicResult, Node } from '../v2ex/types'
+export type { Node } from '../v2ex/types'
+export { TOPIC_CONTENT_MAX_LENGTH, TOPIC_TITLE_MAX_LENGTH } from '../v2ex/types'
 import type { WebviewCommonRpcCommands, WebviewStateRpcCommands } from './commonView'
 
 /** 创作新主题表单状态 */
@@ -41,7 +37,7 @@ export interface CreateTopicPanelRpcCommands
   /** 发布新主题 */
   createTopic(input: CreateTopicInput): CreateTopicResult
   /** 预览新主题正文 */
-  previewTopic(content: string, syntax: TopicSyntax): string
+  previewTopic(content: string): string
   /** 上传正文图片 */
   uploadImage(payload: ImageUploadInput): string
   /** 检测 Imgur 连通性 */

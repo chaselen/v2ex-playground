@@ -21,13 +21,8 @@ import type {
   ImageUploadInput,
   WebviewPageRpcController
 } from '@/shared/webview'
-import type { CreateTopicInput, Node, TopicSyntax } from '@/v2ex'
-import {
-  DEFAULT_TOPIC_SYNTAX,
-  LoginRequiredError,
-  TOPIC_CONTENT_MAX_LENGTH,
-  TOPIC_TITLE_MAX_LENGTH
-} from '@/v2ex'
+import type { CreateTopicInput, Node } from '@/v2ex'
+import { LoginRequiredError, TOPIC_CONTENT_MAX_LENGTH, TOPIC_TITLE_MAX_LENGTH } from '@/v2ex'
 
 /** 创作新主题面板控制器 */
 export class CreateTopicPanelController implements WebviewPageRpcController<CreateTopicPanelRpcCommands> {
@@ -167,8 +162,8 @@ export class CreateTopicPanelController implements WebviewPageRpcController<Crea
   }
 
   /** 预览新主题正文 */
-  rpc_previewTopic(content: string, syntax: TopicSyntax) {
-    return G.V2ex.topics.previewContent(content, syntax, 'topic')
+  rpc_previewTopic(content: string) {
+    return G.V2ex.topics.previewContent(content, 'markdown')
   }
 
   /** 上传正文图片 */
@@ -197,8 +192,7 @@ export class CreateTopicPanelController implements WebviewPageRpcController<Crea
       const draft = normalizeDraft(
         savedDraft || {
           title: '',
-          content: '',
-          syntax: DEFAULT_TOPIC_SYNTAX
+          content: ''
         }
       )
       if (draft.node && !this.nodes.some(node => node.name === draft.node?.name)) {
@@ -240,7 +234,6 @@ function normalizeDraft(draft: CreateTopicDraft): CreateTopicDraft {
   return {
     title: draft.title || '',
     content: draft.content || '',
-    syntax: draft.syntax === 'default' ? 'default' : 'markdown',
     node: draft.node?.name
       ? {
           name: draft.node.name.trim(),

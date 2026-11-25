@@ -1,20 +1,13 @@
 import PageContextMenu from '@/components/PageContextMenu'
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode
-} from 'react'
-import { Image, Smile, X, Reply } from 'lucide-react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { Image, Smile, SquareCode, X, Reply } from 'lucide-react'
 import { ScrollArea, Button, Popover, Spinner, Toast, Tooltip } from '@/components/ui'
 import { proxyImgurImageSrc } from '@/core/contentEnhancement'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import { isApplePlatform } from '@/core/platform'
 import { imageEmoticonLinks, isImageEmoticon } from '@/core/imageEmoticons'
-import { createVsCodeClient } from '@/core/vscode'
+import { handleWebviewLinkClick } from '@/core/linkNavigation'
+import { createVsCodeClient, resolveWebviewUrl } from '@/core/vscode'
 import { mergeClassNames } from '@/components/ui/utils'
 import MentionTextarea from './MentionTextarea'
 import type { MentionUser } from './mentions'
@@ -160,7 +153,7 @@ interface ReplyComposerProps {
   previewAriaLabel?: string
   /** 空正文是否禁止进入预览 */
   previewRequiresContent?: boolean
-  /** 正文预览实现；回复场景默认使用原生格式预览 */
+  /** 正文预览实现；回复场景默认使用 Markdown 预览 */
   onPreview?: (content: string) => Promise<string>
   /** 图片上传实现 */
   onUploadImage?: (file: File) => Promise<string>
@@ -170,10 +163,8 @@ interface ReplyComposerProps {
   onUploadingChange?: (uploading: boolean) => void
   /** 预览或提交前的正文转换 */
   transformContent?: (content: string) => string
-  /** 编辑模式工具栏右侧内容 */
-  toolbarEnd?: ReactNode
-  /** 编辑模式工具栏附加类名 */
-  toolbarClassName?: string
+  /** 在编辑工具栏右侧展示的 Markdown 语法帮助路径 */
+  markdownHelpPath?: string
   /** 是否显示回复专用表情入口 */
   showEmoticons?: boolean
   /** 根元素附加类名 */
@@ -237,8 +228,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
     onCheckImgurConnectivity,
     onUploadingChange,
     transformContent = replaceImageEmoticonTokens,
-    toolbarEnd,
-    toolbarClassName,
+    markdownHelpPath,
     showEmoticons = true,
     className,
     disabled = false,
@@ -246,6 +236,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
   },
   ref
 ) {
+  const helpPath = markdownHelpPath ?? (submitContent ? '/help/markdown#reply' : undefined)
   const [internalValue, setInternalValue] = useState(() => readReplyDraft(draftKey)?.content || '')
   const [parentReply, setParentReply] = useState<ReplyDraft['parent']>(
     () => readReplyDraft(draftKey)?.parent
@@ -848,7 +839,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
           />
         </div>
       )}
-      <div className={mergeClassNames(styles.toolbar, toolbarClassName)}>
+      <div className={styles.toolbar}>
         <div className={styles.tabs} role="tablist" aria-label="正文编辑模式">
           <button
             type="button"
@@ -871,7 +862,16 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
             预览
           </button>
         </div>
-        {toolbarEnd}
+        {helpPath && (
+          <a
+            className={styles.markdownHelp}
+            href={resolveWebviewUrl(helpPath)}
+            onClick={handleWebviewLinkClick}
+          >
+            <SquareCode size={14} aria-hidden="true" />
+            支持 Markdown
+          </a>
+        )}
       </div>
 
       {mode === 'edit' ? (

@@ -1,31 +1,16 @@
 import NodeSelectButton from '@/components/NodeSelectButton'
 import { useEffect, useRef, useState } from 'react'
-import { Info, Send, SquarePen } from 'lucide-react'
-import {
-  ScrollArea,
-  Alert,
-  Button,
-  ConfirmPopover,
-  Input,
-  RadioGroup,
-  RadioGroupItem,
-  Toast,
-  Tooltip
-} from '@/components/ui'
+import { Send, SquarePen } from 'lucide-react'
+import { ScrollArea, Alert, Button, ConfirmPopover, Input, Toast } from '@/components/ui'
 import { handleWebviewLinkClick } from '@/core/linkNavigation'
 import { createVsCodeClient, subscribeWebviewState } from '@/core/vscode'
 import ReplyComposer from '@/views/topic/ReplyComposer'
-import {
-  DEFAULT_TOPIC_SYNTAX,
-  TOPIC_CONTENT_MAX_LENGTH,
-  TOPIC_TITLE_MAX_LENGTH
-} from '@extension/shared/webview'
+import { TOPIC_CONTENT_MAX_LENGTH, TOPIC_TITLE_MAX_LENGTH } from '@extension/shared/webview'
 import type {
   CreateTopicDraft,
   CreateTopicPanelRpcCommands,
   CreateTopicPanelViewState,
-  CreateTopicPanelWebviewEvents,
-  TopicSyntax
+  CreateTopicPanelWebviewEvents
 } from '@extension/shared/webview'
 
 /** 创作新主题 VS Code 通信客户端 */
@@ -34,8 +19,7 @@ const vscode = createVsCodeClient<CreateTopicPanelRpcCommands, CreateTopicPanelW
 /** 空白草稿 */
 const emptyDraft: CreateTopicDraft = {
   title: '',
-  content: '',
-  syntax: DEFAULT_TOPIC_SYNTAX
+  content: ''
 }
 
 /** 创作新主题页面 */
@@ -114,7 +98,6 @@ export default function CreateTopicApp() {
       const result = await vscode.createTopic({
         title,
         content: draft.content,
-        syntax: draft.syntax,
         nodeName: draft.node.name
       })
       Toast.success('主题发布成功')
@@ -233,7 +216,7 @@ export default function CreateTopicApp() {
               className="create-topic-composer"
               showImages
               showEmoticons={false}
-              resetKey={`${draft.syntax}:${composerResetKey}`}
+              resetKey={composerResetKey}
               value={draft.content}
               maxLength={contentMaxLength}
               rows={11}
@@ -243,34 +226,9 @@ export default function CreateTopicApp() {
               previewRequiresContent={false}
               transformContent={preserveContent}
               disabled={formDisabled}
-              toolbarClassName="create-topic-editor-toolbar"
-              toolbarEnd={
-                <div className="create-topic-syntax-tools">
-                  <RadioGroup
-                    className="create-topic-syntax"
-                    size="small"
-                    variant="segmented"
-                    value={draft.syntax}
-                    disabled={formDisabled}
-                    onValueChange={value => updateDraft('syntax', value as TopicSyntax)}
-                  >
-                    <RadioGroupItem value="default" label="V2EX 原生格式" />
-                    <RadioGroupItem value="markdown" label="Markdown" />
-                  </RadioGroup>
-                  <Tooltip content="语法帮助">
-                    <a
-                      className="create-topic-help-link"
-                      href="https://www.v2ex.com/help/markdown"
-                      aria-label="语法帮助"
-                      onClick={event => handleWebviewLinkClick(event)}
-                    >
-                      <Info aria-hidden="true" />
-                    </a>
-                  </Tooltip>
-                </div>
-              }
+              markdownHelpPath="/help/markdown#markdown"
               onChange={content => updateDraft('content', content)}
-              onPreview={content => vscode.previewTopic(content, draft.syntax)}
+              onPreview={content => vscode.previewTopic(content)}
               onUploadImage={uploadTopicImage}
               onCheckImgurConnectivity={checkTopicImageConnectivity}
               onUploadingChange={setUploading}

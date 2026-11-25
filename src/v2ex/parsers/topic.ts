@@ -496,8 +496,26 @@ export function parseTopicEditContent(
   const form = $(`form[method="post"][action="/edit/topic/${topicId}"]`)
   const title = form.find('textarea[name="title"]')
   const content = form.find('textarea[name="content"]')
-  const syntax = String(form.find('select[name="syntax"]').val() ?? '')
-  if (!title.length || !content.length || !['0', '1'].includes(syntax)) {
+  // 新编辑器固定使用主题原语法；历史表单通过选中项表示同一信息
+  const declaredSyntax = $('script:not([src])')
+    .toArray()
+    .map(
+      script =>
+        $(script)
+          .text()
+          .match(/^\s*const topicSyntax = '(markdown|default)';/m)?.[1]
+    )
+    .find(Boolean)
+  const selected = form.find('select[name="syntax"]').val()
+  const syntax =
+    declaredSyntax === 'markdown' || declaredSyntax === 'default'
+      ? declaredSyntax
+      : selected === '1'
+        ? 'markdown'
+        : selected === '0'
+          ? 'default'
+          : undefined
+  if (!title.length || !content.length || !syntax) {
     throw new Error(
       $('.problem, #error_message, .message').first().text().trim() ||
         $('#Main .inner').first().text().trim() ||
@@ -507,7 +525,7 @@ export function parseTopicEditContent(
   return {
     title: decodeTextarea(String(title.val() ?? '')),
     content: decodeTextarea(String(content.val() ?? '')),
-    syntax: syntax === '1' ? 'markdown' : 'default'
+    syntax
   }
 }
 

@@ -155,7 +155,7 @@ describe('topic content', () => {
       expect(await service.prepareContent(12, action)).toEqual({
         title: '原标题',
         content: '',
-        syntax: 'default',
+        syntax: 'markdown',
         nodeName: 'sandbox'
       })
       expect(get).toHaveBeenCalledTimes(1)
@@ -177,13 +177,13 @@ describe('topic content', () => {
 
   test.each<{ input: TopicContentInput; body: Record<string, string> }>([
     {
-      input: { action: 'edit', title: ' 新标题 ', content: '', syntax: 'markdown' },
-      body: { title: '新标题', content: '', syntax: '1' }
+      input: { action: 'edit', title: ' 新标题 ', content: '修改正文' },
+      body: { title: '新标题', content: '修改正文', once: 'fresh' }
     },
     { input: { action: 'move', nodeName: 'programmer' }, body: { destination: 'programmer' } },
     {
-      input: { action: 'append', content: '补充', syntax: 'default' },
-      body: { content: '补充', syntax: '0', once: 'fresh' }
+      input: { action: 'append', content: '补充' },
+      body: { content: '补充', once: 'fresh' }
     }
   ])('submits the fixed $input.action contract', async ({ input, body }) => {
     const { service, get, post, getOnce } = setup()
@@ -191,22 +191,24 @@ describe('topic content', () => {
     expect(post.mock.calls[0][0]).toBe(`/${input.action}/topic/12`)
     expect(Object.fromEntries(post.mock.calls[0][1])).toEqual(body)
     expect(get).toHaveBeenCalledTimes(1)
-    expect(getOnce).toHaveBeenCalledTimes(input.action === 'append' ? 1 : 0)
+    if (input.action === 'edit')
+      expect(post.mock.calls[0][1].getAll('content')).toEqual([input.content, input.content])
+    expect(getOnce).toHaveBeenCalledTimes(input.action === 'move' ? 0 : 1)
   })
 
   test('rechecks expired permissions before getting once or writing', async () => {
     const { service, get, post, getOnce } = setup()
     get.mockResolvedValue({ data: '<div id="Main"></div>' })
-    await expect(
-      service.updateContent(12, { action: 'append', content: '补充', syntax: 'markdown' })
-    ).rejects.toThrow('不支持此操作')
+    await expect(service.updateContent(12, { action: 'append', content: '补充' })).rejects.toThrow(
+      '不支持此操作'
+    )
     expect(post).not.toHaveBeenCalled()
     expect(getOnce).not.toHaveBeenCalled()
   })
 
   test.each<TopicContentInput>([
-    { action: 'append', content: '', syntax: 'default' },
-    { action: 'edit', title: ' ', content: '', syntax: 'default' },
+    { action: 'append', content: '' },
+    { action: 'edit', title: ' ', content: '' },
     { action: 'move', nodeName: ' ' }
   ])('rejects empty required input: $action', async input => {
     const { service, post, getOnce } = setup()
@@ -221,9 +223,9 @@ describe('topic content', () => {
       data: '<div class="problem">最多 3 条附言</div>',
       request: { res: { responseUrl: 'https://www.v2ex.com/append/topic/12' } }
     })
-    await expect(
-      service.updateContent(12, { action: 'append', content: '补充', syntax: 'markdown' })
-    ).rejects.toThrow('最多 3 条附言')
+    await expect(service.updateContent(12, { action: 'append', content: '补充' })).rejects.toThrow(
+      '最多 3 条附言'
+    )
   })
 })
 
@@ -365,7 +367,7 @@ test('rejects content actions at the management boundary before making requests'
   // Webview RPC 参数在运行时仍需校验，不能只依赖 TypeScript
   await expect(
     // @ts-expect-error 内容操作不属于展示管理契约
-    service.manage(12, { action: 'append', content: '附言', syntax: 'default' })
+    service.manage(12, { action: 'append', content: '附言' })
   ).rejects.toThrow('无效的主题管理操作')
   expect(get).not.toHaveBeenCalled()
   expect(post).not.toHaveBeenCalled()

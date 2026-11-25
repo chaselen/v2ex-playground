@@ -144,6 +144,7 @@
 
 .submitRow {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
@@ -155,6 +156,15 @@
     padding-top: 0;
     padding-bottom: 0;
   }
+}
+
+.markdownHelp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  color: var(--v2ex-muted-fg);
+  font-size: 12px;
 }
 
 .submit {

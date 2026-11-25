@@ -6,15 +6,14 @@
 
 `POST /write` 使用以下表单字段：
 
-| 字段        | 值与约束                               |
-| ----------- | -------------------------------------- |
-| `title`     | 必填，最多 120 字符                    |
-| `content`   | 允许为空，最多 20000 字符              |
-| `syntax`    | `default` 或 `markdown`，默认 Markdown |
-| `node_name` | 全量节点 API 中的节点 name             |
-| `once`      | 提交前通过 `/poll_once` 获取           |
+| 字段        | 值与约束                     |
+| ----------- | ---------------------------- |
+| `title`     | 必填，最多 120 字符          |
+| `content`   | 允许为空，最多 20000 字符    |
+| `node_name` | 全量节点 API 中的节点 name   |
+| `once`      | 提交前通过 `/poll_once` 获取 |
 
-长度约束由扩展侧常量统一维护，不依赖打开面板时读取 `/write`。提交时重新确认节点存在于全量列表；发布前显示确认浮层。
+新主题统一使用 Markdown。长度约束由扩展侧常量统一维护，不依赖打开面板时读取 `/write`。提交时重新确认节点存在于全量列表；发布前显示确认浮层。
 
 成功必须重定向到 `/t/{id}`，从最终地址提取主题编号。停留在 `/write` 时解析页面错误；重定向到 `/signin` 或 `/restricted` 由 Session 统一处理登录失效或账号受限。
 
@@ -36,13 +35,13 @@
 
 ## 编辑、移动与附言
 
-| 操作 | 路径                      | 表单字段                     |
-| ---- | ------------------------- | ---------------------------- |
-| 编辑 | `POST /edit/topic/{id}`   | `title`、`content`、`syntax` |
-| 移动 | `POST /move/topic/{id}`   | `destination`，值为节点 name |
-| 附言 | `POST /append/topic/{id}` | `content`、`syntax`、`once`  |
+| 操作 | 路径                      | 表单字段                              |
+| ---- | ------------------------- | ------------------------------------- |
+| 编辑 | `POST /edit/topic/{id}`   | `title`、两个同值的 `content`、`once` |
+| 移动 | `POST /move/topic/{id}`   | `destination`，值为节点 name          |
+| 附言 | `POST /append/topic/{id}` | `content`、`once`                     |
 
-编辑和附言的 `syntax` 使用 `0`（原生格式）或 `1`（Markdown），与 `/write` 的字符串枚举不同。编辑、移动的表单没有 `once`；附言在提交前通过 `/poll_once` 获取，不缓存令牌。
+新增附言固定使用 Markdown。编辑沿用原语法，预览从页面脚本的 `topicSyntax` 读取语法。保存时编辑器和隐藏字段各提交一份正文。编辑和附言均在提交前通过 `/poll_once` 获取令牌；移动表单没有 `once`。
 
 编辑标题和附言正文不能为空，编辑正文允许为空。成功必须重定向到当前 `/t/{id}`，停留在表单页时解析服务端错误。同一面板串行提交；写入成功但刷新失败时提示刷新核对，并阻止当前表单重复提交。
 
@@ -54,7 +53,7 @@
 
 ## 正文预览
 
-主题与附言均使用 `POST /preview/{syntax}`，携带 `text=<正文>` 和 `topic_content=1`。回复预览不携带主题标记，固定使用原生格式。预览与提交使用的语法枚举需分别映射，HTML 输出约束见 [内容预览 HTML 契约](reply-preview-html.md)。
+主题与附言均使用 `POST /preview/{syntax}`，携带 `text=<正文>` 和 `topic_content=1`。回复预览使用 Markdown，同时携带 `topic_content=1` 和 `reply=1`。HTML 输出约束见 [内容预览 HTML 契约](reply-preview-html.md)。
 
 ## 放到首页与下沉
 

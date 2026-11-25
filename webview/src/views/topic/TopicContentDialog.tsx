@@ -2,16 +2,7 @@ import NodeSelectButton from '@/components/NodeSelectButton'
 import { useEffect, useState } from 'react'
 import { MapPin } from 'lucide-react'
 import { getV2exNodeAvatarUrl } from '@extension/shared/nodeAvatars'
-import {
-  Alert,
-  Avatar,
-  Button,
-  Dialog,
-  Input,
-  RadioGroup,
-  RadioGroupItem,
-  Toast
-} from '@/components/ui'
+import { Alert, Avatar, Button, Dialog, Input, Toast } from '@/components/ui'
 import PageSkeleton from '@/components/PageSkeleton'
 import { createVsCodeClient } from '@/core/vscode'
 import ReplyComposer from './ReplyComposer'
@@ -19,8 +10,7 @@ import type {
   Node,
   TopicContentAction,
   TopicContentInput,
-  TopicContentState,
-  TopicSyntax
+  TopicContentState
 } from '@extension/v2ex/types'
 import type { TopicPanelRpcCommands } from '@extension/shared/topicView'
 import styles from './TopicContentDialog.module.scss'
@@ -47,7 +37,7 @@ export default function TopicContentDialog({
   const [values, setValues] = useState<TopicContentState>({
     title: '',
     content: '',
-    syntax: 'default',
+    syntax: 'markdown',
     nodeName: ''
   })
   const [targetNode, setTargetNode] = useState<Node>(currentNode)
@@ -97,8 +87,8 @@ export default function TopicContentDialog({
       action === 'move'
         ? { action, nodeName: values.nodeName }
         : action === 'edit'
-          ? { action, title: values.title, content: values.content, syntax: values.syntax }
-          : { action, content: values.content, syntax: values.syntax }
+          ? { action, title: values.title, content: values.content }
+          : { action, content: values.content }
     try {
       await vscode.updateTopicContent(input)
       Toast.success('主题已更新')
@@ -200,20 +190,8 @@ export default function TopicContentDialog({
                   disabled={editorDisabled}
                   showEmoticons={false}
                   rows={10}
-                  toolbarClassName={styles.editorToolbar}
-                  toolbarEnd={
-                    <RadioGroup
-                      className={styles.syntax}
-                      size="small"
-                      variant="segmented"
-                      aria-label="文本标记语法"
-                      value={values.syntax}
-                      disabled={disabled || editorDisabled}
-                      onValueChange={value => change('syntax', value as TopicSyntax)}
-                    >
-                      <RadioGroupItem value="default" label="V2EX 原生格式" />
-                      <RadioGroupItem value="markdown" label="Markdown" />
-                    </RadioGroup>
+                  markdownHelpPath={
+                    values.syntax === 'markdown' ? '/help/markdown#markdown' : undefined
                   }
                   onUploadingChange={setUploading}
                   onPreview={content => vscode.previewTopicContent(content, values.syntax)}

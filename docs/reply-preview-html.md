@@ -1,6 +1,6 @@
 # V2EX 内容预览 HTML 契约
 
-本文记录 `POST /preview/default` 与 `POST /preview/markdown` 的真实输出特征，供话题正文、回复和回复预览的渲染实现参考。最后核对日期为 2026-07-23，请求使用登录 Cookie 及 `Accept-Language: zh-CN,zh;q=0.9`。
+本文记录 `POST /preview/default` 与 `POST /preview/markdown` 的真实输出特征，供话题正文、回复和回复预览的渲染实现参考。回复预览于 2026-11-25 核对，请求使用登录 Cookie 及 `Accept-Language: zh-CN,zh;q=0.9`。
 
 预览接口只返回 HTML 片段，不返回 JSON，也不提供统一的根元素。探测仅调用预览接口，不会发布内容。
 
@@ -63,7 +63,7 @@ https://youtu.be/YhxnffqiegU
 
 视频自动展开能力也记录在 V2EX 官方的 [Markdown 语法帮助](https://www.v2ex.com/help/markdown) 中，属于“V2EX 原生格式”的链接展开规则。
 
-回复提交使用原生格式；`TopicPanelController` 通过 `previewContent` 以 `reply` 目标固定请求 `default`。新主题正文使用同一方法的 `topic` 目标，并额外提交 `topic_content=1`。在确认提交接口支持 Markdown 之前，不要增加回复预览格式切换。
+根据[官方回复语法说明](https://www.v2ex.com/help/markdown#reply)，新回复支持 Markdown，历史回复保留发布时的格式。回复预览请求 `POST /preview/markdown`，提交 `text`、`reply=1` 和 `topic_content=1`；主题正文预览仅提交 `text` 和 `topic_content=1`。
 
 ## Markdown 格式
 
@@ -113,7 +113,7 @@ Markdown 输入会生成无外层容器的语义 HTML：
 </table>
 ```
 
-Markdown 段落中的单个普通换行保留为源码换行，浏览器按空白折叠规则显示为空格；不能给内容容器添加 `white-space: pre-wrap`，否则会改变服务端预期排版。
+主题 Markdown 段落中的单个普通换行保留为源码换行，浏览器按空白折叠规则显示为空格；不能给内容容器添加 `white-space: pre-wrap`，否则会改变服务端预期排版。
 
 ## 服务端过滤
 
@@ -124,7 +124,7 @@ Markdown 段落中的单个普通换行保留为源码换行，浏览器按空�
 - `script`、`iframe`、`details` 等不允许的原始标签会被转义
 - `b` 等允许的简单格式标签可能原样保留
 
-当前 Webview 将 V2EX 返回的片段交给 `EnhancedHtmlContent` 渲染，再统一绑定站内导航、图片预览、隐藏图片和代码高亮。客户端不应重新解析 Markdown，也不应通过字符串替换改变服务端 HTML 结构。
+当前 Webview 将 V2EX 返回的片段交给 `EnhancedHtmlContent` 渲染，再统一绑定站内导航、图片预览、隐藏图片和代码高亮。根据[沙盒回复样本](https://www.v2ex.com/t/1249137?p=1#r_18322351)，回复预览由服务端直接处理普通换行、站内话题与节点路径链接，以及独立段落的图片和视频直链展开。代码和现有链接保留服务端结构。[提及样本](https://www.v2ex.com/t/1249137?p=1#r_18322397)中，正文起始、空白后和汉字后的 `@用户名` 会生成成员链接，紧跟中英文冒号或左括号的提及保留为文本。链接只包裹用户名并保留大小写。
 
 ## 样式与回归重点
 

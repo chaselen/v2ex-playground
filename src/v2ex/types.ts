@@ -254,17 +254,11 @@ export interface TopicReply {
 /** 话题正文语法 */
 export type TopicSyntax = 'default' | 'markdown'
 
-/** 内容预览目标 */
-export type PreviewContentTarget = 'topic' | 'reply'
-
 /** 主题标题字符上限，与 V2EX 网页创作表单一致 */
 export const TOPIC_TITLE_MAX_LENGTH = 120
 
 /** 主题正文字数上限，与 V2EX 网页创作表单一致 */
 export const TOPIC_CONTENT_MAX_LENGTH = 20000
-
-/** 创作新主题默认正文语法 */
-export const DEFAULT_TOPIC_SYNTAX: TopicSyntax = 'markdown'
 
 /** 创作新主题参数 */
 export interface CreateTopicInput {
@@ -272,8 +266,6 @@ export interface CreateTopicInput {
   title: string
   /** 主题正文 */
   content: string
-  /** 正文语法 */
-  syntax: TopicSyntax
   /** 主题节点 name */
   nodeName: string
 }
@@ -681,17 +673,17 @@ export interface TopicContentState {
   title: string
   /** 编辑时的原始正文，移动和附言初始化为空 */
   content: string
-  /** 编辑时的原始语法，附言默认使用原生格式 */
+  /** 编辑时的原始语法，新增附言使用 Markdown */
   syntax: TopicSyntax
   /** 当前节点的 name */
   nodeName: string
 }
 
-/** 内容操作请求，语法与服务端数字枚举由领域层映射 */
+/** 内容操作请求，编辑时由服务端沿用原语法 */
 export type TopicContentInput =
-  | { action: 'edit'; title: string; content: string; syntax: TopicSyntax }
+  | { action: 'edit'; title: string; content: string }
   | { action: 'move'; nodeName: string }
-  | { action: 'append'; content: string; syntax: TopicSyntax }
+  | { action: 'append'; content: string }
 
 /** 主题展示管理操作 */
 export type TopicManagementAction = 'boost' | 'fade'

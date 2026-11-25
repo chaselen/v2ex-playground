@@ -25,7 +25,6 @@ import type {
 import {
   type CreateTopicInput,
   type CreateTopicResult,
-  type PreviewContentTarget,
   type TagTopicList,
   type ThankResponse,
   type Topic,
@@ -188,7 +187,6 @@ export class TopicService {
     const title = input.title.trim()
     const content = input.content
     const nodeName = input.nodeName.trim()
-    const syntax = normalizeTopicSyntax(input.syntax)
     if (!title) throw new Error('主题标题不能为空')
     if (title.length > TOPIC_TITLE_MAX_LENGTH) {
       throw new Error(`主题标题不能超过 ${TOPIC_TITLE_MAX_LENGTH} 个字符`)
@@ -203,7 +201,6 @@ export class TopicService {
       '/write',
       new URLSearchParams({
         title,
-        syntax,
         content,
         node_name: nodeName,
         once
@@ -230,7 +227,7 @@ export class TopicService {
     const state: TopicContentState = {
       title: detail.title,
       content: '',
-      syntax: 'default',
+      syntax: 'markdown',
       nodeName: detail.node.name
     }
     if (action === 'edit') {
@@ -248,17 +245,16 @@ export class TopicService {
       if (!input.nodeName.trim()) throw new Error('请选择目标节点')
       body.set('destination', input.nodeName.trim())
     } else {
-      if (input.syntax !== 'default' && input.syntax !== 'markdown')
-        throw new Error('无效的文本标记语法')
       if (input.action === 'edit') {
         if (!input.title.trim()) throw new Error('主题标题不能为空')
         body.set('title', input.title.trim())
+        // 官网同时提交编辑器 textarea 和同步后的同名隐藏字段
+        body.append('content', input.content)
       } else {
         if (!input.content.trim()) throw new Error('附言内容不能为空')
-        body.set('once', await this.session.getOnce())
       }
-      body.set('content', input.content)
-      body.set('syntax', input.syntax === 'markdown' ? '1' : '0')
+      body.append('content', input.content)
+      body.set('once', await this.session.getOnce())
     }
     const response = await this.session.post<string>(`/${input.action}/topic/${topicId}`, body, {
       responseType: 'text'
@@ -376,23 +372,16 @@ export class TopicService {
   /**
    * 预览话题或回复内容
    * @param text 预览内容
-   * @param syntax 预览语法
-   * @param target 预览目标
+   * @param mode 主题正文语法，或使用回复专用渲染的 reply
    */
-  async previewContent(
-    text: string,
-    syntax: TopicSyntax,
-    target: PreviewContentTarget
-  ): Promise<string> {
-    const formData = new FormData()
-    formData.append('text', text)
-    if (target === 'topic') {
-      formData.append('topic_content', '1')
-    }
+  async previewContent(text: string, mode: TopicSyntax | 'reply'): Promise<string> {
+    const body = new URLSearchParams({ text, topic_content: '1' })
+    if (mode === 'reply') body.set('reply', '1')
     const response = await this.session.post<string>(
-      `/preview/${normalizeTopicSyntax(syntax)}`,
-      formData,
+      mode === 'default' ? '/preview/default' : '/preview/markdown',
+      body,
       {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         responseType: 'text',
         transformResponse: data => data
       }
@@ -457,9 +446,4 @@ export class TopicService {
 /** 归一化页码 */
 function normalizePage(page?: number): number {
   return Number.isFinite(page) ? Math.max(1, Math.floor(Number(page))) : 1
-}
-
-/** 规范化话题正文语法 */
-function normalizeTopicSyntax(syntax?: string): TopicSyntax {
-  return syntax === 'default' ? 'default' : 'markdown'
 }

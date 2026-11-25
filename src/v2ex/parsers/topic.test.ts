@@ -417,6 +417,18 @@ describe('topic edit content', () => {
     }
   )
 
+  test.each(['markdown', 'default'] as const)(
+    'reads fixed %s syntax from the compose script',
+    syntax => {
+      const html = `<script>const topicSyntax = '${syntax}';</script>
+      <form method="post" action="/edit/topic/12">
+        <textarea name="title">标题</textarea><textarea name="content" id="editor">原文</textarea>
+        <input type="hidden" name="content" value=""><input type="hidden" name="once">
+      </form>`
+      expect(parseTopicEditContent(html, 12)).toEqual({ title: '标题', content: '原文', syntax })
+    }
+  )
+
   test('reads raw title, content and syntax without requiring once', () => {
     expect(parseTopicEditContent(editForm, 12)).toEqual({
       title: '标题 & 示例',
