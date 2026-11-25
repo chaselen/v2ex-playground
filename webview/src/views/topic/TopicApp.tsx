@@ -10,6 +10,7 @@ import { createVsCodeClient, resolveWebviewUrl, subscribeWebviewState } from '@/
 import TopicDetailView from './TopicDetailView'
 import TopicPreviewModal from './TopicPreviewModal'
 import TopicShareDialog from './TopicShareDialog'
+import TopicSummaryDialog from './TopicSummaryDialog'
 import { loadCancellableShareImages } from './shareImageBatches'
 import TopicContentDialog, { topicContentLabels } from './TopicContentDialog'
 import TopicManagementPopover from './TopicManagementPopover'
@@ -40,6 +41,7 @@ export default function TopicApp() {
   const [previewTopicId, setPreviewTopicId] = useState<string>()
   const [contentAction, setContentAction] = useState<TopicContentAction>()
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
   const topicScrollRef = useRef<HTMLDivElement | null>(null)
   const imgurImageFailureHandledRef = useRef(false)
   const topic = state.topic
@@ -105,6 +107,7 @@ export default function TopicApp() {
         showLogin: Boolean(nextState.showLogin),
         showRefresh: Boolean(nextState.showRefresh),
         canOperate: Boolean(nextState.canOperate),
+        hasCachedSummary: nextState.hasCachedSummary,
         status: nextState.status
       })
     }
@@ -154,6 +157,7 @@ export default function TopicApp() {
   useEffect(() => {
     if (!topic) {
       setShowShareDialog(false)
+      setShowSummary(false)
     }
   }, [topic])
 
@@ -221,6 +225,8 @@ export default function TopicApp() {
           scrollContainerRef={topicScrollRef}
           onTopicPreview={openTopicPreview}
           onShare={() => setShowShareDialog(true)}
+          onSummarize={() => setShowSummary(true)}
+          hasCachedSummary={state.hasCachedSummary}
         />
       )}
     </ScrollArea>
@@ -245,6 +251,13 @@ export default function TopicApp() {
         onClose={() => setPreviewTopicId(undefined)}
         onPreviewTopic={openTopicPreview}
       />
+      {topic && showSummary && (
+        <TopicSummaryDialog
+          key={`summary:${topic.id}`}
+          replyCount={topic.replyCount}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
       {topic && (
         <TopicShareDialog
           key={topic.id}

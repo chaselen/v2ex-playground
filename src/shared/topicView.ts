@@ -80,7 +80,41 @@ export interface TopicPanelViewState {
   showRefresh?: boolean
   /** 是否可执行登录态操作 */
   canOperate?: boolean
+  /** 当前话题已有本地总结 */
+  hasCachedSummary?: boolean
 }
+
+/** 用户确认摘要请求前看到的模型来源和发送目标 */
+export interface TopicSummaryTarget {
+  protocol: 'openai' | 'anthropic'
+  endpoint: string
+  model: string
+}
+
+/** 生成摘要时实际纳入的回复范围，页数包括已检查的最后一页 */
+export interface TopicSummaryCoverage {
+  pages: number
+  totalPages: number
+  replies: number
+  totalReplies: number
+  truncated: boolean
+}
+
+/** 成功生成的总结及其来源信息 */
+export interface TopicSummaryResult {
+  text: string
+  model: string
+  coverage: TopicSummaryCoverage
+  /** 生成完成的时间戳（毫秒），旧缓存可能没有此字段 */
+  generatedAt?: number
+}
+
+export type TopicSummaryUpdate =
+  | { status: 'generating'; model: string; coverage: TopicSummaryCoverage }
+  | { status: 'chunk'; text: string }
+  | { status: 'done'; result: TopicSummaryResult; saved: boolean }
+  | { status: 'canceled' }
+  | { status: 'error'; message: string }
 
 /**
  * 话题面板 Webview RPC 命令
@@ -105,6 +139,12 @@ export interface TopicPanelRpcCommands
   openTag(tag: string): void
   login(): void
   refresh(): void
+  getTopicSummaryTarget(): TopicSummaryTarget
+  getCachedTopicSummary(): TopicSummaryResult | undefined
+  openTopicSummarySettings(): void
+  setTopicSummaryApiKey(): void
+  startTopicSummary(requestId: string, target: TopicSummaryTarget): void
+  cancelTopicSummary(requestId: string): void
   /** 保存话题分享图 */
   saveTopicShareImage(topicId: string | number, base64: string): void
   /** 加载分享图使用的本地资源 URI 或 data URL */
@@ -159,6 +199,8 @@ export interface TopicPanelRpcCommands
  * 话题面板发往 Webview 的事件
  */
 export interface TopicPanelWebviewEvents extends BrowseSettingsWebviewEvents {
+  topicSummaryUpdated: { requestId: string; update: TopicSummaryUpdate }
+  topicSummarySettingsChanged: Record<string, never>
   topicStateChanged: {
     /** 页面状态 */
     state: TopicPanelViewState

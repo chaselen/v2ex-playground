@@ -198,6 +198,32 @@
           "type": "boolean",
           "default": true,
           "description": "在帖子列表和评论中显示用户头像"
+        },
+        "v2ex.ai.protocol": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "anthropic"
+          ],
+          "enumDescriptions": [
+            "兼容 OpenAI 的聊天补全协议",
+            "兼容 Anthropic 的消息协议"
+          ],
+          "default": "openai",
+          "scope": "application",
+          "description": "模型服务使用的 API 协议"
+        },
+        "v2ex.ai.baseUrl": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "模型服务的 Base URL，例如 OpenAI 的 https://api.openai.com/v1 或 Anthropic 的 https://api.anthropic.com"
+        },
+        "v2ex.ai.model": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "模型服务的模型 ID"
         }
       }
     }
@@ -249,6 +275,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
     "sass": "^1.105.1",
     "tm-grammars": "1.32.22",
     "tough-cookie": "^6.0.1",

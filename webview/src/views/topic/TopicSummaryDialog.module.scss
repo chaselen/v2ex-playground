@@ -1,0 +1,159 @@
+@use '@/styles/topic-content';
+
+.dialog:global(.v2ex-dialog) {
+  box-sizing: border-box;
+  width: 86%;
+  min-width: min(600px, calc(100% - 24px));
+  max-width: min(920px, calc(100% - 24px));
+}
+
+.viewport {
+  overflow-anchor: none;
+}
+
+.content {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+
+.metadata,
+.note {
+  color: var(--v2ex-muted-fg);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.metadata,
+.model,
+.coverage,
+.emptyModel,
+.actions,
+.settingsActions,
+.summaryActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metadata,
+.actions,
+.settingsActions,
+.summaryActions {
+  flex-wrap: wrap;
+}
+
+.metadata {
+  padding: 7px 10px;
+  border: 1px solid var(--v2ex-control-border);
+  border-radius: var(--v2ex-radius-sm);
+  background: color-mix(in srgb, var(--v2ex-widget-fg) 4%, transparent);
+}
+
+.metadata {
+  justify-content: space-between;
+  gap: 4px 14px;
+}
+
+.model,
+.coverage {
+  min-width: 0;
+}
+
+.model {
+  color: var(--v2ex-widget-fg);
+  font-weight: 600;
+}
+
+.metadata svg {
+  flex: none;
+  color: var(--v2ex-muted-fg);
+}
+
+.note {
+  margin: 0;
+}
+
+.empty {
+  padding: 16px 12px 24px;
+
+  :global(.v2ex-empty__icon) {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--v2ex-radius-md);
+    background: var(--v2ex-link-soft-bg-faint);
+    color: var(--v2ex-link-fg);
+
+    > svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  :global(.v2ex-empty__title) {
+    font-weight: 600;
+  }
+
+  :global(.v2ex-empty__description) {
+    max-width: 38ch;
+    line-height: 1.65;
+  }
+}
+
+.emptyModel {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+
+  svg {
+    flex: none;
+  }
+}
+
+.summarySkeleton {
+  display: grid;
+  gap: 12px;
+}
+
+.summarySkeleton .skeletonHeading {
+  width: min(38%, 180px);
+  margin-bottom: 8px;
+}
+
+.summarySkeleton :global(.v2ex-skeleton__paragraph) {
+  margin-bottom: 0;
+}
+
+.summaryTime {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.result {
+  @include topic-content.article;
+
+  h2 {
+    padding: 6px 10px;
+    border-bottom: 0;
+    border-inline-start: 3px solid var(--v2ex-link-fg);
+    border-radius: var(--v2ex-radius-sm);
+    background: var(--v2ex-link-soft-bg-faint);
+    font-size: 1.12em;
+  }
+
+  li + li {
+    margin-block-start: 0.35em;
+  }
+}
+
+.actions {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.summaryActions {
+  margin-inline-start: auto;
+  justify-content: flex-end;
+}

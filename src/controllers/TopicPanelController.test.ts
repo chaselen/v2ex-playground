@@ -4,10 +4,20 @@ import { setRemotePanelIcon } from '@/features/panelIcon'
 import { TopicPanelController } from './TopicPanelController'
 import { createV2exWebviewPanel } from './webviewPanel'
 
-const mocks = vi.hoisted(() => ({ postReply: vi.fn(), getDetail: vi.fn(), post: vi.fn() }))
-vi.mock('vscode', () => ({ default: {} }))
+const mocks = vi.hoisted(() => ({
+  postReply: vi.fn(),
+  getDetail: vi.fn(),
+  getCachedSummary: vi.fn(),
+  post: vi.fn(),
+  onDidChangeConfiguration: vi.fn(),
+  onDidDispose: vi.fn()
+}))
+vi.mock('vscode', () => ({
+  default: { workspace: { onDidChangeConfiguration: mocks.onDidChangeConfiguration } }
+}))
 vi.mock('@/global', () => ({
   default: {
+    context: { globalState: { get: mocks.getCachedSummary } },
     V2ex: {
       topics: { postReply: mocks.postReply, getDetail: mocks.getDetail },
       hasLoginSession: () => true
@@ -15,7 +25,7 @@ vi.mock('@/global', () => ({
   }
 }))
 vi.mock('./webviewPanel', () => ({
-  createV2exWebviewPanel: () => ({ webview: {}, onDidDispose() {} }),
+  createV2exWebviewPanel: () => ({ webview: {}, onDidDispose: mocks.onDidDispose }),
   formatPanelTitle: (value: string) => value
 }))
 vi.mock('./WebviewCommonRpc', () => ({
@@ -26,11 +36,14 @@ vi.mock('./WebviewCommonRpc', () => ({
 vi.mock('@/core/WebviewRpcBridge', () => ({
   WebviewRpcBridge: class {
     post = mocks.post
+    dispose() {}
   }
 }))
 vi.mock('@/features/topicShareImage', () => ({
   getTopicShareImageCacheDir: () => '',
-  TopicShareImageLoader: class {},
+  TopicShareImageLoader: class {
+    dispose() {}
+  },
   saveTopicShareImage: vi.fn()
 }))
 vi.mock('@/features/recentBrowse', () => ({ updateRecentBrowseTopic: vi.fn() }))
@@ -40,6 +53,7 @@ vi.mock('@/core/imageUpload', () => ({ uploadImage: vi.fn() }))
 
 beforeEach(() => {
   vi.resetAllMocks()
+  mocks.onDidChangeConfiguration.mockReturnValue({ dispose: vi.fn() })
   vi.mocked(updateRecentBrowseTopic).mockResolvedValue(undefined)
   vi.mocked(setRemotePanelIcon).mockResolvedValue(undefined)
   mocks.postReply.mockResolvedValue({ replyId: '123', replyPage: 2 })
@@ -55,6 +69,31 @@ function controller(onPageChanged?: (page: number, addEntry: boolean) => void) {
     onPageChanged
   )
 }
+
+test('notifies the topic webview when AI settings change and disposes the listener', () => {
+  const dispose = vi.fn()
+  mocks.onDidChangeConfiguration.mockReturnValue({ dispose })
+  controller()
+  const [onChange] = mocks.onDidChangeConfiguration.mock.calls[0]
+  onChange({ affectsConfiguration: () => false })
+  expect(mocks.post).not.toHaveBeenCalled()
+  onChange({ affectsConfiguration: (section: string) => section === 'v2ex.ai' })
+  expect(mocks.post).toHaveBeenCalledExactlyOnceWith('topicSummarySettingsChanged', {})
+  const [onDispose] = mocks.onDidDispose.mock.calls[0]
+  onDispose()
+  expect(dispose).toHaveBeenCalledOnce()
+})
+
+test('includes cached summary availability when loading the topic', async () => {
+  mocks.getCachedSummary.mockImplementation(key =>
+    key === 'topicSummary:1' ? { text: '已有总结' } : undefined
+  )
+  const view = controller()
+
+  await view.rpc_loadReplyPage(2)
+
+  expect(view.rpc_ready()).toMatchObject({ status: 'topic', hasCachedSummary: true })
+})
 
 test('loads the page returned by successful publication, including when posting from a preview', async () => {
   const result = await controller().rpc_postTopicReply({

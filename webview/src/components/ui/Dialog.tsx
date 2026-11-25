@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import { Button } from './Button'
 import { ScrollArea } from './ScrollArea'
 import { mergeClassNames } from './utils'
@@ -20,6 +20,10 @@ export interface DialogProps {
   closeOnOverlayClick?: boolean
   /** 对话框附加类名 */
   className?: string
+  /** 对话框主体滚动视口的引用 */
+  viewportRef?: ComponentProps<typeof ScrollArea>['viewportRef']
+  /** 对话框主体滚动视口的属性 */
+  viewportProps?: ComponentProps<typeof ScrollArea>['viewportProps']
   /** 关闭后焦点位置，默认由 Base UI 恢复 */
   finalFocus?: DialogPrimitive.Popup.Props['finalFocus']
   /** 打开后焦点位置，默认由 Base UI 选择 */
@@ -39,7 +43,9 @@ export function Dialog({
   initialFocus,
   onOpenChange,
   open,
-  title
+  title,
+  viewportProps,
+  viewportRef
 }: DialogProps) {
   return (
     <DialogPrimitive.Root
@@ -82,7 +88,12 @@ export function Dialog({
               对话框内容
             </DialogPrimitive.Description>
           )}
-          <ScrollArea className="v2ex-dialog__body" contentClassName="v2ex-dialog__body-content">
+          <ScrollArea
+            className="v2ex-dialog__body"
+            contentClassName="v2ex-dialog__body-content"
+            viewportProps={viewportProps}
+            viewportRef={viewportRef}
+          >
             {children}
           </ScrollArea>
           {footer && <footer className="v2ex-dialog__footer">{footer}</footer>}

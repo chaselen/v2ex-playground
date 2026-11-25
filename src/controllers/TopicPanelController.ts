@@ -26,6 +26,17 @@ import {
   TopicShareImageLoader,
   saveTopicShareImage
 } from '@/features/topicShareImage'
+import {
+  getCachedTopicSummary,
+  prepareTopicSummary,
+  saveTopicSummary
+} from '@/features/topicSummary'
+import {
+  createTopicSummaryModel,
+  getTopicSummaryTarget,
+  setTopicSummaryApiKey
+} from '@/features/topicSummaryModel'
+import type { TopicSummaryTarget, TopicSummaryUpdate } from '@/shared/topicView'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from '@/controllers/WebviewCommonRpc'
 import {
   TopicPanelRpcCommands,
@@ -111,6 +122,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   private topicPageRequestId = 0
   private pendingReplyPage?: { page: number; addEntry: boolean }
   private readonly shareImageLoader: TopicShareImageLoader
+  private summaryRequest?: { id: string; abort: AbortController }
 
   /**
    * @param id 话题 id
@@ -141,7 +153,12 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
       composeWebviewRpcControllers(this, commonRpc)
     )
     commonRpc.bindBrowseSettings(this.panel, this.rpc)
+    const summarySettings = vscode.workspace.onDidChangeConfiguration(event => {
+      if (event.affectsConfiguration('v2ex.ai')) this.rpc.post('topicSummarySettingsChanged', {})
+    })
     this.panel.onDidDispose(() => {
+      summarySettings.dispose()
+      this.summaryRequest?.abort.abort()
       this.shareImageLoader.dispose()
       this.rpc.dispose()
     })
@@ -163,6 +180,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
    * 登录态变化后刷新话题
    */
   refreshForAuthChange() {
+    this.summaryRequest?.abort.abort()
     this.memberQuickInfoCache.clear()
     this.loadTopicPage('full').catch(err => {
       logger.error('话题登录态刷新失败', err, { topicId: this.topicId })
@@ -178,6 +196,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
     this.postViewState({
       status: 'topic',
       topic: topicDetail,
+      hasCachedSummary: Boolean(getCachedTopicSummary(topicDetail.id)),
       canOperate: G.V2ex.hasLoginSession()
     })
   }
@@ -242,6 +261,118 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   /** 刷新话题 */
   async rpc_refresh() {
     await this.loadTopicPage('full')
+  }
+
+  rpc_getTopicSummaryTarget() {
+    return getTopicSummaryTarget()
+  }
+
+  rpc_getCachedTopicSummary() {
+    if (this.viewState.status !== 'topic' || this.detail.id !== this.topicId) return
+    return getCachedTopicSummary(this.detail.id)
+  }
+
+  async rpc_openTopicSummarySettings() {
+    await vscode.commands.executeCommand('workbench.action.openSettings', 'v2ex.ai')
+  }
+
+  rpc_setTopicSummaryApiKey() {
+    return setTopicSummaryApiKey()
+  }
+
+  /** 立即应答 RPC，后续经事件推送生成状态和文本 */
+  rpc_startTopicSummary(requestId: string, confirmedTarget: TopicSummaryTarget) {
+    if (this.viewState.status !== 'topic' || this.detail.id !== this.topicId) {
+      throw new Error('请等待话题加载后重试')
+    }
+    const target = getTopicSummaryTarget()
+    if (
+      target.protocol !== confirmedTarget?.protocol ||
+      target.endpoint !== confirmedTarget.endpoint ||
+      target.model !== confirmedTarget.model
+    ) {
+      throw new Error('模型配置已变化，请核对发送目标后重试')
+    }
+
+    this.summaryRequest?.abort.abort()
+    const abort = new AbortController()
+    this.summaryRequest = { id: requestId, abort }
+    void this.generateTopicSummary(requestId, target, this.detail, abort)
+  }
+
+  rpc_cancelTopicSummary(requestId: string) {
+    if (this.summaryRequest?.id === requestId) this.summaryRequest.abort.abort()
+  }
+
+  private async generateTopicSummary(
+    requestId: string,
+    target: TopicSummaryTarget,
+    topic: TopicDetail,
+    abort: AbortController
+  ) {
+    const { signal } = abort
+    const timer = setTimeout(() => abort.abort(new Error('总结生成超时，请重试')), 120_000)
+    const post = (update: TopicSummaryUpdate) => {
+      if (this.summaryRequest?.abort === abort) {
+        this.rpc.post('topicSummaryUpdated', { requestId, update })
+      }
+    }
+    const onAbort = () => {
+      post(
+        signal.reason instanceof Error && signal.reason.name !== 'AbortError'
+          ? { status: 'error', message: signal.reason.message }
+          : { status: 'canceled' }
+      )
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+    try {
+      const model = await createTopicSummaryModel(target, signal)
+      signal.throwIfAborted()
+      const { input, coverage } = await prepareTopicSummary(
+        topic,
+        async page => {
+          try {
+            return await G.V2ex.topics.getDetail(topic.id, page)
+          } catch {
+            throw new Error('读取话题回复失败，请重试')
+          }
+        },
+        model,
+        signal
+      )
+      signal.throwIfAborted()
+      post({ status: 'generating', model: model.name, coverage })
+      const output = await model.stream(input)
+      let summary = ''
+      for await (const text of output) {
+        signal.throwIfAborted()
+        summary += text
+        if (text) post({ status: 'chunk', text })
+      }
+      signal.throwIfAborted()
+      if (!summary.trim()) throw new Error('模型未返回总结，请重试或更换模型')
+      clearTimeout(timer)
+      const result = { text: summary, model: model.name, coverage, generatedAt: Date.now() }
+      let saved = false
+      try {
+        await saveTopicSummary(topic.id, result)
+        saved = true
+        if (this.viewState.status === 'topic' && !this.viewState.hasCachedSummary) {
+          this.postViewState({ ...this.viewState, hasCachedSummary: true })
+        }
+      } catch (error) {
+        logger.error('保存话题总结失败', error, { topicId: topic.id })
+      }
+      if (!signal.aborted) post({ status: 'done', result, saved })
+    } catch (error) {
+      if (signal.aborted) return
+      const message = error instanceof Error ? error.message : '总结生成失败，请重试'
+      post({ status: 'error', message })
+    } finally {
+      clearTimeout(timer)
+      signal.removeEventListener('abort', onAbort)
+      if (this.summaryRequest?.abort === abort) this.summaryRequest = undefined
+    }
   }
 
   /** 保存话题分享图 */

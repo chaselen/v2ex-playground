@@ -61,6 +61,10 @@
   }
 }
 
+.iconHighlighted {
+  color: var(--v2ex-link-fg);
+}
+
 @media (max-width: 480px) {
   .root:not(.contained) {
     right: 12px;

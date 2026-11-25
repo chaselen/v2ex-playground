@@ -77,11 +77,14 @@
 
 ## ⚙️ 设置项
 
-| 配置项                          | 说明                           | 默认值 |
-| ------------------------------- | ------------------------------ | ------ |
-| `v2ex.browse.autoSignIn`        | 自动进行每日签到               | `true` |
-| `v2ex.browse.showImagesInTopic` | 查看帖子时显示内容中的图片     | `true` |
-| `v2ex.browse.showAvatar`        | 在帖子列表和评论中显示用户头像 | `true` |
+| 配置项                          | 说明                                                                                 | 默认值   |
+| ------------------------------- | ------------------------------------------------------------------------------------ | -------- |
+| `v2ex.browse.autoSignIn`        | 自动进行每日签到                                                                     | `true`   |
+| `v2ex.browse.showImagesInTopic` | 查看帖子时显示内容中的图片                                                           | `true`   |
+| `v2ex.browse.showAvatar`        | 在帖子列表和评论中显示用户头像                                                       | `true`   |
+| `v2ex.ai.protocol`              | 模型服务的 API 协议，支持 `openai` 和 `anthropic`                                    | `openai` |
+| `v2ex.ai.baseUrl`               | 模型服务的 Base URL，例如 `https://api.openai.com/v1` 或 `https://api.anthropic.com` | 空       |
+| `v2ex.ai.model`                 | 模型服务的模型 ID                                                                    | 空       |
 
 ---
 

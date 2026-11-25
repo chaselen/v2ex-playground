@@ -15,6 +15,7 @@ import {
   Reply,
   Settings,
   Share2,
+  Sparkles,
   Tag,
   UserRound
 } from 'lucide-react'
@@ -72,6 +73,9 @@ export interface TopicDetailViewProps {
   authorActions?: ReactNode
   /** 打开话题分享图 */
   onShare?: () => void
+  /** 打开话题 AI 总结 */
+  onSummarize?: () => void
+  hasCachedSummary?: boolean
 }
 
 /**
@@ -88,6 +92,8 @@ export default function TopicDetailView({
   showReplyActions = true,
   onTopicPreview,
   onShare,
+  onSummarize,
+  hasCachedSummary,
   authorActions
 }: TopicDetailViewProps) {
   const { topic, showImages, showAvatar, canOperate } = controller
@@ -105,6 +111,27 @@ export default function TopicDetailView({
   const floatingActions = showFloatingActions ? (
     <FloatingActions contained={Boolean(floatingActionsContainer)}>
       {renderTopicActionButtons('floating')}
+      {onSummarize && (
+        <Tooltip
+          className={floatingActionStyles.tooltip}
+          content={hasCachedSummary ? '查看 AI 总结' : 'AI 总结'}
+          side="left"
+        >
+          <Button
+            aria-label={hasCachedSummary ? '查看 AI 总结' : 'AI 总结'}
+            className={floatingActionStyles.button}
+            icon={
+              <Sparkles
+                aria-hidden="true"
+                className={hasCachedSummary ? floatingActionStyles.iconHighlighted : undefined}
+              />
+            }
+            size="large"
+            variant="ghost"
+            onClick={onSummarize}
+          />
+        </Tooltip>
+      )}
       {onShare && (
         <Tooltip className={floatingActionStyles.tooltip} content="生成分享图" side="left">
           <Button

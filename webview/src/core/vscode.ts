@@ -173,6 +173,7 @@ function request(command: string, args: unknown[]): Promise<unknown> {
  */
 function getRequestTimeout(command: string) {
   if (command === 'postTopicReply') return postTopicReplyRequestTimeout
+  if (command === 'setTopicSummaryApiKey') return 300_000
   return command === 'uploadImage' ? uploadImageRequestTimeout : defaultRequestTimeout
 }
 
