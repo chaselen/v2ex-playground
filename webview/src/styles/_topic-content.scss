@@ -414,7 +414,8 @@
       text-align: left;
     }
 
-    tbody tr:nth-child(2n) {
+    // 官网帮助表格的表头也可能位于 tbody 中，条纹只按数据行计数
+    tbody > tr:nth-child(even of :has(> td)) {
       background: color-mix(in srgb, var(--v2ex-widget-bg) 72%, transparent);
     }
   }
