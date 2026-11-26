@@ -102,6 +102,7 @@ export interface TopicSummaryCoverage {
 
 /** 成功生成的总结及其来源信息 */
 export interface TopicSummaryResult {
+  reasoning?: string
   text: string
   model: string
   coverage: TopicSummaryCoverage
@@ -111,7 +112,7 @@ export interface TopicSummaryResult {
 
 export type TopicSummaryUpdate =
   | { status: 'waiting'; model: string; coverage: TopicSummaryCoverage }
-  | { status: 'thinking' }
+  | { status: 'thinking'; text: string }
   | { status: 'chunk'; text: string }
   | { status: 'done'; result: TopicSummaryResult; saved: boolean }
   | { status: 'canceled' }

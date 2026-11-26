@@ -15,7 +15,7 @@ interface SummaryInput {
 export interface TopicSummaryModel {
   name: string
   fits(input: SummaryInput): Promise<boolean>
-  stream(input: SummaryInput, onThinking?: () => void): Promise<AsyncIterable<string>>
+  stream(input: SummaryInput, onThinking?: (text: string) => void): Promise<AsyncIterable<string>>
 }
 
 const requestTimeout = 60_000
@@ -106,7 +106,7 @@ async function requestCompatibleModel(
   key: string | undefined,
   { instructions, source }: SummaryInput,
   signal: AbortSignal,
-  onThinking?: () => void
+  onThinking?: (text: string) => void
 ) {
   const userMessage = { role: 'user', content: source }
   const request =
@@ -156,7 +156,7 @@ async function requestCompatibleModel(
 export async function* readModelStream(
   stream: Readable,
   protocol: TopicSummaryTarget['protocol'],
-  onThinking?: () => void
+  onThinking?: (text: string) => void
 ) {
   const lines = createInterface({ input: stream, crlfDelay: Infinity })
   let data: string[] = []
@@ -195,14 +195,15 @@ export async function* readModelStream(
           block?.type === 'redacted_thinking' ||
           delta?.type === 'thinking_delta'
         ) {
-          onThinking?.()
+          const text = block?.type === 'thinking' ? block.thinking : delta?.thinking
+          onThinking?.(typeof text === 'string' ? text : '')
         }
         if (delta?.type === 'text_delta' && typeof delta.text === 'string') yield delta.text
         continue
       }
       if (choice?.finish_reason) finished = true
       const reasoning = choice?.delta?.reasoning_content
-      if (typeof reasoning === 'string' && reasoning.trim()) onThinking?.()
+      if (typeof reasoning === 'string' && reasoning) onThinking?.(reasoning)
       if (typeof choice?.delta?.content === 'string') yield choice.delta.content
     }
   } catch {

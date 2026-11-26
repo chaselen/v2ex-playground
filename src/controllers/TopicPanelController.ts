@@ -343,11 +343,11 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
       signal.throwIfAborted()
       post({ status: 'waiting', model: model.name, coverage })
       let summary = ''
-      let reportedThinking = false
-      const output = await model.stream(input, () => {
-        if (signal.aborted || reportedThinking || summary.trim()) return
-        reportedThinking = true
-        post({ status: 'thinking' })
+      let reasoning = ''
+      const output = await model.stream(input, text => {
+        if (signal.aborted) return
+        reasoning += text
+        post({ status: 'thinking', text })
       })
       for await (const text of output) {
         signal.throwIfAborted()
@@ -357,7 +357,13 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
       signal.throwIfAborted()
       if (!summary.trim()) throw new Error('模型未返回总结，请重试或更换模型')
       clearTimeout(timer)
-      const result = { text: summary, model: model.name, coverage, generatedAt: Date.now() }
+      const result = {
+        text: summary,
+        reasoning: reasoning || undefined,
+        model: model.name,
+        coverage,
+        generatedAt: Date.now()
+      }
       let saved = false
       try {
         await saveTopicSummary(topic.id, result)

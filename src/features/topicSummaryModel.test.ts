@@ -47,10 +47,10 @@ test('reads split SSE frames without including reasoning or metadata in the summ
     'data: [DONE]\n\n'
   ])
   const chunks = []
-  for await (const chunk of readModelStream(response, 'openai', () => chunks.push('thinking'))) {
+  for await (const chunk of readModelStream(response, 'openai', text => chunks.push(text))) {
     chunks.push(chunk)
   }
-  expect(chunks).toEqual(['thinking', '首段', '末段'])
+  expect(chunks).toEqual(['hidden', '首段', '末段'])
 })
 
 test('reports an incomplete SSE response after yielding available text', async () => {
@@ -127,13 +127,14 @@ test.each([
     body: { system: '总结', max_tokens: 2048, messages: [{ role: 'user', content: '话题文字' }] },
     events: [
       'event: content_block_start\ndata: {"type":"content_block_start","content_block":{"type":"thinking","thinking":""}}',
+      'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"thinking_delta","thinking":"分析"}}',
       'event: content_block_stop\ndata: {"type":"content_block_stop","index":0}',
       'event: content_block_start\ndata: {"type":"content_block_start","content_block":{"type":"text","text":"本地"}}',
       'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"摘要"}}',
       'event: message_stop\ndata: {"type":"message_stop"}',
       ''
     ].join('\n\n'),
-    progress: ['thinking', '本地', '摘要']
+    progress: ['', '分析', '本地', '摘要']
   }
 ])('streams $protocol requests to a local compatible endpoint', async fixture => {
   let request
@@ -167,8 +168,8 @@ test.each([
       new AbortController().signal
     )
     const progress: string[] = []
-    const stream = await model.stream({ instructions: '总结', source: '话题文字' }, () =>
-      progress.push('thinking')
+    const stream = await model.stream({ instructions: '总结', source: '话题文字' }, text =>
+      progress.push(text)
     )
     for await (const chunk of stream) {
       progress.push(chunk)

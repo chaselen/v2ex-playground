@@ -79,6 +79,7 @@ export default function TopicSummaryDialog({
   const loading = phase !== undefined
   const [settingKey, setSettingKey] = useState(false)
   const [canceled, setCanceled] = useState(false)
+  const [reasoning, setReasoning] = useState('')
   const [text, setText] = useState('')
   const [model, setModel] = useState('')
   const [coverage, setCoverage] = useState<TopicSummaryCoverage>()
@@ -97,13 +98,14 @@ export default function TopicSummaryDialog({
   useLayoutEffect(() => {
     const viewport = viewportRef.current
     const content = contentRef.current
-    if (viewport && content && loading && !text.trim()) {
+    if (viewport && content && loading && !text.trim() && !reasoning.trim()) {
       // 只保留骨架可见的高度，避免短窗口在流式输出开始时滚入留白
       const overflow = viewport.scrollHeight - viewport.clientHeight
       skeletonHeight.current = Math.max(0, content.offsetHeight - overflow)
     }
-    if (viewport && text.trim() && followOutput.current) viewport.scrollTop = viewport.scrollHeight
-  }, [coverage, loading, text])
+    if (viewport && (text.trim() || reasoning.trim()) && followOutput.current)
+      viewport.scrollTop = viewport.scrollHeight
+  }, [coverage, loading, reasoning, text])
 
   const refreshTarget = useCallback(async () => {
     const revision = ++targetRevision.current
@@ -146,6 +148,7 @@ export default function TopicSummaryDialog({
           setPhase('waiting')
           break
         case 'thinking':
+          setReasoning(current => current + update.text)
           setPhase('thinking')
           break
         case 'chunk':
@@ -190,6 +193,7 @@ export default function TopicSummaryDialog({
     followOutput.current = true
     setError('')
     setCanceled(false)
+    setReasoning('')
     setText('')
     setModel('')
     setCoverage(undefined)
@@ -236,6 +240,7 @@ export default function TopicSummaryDialog({
   const ready = Boolean(target?.endpoint && target.model)
   const displayedResult = loading ? undefined : result
   const displayedText = displayedResult?.text ?? text
+  const displayedReasoning = displayedResult ? displayedResult.reasoning : reasoning
   const hasSummary = Boolean(displayedText.trim())
   const showEmpty = !readingCache && !loading && !hasSummary && !error && !canceled && !targetError
   const displayedCoverage = displayedResult?.coverage ?? coverage
@@ -407,7 +412,13 @@ export default function TopicSummaryDialog({
             {progressLabels[phase]}
           </p>
         )}
-        {loading && !hasSummary && (
+        {displayedReasoning?.trim() && (
+          <details className={styles.reasoning} open={phase === 'thinking'}>
+            <summary>思考过程</summary>
+            <div>{displayedReasoning}</div>
+          </details>
+        )}
+        {loading && !hasSummary && !displayedReasoning?.trim() && (
           <Skeleton active className={styles.summarySkeleton} aria-hidden="true">
             {[1, 3, 3].map((rows, index) => (
               <div key={index}>

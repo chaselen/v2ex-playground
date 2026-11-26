@@ -117,6 +117,20 @@
   }
 }
 
+.reasoning {
+  color: var(--v2ex-muted-fg);
+
+  summary {
+    cursor: pointer;
+  }
+
+  div {
+    margin-top: 6px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
 .summarySkeleton {
   display: grid;
   gap: 12px;
