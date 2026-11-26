@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Bot, Copy, FileText, ListChecks, RotateCw, Sparkles, Square } from 'lucide-react'
 import Markdown from 'react-markdown'
-import { Alert, Button, Dialog, Empty, Skeleton, Spinner, Toast, Tooltip } from '@/components/ui'
+import {
+  Alert,
+  Button,
+  Dialog,
+  SplitButton,
+  Empty,
+  Skeleton,
+  Spinner,
+  Toast,
+  Tooltip
+} from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
   TopicPanelRpcCommands,
@@ -44,6 +54,9 @@ function SummaryTime({ timestamp }: { timestamp: number }) {
   )
 }
 
+const copyFormats = ['Markdown', '纯文本'] as const
+type CopyFormat = (typeof copyFormats)[number]
+
 const progressLabels = {
   extracting: '正在提取正文及回复…',
   waiting: '正在等待模型响应…',
@@ -72,6 +85,7 @@ export default function TopicSummaryDialog({
   const [result, setResult] = useState<TopicSummaryResult>()
   const [readingCache, setReadingCache] = useState(true)
   const [fromCache, setFromCache] = useState(false)
+  const articleRef = useRef<HTMLElement>(null)
   const canAutoStart = useRef(true)
   const activeRequest = useRef<string | undefined>(undefined)
   const targetRevision = useRef(0)
@@ -231,6 +245,21 @@ export default function TopicSummaryDialog({
   const generatedAt = displayedResult?.generatedAt
   const GenerateIcon = error || canceled || displayedText ? RotateCw : Sparkles
 
+  async function copySummary(format: CopyFormat) {
+    if (!displayedResult) return
+    const value = format === 'Markdown' ? displayedResult.text : articleRef.current?.innerText
+    if (!value?.trim()) {
+      Toast.error('没有可复制的总结内容')
+      return
+    }
+    try {
+      await vscode.copyText(value)
+      Toast.success(`总结已复制（${format}）`)
+    } catch {
+      Toast.error('复制总结失败')
+    }
+  }
+
   return (
     <Dialog
       open
@@ -268,16 +297,20 @@ export default function TopicSummaryDialog({
           </div>
           <div className={styles.summaryActions}>
             {displayedResult && (
-              <Button
+              <SplitButton
                 icon={<Copy aria-hidden="true" />}
-                onClick={() =>
-                  void vscode
-                    .copyText(displayedResult.text)
-                    .catch(() => Toast.error('复制总结失败'))
-                }
+                title="复制为 Markdown"
+                onClick={() => void copySummary('Markdown')}
+                menuLabel="选择复制格式"
+                side="top"
+                items={copyFormats.map(format => ({
+                  key: format,
+                  label: `复制为 ${format}`,
+                  onSelect: () => void copySummary(format)
+                }))}
               >
                 复制总结
-              </Button>
+              </SplitButton>
             )}
             {loading ? (
               <Button icon={<Square aria-hidden="true" fill="currentColor" />} onClick={cancel}>
@@ -386,7 +419,7 @@ export default function TopicSummaryDialog({
         )}
         {canceled && <p role="status">已取消生成。</p>}
         {hasSummary && (
-          <article className={styles.result} aria-label="总结正文">
+          <article ref={articleRef} className={styles.result} aria-label="总结正文">
             <Markdown skipHtml disallowedElements={['a', 'img']} unwrapDisallowed>
               {displayedText}
             </Markdown>

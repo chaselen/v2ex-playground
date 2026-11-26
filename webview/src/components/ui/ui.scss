@@ -2530,3 +2530,19 @@
     outline-offset: 2px;
   }
 }
+
+.v2ex-split-button {
+  display: inline-flex;
+
+  > button:first-child {
+    border-inline-end-width: 0;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  > button:last-child {
+    border-inline-start-color: var(--v2ex-hc-border, var(--v2ex-control-border));
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+}

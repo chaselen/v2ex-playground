@@ -25,6 +25,7 @@ import {
   DatePicker,
   Dialog,
   DropdownMenu,
+  SplitButton,
   Empty,
   Input,
   OtpInput,
@@ -160,6 +161,15 @@ export default function ThemePreviewApp() {
               Primary
             </Button>
             <Button>Secondary</Button>
+            <SplitButton
+              menuLabel="选择导出格式"
+              onClick={() => Toast.info('导出 Markdown')}
+              items={[
+                { key: 'text', label: '导出纯文本', onSelect: () => Toast.info('导出纯文本') }
+              ]}
+            >
+              导出 Markdown
+            </SplitButton>
             <Button variant="subtle">Subtle</Button>
             <Button variant="ghost">Ghost</Button>
             <Button
