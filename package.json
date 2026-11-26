@@ -223,7 +223,7 @@
           "type": "string",
           "default": "",
           "scope": "application",
-          "description": "模型服务的模型 ID"
+          "description": "模型服务的模型 ID，例如 OpenAI 的 gpt-4o-mini"
         }
       }
     }

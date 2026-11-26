@@ -4,6 +4,7 @@ import { Readable } from 'node:stream'
 import { expect, test, vi } from 'vitest'
 import {
   createTopicSummaryModel,
+  getTopicSummarySettings,
   getTopicSummaryTarget,
   readModelStream
 } from './topicSummaryModel'
@@ -26,7 +27,17 @@ vi.mock('vscode', () => ({
 
 test('reads the compatible endpoint without requiring a provider setting', () => {
   expect(getTopicSummaryTarget()).toEqual({ protocol: 'openai', endpoint: '', model: '' })
+  config.set('protocol', 'invalid')
+  expect(getTopicSummaryTarget).toThrow('协议')
+  config.delete('protocol')
+  config.set('model', 'local')
+  expect(getTopicSummaryTarget()).toMatchObject({ endpoint: '', model: 'local' })
+  config.delete('model')
   config.set('baseUrl', 'http://127.0.0.1:1234/v1/')
+  expect(getTopicSummaryTarget()).toMatchObject({
+    endpoint: 'http://127.0.0.1:1234/v1/chat/completions',
+    model: ''
+  })
   config.set('model', 'local')
   expect(getTopicSummaryTarget()).toEqual({
     protocol: 'openai',
@@ -36,6 +47,18 @@ test('reads the compatible endpoint without requiring a provider setting', () =>
   config.set('baseUrl', 'http://example.test/v1')
   expect(getTopicSummaryTarget).toThrow('HTTPS')
   config.clear()
+})
+
+test('reports key availability for the configured endpoint', async () => {
+  try {
+    expect((await getTopicSummarySettings()).hasApiKey).toBe(false)
+    config.set('baseUrl', 'https://example.test/v1')
+    getSecret.mockResolvedValueOnce('')
+    expect((await getTopicSummarySettings()).hasApiKey).toBe(false)
+    expect(await getTopicSummarySettings()).toEqual({ ...getTopicSummaryTarget(), hasApiKey: true })
+  } finally {
+    config.clear()
+  }
 })
 
 test('reads split SSE frames without including reasoning or metadata in the summary', async () => {

@@ -17,8 +17,7 @@ import type {
   TopicPanelRpcCommands,
   TopicPanelWebviewEvents,
   TopicSummaryCoverage,
-  TopicSummaryResult,
-  TopicSummaryTarget
+  TopicSummaryResult
 } from '@extension/shared/topicView'
 import styles from './TopicSummaryDialog.module.scss'
 
@@ -54,6 +53,14 @@ function SummaryTime({ timestamp }: { timestamp: number }) {
   )
 }
 
+function formatDuration(durationMs: number) {
+  if (durationMs < 1000) return '不足 1 秒'
+  const seconds = Math.floor(durationMs / 1000)
+  if (seconds < 60) return `${seconds} 秒`
+  const remainder = seconds % 60
+  return `${Math.floor(seconds / 60)} 分${remainder ? ` ${remainder} 秒` : '钟'}`
+}
+
 const copyFormats = ['Markdown', '纯文本'] as const
 type CopyFormat = (typeof copyFormats)[number]
 
@@ -72,28 +79,37 @@ export default function TopicSummaryDialog({
   replyCount: number
   onClose(): void
 }) {
-  const [target, setTarget] = useState<TopicSummaryTarget>()
+  const [target, setTarget] = useState<ReturnType<TopicPanelRpcCommands['getTopicSummaryTarget']>>()
   const [targetError, setTargetError] = useState('')
   const [error, setError] = useState('')
   const [phase, setPhase] = useState<keyof typeof progressLabels>()
   const loading = phase !== undefined
   const [settingKey, setSettingKey] = useState(false)
   const [canceled, setCanceled] = useState(false)
+  const [showPrevious, setShowPrevious] = useState(false)
+  const [manualReasoningOpen, setManualReasoningOpen] = useState<boolean>()
+  const [autoReasoningOpen, setAutoReasoningOpen] = useState(false)
   const [reasoning, setReasoning] = useState('')
   const [text, setText] = useState('')
   const [model, setModel] = useState('')
   const [coverage, setCoverage] = useState<TopicSummaryCoverage>()
   const [result, setResult] = useState<TopicSummaryResult>()
   const [readingCache, setReadingCache] = useState(true)
-  const [fromCache, setFromCache] = useState(false)
   const articleRef = useRef<HTMLElement>(null)
   const canAutoStart = useRef(true)
+  const [durationMs, setDurationMs] = useState<number>()
+  const startedAt = useRef(0)
   const activeRequest = useRef<string | undefined>(undefined)
   const targetRevision = useRef(0)
   const viewportRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const skeletonHeight = useRef(0)
   const followOutput = useRef(false)
+
+  useLayoutEffect(() => {
+    if (phase === 'thinking') setAutoReasoningOpen(true)
+    if (phase === 'generating' && followOutput.current) setAutoReasoningOpen(false)
+  }, [phase])
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current
@@ -128,7 +144,6 @@ export default function TopicSummaryDialog({
       .then(cached => {
         if (disposed || !cached) return
         setResult(cached)
-        setFromCache(true)
       })
       .catch(() => {
         if (!disposed) {
@@ -159,8 +174,8 @@ export default function TopicSummaryDialog({
           activeRequest.current = undefined
           setPhase(undefined)
           if (update.status === 'done') {
+            setDurationMs(performance.now() - startedAt.current)
             setResult(update.result)
-            setFromCache(false)
             if (!update.saved) Toast.error('总结未能保存到本地')
           }
           if (update.status === 'error') setError(update.message)
@@ -168,7 +183,10 @@ export default function TopicSummaryDialog({
       }
     })
     const refreshSettings = () => void refreshTarget()
-    const unsubscribeSettings = vscode.on('topicSummarySettingsChanged', refreshSettings)
+    const unsubscribeSettings = vscode.on('topicSummarySettingsChanged', () => {
+      canAutoStart.current = false
+      refreshSettings()
+    })
     window.addEventListener('focus', refreshSettings)
     refreshSettings()
     return () => {
@@ -188,11 +206,16 @@ export default function TopicSummaryDialog({
       return
     canAutoStart.current = false
     const requestId = crypto.randomUUID()
+    startedAt.current = performance.now()
+    setDurationMs(undefined)
     activeRequest.current = requestId
     skeletonHeight.current = 0
     followOutput.current = true
     setError('')
     setCanceled(false)
+    setShowPrevious(false)
+    setManualReasoningOpen(undefined)
+    setAutoReasoningOpen(false)
     setReasoning('')
     setText('')
     setModel('')
@@ -228,9 +251,10 @@ export default function TopicSummaryDialog({
     setSettingKey(true)
     try {
       await vscode.setTopicSummaryApiKey()
-      setError('')
     } catch (error) {
-      setError(error instanceof Error ? error.message : '无法设置 API Key')
+      Toast.error(
+        error instanceof Error ? `设置 API Key 失败：${error.message}` : '设置 API Key 失败'
+      )
     } finally {
       setSettingKey(false)
       void refreshTarget()
@@ -238,15 +262,20 @@ export default function TopicSummaryDialog({
   }
 
   const ready = Boolean(target?.endpoint && target.model)
-  const displayedResult = loading ? undefined : result
+  const missingSettings = [!target?.endpoint && 'Base URL', !target?.model && '模型 ID']
+    .filter(Boolean)
+    .join(' 和 ')
+  const interrupted = Boolean(error || canceled)
+  const hasPartial = interrupted && Boolean(text.trim() || reasoning.trim())
+  const displayedResult = loading || (hasPartial && !showPrevious) ? undefined : result
+  const reasoningOpen = manualReasoningOpen ?? autoReasoningOpen
   const displayedText = displayedResult?.text ?? text
-  const displayedReasoning = displayedResult ? displayedResult.reasoning : reasoning
+  const displayedReasoning = displayedResult ? '' : reasoning
   const hasSummary = Boolean(displayedText.trim())
   const showEmpty = !readingCache && !loading && !hasSummary && !error && !canceled && !targetError
   const displayedCoverage = displayedResult?.coverage ?? coverage
   const displayedModel = displayedResult?.model || model || target?.model
-  const newReplies =
-    fromCache && displayedResult ? replyCount - displayedResult.coverage.totalReplies : 0
+  const newReplies = displayedResult ? replyCount - displayedResult.coverage.totalReplies : 0
   const generatedAt = displayedResult?.generatedAt
   const GenerateIcon = error || canceled || displayedText ? RotateCw : Sparkles
 
@@ -299,6 +328,16 @@ export default function TopicSummaryDialog({
                 设置 API Key
               </Button>
             )}
+            {target?.endpoint && !target.hasApiKey && (
+              <span className={styles.note} role="status">
+                未设置 API Key（免鉴权服务可跳过）
+              </span>
+            )}
+            {target && !ready && !loading && (
+              <span className={styles.settingsHint} role="status">
+                请填写 {missingSettings}
+              </span>
+            )}
           </div>
           <div className={styles.summaryActions}>
             {displayedResult && (
@@ -348,39 +387,63 @@ export default function TopicSummaryDialog({
         {(hasSummary || (loading && displayedCoverage)) &&
           (displayedModel || displayedCoverage) && (
             <div className={styles.metadata}>
-              {displayedModel && (
-                <span className={styles.model}>
-                  <Bot size={16} aria-hidden="true" />
-                  <span>{displayedModel}</span>
-                </span>
-              )}
+              <div className={styles.modelInfo}>
+                <Bot size={16} aria-hidden="true" />
+                <div>
+                  {displayedModel && <div className={styles.model}>{displayedModel}</div>}
+                  {displayedResult && (
+                    <span>
+                      {generatedAt === undefined ? (
+                        '上次总结'
+                      ) : (
+                        <>
+                          <SummaryTime timestamp={generatedAt} />
+                          生成
+                        </>
+                      )}
+                      {newReplies > 0 && <> · 较生成时多 {newReplies} 条回复</>}
+                    </span>
+                  )}
+                </div>
+              </div>
               {displayedCoverage && (
-                <span className={styles.coverage}>
-                  <ListChecks size={16} aria-hidden="true" />
-                  <span>
-                    纳入回复 {displayedCoverage.replies}/{displayedCoverage.totalReplies} 条
-                    {displayedCoverage.totalPages > 0 &&
-                      ` · ${displayedCoverage.pages < displayedCoverage.totalPages ? '前 ' : ''}${displayedCoverage.pages}/${displayedCoverage.totalPages} 页`}
+                <Tooltip content="从第 1 页起按楼层顺序纳入文字回复，最多读取前 3 页。重复回复只计一次，纯图片等没有文字的回复会跳过。每条最多取前 4000 个字符，剩余输入空间不足以容纳下一条时停止。">
+                  <span className={styles.coverage} tabIndex={0}>
+                    <ListChecks size={16} aria-hidden="true" />
+                    <span>
+                      {displayedCoverage.truncated &&
+                        displayedCoverage.replies === displayedCoverage.totalReplies &&
+                        '节选 · '}
+                      纳入回复 {displayedCoverage.replies}/{displayedCoverage.totalReplies} 条
+                      {displayedCoverage.totalPages > 0 &&
+                        ` · ${displayedCoverage.pages < displayedCoverage.totalPages ? '前 ' : ''}${displayedCoverage.pages}/${displayedCoverage.totalPages} 页`}
+                    </span>
                   </span>
-                </span>
+                </Tooltip>
               )}
             </div>
           )}
-        {displayedResult && fromCache && (
-          <p className={styles.note}>
-            {generatedAt === undefined ? (
-              '上次总结'
-            ) : (
-              <>
-                <SummaryTime timestamp={generatedAt} />
-                生成
-              </>
+        {interrupted && (
+          <div>
+            <p className={styles.note} role="status">
+              {canceled ? '已取消生成。' : '生成中断。'}
+              {displayedResult
+                ? '当前显示上次完整总结。'
+                : hasPartial
+                  ? '以下为本次已生成的内容。'
+                  : ''}
+            </p>
+            {hasPartial && result && (
+              <Button
+                onClick={() => {
+                  setShowPrevious(!showPrevious)
+                  setManualReasoningOpen(undefined)
+                }}
+              >
+                {showPrevious ? '查看本次中断内容' : '查看上次完整总结'}
+              </Button>
             )}
-            {newReplies > 0 && <> · 回复比生成时多 {newReplies} 条</>}
-          </p>
-        )}
-        {hasSummary && displayedCoverage?.truncated && (
-          <p className={styles.note}>部分帖子文本或回复未纳入本次总结。</p>
+          </div>
         )}
         {showEmpty && target && (
           <Empty
@@ -390,7 +453,7 @@ export default function TopicSummaryDialog({
             description={
               ready
                 ? '生成时会把主楼、附言和本次纳入的文字回复发送给所选模型，整理成主楼要点和回复区观点。'
-                : '在「模型设置」填写 Base URL 和模型 ID，服务需要鉴权时再设置 API Key。'
+                : '服务需要鉴权时，请同时设置 API Key。'
             }
           >
             {ready && (
@@ -401,9 +464,6 @@ export default function TopicSummaryDialog({
             )}
           </Empty>
         )}
-        {!showEmpty && target && !ready && (
-          <p className={styles.note}>请在模型设置填写 Base URL 和模型 ID，按需设置 API Key。</p>
-        )}
         {targetError && <Alert variant="danger" title="模型配置有误" description={targetError} />}
         {error && <Alert variant="danger" title="生成失败" description={error} />}
         {phase && (
@@ -412,13 +472,23 @@ export default function TopicSummaryDialog({
             {progressLabels[phase]}
           </p>
         )}
-        {displayedReasoning?.trim() && (
-          <details className={styles.reasoning} open={phase === 'thinking'}>
-            <summary>思考过程</summary>
+        {displayedResult && durationMs !== undefined && (
+          <p className={styles.note}>生成用时 {formatDuration(durationMs)}</p>
+        )}
+        {displayedReasoning.trim() && (
+          <details className={styles.reasoning} open={reasoningOpen}>
+            <summary
+              onClick={event => {
+                event.preventDefault()
+                setManualReasoningOpen(!reasoningOpen)
+              }}
+            >
+              思考过程
+            </summary>
             <div>{displayedReasoning}</div>
           </details>
         )}
-        {loading && !hasSummary && !displayedReasoning?.trim() && (
+        {loading && !hasSummary && !displayedReasoning.trim() && (
           <Skeleton active className={styles.summarySkeleton} aria-hidden="true">
             {[1, 3, 3].map((rows, index) => (
               <div key={index}>
@@ -428,7 +498,6 @@ export default function TopicSummaryDialog({
             ))}
           </Skeleton>
         )}
-        {canceled && <p role="status">已取消生成。</p>}
         {hasSummary && (
           <article ref={articleRef} className={styles.result} aria-label="总结正文">
             <Markdown skipHtml disallowedElements={['a', 'img']} unwrapDisallowed>

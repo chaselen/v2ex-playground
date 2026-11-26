@@ -102,7 +102,6 @@ export interface TopicSummaryCoverage {
 
 /** 成功生成的总结及其来源信息 */
 export interface TopicSummaryResult {
-  reasoning?: string
   text: string
   model: string
   coverage: TopicSummaryCoverage
@@ -141,7 +140,7 @@ export interface TopicPanelRpcCommands
   openTag(tag: string): void
   login(): void
   refresh(): void
-  getTopicSummaryTarget(): TopicSummaryTarget
+  getTopicSummaryTarget(): TopicSummaryTarget & { hasApiKey: boolean }
   getCachedTopicSummary(): TopicSummaryResult | undefined
   openTopicSummarySettings(): void
   setTopicSummaryApiKey(): void

@@ -33,6 +33,7 @@ import {
 } from '@/features/topicSummary'
 import {
   createTopicSummaryModel,
+  getTopicSummarySettings,
   getTopicSummaryTarget,
   setTopicSummaryApiKey
 } from '@/features/topicSummaryModel'
@@ -264,7 +265,7 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
   }
 
   rpc_getTopicSummaryTarget() {
-    return getTopicSummaryTarget()
+    return getTopicSummarySettings()
   }
 
   rpc_getCachedTopicSummary() {
@@ -343,10 +344,8 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
       signal.throwIfAborted()
       post({ status: 'waiting', model: model.name, coverage })
       let summary = ''
-      let reasoning = ''
       const output = await model.stream(input, text => {
         if (signal.aborted) return
-        reasoning += text
         post({ status: 'thinking', text })
       })
       for await (const text of output) {
@@ -359,7 +358,6 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
       clearTimeout(timer)
       const result = {
         text: summary,
-        reasoning: reasoning || undefined,
         model: model.name,
         coverage,
         generatedAt: Date.now()

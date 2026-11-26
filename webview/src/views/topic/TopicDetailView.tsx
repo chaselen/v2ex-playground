@@ -114,11 +114,11 @@ export default function TopicDetailView({
       {onSummarize && (
         <Tooltip
           className={floatingActionStyles.tooltip}
-          content={hasCachedSummary ? '查看 AI 总结' : 'AI 总结'}
+          content={hasCachedSummary ? '查看 AI 总结' : '生成 AI 总结'}
           side="left"
         >
           <Button
-            aria-label={hasCachedSummary ? '查看 AI 总结' : 'AI 总结'}
+            aria-label={hasCachedSummary ? '查看 AI 总结' : '生成 AI 总结'}
             className={floatingActionStyles.button}
             icon={
               <Sparkles

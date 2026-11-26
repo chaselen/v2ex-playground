@@ -26,7 +26,10 @@ const anthropicMaxOutputTokens = 2048
 export function getTopicSummaryTarget(): TopicSummaryTarget {
   const config = vscode.workspace.getConfiguration('v2ex.ai')
 
-  const protocol = config.get<string>('protocol') === 'anthropic' ? 'anthropic' : 'openai'
+  const protocol = config.get<string>('protocol', 'openai')
+  if (protocol !== 'openai' && protocol !== 'anthropic') {
+    throw new Error('请选择 OpenAI 或 Anthropic 模型服务协议')
+  }
   const model = config.get<string>('model', '').trim()
   const baseUrl = config.get<string>('baseUrl', '').trim()
   if (!baseUrl) return { protocol, endpoint: '', model }
@@ -62,6 +65,15 @@ function apiKeySecret(endpoint: string) {
   return `topicSummary.apiKey.${digest}`
 }
 
+/** 弹窗只需知道当前服务是否保存了密钥 */
+export async function getTopicSummarySettings() {
+  const target = getTopicSummaryTarget()
+  const hasApiKey = Boolean(
+    target.endpoint && (await G.context.secrets.get(apiKeySecret(target.endpoint)))
+  )
+  return { ...target, hasApiKey }
+}
+
 /** 使用宿主密码输入框添加、更换或清除当前服务的密钥 */
 export async function setTopicSummaryApiKey() {
   const target = getTopicSummaryTarget()
@@ -71,7 +83,7 @@ export async function setTopicSummaryApiKey() {
   const secret = apiKeySecret(target.endpoint)
   const currentKey = await G.context.secrets.get(secret)
   const key = await vscode.window.showInputBox({
-    title: '设置话题 AI 总结 API Key',
+    title: '设置模型 API Key',
     prompt: `凭据仅用于 ${target.endpoint}。留空确认可清除，按 Esc 可取消`,
     value: currentKey,
     password: true,

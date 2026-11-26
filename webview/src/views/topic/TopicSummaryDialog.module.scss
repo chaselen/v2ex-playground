@@ -27,7 +27,7 @@
 }
 
 .metadata,
-.model,
+.modelInfo,
 .coverage,
 .emptyModel,
 .actions,
@@ -57,9 +57,13 @@
   gap: 4px 14px;
 }
 
-.model,
+.modelInfo,
 .coverage {
   min-width: 0;
+}
+
+.modelInfo {
+  align-items: flex-start;
 }
 
 .model {
@@ -125,7 +129,10 @@
   }
 
   div {
-    margin-top: 6px;
+    margin-block-start: 0.75em;
+    padding-inline-start: 1em;
+    border-inline-start: 2px solid var(--v2ex-control-border);
+    line-height: 1.85;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
@@ -171,6 +178,12 @@
 .actions {
   width: 100%;
   justify-content: space-between;
+}
+
+.settingsHint {
+  color: var(--v2ex-danger-fg);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .summaryActions {
