@@ -499,7 +499,11 @@ export default function TopicSummaryDialog({
           </Skeleton>
         )}
         {hasSummary && (
-          <article ref={articleRef} className={styles.result} aria-label="总结正文">
+          <article
+            ref={articleRef}
+            className={`topic-content ${styles.result}`}
+            aria-label="总结正文"
+          >
             <Markdown skipHtml disallowedElements={['a', 'img']} unwrapDisallowed>
               {displayedText}
             </Markdown>
