@@ -110,7 +110,7 @@ export interface TopicSummaryResult {
 }
 
 export type TopicSummaryUpdate =
-  | { status: 'generating'; model: string; coverage: TopicSummaryCoverage }
+  | { status: 'thinking'; model: string; coverage: TopicSummaryCoverage }
   | { status: 'chunk'; text: string }
   | { status: 'done'; result: TopicSummaryResult; saved: boolean }
   | { status: 'canceled' }

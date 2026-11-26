@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Bot, Copy, FileText, ListChecks, RotateCw, Sparkles, Square } from 'lucide-react'
 import Markdown from 'react-markdown'
-import { Alert, Button, Dialog, Empty, Skeleton, Toast, Tooltip } from '@/components/ui'
+import { Alert, Button, Dialog, Empty, Skeleton, Spinner, Toast, Tooltip } from '@/components/ui'
 import { createVsCodeClient } from '@/core/vscode'
 import type {
   TopicPanelRpcCommands,
@@ -45,6 +45,12 @@ function SummaryTime({ timestamp }: { timestamp: number }) {
 }
 
 /** 确认发送目标后生成总结，以 Markdown 展示流式总结 */
+const progressLabels = {
+  extracting: '正在提取正文及回复…',
+  thinking: '正在等待模型响应…',
+  generating: '正在生成…'
+}
+
 export default function TopicSummaryDialog({
   replyCount,
   onClose
@@ -55,7 +61,8 @@ export default function TopicSummaryDialog({
   const [target, setTarget] = useState<TopicSummaryTarget>()
   const [targetError, setTargetError] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [phase, setPhase] = useState<keyof typeof progressLabels>()
+  const loading = phase !== undefined
   const [settingKey, setSettingKey] = useState(false)
   const [canceled, setCanceled] = useState(false)
   const [text, setText] = useState('')
@@ -118,16 +125,18 @@ export default function TopicSummaryDialog({
     const unsubscribe = vscode.on('topicSummaryUpdated', ({ requestId, update }) => {
       if (activeRequest.current !== requestId) return
       switch (update.status) {
-        case 'generating':
+        case 'thinking':
           setModel(update.model)
           setCoverage(update.coverage)
+          setPhase('thinking')
           break
         case 'chunk':
           setText(current => current + update.text)
+          if (update.text.trim()) setPhase('generating')
           break
         default:
           activeRequest.current = undefined
-          setLoading(false)
+          setPhase(undefined)
           if (update.status === 'done') {
             setResult(update.result)
             setFromCache(false)
@@ -166,13 +175,13 @@ export default function TopicSummaryDialog({
     setText('')
     setModel('')
     setCoverage(undefined)
-    setLoading(true)
+    setPhase('extracting')
     try {
       await vscode.startTopicSummary(requestId, target)
     } catch (error) {
       if (activeRequest.current !== requestId) return
       activeRequest.current = undefined
-      setLoading(false)
+      setPhase(undefined)
       setError(error instanceof Error ? error.message : '总结生成失败')
       void refreshTarget()
     }
@@ -188,7 +197,7 @@ export default function TopicSummaryDialog({
     const requestId = activeRequest.current
     if (!requestId) return
     activeRequest.current = undefined
-    setLoading(false)
+    setPhase(undefined)
     setCanceled(true)
     void vscode.cancelTopicSummary(requestId).catch(() => {})
   }
@@ -294,26 +303,27 @@ export default function TopicSummaryDialog({
           hasSummary && skeletonHeight.current ? { minHeight: skeletonHeight.current } : undefined
         }
       >
-        {hasSummary && (displayedModel || displayedCoverage) && (
-          <div className={styles.metadata}>
-            {displayedModel && (
-              <span className={styles.model}>
-                <Bot size={16} aria-hidden="true" />
-                <span>{displayedModel}</span>
-              </span>
-            )}
-            {displayedCoverage && (
-              <span className={styles.coverage}>
-                <ListChecks size={16} aria-hidden="true" />
-                <span>
-                  纳入回复 {displayedCoverage.replies}/{displayedCoverage.totalReplies} 条
-                  {displayedCoverage.totalPages > 0 &&
-                    ` · ${displayedCoverage.pages < displayedCoverage.totalPages ? '前 ' : ''}${displayedCoverage.pages}/${displayedCoverage.totalPages} 页`}
+        {(hasSummary || (loading && displayedCoverage)) &&
+          (displayedModel || displayedCoverage) && (
+            <div className={styles.metadata}>
+              {displayedModel && (
+                <span className={styles.model}>
+                  <Bot size={16} aria-hidden="true" />
+                  <span>{displayedModel}</span>
                 </span>
-              </span>
-            )}
-          </div>
-        )}
+              )}
+              {displayedCoverage && (
+                <span className={styles.coverage}>
+                  <ListChecks size={16} aria-hidden="true" />
+                  <span>
+                    纳入回复 {displayedCoverage.replies}/{displayedCoverage.totalReplies} 条
+                    {displayedCoverage.totalPages > 0 &&
+                      ` · ${displayedCoverage.pages < displayedCoverage.totalPages ? '前 ' : ''}${displayedCoverage.pages}/${displayedCoverage.totalPages} 页`}
+                  </span>
+                </span>
+              )}
+            </div>
+          )}
         {displayedResult && fromCache && (
           <p className={styles.note}>
             {generatedAt === undefined ? (
@@ -354,9 +364,10 @@ export default function TopicSummaryDialog({
         )}
         {targetError && <Alert variant="danger" title="模型配置有误" description={targetError} />}
         {error && <Alert variant="danger" title="生成失败" description={error} />}
-        {loading && (
-          <p className={styles.note} role="status">
-            {coverage ? '正在生成总结…' : '正在准备模型与帖子内容…'}
+        {phase && (
+          <p className={`${styles.note} ${styles.progress}`} role="status">
+            <Spinner aria-hidden="true" />
+            {progressLabels[phase]}
           </p>
         )}
         {loading && !hasSummary && (

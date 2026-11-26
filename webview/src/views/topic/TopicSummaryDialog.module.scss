@@ -76,6 +76,12 @@
   margin: 0;
 }
 
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .empty {
   padding: 16px 12px 24px;
 
