@@ -44,13 +44,14 @@ function SummaryTime({ timestamp }: { timestamp: number }) {
   )
 }
 
-/** 确认发送目标后生成总结，以 Markdown 展示流式总结 */
 const progressLabels = {
   extracting: '正在提取正文及回复…',
-  thinking: '正在等待模型响应…',
+  waiting: '正在等待模型响应…',
+  thinking: '正在思考…',
   generating: '正在生成…'
 }
 
+/** 确认发送目标后生成总结，以 Markdown 展示流式总结 */
 export default function TopicSummaryDialog({
   replyCount,
   onClose
@@ -125,9 +126,12 @@ export default function TopicSummaryDialog({
     const unsubscribe = vscode.on('topicSummaryUpdated', ({ requestId, update }) => {
       if (activeRequest.current !== requestId) return
       switch (update.status) {
-        case 'thinking':
+        case 'waiting':
           setModel(update.model)
           setCoverage(update.coverage)
+          setPhase('waiting')
+          break
+        case 'thinking':
           setPhase('thinking')
           break
         case 'chunk':

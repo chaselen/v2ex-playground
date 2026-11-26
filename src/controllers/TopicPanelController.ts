@@ -341,9 +341,14 @@ export class TopicPanelController implements WebviewPageRpcController<TopicPanel
         signal
       )
       signal.throwIfAborted()
-      post({ status: 'thinking', model: model.name, coverage })
-      const output = await model.stream(input)
+      post({ status: 'waiting', model: model.name, coverage })
       let summary = ''
+      let reportedThinking = false
+      const output = await model.stream(input, () => {
+        if (signal.aborted || reportedThinking || summary.trim()) return
+        reportedThinking = true
+        post({ status: 'thinking' })
+      })
       for await (const text of output) {
         signal.throwIfAborted()
         summary += text

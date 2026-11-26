@@ -47,8 +47,10 @@ test('reads split SSE frames without including reasoning or metadata in the summ
     'data: [DONE]\n\n'
   ])
   const chunks = []
-  for await (const chunk of readModelStream(response, 'openai')) chunks.push(chunk)
-  expect(chunks).toEqual(['首段', '末段'])
+  for await (const chunk of readModelStream(response, 'openai', () => chunks.push('thinking'))) {
+    chunks.push(chunk)
+  }
+  expect(chunks).toEqual(['thinking', '首段', '末段'])
 })
 
 test('reports an incomplete SSE response after yielding available text', async () => {
@@ -115,7 +117,8 @@ test.each([
         { role: 'user', content: '话题文字' }
       ]
     },
-    events: 'data: {"choices":[{"delta":{"content":"本地摘要"}}]}\n\ndata: [DONE]\n\n'
+    events: 'data: {"choices":[{"delta":{"content":"本地摘要"}}]}\n\ndata: [DONE]\n\n',
+    progress: ['本地摘要']
   },
   {
     protocol: 'anthropic' as const,
@@ -123,12 +126,14 @@ test.each([
     headers: { 'x-api-key': 'fixture-key', 'anthropic-version': '2023-06-01' },
     body: { system: '总结', max_tokens: 2048, messages: [{ role: 'user', content: '话题文字' }] },
     events: [
+      'event: content_block_start\ndata: {"type":"content_block_start","content_block":{"type":"thinking","thinking":""}}',
+      'event: content_block_stop\ndata: {"type":"content_block_stop","index":0}',
       'event: content_block_start\ndata: {"type":"content_block_start","content_block":{"type":"text","text":"本地"}}',
-      'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"thinking_delta","thinking":"隐藏"}}',
       'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"摘要"}}',
       'event: message_stop\ndata: {"type":"message_stop"}',
       ''
-    ].join('\n\n')
+    ].join('\n\n'),
+    progress: ['thinking', '本地', '摘要']
   }
 ])('streams $protocol requests to a local compatible endpoint', async fixture => {
   let request
@@ -161,11 +166,14 @@ test.each([
       },
       new AbortController().signal
     )
-    let output = ''
-    for await (const chunk of await model.stream({ instructions: '总结', source: '话题文字' })) {
-      output += chunk
+    const progress: string[] = []
+    const stream = await model.stream({ instructions: '总结', source: '话题文字' }, () =>
+      progress.push('thinking')
+    )
+    for await (const chunk of stream) {
+      progress.push(chunk)
     }
-    expect(output).toBe('本地摘要')
+    expect(progress).toEqual(fixture.progress)
     expect(request).toEqual({
       method: 'POST',
       path: fixture.path,

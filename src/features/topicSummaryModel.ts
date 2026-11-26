@@ -15,7 +15,7 @@ interface SummaryInput {
 export interface TopicSummaryModel {
   name: string
   fits(input: SummaryInput): Promise<boolean>
-  stream(input: SummaryInput): Promise<AsyncIterable<string>>
+  stream(input: SummaryInput, onThinking?: () => void): Promise<AsyncIterable<string>>
 }
 
 const requestTimeout = 60_000
@@ -97,7 +97,7 @@ export async function createTopicSummaryModel(
     name: target.model,
     fits: async ({ instructions, source }) =>
       instructions.length + source.length <= customInputLimit,
-    stream: input => requestCompatibleModel(target, key, input, signal)
+    stream: (input, onThinking) => requestCompatibleModel(target, key, input, signal, onThinking)
   }
 }
 
@@ -105,7 +105,8 @@ async function requestCompatibleModel(
   target: TopicSummaryTarget,
   key: string | undefined,
   { instructions, source }: SummaryInput,
-  signal: AbortSignal
+  signal: AbortSignal,
+  onThinking?: () => void
 ) {
   const userMessage = { role: 'user', content: source }
   const request =
@@ -139,7 +140,7 @@ async function requestCompatibleModel(
       response.data.destroy()
       throw new Error('服务未返回总结所需的 SSE 流')
     }
-    return readModelStream(response.data, target.protocol)
+    return readModelStream(response.data, target.protocol, onThinking)
   } catch (error) {
     if (!axios.isAxiosError(error)) throw error
     error.response?.data?.destroy?.()
@@ -151,8 +152,12 @@ async function requestCompatibleModel(
   }
 }
 
-/** 按 SSE 事件边界读取模型文本，跳过推理和其他非文本事件 */
-export async function* readModelStream(stream: Readable, protocol: TopicSummaryTarget['protocol']) {
+/** 按 SSE 事件边界读取正文，推理事件仅通知进度 */
+export async function* readModelStream(
+  stream: Readable,
+  protocol: TopicSummaryTarget['protocol'],
+  onThinking?: () => void
+) {
   const lines = createInterface({ input: stream, crlfDelay: Infinity })
   let data: string[] = []
   let finished = false
@@ -185,10 +190,19 @@ export async function* readModelStream(stream: Readable, protocol: TopicSummaryT
         const block = event?.type === 'content_block_start' ? event.content_block : undefined
         if (block?.type === 'text' && typeof block.text === 'string' && block.text) yield block.text
         const delta = event?.type === 'content_block_delta' ? event.delta : undefined
+        if (
+          block?.type === 'thinking' ||
+          block?.type === 'redacted_thinking' ||
+          delta?.type === 'thinking_delta'
+        ) {
+          onThinking?.()
+        }
         if (delta?.type === 'text_delta' && typeof delta.text === 'string') yield delta.text
         continue
       }
       if (choice?.finish_reason) finished = true
+      const reasoning = choice?.delta?.reasoning_content
+      if (typeof reasoning === 'string' && reasoning.trim()) onThinking?.()
       if (typeof choice?.delta?.content === 'string') yield choice.delta.content
     }
   } catch {
