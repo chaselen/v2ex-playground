@@ -224,12 +224,9 @@ export default function TopicShareDialog({
       return await snapdom.toBlob(card, {
         type: 'png',
         backgroundColor: getComputedStyle(card).backgroundColor,
-        compress: false,
         dpr: pixelRatio,
         embedFonts: false,
-        fallbackURL: TRANSPARENT_IMAGE,
-        fast: true,
-        resolvePicturePlaceholders: false
+        fallbackURL: TRANSPARENT_IMAGE
       })
     } finally {
       // data URL 只服务于本次截图，完成后恢复轻量资源 URI

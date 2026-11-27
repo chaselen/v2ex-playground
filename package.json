@@ -261,7 +261,7 @@
     "@types/vscode": "~1.86.0",
     "@types/vscode-webview": "^1.57.5",
     "@vitejs/plugin-react": "^6.3.0",
-    "@zumer/snapdom": "^2.24.18",
+    "@zumer/snapdom": "^3.8.3",
     "axios": "^1.21.1",
     "cheerio": "^1.2.0",
     "cookie": "^2.0.2",
