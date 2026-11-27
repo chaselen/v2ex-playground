@@ -262,7 +262,7 @@
     "@types/vscode-webview": "^1.57.5",
     "@vitejs/plugin-react": "^6.1.2",
     "@zumer/snapdom": "^2.24.18",
-    "axios": "^1.20.0",
+    "axios": "^1.21.1",
     "cheerio": "^1.2.0",
     "cookie": "^2.0.1",
     "dayjs": "^1.11.21",
@@ -281,7 +281,7 @@
     "tough-cookie": "^6.0.1",
     "typescript": "^5.9.3",
     "vite": "^8.3.4",
-    "vitest": "^4.1.11",
+    "vitest": "^4.1.12",
     "vscode-oniguruma": "2.0.1",
     "vscode-tint": "0.2.1"
   }
