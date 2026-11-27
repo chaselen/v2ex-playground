@@ -16,7 +16,6 @@ export interface HelpRpcCommands
   extends WebviewCommonRpcCommands, WebviewStateRpcCommands<HelpViewState> {
   load(slug: string, anchor?: string): void
   refresh(): void
-  openSource(): void
 }
 
 /** 帮助页面状态事件 */

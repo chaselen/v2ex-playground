@@ -3,9 +3,9 @@ import { HelpPanelController } from './HelpPanelController'
 import { createV2exWebviewPanel } from './webviewPanel'
 import type { HelpPage } from '@/v2ex'
 
-const mocks = vi.hoisted(() => ({ getPage: vi.fn(), post: vi.fn(), openExternal: vi.fn() }))
+const mocks = vi.hoisted(() => ({ getPage: vi.fn(), post: vi.fn() }))
 vi.mock('@/global', () => ({
-  default: { V2ex: { baseUrl: 'https://www.v2ex.com', help: { getPage: mocks.getPage } } }
+  default: { V2ex: { help: { getPage: mocks.getPage } } }
 }))
 vi.mock('./webviewPanel', () => ({
   createV2exWebviewPanel: () => ({ webview: {}, onDidDispose() {}, reveal() {}, title: '' }),
@@ -18,7 +18,6 @@ vi.mock('@/core/WebviewRpcBridge', () => ({
     dispose() {}
   }
 }))
-vi.mock('@/features/openExternal', () => ({ openExternal: mocks.openExternal }))
 
 const currency: HelpPage = {
   slug: 'currency',
@@ -55,14 +54,12 @@ test('navigates to an anchor in cached help without fetching the article again',
   expect(mocks.getPage).toHaveBeenCalledTimes(1)
 })
 
-test('preserves the section when refreshing or opening the original document', async () => {
+test('preserves the section when refreshing', async () => {
   const controller = createController()
   await controller.load('currency', false, 'boost')
   await controller.rpc_refresh()
   expect(controller.rpc_ready().anchor).toBe('boost')
   expect(mocks.getPage).toHaveBeenCalledTimes(2)
-  controller.rpc_openSource()
-  expect(mocks.openExternal).toHaveBeenCalledWith('https://www.v2ex.com/help/currency#boost')
 })
 
 test('does not let an older request replace the latest document and section', async () => {

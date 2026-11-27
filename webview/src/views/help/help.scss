@@ -11,10 +11,6 @@
 }
 .help-toolbar {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
   padding-bottom: 12px;
   margin-bottom: 16px;
   border-bottom: 1px solid var(--v2ex-control-border);
@@ -23,7 +19,6 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-right: auto;
 }
 .help-brand-icon {
   display: grid;

@@ -2,7 +2,7 @@ import { getLinkMenuItems } from '@/components/linkMenuItems'
 import { usePanelScrollPosition } from '@/components/PanelAddressBar'
 import PageContextMenu from '@/components/PageContextMenu'
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
-import { BookOpen, ChevronRight, ExternalLink } from 'lucide-react'
+import { BookOpen, ChevronRight } from 'lucide-react'
 import EnhancedHtmlContent from '@/components/EnhancedHtmlContent'
 import PageSkeleton from '@/components/PageSkeleton'
 import { ScrollArea, Alert, Button, Toast } from '@/components/ui'
@@ -109,13 +109,6 @@ export default function HelpApp() {
               <span className="help-subtitle">了解 V2EX 的功能与社区规则</span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            icon={<ExternalLink aria-hidden="true" />}
-            onClick={() => void vscode.openSource()}
-          >
-            查看原文
-          </Button>
         </header>
         {!state.data && (
           <ScrollArea className="help-initial-scroll">

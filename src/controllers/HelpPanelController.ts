@@ -8,7 +8,6 @@ import {
 import type { HelpPage } from '@/v2ex'
 import { WebviewCommonRpc, type WebviewNavigationDeps } from './WebviewCommonRpc'
 import { WebviewRpcBridge } from '@/core/WebviewRpcBridge'
-import { openExternal } from '@/features/openExternal'
 import type {
   HelpRpcCommands,
   HelpViewState,
@@ -64,12 +63,6 @@ export class HelpPanelController implements WebviewPageRpcController<HelpRpcComm
   /** 刷新当前主题 */
   rpc_refresh() {
     return this.load(this.state.slug, true, this.state.anchor)
-  }
-  /** 在浏览器中查看原文 */
-  rpc_openSource() {
-    const url = new URL(`/help/${this.state.slug}`, G.V2ex.baseUrl)
-    if (this.state.anchor) url.hash = encodeURIComponent(this.state.anchor)
-    void openExternal(url.toString())
   }
 
   /** 请求主题并同步状态，旧请求不得覆盖后续导航 */
