@@ -1,5 +1,11 @@
 @use './focus';
 
+@mixin emoticon-image() {
+  width: 21px !important;
+  height: 21px !important;
+  vertical-align: text-bottom;
+}
+
 @mixin base() {
   line-height: 1.55;
   word-break: break-word;
@@ -63,9 +69,7 @@
   }
 
   .v2ex-emoticon-image {
-    width: 21px !important;
-    height: 21px !important;
-    vertical-align: text-bottom;
+    @include emoticon-image();
   }
 
   .image-preview-target {
@@ -212,26 +216,30 @@
   }
 }
 
+/** 正文段落间距，兼容站点生成的 Markdown 容器 */
+@mixin paragraph-spacing($gap: 1em, $markdown-body: '.markdown_body') {
+  > :first-child,
+  #{$markdown-body} > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child,
+  #{$markdown-body} > :last-child {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin: 0 0 $gap;
+  }
+}
+
 /** 话题与帮助文档共用的正文排版 */
 @mixin article() {
   @include base;
   min-width: 0;
   font-size: 14px;
   line-height: 1.72;
-
-  > :first-child,
-  .markdown_body > :first-child {
-    margin-top: 0;
-  }
-
-  > :last-child,
-  .markdown_body > :last-child {
-    margin-bottom: 0;
-  }
-
-  p {
-    margin: 0 0 1em;
-  }
+  @include paragraph-spacing();
 
   h1,
   h2,

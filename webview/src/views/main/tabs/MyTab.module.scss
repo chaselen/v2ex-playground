@@ -1,5 +1,6 @@
 @use '../components/mixins';
 @use '../../../styles/focus';
+@use '../../../styles/topic-content';
 
 .my-panel {
   box-sizing: border-box;
@@ -471,6 +472,20 @@
   color: var(--v2ex-main-content-fg);
   line-height: 1.55;
   word-break: break-word;
+
+  @include topic-content.paragraph-spacing(6px, ':global(.markdown_body)');
+
+  img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+  }
+
+  :global(.v2ex-emoticon-image) {
+    @include topic-content.emoticon-image();
+  }
 
   a {
     color: var(--v2ex-link-fg);
