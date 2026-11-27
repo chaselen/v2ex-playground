@@ -4,7 +4,7 @@ import { V2exClient } from '../client'
 
 const client = new V2exClient(process.env.V2EX_COOKIE)
 
-describe.sequential('official reply threads live', () => {
+describe('official reply threads live', { concurrent: false }, () => {
   for (const [id, pages] of [
     [1030787, [1]],
     [1149556, [1, 2]],

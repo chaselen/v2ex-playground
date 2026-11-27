@@ -393,10 +393,7 @@ function parseReplyReference(
     const who = strip.find('.reply-strip-who').clone()
     floor = who.find('.reply-quote-no').text().replace('#', '')
     who.children().remove()
-    userName = who
-      .text()
-      .replace(/^↩\s*/, '')
-      .trim()
+    userName = who.text().replace(/^↩\s*/, '').trim()
     content = escapeReplyText(strip.find('.reply-strip-text').text())
   } else if (chip.length && !to.length) {
     userName = chip

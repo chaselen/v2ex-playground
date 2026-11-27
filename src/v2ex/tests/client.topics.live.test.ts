@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 
 const client = new V2exClient(process.env.V2EX_COOKIE)
 
-describe.sequential('V2exClient topics', () => {
+describe('V2exClient topics', { concurrent: false }, () => {
   // 编辑权限会过期；仅显式指定具有快照测试原文的新沙盒主题时运行，测试本身不写入
   const editFixtureTopicId = Number(process.env.V2EX_EDIT_FIXTURE_TOPIC_ID)
   test.skipIf(!process.env.V2EX_COOKIE || !editFixtureTopicId)(

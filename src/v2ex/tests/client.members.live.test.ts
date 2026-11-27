@@ -4,7 +4,7 @@ import { expectMemberContent, expectMemberInfo, expectTopic } from './client.liv
 
 const client = new V2exClient()
 
-describe.sequential('V2exClient members', () => {
+describe('V2exClient members', { concurrent: false }, () => {
   test('gets member info and default activity from public member page', async () => {
     const member = await client.members.getInfo('livid')
     const content = await client.members.getContent('livid')
