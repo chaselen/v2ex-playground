@@ -777,14 +777,36 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(functi
    * @param event 键盘事件
    */
   function handleKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
+    if (event.defaultPrevented || disabled || posting || event.nativeEvent.isComposing) {
+      return
+    }
+
     if (
-      !submitContent ||
-      disabled ||
-      posting ||
-      event.nativeEvent.isComposing ||
-      event.key !== 'Enter' ||
-      (!event.metaKey && !event.ctrlKey)
+      (event.key === 'Backspace' || event.key === 'Delete') &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.shiftKey
     ) {
+      const textarea = getTextarea()
+      if (
+        textarea &&
+        event.target === textarea &&
+        textarea.selectionStart === textarea.selectionEnd
+      ) {
+        const cursor = textarea.selectionStart
+        const backward = event.key === 'Backspace'
+        const start = backward ? textarea.value.slice(0, cursor).lastIndexOf('[') : cursor
+        const end = backward ? cursor : textarea.value.indexOf(']', cursor) + 1
+        if (start >= 0 && end > start && isImageEmoticon(textarea.value.slice(start, end))) {
+          // 选中整个标记，交给原生按键处理删除和撤销
+          textarea.setSelectionRange(start, end)
+        }
+      }
+      return
+    }
+
+    if (!submitContent || event.key !== 'Enter' || (!event.metaKey && !event.ctrlKey)) {
       return
     }
 
