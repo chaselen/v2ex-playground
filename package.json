@@ -279,7 +279,7 @@
     "sass": "^1.108.2",
     "tm-grammars": "1.32.22",
     "tough-cookie": "^6.0.1",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^8.4.0",
     "vitest": "^4.1.12",
     "vscode-oniguruma": "2.0.1",
