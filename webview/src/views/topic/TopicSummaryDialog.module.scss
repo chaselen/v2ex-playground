@@ -1,8 +1,13 @@
 .dialog:global(.v2ex-dialog) {
   box-sizing: border-box;
   width: 86%;
+  max-height: calc(100vh - clamp(32px, 8vh, 96px));
   min-width: min(600px, calc(100% - 24px));
   max-width: min(920px, calc(100% - 24px));
+
+  &.generating {
+    height: 100vh;
+  }
 }
 
 .viewport {
@@ -150,14 +155,24 @@
   margin-bottom: 0;
 }
 
+.summaryTime,
+.coverage {
+  cursor: default;
+}
+
 .summaryTime {
-  cursor: help;
   text-decoration: underline dotted;
   text-underline-offset: 2px;
 }
 
 .result:global(.topic-content) {
   color: var(--v2ex-content-fg);
+
+  strong {
+    color: var(--v2ex-content-fg);
+    background-color: color-mix(in srgb, var(--v2ex-link-fg) 12%, transparent);
+    border-radius: var(--v2ex-radius-sm);
+  }
 
   h2 {
     padding: 6px 10px;

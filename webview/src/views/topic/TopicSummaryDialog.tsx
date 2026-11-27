@@ -102,8 +102,6 @@ export default function TopicSummaryDialog({
   const activeRequest = useRef<string | undefined>(undefined)
   const targetRevision = useRef(0)
   const viewportRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const skeletonHeight = useRef(0)
   const followOutput = useRef(false)
 
   useLayoutEffect(() => {
@@ -113,12 +111,6 @@ export default function TopicSummaryDialog({
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current
-    const content = contentRef.current
-    if (viewport && content && loading && !text.trim() && !reasoning.trim()) {
-      // 只保留骨架可见的高度，避免短窗口在流式输出开始时滚入留白
-      const overflow = viewport.scrollHeight - viewport.clientHeight
-      skeletonHeight.current = Math.max(0, content.offsetHeight - overflow)
-    }
     if (viewport && (text.trim() || reasoning.trim()) && followOutput.current)
       viewport.scrollTop = viewport.scrollHeight
   }, [coverage, loading, reasoning, text])
@@ -209,7 +201,6 @@ export default function TopicSummaryDialog({
     startedAt.current = performance.now()
     setDurationMs(undefined)
     activeRequest.current = requestId
-    skeletonHeight.current = 0
     followOutput.current = true
     setError('')
     setCanceled(false)
@@ -297,7 +288,7 @@ export default function TopicSummaryDialog({
   return (
     <Dialog
       open
-      className={styles.dialog}
+      className={loading ? `${styles.dialog} ${styles.generating}` : styles.dialog}
       viewportRef={viewportRef}
       viewportProps={{
         className: styles.viewport,
@@ -377,13 +368,7 @@ export default function TopicSummaryDialog({
         </div>
       }
     >
-      <div
-        className={styles.content}
-        ref={contentRef}
-        style={
-          hasSummary && skeletonHeight.current ? { minHeight: skeletonHeight.current } : undefined
-        }
-      >
+      <div className={styles.content}>
         {(hasSummary || (loading && displayedCoverage)) &&
           (displayedModel || displayedCoverage) && (
             <div className={styles.metadata}>
@@ -490,7 +475,7 @@ export default function TopicSummaryDialog({
         )}
         {loading && !hasSummary && !displayedReasoning.trim() && (
           <Skeleton active className={styles.summarySkeleton} aria-hidden="true">
-            {[1, 3, 3].map((rows, index) => (
+            {[2, 3, 5].map((rows, index) => (
               <div key={index}>
                 <Skeleton.Title className={styles.skeletonHeading} />
                 <Skeleton.Paragraph rows={rows} />
